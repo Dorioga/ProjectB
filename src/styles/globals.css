@@ -1,0 +1,26 @@
+@import "tailwindcss";
+@theme {
+  --color-primary: #0b3d91;
+  --color-secondary: #f59e0b;
+  --color-accent: #10b981;
+  --color-bg: #f4f6f8;
+  --color-surface: #ffffff;
+  --color-text: #111827;
+  --color-muted: #6b7280;
+  --color-error: #dc2626;
+  --color-warning: #d97706;
+  --color-info: #0ea5e9;
+}
+/* SCSS HEX 
+
+#155dfc
+
+
+
+
+sm: Mínimo 640px
+md: Mínimo 768px
+lg: Mínimo 1024px
+xl: Mínimo 1280px
+2xl: Mínimo 1536px
+/* /* ...existing code... */
