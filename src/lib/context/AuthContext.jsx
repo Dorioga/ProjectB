@@ -53,7 +53,7 @@ export function AuthProvider({ children }) {
   const [error, setError] = useState(null);
 
   //Mneja el estado del
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
 
   const loadProfile = useCallback(async () => {
     if (!token) {

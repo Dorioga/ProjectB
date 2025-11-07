@@ -1,4 +1,3 @@
-
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "../pages/Login/Login";
 import DashboardTemplate from "../components/templates/DashboardTemplate";

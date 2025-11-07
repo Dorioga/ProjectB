@@ -93,13 +93,11 @@ const AllStudent = () => {
     []
   );
 
-  if (loading) return <p>Cargando estudiantes...</p>;
-
   useEffect(() => {
     loadStudents();
   }, []); // Carga los estudiantes al montar el componente
   return (
-    <div className="p-4">
+    <div className="border p-6 rounded bg-bg h-full gap-4 flex flex-col">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Estudiantes Registrados</h1>
       </div>
