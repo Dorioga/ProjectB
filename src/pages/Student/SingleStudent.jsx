@@ -43,68 +43,71 @@ const SingleStudent = () => {
 
   return (
     <div className="border p-6 rounded bg-bg h-full gap-4 flex flex-col">
-      <h2 className="font-bold text-2xl">Perfil Estudiante</h2>
+      <h2 className="font-bold text-2xl ">Perfil Estudiante</h2>
 
-      <div id="Busqueda" className="w-full flex flex-col gap-4 border-b pb-4">
-        <div className="grid grid-cols-4 items-center justify-center gap-4">
-          <div className="grid grid-cols-6 items-center gap-4 w-full col-span-2">
-            <label className="col-span-2 text-lg font-semibold">
-              Documento de Identidad
-            </label>
-            <input
-              className="bg-white rounded-sm p-2 border border-gray-300 col-span-3 focus:outline-none focus:ring-2 focus:ring-secondary"
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              placeholder="Solo números (máx. 15 dígitos)"
-              value={studentId}
-              onChange={handleInputChange}
-              disabled={loading}
-            />
-            <SimpleButton
-              msj={loading ? "Buscando..." : "Buscar"}
-              onClick={handleSearch}
-              bg={"bg-secondary"}
-              text={"text-white"}
-              hover={"hover:bg-secondary/80"}
-              icon={"Search"}
-              disabled={loading}
-            />
-          </div>
-
-          <div className="flex flex-row items-center justify-center gap-4 w-full">
-            <SimpleButton
-              msj={"Escanear QR"}
-              onClick={() => setQrOpen(true)}
-              bg={"bg-secondary"}
-              text={"text-white"}
-              hover={"hover:bg-secondary/80"}
-              icon={"QrCode"}
-            />
-            <QRModal
-              isOpen={qrOpen}
-              onClose={() => setQrOpen(false)}
-              onScan={handleQRCodeScan}
-              title="Escanear QR del estudiante"
-            />
-          </div>
-          {selected ? (
-            <div className="flex flex-row items-center justify-start gap-4 w-full">
+      <div className="w-full flex flex-col gap-4 border-b pb-4">
+        <div className="grid grid-cols-4 xl:grid-cols-8  items-center justify-center gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3  xl:grid-cols-12 items-center w-full col-span-4 xl:col-span-8 gap-2">
+            <div className="md:col-span-2 xl:col-span-4 flex flex-col ">
+              <label className=" text-lg font-semibold">
+                Documento de Identidad
+              </label>
+              <input
+                className="bg-white rounded-sm p-2 border border-gray-300 col-span-3 focus:outline-none focus:ring-2 focus:ring-secondary"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                placeholder="Solo números (máx. 15 dígitos)"
+                value={studentId}
+                onChange={handleInputChange}
+                disabled={loading}
+              />
+            </div>
+            <div className="md:col-span-1 xl:col-span-2 flex w-full h-full items-end">
               <SimpleButton
-                msj={"Generar Carnet"}
-                onClick={() => setCarnetOpen(true)}
+                msj={loading ? "Buscando..." : "Buscar"}
+                onClick={handleSearch}
                 bg={"bg-secondary"}
                 text={"text-white"}
                 hover={"hover:bg-secondary/80"}
-                icon={"IdCard"}
-              />
-              <CarnetModal
-                isOpen={carnetOpen}
-                onClose={() => setCarnetOpen(false)}
-                data={selected}
+                icon={"Search"}
+                disabled={loading}
               />
             </div>
-          ) : null}
+            <div className="md:col-span-3 xl:col-span-3 flex w-full h-full items-end">
+              <SimpleButton
+                msj={"Escanear QR"}
+                onClick={() => setQrOpen(true)}
+                bg={"bg-secondary"}
+                text={"text-white"}
+                hover={"hover:bg-secondary/80"}
+                icon={"QrCode"}
+              />
+              <QRModal
+                isOpen={qrOpen}
+                onClose={() => setQrOpen(false)}
+                onScan={handleQRCodeScan}
+                title="Escanear QR del estudiante"
+              />
+            </div>
+            {selected ? (
+              <div className="md:col-span-3  xl:col-span-3 flex w-full h-full items-end">
+                <SimpleButton
+                  msj={"Generar Carnet"}
+                  onClick={() => setCarnetOpen(true)}
+                  bg={"bg-secondary"}
+                  text={"text-white"}
+                  hover={"hover:bg-secondary/80"}
+                  icon={"IdCard"}
+                />
+                <CarnetModal
+                  isOpen={carnetOpen}
+                  onClose={() => setCarnetOpen(false)}
+                  data={selected}
+                />
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
 

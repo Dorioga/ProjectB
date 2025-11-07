@@ -52,6 +52,8 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  //Mneja el estado del Sidebar
+  const [isOpen, setIsOpen] = useState(false);
   // ✅ Un solo useEffect que guarda todo en sessionStorage
   useEffect(() => {
     saveToSession("user", user);
@@ -167,6 +169,8 @@ export function AuthProvider({ children }) {
       nameRole,
       loading,
       error,
+      isOpen,
+      toggleSidebar: () => setIsOpen(!isOpen),
       login,
       logout,
       reload: loadProfile,
@@ -181,6 +185,9 @@ export function AuthProvider({ children }) {
       nameRole,
       loading,
       error,
+      isOpen,
+      login,
+      logout,
       loadProfile,
     ]
   );

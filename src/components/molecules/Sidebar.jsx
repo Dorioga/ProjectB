@@ -5,19 +5,29 @@ import { User, LogOut } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import PreviewIMG from "../atoms/PreviewIMG";
 const Sidebar = () => {
-  const { nameSchool, id_School, imgSchool, menu, nameRole, logout } =
-    useAuth();
-  const [isOpen, setIsOpen] = useState(true);
+  const {
+    nameSchool,
+    id_School,
+    imgSchool,
+    menu,
+    nameRole,
+    logout,
+    isOpen,
+    toggleSidebar,
+  } = useAuth();
+
   console.log("Sidebar - imgSchool:", imgSchool);
   console.log("Sidebar - menu:", menu);
   console.log("Sidebar - Tipo de imgSchool:", typeof imgSchool);
   const toggleIsOpen = () => {
-    setIsOpen(!isOpen);
+    toggleSidebar();
   };
   return (
     <div
-      className={`  fixed left-0 top-0  z-50 h-screen grid grid-rows-12 border  bg-primary transition-all duration-300 ease-in-out${
-        isOpen ? "md:w-1/3 xl:w-2/12 bg-primary" : " w-15"
+      className={`   fixed left-0 top-0  z-50 h-screen grid grid-rows-12 border  bg-primary transition-all duration-300 ease-in-out${
+        isOpen
+          ? " w-4/5 sm:w-3/6 md:w-2/5 lg:w-1/3 xl:w-3/12 2xl:w-2/12 bg-primary"
+          : "w-15"
       }`}
     >
       <div className="p-2 row-span-3">
@@ -40,7 +50,7 @@ const Sidebar = () => {
           </div>
         )}
       </div>
-      <div className="row-span-7">
+      <div className="row-span-7 flex flex-col justify-start xl:justify-center 2xl:justify-start ">
         <ul className="">
           {menu &&
             menu.map((item) => {
@@ -62,8 +72,8 @@ const Sidebar = () => {
             })}
         </ul>
       </div>
-      <div className="flex flex-col items-center  py-10 gap-2">
-        <div className="flex flex-row items-center gap-2  p-2 rounded">
+      <div className="flex flex-col items-center row-span-2 justify-center gap-2 ">
+        <div className="flex flex-row items-center gap-2 ">
           <User className="text-white text-2xl" />
           {isOpen ? (
             <h2 className="text-white font-bold text-xl">{nameRole}</h2>

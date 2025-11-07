@@ -28,7 +28,7 @@ const Login = () => {
   };
   return (
     <div className="w-full flex items-center justify-center h-full">
-      <div className="w-1/4 bg-primary flex items-center justify-center p-4 rounded-2xl py-14">
+      <div className="w-11/12 sm:w-2/3 lg:w-1/2 xl:w-1/4 bg-primary flex items-center justify-center p-4 rounded-2xl py-14">
         <div className="flex flex-col gap-4 w-3/4">
           <div className="text-center">
             <h2 className="text-surface font-bold text-4xl">Bienvenido</h2>
