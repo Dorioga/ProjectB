@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import useStudent from "../../lib/hooks/useStudent";
 import DataTable from "../../components/atoms/DataTable";
 import StudentModal from "../../components/molecules/StudentModal"; // 1. Importa el modal

@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from "react";
 import Modal from "../atoms/Modal";
 import ProfileStudent from "./ProfileStudent";
 

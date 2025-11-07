@@ -1,15 +1,16 @@
-import { loginResponse } from "../../services/DataExamples/ExamplesResponse";
-import FileChooser from "../atoms/FileChooser";
-import PreviewIMG from "../atoms/PreviewIMG";
 import { useState } from "react";
+import PreviewIMG from "../atoms/PreviewIMG";
 import SimpleButton from "../atoms/SimpleButton";
+import FileChooser from "../atoms/FileChooser";
 
 const ProfileStudent = ({ data }) => {
+  // ✅ AGREGAR ESTE HOOK
   const [isEditing, setIsEditing] = useState(false);
 
   const toggleEditing = () => {
     setIsEditing(!isEditing);
   };
+
   return (
     <div className="w-full flex flex-col items-center justify-center ">
       <div className="w-11/12 flex  flex-col gap-4  ">
@@ -21,7 +22,7 @@ const ProfileStudent = ({ data }) => {
               bg={isEditing ? "bg-accent" : "bg-secondary"}
               icon={isEditing ? "Save" : "Pencil"}
               text={"text-white"}
-            ></SimpleButton>
+            />
           </div>
         </div>
         <div className="grid lg:grid-cols-3 gap-4 p-4 bg-bg rounded-lg shadow-md ">

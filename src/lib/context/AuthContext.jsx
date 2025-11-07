@@ -52,7 +52,7 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  //Mneja el estado del Sidebar
+  //Mneja el estado del
   const [isOpen, setIsOpen] = useState(false);
   // ✅ Un solo useEffect que guarda todo en sessionStorage
   useEffect(() => {
@@ -72,6 +72,11 @@ export function AuthProvider({ children }) {
     }
   }, [user, nameSchool, id_School, imgSchool, nameRole, menu, token]);
 
+  useEffect(() => {
+    if (token && !user) {
+      loadProfile();
+    }
+  }, [token, user, loadProfile]);
   const loadProfile = useCallback(async () => {
     if (!token) {
       setLoading(false);
@@ -99,13 +104,6 @@ export function AuthProvider({ children }) {
       setLoading(false);
     }
   }, [token]);
-
-  useEffect(() => {
-    if (token && !user) {
-      loadProfile();
-    }
-  }, [token, user, loadProfile]);
-
   const login = async (credentials) => {
     setLoading(true);
     setError(null);
