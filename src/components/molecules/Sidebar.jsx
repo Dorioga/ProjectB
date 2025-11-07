@@ -16,9 +16,6 @@ const Sidebar = () => {
     toggleSidebar,
   } = useAuth();
 
-  console.log("Sidebar - imgSchool:", imgSchool);
-  console.log("Sidebar - menu:", menu);
-  console.log("Sidebar - Tipo de imgSchool:", typeof imgSchool);
   const toggleIsOpen = () => {
     toggleSidebar();
   };

@@ -12,7 +12,6 @@ const CarnetModal = ({ isOpen, onClose, data }) => {
   const frontRef = useRef(null);
   const backRef = useRef(null);
   const { pathSignature } = useSchool();
-  console.log(data);
   let fullName =
     data.first_name +
     " " +

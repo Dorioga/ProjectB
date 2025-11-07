@@ -3,7 +3,6 @@ import Modal from "../atoms/Modal";
 import ProfileStudent from "./ProfileStudent";
 
 const StudentModal = ({ isOpen, onClose, student, onSave }) => {
-  console.log("StudentModal props:", { isOpen, onClose, student, onSave });
   // Determina el título del modal
   const modalTitle = student
     ? "Perfil del Estudiante"

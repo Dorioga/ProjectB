@@ -5,8 +5,8 @@ import { useState } from "react";
 import SimpleButton from "../atoms/SimpleButton";
 
 const ProfileStudent = ({ data }) => {
-  console.log(data);
   const [isEditing, setIsEditing] = useState(false);
+
   const toggleEditing = () => {
     setIsEditing(!isEditing);
   };

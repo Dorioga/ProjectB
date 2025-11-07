@@ -26,11 +26,9 @@ const AllStudent = () => {
   const handleSave = (formData) => {
     if (selectedStudent) {
       // Lógica para actualizar
-      console.log("Actualizando estudiante:", selectedStudent.id, formData);
       // updateStudent(selectedStudent.id, formData); // Descomenta cuando tengas la lógica del hook
     } else {
       // Lógica para crear
-      console.log("Creando nuevo estudiante:", formData);
       // addStudent(formData); // Descomenta cuando tengas la lógica del hook
     }
     setIsModalOpen(false); // Cierra el modal después de guardar

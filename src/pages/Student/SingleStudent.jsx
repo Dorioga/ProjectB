@@ -27,7 +27,6 @@ const SingleStudent = () => {
     }
     //1096252058
     try {
-      console.log("Buscando estudiante con ID:", studentId);
       await fetchStudent(studentId);
       // El resultado se guarda automáticamente en 'selected' del contexto
     } catch (err) {
@@ -38,7 +37,6 @@ const SingleStudent = () => {
 
   const handleQRCodeScan = () => {
     // TODO: escaneo Código QR
-    console.log("Código QR leído:", code);
   };
 
   return (

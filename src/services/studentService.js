@@ -22,7 +22,6 @@ export async function getStudent(id) {
       throw new Error(`Estudiante con documento ${id} no encontrado`);
     }
 
-    console.log("Estudiante encontrado en service:", student);
     return Promise.resolve(student);
   }
   return ApiClient.get(`/students/${id}`);

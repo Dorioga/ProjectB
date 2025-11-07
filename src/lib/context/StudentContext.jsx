@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useEffect, useState } from "react";
 import * as studentService from "../../services/studentService";
 
-export const StudentContext = createContext(null);
+export const StudentContext = createContext();
 
 export function StudentProvider({ children }) {
   const [students, setStudents] = useState([]);
@@ -30,7 +30,6 @@ export function StudentProvider({ children }) {
     setError(null);
     try {
       const s = await studentService.getStudent(id);
-      console.log("Estudiante encontrado:", s);
       setSelected(s);
       return s;
     } catch (err) {
