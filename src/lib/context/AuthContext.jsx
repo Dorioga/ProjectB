@@ -54,29 +54,7 @@ export function AuthProvider({ children }) {
 
   //Mneja el estado del
   const [isOpen, setIsOpen] = useState(false);
-  // ✅ Un solo useEffect que guarda todo en sessionStorage
-  useEffect(() => {
-    saveToSession("user", user);
-    saveToSession("nameSchool", nameSchool);
-    saveToSession("id_School", id_School);
-    saveToSession("imgSchool", imgSchool);
-    saveToSession("nameRole", nameRole);
-    saveToSession("menu", menu);
 
-    if (token) {
-      sessionStorage.setItem("token", token);
-      setAuthToken(token);
-    } else {
-      sessionStorage.removeItem("token");
-      setAuthToken(null);
-    }
-  }, [user, nameSchool, id_School, imgSchool, nameRole, menu, token]);
-
-  useEffect(() => {
-    if (token && !user) {
-      loadProfile();
-    }
-  }, [token, user, loadProfile]);
   const loadProfile = useCallback(async () => {
     if (!token) {
       setLoading(false);
@@ -104,6 +82,30 @@ export function AuthProvider({ children }) {
       setLoading(false);
     }
   }, [token]);
+
+  // ✅ Un solo useEffect que guarda todo en sessionStorage
+  useEffect(() => {
+    saveToSession("user", user);
+    saveToSession("nameSchool", nameSchool);
+    saveToSession("id_School", id_School);
+    saveToSession("imgSchool", imgSchool);
+    saveToSession("nameRole", nameRole);
+    saveToSession("menu", menu);
+
+    if (token) {
+      sessionStorage.setItem("token", token);
+      setAuthToken(token);
+    } else {
+      sessionStorage.removeItem("token");
+      setAuthToken(null);
+    }
+  }, [user, nameSchool, id_School, imgSchool, nameRole, menu, token]);
+
+  useEffect(() => {
+    if (token && !user) {
+      loadProfile();
+    }
+  }, [token, user, loadProfile]);
   const login = async (credentials) => {
     setLoading(true);
     setError(null);

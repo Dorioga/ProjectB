@@ -1,5 +1,5 @@
 import { ApiClient } from "./ApiClient";
-import { studentsResponse as studentsMock } from "./DataExamples/ExamplesResponse";
+import { studentsResponse as studentsMock } from "./DataExamples/studentsResponse";
 
 /**
  * studentService: adaptarlo a tus endpoints reales

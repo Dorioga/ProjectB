@@ -50,11 +50,11 @@ const Sidebar = () => {
       <div className="row-span-7 flex flex-col justify-start xl:justify-center 2xl:justify-start ">
         <ul className="">
           {menu &&
-            menu.map((item) => {
+            menu.map((item, id) => {
               const IconComponent = LucideIcons[item.icon] || LucideIcons.User;
               return (
                 <Link
-                  key={item.id}
+                  key={id}
                   to={item.link}
                   className="flex flex-row px-4 py-2 items-center gap-2 hover:bg-secondary rounded"
                 >

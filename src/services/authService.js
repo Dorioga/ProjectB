@@ -1,5 +1,5 @@
 import { ApiClient } from "./ApiClient";
-import { loginResponse } from "./DataExamples/ExamplesResponse";
+import { loginResponse } from "./DataExamples/loginResponse";
 /**
  * authService: funciones para login/logout/perfil
  * Ajusta rutas según tu backend.
