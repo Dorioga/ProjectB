@@ -7,8 +7,8 @@ import { studentsResponse as studentsMock } from "./DataExamples/studentsRespons
 export async function getStudents(params = {}) {
   if (import.meta.env.DEV) {
     return Promise.resolve(studentsMock);
-  }
-  return ApiClient.get("/students", params);
+  } //ApiClient.get("/students", params)
+  return studentsMock;
 }
 
 export async function getStudent(id) {
@@ -24,7 +24,8 @@ export async function getStudent(id) {
 
     return Promise.resolve(student);
   }
-  return ApiClient.get(`/students/${id}`);
+  //ApiClient.get(`/students/${id}`)
+  return student;
 }
 
 export async function createStudent(payload) {
