@@ -5,18 +5,18 @@ import { studentsResponse as studentsMock } from "./DataExamples/studentsRespons
  * studentService: adaptarlo a tus endpoints reales
  */
 export async function getStudents(params = {}) {
+  // return Promise.resolve(studentsMock);
   if (import.meta.env.DEV) {
-    return Promise.resolve(studentsMock);
   } //ApiClient.get("/students", params)
   return studentsMock;
 }
 
 export async function getStudent(id) {
+  const student = studentsMock.find(
+    (s) => String(s.identification) === String(id)
+  );
   if (import.meta.env.DEV) {
     // ✅ Comparar como strings (sin Number())
-    const student = studentsMock.find(
-      (s) => String(s.identification) === String(id)
-    );
 
     if (!student) {
       throw new Error(`Estudiante con documento ${id} no encontrado`);
