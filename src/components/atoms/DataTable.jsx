@@ -1,5 +1,5 @@
 // filepath: src/components/molecules/DataTable.jsx
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -8,10 +8,13 @@ import {
   getSortedRowModel,
   flexRender,
 } from "@tanstack/react-table";
+import * as XLSX from "xlsx";
+import { FileUp } from "lucide-react";
 
-const DataTable = ({ data, columns }) => {
+const DataTable = ({ data, columns, fileName = "export" }) => {
   const [sorting, setSorting] = useState([]);
   const [globalFilter, setGlobalFilter] = useState("");
+  const tableRef = useRef(null);
 
   const table = useReactTable({
     data,
@@ -33,18 +36,72 @@ const DataTable = ({ data, columns }) => {
     getSortedRowModel: getSortedRowModel(),
   });
 
+  const handleExport = () => {
+    // Obtener todas las filas filtradas
+    const filteredRows = table.getFilteredRowModel().rows;
+
+    // Crear los datos para exportar
+    const exportData = filteredRows.map((row) => {
+      const rowData = {};
+
+      // Iterar sobre las columnas visibles
+      columns.forEach((column) => {
+        // Ignorar la columna de acciones
+        if (column.id === "actions") return;
+
+        const columnId = column.accessorKey || column.id;
+        const header = column.header;
+
+        // Obtener el valor usando accessorFn si existe, sino usar accessorKey
+        let value;
+        if (column.accessorFn) {
+          value = column.accessorFn(row.original);
+        } else if (column.accessorKey) {
+          value = row.original[column.accessorKey];
+        }
+
+        rowData[header] = value;
+      });
+
+      return rowData;
+    });
+
+    // Crear el worksheet desde los datos JSON
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Datos");
+
+    // Generar el nombre del archivo con fecha
+    const fecha = new Date().toISOString().split("T")[0];
+    const nombreArchivo = globalFilter
+      ? `${fileName}_filtrado_${fecha}.xlsx`
+      : `${fileName}_${fecha}.xlsx`;
+
+    XLSX.writeFile(workbook, nombreArchivo);
+  };
+
   return (
     <div>
-      <input
-        type="text"
-        value={globalFilter ?? ""}
-        onChange={(e) => setGlobalFilter(e.target.value)}
-        placeholder="Buscar en la tabla..."
-        className="border p-2 rounded mb-4 w-full md:w-1/3"
-      />
+      <div className="flex justify-between items-center  gap-4">
+        <input
+          type="text"
+          value={globalFilter ?? ""}
+          onChange={(e) => setGlobalFilter(e.target.value)}
+          placeholder="Buscar en la tabla..."
+          className="border p-2 rounded mb-4 w-full md:w-1/3 bg-white"
+        />
+
+        <button
+          onClick={handleExport}
+          className=" flex flex-row px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 whitespace-nowrap"
+        >
+          <FileUp /> Exportar Excel
+        </button>
+      </div>
+
       <div className="overflow-x-auto rounded-lg border">
-        <table className="w-full">
-          <thead className="bg-primary  text-white">
+        <table ref={tableRef} className="w-full">
+          <thead className="bg-primary text-white">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
@@ -85,7 +142,7 @@ const DataTable = ({ data, columns }) => {
           </thead>
           <tbody>
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="border-b hover:bg-gray-50  ">
+              <tr key={row.id} className="border-b bg-white hover:bg-gray-50">
                 {row.getVisibleCells().map((cell) => (
                   <td
                     key={cell.id}
@@ -119,11 +176,20 @@ const DataTable = ({ data, columns }) => {
 
       <div className="flex items-center justify-between mt-4">
         <div className="text-sm text-gray-600">
-          Página{" "}
-          <strong>
-            {table.getState().pagination.pageIndex + 1} de{" "}
-            {table.getPageCount()}
-          </strong>
+          <p>
+            Página{" "}
+            <strong>
+              {table.getState().pagination.pageIndex + 1} de{" "}
+              {table.getPageCount()}
+            </strong>
+          </p>
+          <p>
+            Mostrando <strong>{table.getFilteredRowModel().rows.length}</strong>{" "}
+            de <strong>{data.length}</strong> registros
+            {globalFilter && (
+              <span className="text-blue-600"> (filtrados)</span>
+            )}
+          </p>
         </div>
 
         <div className="flex items-center gap-2">

@@ -102,7 +102,7 @@ const AllStudent = () => {
         <h1 className="text-2xl font-bold">Estudiantes Registrados</h1>
       </div>
 
-      <DataTable data={students} columns={columns} />
+      <DataTable data={students} columns={columns} fileName="Export Student" />
 
       {/* 6. Renderiza el modal y pásale el estado y las funciones */}
       <StudentModal
