@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import useStudent from "../../lib/hooks/useStudent";
 import DataTable from "../../components/atoms/DataTable";
 import StudentModal from "../../components/molecules/StudentModal"; // 1. Importa el modal
+import { User } from "lucide-react";
 
 const AllStudent = () => {
   const { students, loading, loadStudents } = useStudent();
@@ -81,9 +82,9 @@ const AllStudent = () => {
           <div className="flex gap-2 items-center justify-center">
             <button
               onClick={() => handleViewProfile(row.original)} // Llama a la función con los datos de la fila
-              className="px-3 py-1 bg-primary text-white rounded text-sm hover:bg-primary/90"
+              className=" flex flex-row items-center px-3 py-1 bg-primary text-white rounded text-sm hover:bg-primary/90"
             >
-              Ver Perfil
+              <User /> Ver Perfil
             </button>
             {/* Puedes añadir más botones aquí, como eliminar */}
           </div>
@@ -102,9 +103,8 @@ const AllStudent = () => {
         <h1 className="text-2xl font-bold">Estudiantes Registrados</h1>
       </div>
 
-      <DataTable data={students} columns={columns} fileName="Export Student" />
+      <DataTable data={students} columns={columns} fileName="Export_Student" />
 
-      {/* 6. Renderiza el modal y pásale el estado y las funciones */}
       <StudentModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
