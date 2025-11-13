@@ -18,7 +18,7 @@ const AllStudent = () => {
     setSelectedStudent(student);
     setIsModalOpen(true);
   };
-
+  console.log(students);
   // Función para abrir el modal para crear un nuevo estudiante
   const handleCreateStudent = () => {
     setSelectedStudent(null); // Asegúrate de que no hay ningún estudiante seleccionado
@@ -52,7 +52,13 @@ const AllStudent = () => {
           hideOnLG: true,
         },
       },
-
+      {
+        accessorKey: "journey",
+        header: "Jornada",
+        meta: {
+          hideOnLG: true,
+        },
+      },
       {
         accessorKey: "state_first",
         header: "Estado Primera Etapa",
