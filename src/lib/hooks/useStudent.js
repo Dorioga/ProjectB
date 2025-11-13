@@ -1,8 +1,14 @@
 import { useContext } from "react";
 import { StudentContext } from "../context/StudentContext";
 
-export default function useStudent() {
-  const ctx = useContext(StudentContext);
-  if (!ctx) throw new Error("useStudent debe usarse dentro de StudentProvider");
-  return ctx;
-}
+const useStudent = () => {
+  const context = useContext(StudentContext);
+
+  if (!context) {
+    throw new Error("useStudent debe usarse dentro de StudentProvider");
+  }
+
+  return context;
+};
+
+export default useStudent;

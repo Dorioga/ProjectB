@@ -5,12 +5,14 @@ import StudentModal from "../../components/molecules/StudentModal"; // 1. Import
 import { User } from "lucide-react";
 
 const AllStudent = () => {
-  const { students, loading, loadStudents } = useStudent();
+  const { students, loading, reload, updateStudent } = useStudent();
 
   // 2. Estados para controlar el modal y el estudiante seleccionado
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
-
+  useEffect(() => {
+    reload();
+  }, [reload]);
   // 3. Función para abrir el modal con los datos del estudiante
   const handleViewProfile = (student) => {
     setSelectedStudent(student);
@@ -23,16 +25,9 @@ const AllStudent = () => {
     setIsModalOpen(true);
   };
 
-  // 4. Función que se pasará al modal para guardar los cambios
-  const handleSave = (formData) => {
-    if (selectedStudent) {
-      // Lógica para actualizar
-      // updateStudent(selectedStudent.id, formData); // Descomenta cuando tengas la lógica del hook
-    } else {
-      // Lógica para crear
-      // addStudent(formData); // Descomenta cuando tengas la lógica del hook
-    }
-    setIsModalOpen(false); // Cierra el modal después de guardar
+  const handleSave = (identification, updatedData) => {
+    updateStudent(identification, updatedData);
+    //setIsModalOpen(false);
   };
 
   // 5. Define las columnas para la tabla, incluyendo la de "Acciones"
@@ -57,13 +52,68 @@ const AllStudent = () => {
           hideOnLG: true,
         },
       },
+
       {
-        accessorKey: "state_bd",
-        header: "Estado",
+        accessorKey: "state_first",
+        header: "Estado Primera Etapa",
         cell: ({ getValue }) => (
           <span
             className={`px-2 py-1 rounded-full text-xs font-semibold ${
-              getValue() === "Cargado"
+              getValue() === "Registrado"
+                ? "bg-green-100 text-green-800"
+                : "bg-red-100 text-red-800"
+            }`}
+          >
+            {getValue()}
+          </span>
+        ),
+        meta: {
+          hideOnLG: true,
+        },
+      },
+      {
+        accessorKey: "state_second",
+        header: "Estado Segunda Etapa ",
+        cell: ({ getValue }) => (
+          <span
+            className={`px-2 py-1 rounded-full text-xs font-semibold ${
+              getValue() === "Validado"
+                ? "bg-green-100 text-green-800"
+                : "bg-red-100 text-red-800"
+            }`}
+          >
+            {getValue()}
+          </span>
+        ),
+        meta: {
+          hideOnLG: true,
+        },
+      },
+      {
+        accessorKey: "state_institutional",
+        header: "Estado Institucional",
+        cell: ({ getValue }) => (
+          <span
+            className={`px-2 py-1 rounded-full text-xs font-semibold ${
+              getValue() === "Activo"
+                ? "bg-green-100 text-green-800"
+                : "bg-red-100 text-red-800"
+            }`}
+          >
+            {getValue()}
+          </span>
+        ),
+        meta: {
+          hideOnLG: true,
+        },
+      },
+      {
+        accessorKey: "state_process",
+        header: "Estado Proceso",
+        cell: ({ getValue }) => (
+          <span
+            className={`px-2 py-1 rounded-full text-xs font-semibold ${
+              getValue() === "Correcto"
                 ? "bg-green-100 text-green-800"
                 : "bg-red-100 text-red-800"
             }`}
@@ -93,10 +143,7 @@ const AllStudent = () => {
     ],
     []
   );
-
-  useEffect(() => {
-    loadStudents();
-  }, []); // Carga los estudiantes al montar el componente
+  // Carga los estudiantes al montar el componente
   return (
     <div className="border p-6 rounded bg-bg h-full gap-4 flex flex-col">
       <div className="flex justify-between items-center mb-4">
