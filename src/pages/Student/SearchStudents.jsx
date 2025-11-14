@@ -1,38 +1,53 @@
-import { useState, useMemo, useEffect } from "react";
-import useStudent from "../../lib/hooks/useStudent";
+import React, { useState, useMemo } from "react";
+import FileChooser from "../../components/atoms/FileChooser";
 import DataTable from "../../components/atoms/DataTable";
-import StudentModal from "../../components/molecules/StudentModal"; // 1. Importa el modal
+import useStudent from "../../lib/hooks/useStudent";
+import SimpleButton from "../../components/atoms/SimpleButton";
 import { User } from "lucide-react";
-import AlertTable from "../../components/molecules/AlertTable";
-import { alertsResponse } from "../../services/DataExamples/alertsResponse";
+import StudentModal from "../../components/molecules/StudentModal";
 
-const AllStudent = () => {
-  const { students, loading, reload, updateStudent } = useStudent();
-  const alerts = alertsResponse;
-  // 2. Estados para controlar el modal y el estudiante seleccionado
+const SearchStudents = () => {
+  const [files, setFiles] = useState([]);
+  const [studentsData, setStudentsData] = useState([]);
+  const { getRandomStudents, updateStudent } = useStudent();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
-  useEffect(() => {
-    reload();
-  }, [reload]);
+
+  const handleFilesSelected = (selectedFiles) => {
+    //setFiles(selectedFiles);
+    // // Simular carga de datos de estudiantes desde los archivos
+    // const mockStudents = selectedFiles.map((file, index) => ({
+    //   id: index + 1,
+    //   name: `Estudiante ${index + 1}`,
+    //   email: `estudiante${index + 1}@example.com`,
+    //   fileName: file.name,
+    //   fileSize: (file.size / 1024).toFixed(2) + " KB",
+    //   uploadDate: new Date().toLocaleDateString(),
+    // }));
+    // guardar en el estado para mostrar en la tabla
+  };
   // 3. Función para abrir el modal con los datos del estudiante
   const handleViewProfile = (student) => {
     setSelectedStudent(student);
     setIsModalOpen(true);
   };
-  console.log(students);
-  // Función para abrir el modal para crear un nuevo estudiante
-  const handleCreateStudent = () => {
-    setSelectedStudent(null); // Asegúrate de que no hay ningún estudiante seleccionado
-    setIsModalOpen(true);
+  const loadFiveRandom = async () => {
+    console.log("Cargando cinco estudiantes aleatorios...");
+    try {
+      const five = await getRandomStudents(5);
+      setStudentsData(five);
+    } catch (err) {
+      console.error("Error cargando estudiantes aleatorios:", err);
+    }
+  };
+  console.log("Students Data:", studentsData);
+  const handleRemoveFile = (index) => {
+    const newFiles = files.filter((_, i) => i !== index);
+    const newStudents = studentsData.filter((_, i) => i !== index);
+    setFiles(newFiles);
+    setStudentsData(newStudents);
   };
 
-  const handleSave = (identification, updatedData) => {
-    updateStudent(identification, updatedData);
-    //setIsModalOpen(false);
-  };
-
-  // 5. Define las columnas para la tabla, incluyendo la de "Acciones"
   const columns = useMemo(
     () => [
       {
@@ -151,20 +166,38 @@ const AllStudent = () => {
     ],
     []
   );
-  // Carga los estudiantes al montar el componente
+  const handleSave = (identification, updatedData) => {
+    updateStudent(identification, updatedData);
+    //setIsModalOpen(false);
+  };
+
   return (
     <div className="border p-6 rounded bg-bg h-full gap-4 flex flex-col">
-      {alerts.length > 0 && <AlertTable alerts={alerts} />}
-      <div className="w-full flex justify-between items-center bg-primary text-white p-3 rounded-t-lg">
-        <h2 className="text-2xl font-bold">Datos Estudiantes</h2>
+      <h1 className="text-2xl font-bold mb-4">Buscar Estudiantes</h1>
+      <div className="flex flex-row items-center justify-start gap-4 w-1/2">
+        <h2 className="text-lg font-semibold">Cargar datos de Archivos</h2>
+        <div className="flex flex-col gap-2">
+          <SimpleButton
+            msj="Cargar Archivos"
+            bg="bg-primary"
+            text="text-white"
+            icon="Upload"
+            onClick={() => loadFiveRandom()}
+          />
+          {/* <FileChooser
+            onFilesSelected={handleFilesSelected}
+            acceptedTypes=".csv,.xlsx,.json"
+          /> */}
+        </div>
       </div>
-      <DataTable
-        data={students}
-        columns={columns}
-        fileName="Export_Student"
-        mode="Student"
-      />
 
+      {studentsData.length > 0 && (
+        <DataTable
+          data={studentsData}
+          columns={columns}
+          title="Datos de Estudiantes Cargados"
+        />
+      )}
       <StudentModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -175,4 +208,4 @@ const AllStudent = () => {
   );
 };
 
-export default AllStudent;
+export default SearchStudents;

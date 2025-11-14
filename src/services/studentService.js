@@ -12,6 +12,7 @@ export async function getStudents(params = {}) {
 }
 
 export async function getStudent(id) {
+  console.log("getStudent ID:", id);
   const student = studentsMock.find(
     (s) => String(s.identification) === String(id)
   );
@@ -45,4 +46,21 @@ export async function uploadStudentPhoto(id, formData) {
   return ApiClient.post(`/students/${id}/photo`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
+}
+
+export async function getRandomStudents(count = 5) {
+  // fuente de datos (usa el mock si está disponible)
+  const source =
+    Array.isArray(studentsMock) && studentsMock.length
+      ? studentsMock
+      : await getStudents();
+
+  const n = Math.max(0, Math.min(count, source.length));
+  // copia y baraja (Fisher-Yates)
+  const arr = source.slice();
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr.slice(0, n);
 }

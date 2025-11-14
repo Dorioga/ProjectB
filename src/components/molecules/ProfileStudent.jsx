@@ -4,6 +4,7 @@ import SimpleButton from "../atoms/SimpleButton";
 import FileChooser from "../atoms/FileChooser";
 import CameraModal from "./CameraModal";
 import ExcuseModal from "./ExcuseModal";
+import SignatureFormatModal from "./SignatureFormatModal";
 
 const ProfileStudent = ({ data, state = false, onSave }) => {
   console.log("Data en ProfileStudent:", data);
@@ -11,6 +12,7 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isOpenCamera, setIsOpenCamera] = useState(false);
   const [isOpenExcuse, setIsOpenExcuse] = useState(false);
+  const [isOpenSignatureFormat, setIsOpenSignatureFormat] = useState(false);
 
   // Estados para manejar archivos y previews
   const [photoFile, setPhotoFile] = useState(null);
@@ -19,11 +21,13 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
     documento3: null,
     documento4: null,
   });
+
   const [editedData, setEditedData] = useState({
     state_first: data?.state_first || "Ausente",
     state_second: data?.state_second || "Pendiente",
     state_institutional: data?.state_institutional || "Inactivo",
     state_process: data?.state_process || "Incompleto",
+    state_beca: data?.state_beca || "No",
   });
 
   const toggleEditing = () => {
@@ -115,19 +119,6 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
         <div className="grid lg:grid-cols-3 gap-4 p-4 bg-bg rounded-lg shadow-md">
           <div className="flex flex-col gap-2 items-center justify-center">
             <PreviewIMG path={photoPreview} size="profile" />
-            {isEditing &&
-              (data.state_first === "Ausente" ||
-                data.state_second === "Ausente") && (
-                <>
-                  <SimpleButton
-                    onClick={() => setIsOpenCamera(true)}
-                    msj="Tomar Foto"
-                    bg="bg-accent"
-                    icon="Camera"
-                    text="text-white"
-                  />
-                </>
-              )}
           </div>
           <div className="flex flex-col pb-4 lg:col-span-2">
             <h2 className="text-2xl font-semibold pb-4">Información Básica</h2>
@@ -174,6 +165,31 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
             <label className="text-lg font-medium">Grupo:</label>
             <p>{data.group_grade}</p>
           </div>
+          <div className="flex flex-row gap-4 items-center">
+            <label className="text-lg font-medium">Becado:</label>
+            {isEditing ? (
+              <select
+                value={editedData.state_beca}
+                onChange={(e) =>
+                  handleStateChange("state_beca", e.target.value)
+                }
+                className="border p-2 rounded bg-white"
+              >
+                <option value="Si">Si</option>
+                <option value="No">No</option>
+              </select>
+            ) : (
+              <span
+                className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                  editedData.state_beca === "Si"
+                    ? "bg-green-100 text-green-800"
+                    : "bg-yellow-100 text-yellow-800"
+                }`}
+              >
+                {editedData.state_beca}
+              </span>
+            )}
+          </div>
         </div>
         <div className="p-4 bg-bg rounded-lg shadow-md">
           <h2 className="text-2xl font-semibold pb-4">Informacion Familiar</h2>
@@ -207,7 +223,6 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
             {/* Estado Primera Etapa */}
             <div className="flex flex-row gap-4 items-center">
               <label className="text-lg font-medium w-48">Primera Etapa:</label>
-
               <span
                 className={`px-3 py-1 rounded-full text-sm font-semibold ${
                   editedData.state_first === "Registrado"
@@ -217,6 +232,17 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
               >
                 {editedData.state_first}
               </span>
+              {data.state_first === "Ausente" ? (
+                <div className="w-1/5">
+                  <SimpleButton
+                    onClick={() => setIsOpenCamera(true)}
+                    msj="Tomar Foto"
+                    bg="bg-accent"
+                    icon="Camera"
+                    text="text-white"
+                  />
+                </div>
+              ) : null}
             </div>
             <div className="flex flex-row gap-4 items-center">
               <label className="text-lg font-medium w-48">Segunda Etapa:</label>
@@ -230,6 +256,18 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
               >
                 {editedData.state_second}
               </span>
+              {data.state_first === "Registrado" &&
+                data.state_second === "Ausente" && (
+                  <div className="w-1/5">
+                    <SimpleButton
+                      onClick={() => setIsOpenCamera(true)}
+                      msj="Tomar Foto"
+                      bg="bg-accent"
+                      icon="Camera"
+                      text="text-white"
+                    />
+                  </div>
+                )}
             </div>
 
             {/* Estado Institucional */}
@@ -317,20 +355,44 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
         </div>
         <div className="p-4 bg-bg rounded-lg shadow-md flex flex-col gap-2">
           <h2 className="text-2xl font-semibold pb-4">Documentos Auditoria</h2>
-          <div className="flex flex-row gap-4 items-center">
+          <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-4 items-center">
             <label className="text-lg font-medium">Habeas Data:</label>
-            <p>{data.documento1}</p>
+            <span
+              className={`px-3 py-1 rounded-full text-sm font-semibold w-20 ${
+                data.auDoc_habeas
+                  ? "bg-green-100 text-green-800"
+                  : "bg-yellow-100 text-yellow-800"
+              }`}
+            >
+              {data.auDoc_habeas ? "Cargado" : "No cargado"}
+            </span>
           </div>
-          <div className="flex flex-row gap-4 items-center">
+          <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-4 items-center">
             <label className="text-lg font-medium">Ficha Matricula:</label>
-            <p>{data.documento2}</p>
+            <span
+              className={`px-3 py-1 rounded-full text-sm font-semibold w-20 ${
+                data.auDoc_matricula
+                  ? "bg-green-100 text-green-800"
+                  : "bg-yellow-100 text-yellow-800"
+              }`}
+            >
+              {data.auDoc_matricula ? "Cargado" : "No cargado"}
+            </span>
           </div>
           <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-4 items-center">
             <label className="text-lg font-medium lg:col-span-1">
               Identificación Acudiente:
             </label>
             {!isEditing ? (
-              <p className="lg:col-span-2">{data.documento3 || "No cargado"}</p>
+              <span
+                className={`px-3 py-1 rounded-full text-sm font-semibold text-center w-20 ${
+                  data.auDoc_idAcudiente
+                    ? "bg-green-100 text-green-800"
+                    : "bg-yellow-100 text-yellow-800"
+                }`}
+              >
+                {data.auDoc_idAcudiente ? "Cargado" : "No cargado"}
+              </span>
             ) : (
               <div className="lg:col-span-2 flex justify-end">
                 <FileChooser
@@ -350,7 +412,15 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
               Identificación Estudiante:
             </label>
             {!isEditing ? (
-              <p className="lg:col-span-2">{data.documento4 || "No cargado"}</p>
+              <span
+                className={`px-3 py-1 rounded-full text-sm font-semibold text-center w-20 ${
+                  data.auDoc_idAcudiente
+                    ? "bg-green-100 text-green-800"
+                    : "bg-yellow-100 text-yellow-800"
+                }`}
+              >
+                {data.auDoc_idAcudiente ? "Cargado" : "No cargado"}
+              </span>
             ) : (
               <div className="lg:col-span-2 flex justify-end">
                 <FileChooser
@@ -364,6 +434,31 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
                 />
               </div>
             )}
+          </div>
+          <div className="w-full grid grid-cols-1 lg:grid-cols-5 gap-4 lg:items-center">
+            <label className="text-lg font-medium lg:col-span-2">
+              Autorización Firma:
+            </label>
+            <span
+              className={`px-3 py-1 rounded-full text-sm font-semibold text-center w-30 ${
+                data.auDoc_signatureFormat
+                  ? "bg-green-100 text-green-800"
+                  : "bg-yellow-100 text-yellow-800"
+              }`}
+            >
+              {data.auDoc_signatureFormat ? "Cargado" : "No cargado"}
+            </span>
+            <div className="lg:col-span-2 flex justify-end">
+              <SimpleButton
+                onClick={() => setIsOpenSignatureFormat(true)}
+                msj={
+                  data.auDoc_signatureFormat ? "Ver Formato" : "Cargar Formato"
+                }
+                bg="bg-accent"
+                icon="Eye"
+                text="text-white"
+              />
+            </div>
           </div>
         </div>
         <div className="p-4 bg-bg rounded-lg shadow-md">
@@ -382,6 +477,11 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
         onClose={() => setIsOpenExcuse(false)}
         mode={isEditing ? "upload" : "view"}
         onSubmit={handleExcuseSubmit}
+      />
+      <SignatureFormatModal
+        idEstudiante={data.identification}
+        isOpen={isOpenSignatureFormat}
+        onClose={() => setIsOpenSignatureFormat(false)}
       />
     </div>
   );

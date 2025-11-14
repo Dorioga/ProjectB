@@ -10,12 +10,14 @@ import {
 } from "@tanstack/react-table";
 import * as XLSX from "xlsx";
 import { FileUp } from "lucide-react";
+import SimpleButton from "./SimpleButton";
+import DocumentModal from "../molecules/DocumentModal";
 
-const DataTable = ({ data, columns, fileName = "export" }) => {
+const DataTable = ({ data, columns, fileName = "export", mode = null }) => {
   const [sorting, setSorting] = useState([]);
   const [globalFilter, setGlobalFilter] = useState("");
   const tableRef = useRef(null);
-
+  const [isOpen, setIsOpen] = useState(false);
   const table = useReactTable({
     data,
     columns,
@@ -90,13 +92,28 @@ const DataTable = ({ data, columns, fileName = "export" }) => {
           placeholder="Buscar en la tabla..."
           className="border p-2 rounded mb-4 w-full md:w-1/3 bg-white"
         />
-
-        <button
-          onClick={handleExport}
-          className=" flex flex-row px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 whitespace-nowrap"
+        <div
+          className={` grid   gap-2 ${
+            mode !== null ? " w-1/2 grid-cols-2" : "w-1/5 grid-cols-1"
+          } `}
         >
-          <FileUp /> Exportar Excel
-        </button>
+          {mode !== null && (
+            <SimpleButton
+              onClick={() => setIsOpen(true)}
+              bg="bg-green-600"
+              icon="Download"
+              text="text-white"
+              msj="Descargar Archivos Auditoria"
+            />
+          )}
+          <SimpleButton
+            onClick={handleExport}
+            bg="bg-green-600"
+            icon="FileUp"
+            text="text-white"
+            msj="Exportar a Excel"
+          />
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-lg border">
@@ -240,6 +257,7 @@ const DataTable = ({ data, columns, fileName = "export" }) => {
           </select>
         </div>
       </div>
+      <DocumentModal isOpen={isOpen} onClose={() => setIsOpen(false)} />
     </div>
   );
 };

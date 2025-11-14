@@ -9,6 +9,7 @@ import RegisterParents from "../pages/Student/RegisterParents";
 import RegisterSchool from "../pages/School/RegisterSchool";
 import UpdateSchool from "../pages/School/UpdateSchool";
 import SingleStudent from "../pages/Student/SingleStudent";
+import SearchStudents from "../pages/Student/SearchStudents";
 const GeneralRoutes = () => {
   return (
     <div id="body" className="w-full h-screen flex flex-col ">
@@ -20,6 +21,7 @@ const GeneralRoutes = () => {
             <Route path="home" element={<DashHome />} />
             <Route path="studentSchool" element={<AllStudent />} />
             <Route path="singleStudent" element={<SingleStudent />} />
+            <Route path="searchStudents" element={<SearchStudents />} />
             <Route path="registerStudent" element={<RegisterStudent />} />
             <Route path="registerParents" element={<RegisterParents />} />
             <Route path="registerSchool" element={<RegisterSchool />} />

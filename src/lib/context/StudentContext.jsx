@@ -25,6 +25,21 @@ export function StudentProvider({ children }) {
     loadStudents();
   }, [loadStudents]);
 
+  const getStudent = useCallback(async (identification) => {
+    console.log("Fetching student with ID:", identification);
+    setLoading(true);
+    setError(null);
+    try {
+      const student = await studentService.getStudent(identification);
+      return student;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const updateStudent = (identification, updatedData) => {
     setStudents((prevStudents) =>
       prevStudents.map((student) =>
@@ -63,6 +78,20 @@ export function StudentProvider({ children }) {
       setLoading(false);
     }
   };
+  // obtiene N estudiantes aleatorios (usa studentService.getRandomStudents)
+  const getRandomStudents = useCallback(async (count = 5) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const items = await studentService.getRandomStudents(count);
+      return items;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   return (
     <StudentContext.Provider
@@ -71,7 +100,9 @@ export function StudentProvider({ children }) {
         loading,
         error,
         reload: loadStudents,
+        getStudent,
         updateStudent,
+        getRandomStudents,
         addStudent,
         removeStudent,
       }}
