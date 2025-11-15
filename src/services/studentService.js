@@ -12,21 +12,32 @@ export async function getStudents(params = {}) {
 }
 
 export async function getStudent(id) {
-  console.log("getStudent ID:", id);
-  const student = studentsMock.find(
-    (s) => String(s.identification) === String(id)
-  );
-  if (import.meta.env.DEV) {
-    // ✅ Comparar como strings (sin Number())
+  // intenta obtener desde API si existe (omitir aquí) y usa mock como fallback
+  const key = (id ?? "").toString().trim();
+  if (!key) throw new Error("Identificación vacía");
 
-    if (!student) {
-      throw new Error(`Estudiante con documento ${id} no encontrado`);
-    }
+  const source = Array.isArray(studentsMock) ? studentsMock : [];
 
-    return Promise.resolve(student);
+  const found = source.find((s) => {
+    // lista de posibles campos que pueden contener la identificación
+    const candidates = [
+      s.identification,
+      s.numero_identificacion,
+      s.documento,
+      s.id,
+      s.identificacion,
+      s.numeroDocumento,
+      s.numero_identificacion_acudiente, // por si acaso
+    ];
+    return candidates.some((c) => String(c ?? "").trim() === key);
+  });
+
+  if (!found) {
+    // opcional: intentar llamada a API real aquí
+    throw new Error("Estudiante no encontrado");
   }
-  //ApiClient.get(`/students/${id}`)
-  return student;
+
+  return found;
 }
 
 export async function createStudent(payload) {

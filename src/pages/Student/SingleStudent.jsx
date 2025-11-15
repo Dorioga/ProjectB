@@ -5,9 +5,10 @@ import { handleNumericInput } from "../../utils/formatUtils";
 import ProfileStudent from "../../components/molecules/ProfileStudent";
 import QRModal from "../../components/molecules/QRModal";
 import CarnetModal from "../../components/molecules/CarnetModal";
+import { getStudent } from "../../services/studentService";
 
 const SingleStudent = () => {
-  const { fetchStudent, selected, loading, error } = useStudent(); // ✅ Obtener selected del contexto
+  const { getStudent, selected, loading, error } = useStudent(); // ✅ Obtener selected del contexto
   const [studentId, setStudentId] = useState("");
   const [qrOpen, setQrOpen] = useState(false);
   const [carnetOpen, setCarnetOpen] = useState(false);
@@ -18,7 +19,7 @@ const SingleStudent = () => {
     doc4: "",
   });
   const handleInputChange = (e) => {
-    handleNumericInput(e, setStudentId, { maxLength: 15 });
+    setStudentId(e.target.value);
   };
   const handleSearch = async () => {
     if (!studentId) {
@@ -27,8 +28,9 @@ const SingleStudent = () => {
     }
     //1096252058
     try {
-      await fetchStudent(studentId);
-      // El resultado se guarda automáticamente en 'selected' del contexto
+      const student = await getStudent(studentId);
+      // getStudent del contexto ahora setea `selected`; además logueamos el resultado recibido
+      console.log("Estudiante encontrado (retornado):", student);
     } catch (err) {
       console.error("Error al buscar estudiante:", err);
       alert("Estudiante no encontrado");

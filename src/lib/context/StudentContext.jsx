@@ -7,6 +7,7 @@ export function StudentProvider({ children }) {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [selected, setSelected] = useState(null);
 
   const loadStudents = useCallback(async () => {
     setLoading(true);
@@ -26,11 +27,12 @@ export function StudentProvider({ children }) {
   }, [loadStudents]);
 
   const getStudent = useCallback(async (identification) => {
-    console.log("Fetching student with ID:", identification);
     setLoading(true);
     setError(null);
     try {
       const student = await studentService.getStudent(identification);
+      // guardar en el contexto para que componentes que lean 'selected' se actualicen
+      setSelected(student);
       return student;
     } catch (err) {
       setError(err);
@@ -99,6 +101,7 @@ export function StudentProvider({ children }) {
         students,
         loading,
         error,
+        selected,
         reload: loadStudents,
         getStudent,
         updateStudent,
