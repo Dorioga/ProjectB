@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import ProgressPage from "../../components/atoms/progressPage";
 import FileChooser from "../../components/atoms/FileChooser";
 import SimpleButton from "../../components/atoms/SimpleButton";
+import ThemeModal from "../../components/molecules/ThemeModal";
 
 const UpdateSchool = ({ isUpdate = true }) => {
   const [formData, setFormData] = useState({
@@ -9,8 +10,12 @@ const UpdateSchool = ({ isUpdate = true }) => {
     address: "",
     phone: "",
     email: "",
+    principalName: "",
+    signaturePrincipal: "",
+    coordinadorName: "",
     logo: null,
   });
+  const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, files } = e.target;
@@ -83,7 +88,35 @@ const UpdateSchool = ({ isUpdate = true }) => {
             className="w-full p-2 border rounded bg-white"
           />
         </div>
+        <div className="">
+          <label>Nombre del Director</label>
+          <input
+            type="text"
+            name="principalName"
+            value={formData.principalName}
+            onChange={handleChange}
+            className="w-full p-2 border rounded bg-white"
+          />
+        </div>
+        <div className="">
+          <label>Firma del Director</label>
+          <FileChooser
+            name="signaturePrincipal"
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+          />
+        </div>
         <div className="md:col-span-2">
+          <label>Nombre del Coordinador</label>
+          <input
+            type="text"
+            name="coordinadorName"
+            value={formData.coordinadorName}
+            onChange={handleChange}
+            className="w-full p-2 border rounded bg-white"
+          />
+        </div>
+        <div className="">
           <label>Logo de la Institución</label>
           <FileChooser
             name="logo"
@@ -91,17 +124,32 @@ const UpdateSchool = ({ isUpdate = true }) => {
             className="w-full p-2 border rounded"
           />
         </div>
-        <div className="md:col-span-2 mt-4">
+        <div className="">
+          <label>Tema</label>
+          <SimpleButton
+            onClick={() => setIsThemeModalOpen(true)}
+            className="mt-2"
+            msj={"Modificar Tema"}
+            icon={"Pencil"}
+            text={"text-white"}
+            bg={"bg-accent"}
+          />
+        </div>
+        <div className="  md:col-span-2 mt-4">
           <SimpleButton
             onClick={() => console.log("Acción secundaria")}
             className="mt-2"
-            msj={"Registrar Institucion"}
+            msj={"Actualizar Institucion"}
             icon={"Save"}
             text={"text-white"}
             bg={"bg-accent"}
-          ></SimpleButton>
+          />
         </div>
       </form>
+      <ThemeModal
+        isOpen={isThemeModalOpen}
+        onClose={() => setIsThemeModalOpen(false)}
+      />
     </div>
   );
 };

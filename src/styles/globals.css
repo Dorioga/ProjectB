@@ -1,5 +1,7 @@
 @import "tailwindcss";
-@theme {
+
+/* Valores por defecto - serán sobrescritos por JS */
+:root {
   --color-primary: #0b3d91;
   --color-secondary: #f59e0b;
   --color-accent: #10b981;
@@ -11,16 +13,65 @@
   --color-warning: #d97706;
   --color-info: #0ea5e9;
 }
-/* SCSS HEX 
 
-#155dfc
+/* Utilidades CSS que usan las variables */
+@layer utilities {
+  .bg-primary {
+    background-color: var(--color-primary);
+  }
+  .text-primary {
+    color: var(--color-primary);
+  }
+  .border-primary {
+    border-color: var(--color-primary);
+  }
 
+  .bg-secondary {
+    background-color: var(--color-secondary);
+  }
+  .text-secondary {
+    color: var(--color-secondary);
+  }
 
+  .bg-accent {
+    background-color: var(--color-accent);
+  }
+  .text-accent {
+    color: var(--color-accent);
+  }
 
+  .bg-surface {
+    background-color: var(--color-surface);
+  }
+  .text-surface {
+    color: var(--color-surface);
+  }
+  .bg-bg {
+    background-color: var(--color-bg);
+  }
+  .text-bg {
+    color: var(--color-bg);
+  }
 
-sm: Mínimo 640px
-md: Mínimo 768px
-lg: Mínimo 1024px
-xl: Mínimo 1280px
-2xl: Mínimo 1536px
-/* /* ...existing code... */
+  .text-muted {
+    color: var(--color-muted);
+  }
+  .text-error {
+    color: var(--color-error);
+  }
+  .text-warning {
+    color: var(--color-warning);
+  }
+  .text-info {
+    color: var(--color-info);
+  }
+  .bg-error {
+    background-color: var(--color-error);
+  }
+  .bg-warning {
+    background-color: var(--color-warning);
+  }
+  .bg-info {
+    background-color: var(--color-info);
+  }
+}

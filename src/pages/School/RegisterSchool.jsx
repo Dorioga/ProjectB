@@ -9,6 +9,9 @@ const RegisterSchool = ({ isUpdate = false }) => {
     address: "",
     phone: "",
     email: "",
+    principalName: "",
+    signaturePrincipal: "",
+    coordinadorName: "",
     logo: null,
   });
 
@@ -83,7 +86,35 @@ const RegisterSchool = ({ isUpdate = false }) => {
             className="w-full p-2 border rounded bg-white"
           />
         </div>
+        <div className="">
+          <label>Nombre del Director</label>
+          <input
+            type="text"
+            name="principalName"
+            value={formData.principalName}
+            onChange={handleChange}
+            className="w-full p-2 border rounded bg-white"
+          />
+        </div>
+        <div className="">
+          <label>Firma del Director</label>
+          <FileChooser
+            name="signaturePrincipal"
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+          />
+        </div>
         <div className="md:col-span-2">
+          <label>Nombre del Coordinador</label>
+          <input
+            type="text"
+            name="coordinadorName"
+            value={formData.coordinadorName}
+            onChange={handleChange}
+            className="w-full p-2 border rounded bg-white"
+          />
+        </div>
+        <div className="">
           <label>Logo de la Institución</label>
           <FileChooser
             name="logo"
