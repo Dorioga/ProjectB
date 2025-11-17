@@ -1,26 +1,69 @@
-import { use, useState } from "react";
+import { useEffect, useState } from "react";
 import Modal from "../atoms/Modal";
 import ColorSelector from "../atoms/ColorSelector";
+import SimpleButton from "../atoms/SimpleButton";
+import {
+  getCurrentTheme,
+  setTheme,
+  resetTheme,
+} from "../../utils/themeManager";
 
 const ThemeModal = ({ isOpen, onClose }) => {
   const [color, setColor] = useState({
     primary: "#0b3d91",
     secondary: "#f59e0b",
-    bg: "#F4F6F8",
+    bg: "#f4f6f8",
   });
 
-  const handleThemeChange = (theme) => {
-    setCurrentTheme(theme);
-    // Aquí puedes integrar con ThemeManager
-    // ThemeManager.setTheme(theme);
+  // Cargar tema actual al abrir el modal
+  useEffect(() => {
+    if (isOpen) {
+      const currentTheme = getCurrentTheme();
+      setColor({
+        primary: currentTheme["color-primary"] || "#0b3d91",
+        secondary: currentTheme["color-secondary"] || "#f59e0b",
+        bg: currentTheme["color-bg"] || "#f4f6f8",
+      });
+    }
+  }, [isOpen]);
+
+  const handleThemeChange = () => {
+    // Convertir el formato del estado al formato esperado por themeManager
+    const themeObj = {
+      "color-primary": color.primary,
+      "color-secondary": color.secondary,
+      "color-bg": color.bg,
+      // Mantener los otros colores del tema actual
+      ...getCurrentTheme(),
+    };
+
+    // Aplicar solo los colores modificados
+    themeObj["color-primary"] = color.primary;
+    themeObj["color-secondary"] = color.secondary;
+    themeObj["color-bg"] = color.bg;
+
+    // Aplicar y guardar el tema
+    setTheme(themeObj);
+
+    // Cerrar el modal
+    onClose();
+  };
+
+  const handleReset = () => {
+    const defaultTheme = resetTheme();
+    setColor({
+      primary: defaultTheme["color-primary"],
+      secondary: defaultTheme["color-secondary"],
+      bg: defaultTheme["color-bg"],
+    });
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Modificar Tema " size="xl">
+    <Modal isOpen={isOpen} onClose={onClose} title="Modificar Tema" size="xl">
       <h1 className="font-bold text-xl">Seleccionar Colores</h1>
       <div className="flex flex-col gap-4 p-4">
         <div className="grid grid-cols-7 gap-6 items-center">
-          <h2 className="text-lg font-semibold  col-span-3">Color Primario:</h2>
+          <h2 className="text-lg font-semibold col-span-3">Color Primario:</h2>
           <ColorSelector
             color={color.primary}
             setColor={(newColor) =>
@@ -29,7 +72,7 @@ const ThemeModal = ({ isOpen, onClose }) => {
           />
         </div>
         <div className="grid grid-cols-7 gap-6 items-center">
-          <h2 className="text-lg font-semibold  col-span-3">
+          <h2 className="text-lg font-semibold col-span-3">
             Color Secundario:
           </h2>
           <ColorSelector
@@ -40,7 +83,7 @@ const ThemeModal = ({ isOpen, onClose }) => {
           />
         </div>
         <div className="grid grid-cols-7 gap-6 items-center">
-          <h2 className="text-lg font-semibold  col-span-3">Color Fondo:</h2>
+          <h2 className="text-lg font-semibold col-span-3">Color Fondo:</h2>
           <ColorSelector
             color={color.bg}
             setColor={(newColor) =>
@@ -49,8 +92,9 @@ const ThemeModal = ({ isOpen, onClose }) => {
           />
         </div>
       </div>
+
       <h3 className="font-bold text-xl">Vista Previa</h3>
-      <div className="w-full grid grid-cols-7  border rounded-lg bg-white h-80">
+      <div className="w-full grid grid-cols-7 border rounded-lg bg-white h-80">
         <div
           className="col-span-2"
           style={{ backgroundColor: color.primary }}
@@ -61,13 +105,30 @@ const ThemeModal = ({ isOpen, onClose }) => {
             style={{ backgroundColor: color.bg }}
           >
             <div
-              className="w-1/3 h-10 rounded-lg flex items-center justify-center "
+              className="w-1/3 h-10 rounded-lg flex items-center justify-center"
               style={{ backgroundColor: color.secondary, color: "#fff" }}
             >
               Boton Prueba
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="pt-2 flex gap-2">
+        <SimpleButton
+          msj="Restaurar Por Defecto"
+          onClick={handleReset}
+          bg="bg-gray-500"
+          text="text-white"
+          icon="RotateCcw"
+        />
+        <SimpleButton
+          msj="Guardar Cambios"
+          onClick={handleThemeChange}
+          bg="bg-accent"
+          text="text-white"
+          icon="Save"
+        />
       </div>
     </Modal>
   );

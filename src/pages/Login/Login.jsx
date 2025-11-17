@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Loader from "../../components/atoms/Loader";
 import useAuth from "../../lib/hooks/useAuth";
 import SimpleButton from "../../components/atoms/SimpleButton";
+import { School } from "lucide-react";
 const Login = () => {
   const [formData, setFormData] = useState({
     user: "",
@@ -27,8 +28,14 @@ const Login = () => {
     // Peticion de Iniciar Sesion
   };
   return (
-    <div className="w-full flex items-center justify-center h-full">
-      <div className="w-11/12 sm:w-2/3 lg:w-1/2 xl:w-1/4 bg-primary flex items-center justify-center p-4 rounded-2xl py-14">
+    <div className="w-full grid grid-cols-1 lg:grid-cols-2 h-full">
+      <div className="bg-surface hidden lg:flex lg:items-center lg:justify-center">
+        <div className="w-96 h-96   bg-amber-400 flex flex-col items-center justify-center rounded-full">
+          <School size={150} color="white" />
+          <h1 className="text-white font-bold text-5xl mt-4">SchoolApp</h1>
+        </div>
+      </div>
+      <div className="w-full bg-primary flex items-center justify-center p-4 ">
         <div className="flex flex-col gap-4 w-3/4">
           <div className="text-center">
             <h2 className="text-surface font-bold text-4xl">Bienvenido</h2>

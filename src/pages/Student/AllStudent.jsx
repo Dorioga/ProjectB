@@ -5,6 +5,7 @@ import StudentModal from "../../components/molecules/StudentModal"; // 1. Import
 import { User } from "lucide-react";
 import AlertTable from "../../components/molecules/AlertTable";
 import { alertsResponse } from "../../services/DataExamples/alertsResponse";
+import SimpleButton from "../../components/atoms/SimpleButton";
 
 const AllStudent = () => {
   const { students, loading, reload, updateStudent } = useStudent();
@@ -12,6 +13,7 @@ const AllStudent = () => {
   // 2. Estados para controlar el modal y el estudiante seleccionado
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
+
   useEffect(() => {
     reload();
   }, [reload]);
@@ -66,7 +68,7 @@ const AllStudent = () => {
         header: "Estado Primera Etapa",
         cell: ({ getValue }) => (
           <span
-            className={`px-2 py-1 rounded-full text-xs font-semibold ${
+            className={`block w-full h-full p-4   text-center text-xs font-semibold ${
               getValue() === "Registrado"
                 ? "bg-green-100 text-green-800"
                 : "bg-red-100 text-red-800"
@@ -84,7 +86,7 @@ const AllStudent = () => {
         header: "Estado Segunda Etapa ",
         cell: ({ getValue }) => (
           <span
-            className={`px-2 py-1 rounded-full text-xs font-semibold ${
+            className={`block w-full h-full p-4 text-center text-xs font-semibold ${
               getValue() === "Validado"
                 ? "bg-green-100 text-green-800"
                 : "bg-red-100 text-red-800"
@@ -98,11 +100,11 @@ const AllStudent = () => {
         },
       },
       {
-        accessorKey: "state_institutional",
-        header: "Estado Institucional",
+        accessorKey: "state_beca",
+        header: "Estado Beca",
         cell: ({ getValue }) => (
           <span
-            className={`px-2 py-1 rounded-full text-xs font-semibold ${
+            className={`block w-full h-full p-4 text-center text-xs font-semibold ${
               getValue() === "Activo"
                 ? "bg-green-100 text-green-800"
                 : "bg-red-100 text-red-800"
@@ -120,7 +122,7 @@ const AllStudent = () => {
         header: "Estado Proceso",
         cell: ({ getValue }) => (
           <span
-            className={`px-2 py-1 rounded-full text-xs font-semibold ${
+            className={`block w-full h-full p-4 text-center text-xs font-semibold ${
               getValue() === "Correcto"
                 ? "bg-green-100 text-green-800"
                 : "bg-red-100 text-red-800"
@@ -137,14 +139,15 @@ const AllStudent = () => {
         id: "actions",
         header: "Acciones",
         cell: ({ row }) => (
-          <div className="flex gap-2 items-center justify-center">
-            <button
-              onClick={() => handleViewProfile(row.original)} // Llama a la función con los datos de la fila
-              className=" flex flex-row items-center px-3 py-1 bg-primary text-white rounded text-sm hover:bg-primary/90"
-            >
-              <User /> Ver Perfil
-            </button>
-            {/* Puedes añadir más botones aquí, como eliminar */}
+          <div className="w-full h-full flex">
+            <SimpleButton
+              onClick={() => handleViewProfile(row.original)}
+              msj="Ver Perfil"
+              icon="User"
+              bg="bg-primary"
+              text="text-white"
+              noRounded={true}
+            />
           </div>
         ),
       },

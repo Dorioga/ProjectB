@@ -81,7 +81,7 @@ const SearchStudents = () => {
         header: "Estado Primera Etapa",
         cell: ({ getValue }) => (
           <span
-            className={`px-2 py-1 rounded-full text-xs font-semibold ${
+            className={`block w-full h-full p-4 text-center text-xs font-semibold ${
               getValue() === "Registrado"
                 ? "bg-green-100 text-green-800"
                 : "bg-red-100 text-red-800"
@@ -99,7 +99,7 @@ const SearchStudents = () => {
         header: "Estado Segunda Etapa ",
         cell: ({ getValue }) => (
           <span
-            className={`px-2 py-1 rounded-full text-xs font-semibold ${
+            className={`block w-full h-full p-4 text-center text-xs font-semibold ${
               getValue() === "Validado"
                 ? "bg-green-100 text-green-800"
                 : "bg-red-100 text-red-800"
@@ -117,7 +117,7 @@ const SearchStudents = () => {
         header: "Estado Institucional",
         cell: ({ getValue }) => (
           <span
-            className={`px-2 py-1 rounded-full text-xs font-semibold ${
+            className={`block w-full h-full p-4 text-center text-xs font-semibold ${
               getValue() === "Activo"
                 ? "bg-green-100 text-green-800"
                 : "bg-red-100 text-red-800"
@@ -135,7 +135,7 @@ const SearchStudents = () => {
         header: "Estado Proceso",
         cell: ({ getValue }) => (
           <span
-            className={`px-2 py-1 rounded-full text-xs font-semibold ${
+            className={`block w-full h-full p-4 text-center text-xs font-semibold ${
               getValue() === "Correcto"
                 ? "bg-green-100 text-green-800"
                 : "bg-red-100 text-red-800"
@@ -152,13 +152,15 @@ const SearchStudents = () => {
         id: "actions",
         header: "Acciones",
         cell: ({ row }) => (
-          <div className="flex gap-2 items-center justify-center">
-            <button
+          <div className="w-full h-full flex">
+            <SimpleButton
               onClick={() => handleViewProfile(row.original)} // Llama a la función con los datos de la fila
-              className=" flex flex-row items-center px-3 py-1 bg-primary text-white rounded text-sm hover:bg-primary/90"
-            >
-              <User /> Ver Perfil
-            </button>
+              noRounded={true}
+              bg="bg-primary"
+              text="text-white"
+              msj="Ver Perfil"
+              icon="User"
+            />
             {/* Puedes añadir más botones aquí, como eliminar */}
           </div>
         ),

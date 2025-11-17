@@ -18,6 +18,7 @@ const DataTable = ({ data, columns, fileName = "export", mode = null }) => {
   const [globalFilter, setGlobalFilter] = useState("");
   const tableRef = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [downloadTypeMode, setDownloadTypeMode] = useState("all");
   const table = useReactTable({
     data,
     columns,
@@ -84,35 +85,52 @@ const DataTable = ({ data, columns, fileName = "export", mode = null }) => {
 
   return (
     <div>
-      <div className="flex justify-between items-center  gap-4">
+      <div className="grid grid-cols-7  gap-4 pb-4 ">
         <input
           type="text"
           value={globalFilter ?? ""}
           onChange={(e) => setGlobalFilter(e.target.value)}
           placeholder="Buscar en la tabla..."
-          className="border p-2 rounded mb-4 w-full md:w-1/3 bg-white"
+          className="border p-2 rounded col-span-2 bg-white"
         />
         <div
-          className={` grid   gap-2 ${
-            mode !== null ? " w-1/2 grid-cols-2" : "w-1/5 grid-cols-1"
+          className={` grid w-full col-span-5 gap-2 ${
+            mode !== null ? " grid-cols-3" : "grid-cols-1"
           } `}
         >
           {mode !== null && (
-            <SimpleButton
-              onClick={() => setIsOpen(true)}
-              bg="bg-green-600"
-              icon="Download"
-              text="text-white"
-              msj="Descargar Archivos Auditoria"
-            />
+            <div className="grid grid-cols-2 col-span-2 gap-4">
+              <SimpleButton
+                onClick={() => {
+                  setIsOpen(true);
+                  setDownloadTypeMode("habeasData");
+                }}
+                bg="bg-green-600"
+                icon="Download"
+                text="text-white"
+                msj="Descargar Archivos Habeas Data"
+              />
+              <SimpleButton
+                onClick={() => {
+                  setIsOpen(true);
+                  setDownloadTypeMode("all");
+                }}
+                bg="bg-green-600"
+                icon="Download"
+                text="text-white"
+                msj="Descargar Archivos Auditoria"
+              />
+            </div>
           )}
-          <SimpleButton
-            onClick={handleExport}
-            bg="bg-green-600"
-            icon="FileUp"
-            text="text-white"
-            msj="Exportar a Excel"
-          />
+          <div className="col-span-1">
+            <SimpleButton
+              onClick={handleExport}
+              bg="bg-green-600"
+              icon="FileUp"
+              text="text-white"
+              msj="Exportar a Excel"
+            />
+          </div>
         </div>
       </div>
 
@@ -163,7 +181,7 @@ const DataTable = ({ data, columns, fileName = "export", mode = null }) => {
                 {row.getVisibleCells().map((cell) => (
                   <td
                     key={cell.id}
-                    className={`p-3 text-center font-semibold cursor-pointer ${
+                    className={`p-0 h-full text-center ${
                       cell.column.columnDef.meta?.hideOnSM
                         ? "hidden sm:table-cell"
                         : ""
@@ -182,7 +200,12 @@ const DataTable = ({ data, columns, fileName = "export", mode = null }) => {
                         : ""
                     }`}
                   >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    <div className=" p-0 block">
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </div>
                   </td>
                 ))}
               </tr>
@@ -257,7 +280,14 @@ const DataTable = ({ data, columns, fileName = "export", mode = null }) => {
           </select>
         </div>
       </div>
-      <DocumentModal isOpen={isOpen} onClose={() => setIsOpen(false)} />
+      <DocumentModal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        type={downloadTypeMode}
+        title={
+          downloadTypeMode === "all" ? "Documentos Auditoria" : "Habeas Data"
+        }
+      />
     </div>
   );
 };

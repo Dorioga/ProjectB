@@ -196,6 +196,7 @@ const RegisterStudent = () => {
           <label>Foto del Estudiante</label>
           <FileChooser name="url_photo" onChange={handleChange} />
         </div>
+
         <div className="flex items-center gap-2">
           <input
             type="checkbox"
