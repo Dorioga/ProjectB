@@ -32,7 +32,7 @@ const Login = () => {
       <div className="bg-surface hidden lg:flex lg:items-center lg:justify-center">
         <div className="w-96 h-96   bg-amber-400 flex flex-col items-center justify-center rounded-full">
           <School size={150} color="white" />
-          <h1 className="text-white font-bold text-5xl mt-4">SchoolApp</h1>
+          <h1 className="text-white font-bold text-5xl mt-4">Nexus</h1>
         </div>
       </div>
       <div className="w-full bg-primary flex items-center justify-center p-4 ">

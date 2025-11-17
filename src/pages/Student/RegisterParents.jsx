@@ -1,13 +1,15 @@
 import React, { useState } from "react";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import ProgressPage from "../../components/atoms/progressPage";
+import FileChooser from "../../components/atoms/FileChooser";
 
 const RegisterParents = () => {
   const [formData, setFormData] = useState({
-    tipo_documento_acudiente: "CC",
-    numero_identificacion_acudiente: "123456789",
-    nombre_acudiente: "Juan Perez",
-    telefono_acudiente: "1234567890",
+    tipo_documento_acudiente: "",
+    numero_identificacion_acudiente: "",
+    nombre_acudiente: "",
+    telefono_acudiente: "",
+    img_idacudiente: null,
   });
 
   const handleChange = (e) => {
@@ -52,6 +54,7 @@ const RegisterParents = () => {
             onChange={handleChange}
             className="w-full p-2 border rounded bg-white"
           >
+            <option value=""></option>
             <option value="CC">Cédula de Ciudadanía</option>
             <option value="CE">Cédula de Extranjería</option>
             <option value="PA">Pasaporte</option>
@@ -87,7 +90,10 @@ const RegisterParents = () => {
             className="w-full p-2 border rounded bg-white"
           />
         </div>
-
+        <div>
+          <label>Foto Documento Acudiente</label>
+          <FileChooser name="img_idacudiente" onChange={handleChange} />
+        </div>
         <div className="md:col-span-2 mt-4">
           <SimpleButton
             msj="Registrar Acudiente"
@@ -96,6 +102,7 @@ const RegisterParents = () => {
             icon={"Save"}
           />
         </div>
+
         <ProgressPage />
       </form>
     </div>

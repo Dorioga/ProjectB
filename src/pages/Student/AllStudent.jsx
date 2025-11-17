@@ -71,7 +71,7 @@ const AllStudent = () => {
             className={`block w-full h-full p-4   text-center text-xs font-semibold ${
               getValue() === "Registrado"
                 ? "bg-green-100 text-green-800"
-                : "bg-red-100 text-red-800"
+                : "bg-yellow-100 text-yellow-800"
             }`}
           >
             {getValue()}
@@ -89,7 +89,7 @@ const AllStudent = () => {
             className={`block w-full h-full p-4 text-center text-xs font-semibold ${
               getValue() === "Validado"
                 ? "bg-green-100 text-green-800"
-                : "bg-red-100 text-red-800"
+                : "bg-yellow-100 text-yellow-800"
             }`}
           >
             {getValue()}
@@ -107,7 +107,7 @@ const AllStudent = () => {
             className={`block w-full h-full p-4 text-center text-xs font-semibold ${
               getValue() === "Activo"
                 ? "bg-green-100 text-green-800"
-                : "bg-red-100 text-red-800"
+                : "bg-gray-100 text-gray-800"
             }`}
           >
             {getValue()}
@@ -123,8 +123,12 @@ const AllStudent = () => {
         cell: ({ getValue }) => (
           <span
             className={`block w-full h-full p-4 text-center text-xs font-semibold ${
-              getValue() === "Correcto"
+              getValue() === "Conforme"
                 ? "bg-green-100 text-green-800"
+                : getValue() === "Retirado"
+                ? "bg-gray-100 text-gray-800"
+                : getValue() === "Reasignado"
+                ? "bg-indigo-100 text-indigo-800"
                 : "bg-red-100 text-red-800"
             }`}
           >

@@ -14,8 +14,12 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
   const [isOpenCamera, setIsOpenCamera] = useState(false);
   const [isOpenExcuse, setIsOpenExcuse] = useState(false);
   const [isOpenHabeasDataFormat, setIsOpenHabeasDataFormat] = useState(false);
-  const [isOpenHabeasDataView, setIsOpenHabeasDataView] = useState(false);
-  const [habeasDataMode, setHabeasDataMode] = useState("view"); // Estado para el modo de Habeas Data
+  const [isOpenDocument, setIsOpenDocument] = useState(false);
+  const [habeasDataMode, setHabeasDataMode] = useState("view");
+  const [documentSelected, setDocumentSelected] = useState({
+    file: null,
+    name: "",
+  }); // Estado para el modo de Habeas Data
 
   // Estados para manejar archivos y previews
   const [photoFile, setPhotoFile] = useState(null);
@@ -279,7 +283,7 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
                   className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
                     editedData.state_beca === "Activo"
                       ? "bg-green-100 text-green-800"
-                      : "bg-red-100 text-red-800"
+                      : "bg-gray-100 text-gray-800"
                   }`}
                 >
                   {editedData.state_beca}
@@ -309,9 +313,12 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
               ) : (
                 <span
                   className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
-                    editedData.state_process === "Correcto" ||
-                    editedData.state_process === "Completo"
+                    editedData.state_process === "Conforme"
                       ? "bg-green-100 text-green-800"
+                      : editedData.state_process === "Retirado"
+                      ? "bg-gray-100 text-gray-800"
+                      : editedData.state_process === "Reasignado"
+                      ? "bg-indigo-100 text-indigo-800"
                       : "bg-red-100 text-red-800"
                   }`}
                 >
@@ -342,12 +349,14 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
             <label className="text-lg font-medium">Habeas Data:</label>
             <span
               className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
-                data.auDoc_signatureFormat
+                data.auDoc_habeas
                   ? "bg-green-100 text-green-800 border-green-200 "
                   : "bg-yellow-100 text-yellow-800 border-yellow-200 "
               }`}
             >
-              {data.auDoc_signatureFormat ? "Cargado" : "No cargado"}
+              {data.auDoc_habeas.includes("https://")
+                ? "Cargado"
+                : "No cargado"}
             </span>
 
             {isEditing ? (
@@ -366,13 +375,29 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
                   }
                 />
               </div>
-            ) : (
+            ) : data.auDoc_habeas.includes("https://") ? (
               <SimpleButton
-                onClick={() => setIsOpenHabeasDataView(true)}
+                onClick={() => {
+                  setIsOpenDocument(true);
+                  setDocumentSelected({
+                    file: data.auDoc_habeas,
+                    name: "Documento Habeas Data",
+                  });
+                }}
                 msj="Ver Documento"
                 bg="bg-accent"
                 icon="View"
                 text="text-white"
+              />
+            ) : (
+              <FileChooser
+                onChange={(file) => handleDocumentChange("habeas_data", file)}
+                accept=".pdf"
+                label={
+                  documentFiles.habeas_data
+                    ? documentFiles.habeas_data.name
+                    : "Cargar Archivo"
+                }
               />
             )}
           </div>
@@ -380,13 +405,31 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
             <label className="text-lg font-medium">Ficha Matricula:</label>
             <span
               className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
-                data.auDoc_matricula
+                data.auDoc_matricula.includes("https://")
                   ? "bg-green-100 text-green-800 border-green-200 "
                   : "bg-yellow-100 text-yellow-800 border-yellow-200 "
               }`}
             >
-              {data.auDoc_matricula ? "Cargado" : "No cargado"}
+              {data.auDoc_matricula.includes("https://")
+                ? "Cargado"
+                : "No cargado"}
             </span>
+
+            {data.auDoc_matricula.includes("https://") && (
+              <SimpleButton
+                onClick={() => {
+                  setIsOpenDocument(true);
+                  setDocumentSelected({
+                    file: data.auDoc_matricula,
+                    name: "Documento Matricula",
+                  });
+                }}
+                msj="Ver Documento"
+                bg="bg-accent"
+                icon="View"
+                text="text-white"
+              />
+            )}
           </div>
           <div
             className={`w-full grid grid-cols-1  gap-4 items-center ${
@@ -398,14 +441,16 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
             </label>
             <span
               className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
-                data.auDoc_idAcudiente
+                data.auDoc_idAcudiente.includes("https://")
                   ? "bg-green-100 text-green-800 border-green-200 "
                   : "bg-yellow-100 text-yellow-800 border-yellow-200 "
               }`}
             >
-              {data.auDoc_idAcudiente ? "Cargado" : "No cargado"}
+              {data.auDoc_idAcudiente.includes("https://")
+                ? "Cargado"
+                : "No cargado"}
             </span>
-            {isEditing && (
+            {isEditing ? (
               <div
                 className={`flex  ${
                   documentFiles.id_Acudiente ? "col-span-3" : "col-span-1"
@@ -423,6 +468,30 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
                   }
                 />
               </div>
+            ) : data.auDoc_idAcudiente.includes("https://") ? (
+              <SimpleButton
+                onClick={() => {
+                  setIsOpenDocument(true);
+                  setDocumentSelected({
+                    file: data.auDoc_idAcudiente,
+                    name: "Documento Acudiente",
+                  });
+                }}
+                msj="Ver Documento"
+                bg="bg-accent"
+                icon="View"
+                text="text-white"
+              />
+            ) : (
+              <FileChooser
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={(file) => handleDocumentChange("id_Acudiente", file)}
+                label={
+                  documentFiles.id_Acudiente
+                    ? documentFiles.id_Acudiente.name
+                    : "Cargar Archivo"
+                }
+              />
             )}
           </div>
           <div
@@ -435,14 +504,16 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
             </label>
             <span
               className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
-                data.auDoc_idStudent
+                data.auDoc_idEstudiante.includes("https://")
                   ? "bg-green-100 text-green-800 border-green-200 "
                   : "bg-yellow-100 text-yellow-800 border-yellow-200 "
               }`}
             >
-              {data.auDoc_idStudent ? "Cargado" : "No cargado"}
+              {data.auDoc_idEstudiante.includes("https://")
+                ? "Cargado"
+                : "No cargado"}
             </span>
-            {isEditing && (
+            {isEditing ? (
               <div
                 className={`flex  ${
                   documentFiles.id_Student ? "col-span-3" : "col-span-1"
@@ -458,6 +529,30 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
                   }
                 />
               </div>
+            ) : data.auDoc_idEstudiante.includes("https://") ? (
+              <SimpleButton
+                onClick={() => {
+                  setIsOpenDocument(true);
+                  setDocumentSelected({
+                    file: data.auDoc_idEstudiante,
+                    name: "Documento Estudiante",
+                  });
+                }}
+                msj="Ver Documento"
+                bg="bg-accent"
+                icon="View"
+                text="text-white"
+              />
+            ) : (
+              <FileChooser
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={(file) => handleDocumentChange("id_Student", file)}
+                label={
+                  documentFiles.id_Student
+                    ? documentFiles.id_Student.name
+                    : "Cargar Archivo"
+                }
+              />
             )}
           </div>
         </div>
@@ -485,16 +580,10 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
         mode={habeasDataMode}
       />
       <PDFViewerModal
-        isOpen={isOpenHabeasDataView}
-        onClose={() => setIsOpenHabeasDataView(false)}
-        pdfUrl={
-          documentFiles.habeas_data
-            ? `/pdfs/${data.auDoc_signatureFormat}` // Ruta al PDF en public
-            : null
-            ? URL.createObjectURL(documentFiles.habeas_data)
-            : data.auDoc_signatureFormat
-        }
-        title="Documento Habeas Data"
+        isOpen={isOpenDocument}
+        onClose={() => setIsOpenDocument(false)}
+        pdfUrl={documentSelected.file}
+        title={documentSelected.name}
       />
     </div>
   );

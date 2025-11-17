@@ -19,6 +19,7 @@ const RegisterStudent = () => {
     birthday: "",
     habeas_data: "",
     url_photo: null,
+    reasigned: "",
   });
 
   const handleChange = (e) => {
@@ -191,13 +192,27 @@ const RegisterStudent = () => {
           />
         </div>
 
-        <div className="md:col-span-3 font-bold mt-4">Otros</div>
+        <div className="md:col-span-3 font-bold mt-4">
+          Datos Complementarios
+        </div>
         <div>
           <label>Foto del Estudiante</label>
           <FileChooser name="url_photo" onChange={handleChange} />
         </div>
-
-        <div className="flex items-center gap-2">
+        <div>
+          <label>Reasignado</label>
+          <select
+            name="reasigned"
+            value={formData.reasigned}
+            onChange={handleChange}
+            className="w-full p-2 border rounded bg-white"
+          >
+            <option value=""></option>
+            <option value={true}>Si</option>
+            <option value={false}>No</option>
+          </select>
+        </div>
+        <div className="flex items-center justify-center gap-2">
           <input
             type="checkbox"
             name="habeas_data"

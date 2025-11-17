@@ -28,9 +28,8 @@
     state_first: "Registrado",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
-
-    auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
+    state_process: "Conforme",
+    auDoc_habeas: "",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
     auDoc_idAcudiente: "https://example.com/documents/id_acudiente.pdf",
     auDoc_idEstudiante: "https://example.com/documents/id_estudiante.pdf",
@@ -66,7 +65,6 @@
     state_second: "Ausente",
     state_beca: "Activo",
     state_process: "Excusa",
-
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
     auDoc_idAcudiente: "https://example.com/documents/id_acudiente.pdf",
@@ -101,8 +99,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
-
+    state_process: "No Excusa",
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
     auDoc_idAcudiente: "https://example.com/documents/id_acudiente.pdf",
@@ -136,9 +133,8 @@
     telefono_acudiente: "1234567890",
     state_first: "Ausente",
     state_second: "Ausente",
-    state_beca: "Activo",
-    state_process: "Correcto",
-
+    state_beca: "Retirado",
+    state_process: "Retirado",
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
     auDoc_idAcudiente: "https://example.com/documents/id_acudiente.pdf",
@@ -173,12 +169,11 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
-
-    auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
-    auDoc_matricula: "https://example.com/documents/matricula.pdf",
-    auDoc_idAcudiente: "https://example.com/documents/id_acudiente.pdf",
-    auDoc_idEstudiante: "https://example.com/documents/id_estudiante.pdf",
+    state_process: "Conforme",
+    auDoc_habeas: "",
+    auDoc_matricula: "",
+    auDoc_idAcudiente: "",
+    auDoc_idEstudiante: "",
   },
   {
     id_student: 6,
@@ -209,7 +204,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -245,7 +240,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -281,7 +276,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -317,7 +312,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -353,7 +348,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -389,7 +384,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -461,7 +456,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -497,7 +492,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -533,7 +528,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -569,7 +564,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -605,7 +600,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -641,7 +636,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -677,7 +672,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -713,7 +708,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -749,7 +744,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -785,7 +780,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -821,7 +816,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -857,7 +852,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -893,7 +888,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -929,7 +924,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -965,7 +960,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -1001,7 +996,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -1037,7 +1032,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -1073,7 +1068,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -1109,7 +1104,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -1145,7 +1140,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -1181,7 +1176,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -1217,7 +1212,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -1253,7 +1248,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -1289,7 +1284,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -1325,7 +1320,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -1361,7 +1356,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -1397,7 +1392,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -1433,7 +1428,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -1469,7 +1464,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -1505,7 +1500,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -1541,7 +1536,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -1577,7 +1572,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -1613,7 +1608,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -1649,7 +1644,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -1685,7 +1680,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -1721,7 +1716,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -1757,7 +1752,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -1793,7 +1788,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -1829,7 +1824,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -1865,7 +1860,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -1901,7 +1896,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -1937,7 +1932,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -1973,7 +1968,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -2009,7 +2004,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -2045,7 +2040,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -2081,7 +2076,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -2117,7 +2112,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -2153,7 +2148,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -2189,7 +2184,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -2225,7 +2220,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -2261,7 +2256,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -2297,7 +2292,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -2333,7 +2328,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -2369,7 +2364,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -2405,7 +2400,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -2441,7 +2436,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -2477,7 +2472,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -2513,7 +2508,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -2549,7 +2544,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -2585,7 +2580,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -2621,7 +2616,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -2657,7 +2652,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -2693,7 +2688,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -2729,7 +2724,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -2765,7 +2760,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -2801,7 +2796,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -2837,7 +2832,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -2873,7 +2868,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -2909,7 +2904,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -2945,7 +2940,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -2981,7 +2976,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -3017,7 +3012,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -3053,7 +3048,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -3089,7 +3084,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -3125,7 +3120,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -3161,7 +3156,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -3197,7 +3192,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -3233,7 +3228,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -3269,7 +3264,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -3305,7 +3300,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -3341,7 +3336,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -3377,7 +3372,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -3413,7 +3408,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -3449,7 +3444,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -3485,7 +3480,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -3521,7 +3516,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -3557,7 +3552,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -3593,7 +3588,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -3629,7 +3624,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -3665,7 +3660,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -3701,7 +3696,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -3737,7 +3732,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -3773,7 +3768,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -3809,7 +3804,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -3845,7 +3840,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -3881,7 +3876,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -3917,7 +3912,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -3953,7 +3948,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -3989,7 +3984,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -4025,7 +4020,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -4061,7 +4056,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -4097,7 +4092,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -4133,7 +4128,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -4169,7 +4164,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -4205,7 +4200,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -4241,7 +4236,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -4277,7 +4272,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -4313,7 +4308,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -4349,7 +4344,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -4385,7 +4380,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -4421,7 +4416,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -4457,7 +4452,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -4493,7 +4488,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -4529,7 +4524,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -4565,7 +4560,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -4601,7 +4596,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -4637,7 +4632,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -4673,7 +4668,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -4709,7 +4704,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -4745,7 +4740,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -4781,7 +4776,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -4817,7 +4812,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -4853,7 +4848,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -4889,7 +4884,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -4925,7 +4920,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -4961,7 +4956,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -4997,7 +4992,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -5033,7 +5028,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -5069,7 +5064,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -5105,7 +5100,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -5141,7 +5136,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -5177,7 +5172,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -5213,7 +5208,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -5249,7 +5244,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -5285,7 +5280,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -5321,7 +5316,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -5357,7 +5352,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -5393,7 +5388,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -5429,7 +5424,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -5465,7 +5460,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -5501,7 +5496,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -5537,7 +5532,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -5573,7 +5568,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -5609,7 +5604,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -5645,7 +5640,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -5681,7 +5676,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -5717,7 +5712,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -5753,7 +5748,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -5789,7 +5784,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -5825,7 +5820,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -5861,7 +5856,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -5897,7 +5892,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -5933,7 +5928,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -5969,7 +5964,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -6005,7 +6000,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -6041,7 +6036,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -6077,7 +6072,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -6113,7 +6108,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -6149,7 +6144,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -6185,7 +6180,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -6221,7 +6216,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -6257,7 +6252,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -6293,7 +6288,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -6329,7 +6324,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -6365,7 +6360,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -6401,7 +6396,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -6437,7 +6432,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -6473,7 +6468,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -6509,7 +6504,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -6545,7 +6540,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -6581,7 +6576,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -6617,7 +6612,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -6653,7 +6648,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -6689,7 +6684,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -6725,7 +6720,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -6761,7 +6756,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -6797,7 +6792,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -6833,7 +6828,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -6869,7 +6864,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -6905,7 +6900,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -6941,7 +6936,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -6977,7 +6972,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -7013,7 +7008,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -7049,7 +7044,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -7085,7 +7080,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -7121,7 +7116,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -7157,7 +7152,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -7193,7 +7188,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -7229,7 +7224,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -7265,7 +7260,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -7301,7 +7296,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -7337,7 +7332,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -7373,7 +7368,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -7409,7 +7404,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -7445,7 +7440,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -7481,7 +7476,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -7517,7 +7512,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -7553,7 +7548,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -7589,7 +7584,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -7625,7 +7620,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -7661,7 +7656,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -7697,7 +7692,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -7733,7 +7728,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -7769,7 +7764,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -7805,7 +7800,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -7841,7 +7836,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -7877,7 +7872,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -7913,7 +7908,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -7949,7 +7944,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -7985,7 +7980,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -8021,7 +8016,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -8057,7 +8052,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -8093,7 +8088,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -8129,7 +8124,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -8165,7 +8160,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -8201,7 +8196,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -8237,7 +8232,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -8273,7 +8268,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -8309,7 +8304,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -8345,7 +8340,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -8381,7 +8376,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -8417,7 +8412,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -8453,7 +8448,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -8489,7 +8484,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -8525,7 +8520,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -8561,7 +8556,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -8597,7 +8592,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -8633,7 +8628,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -8669,7 +8664,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -8705,7 +8700,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -8741,7 +8736,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -8777,7 +8772,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -8813,7 +8808,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -8849,7 +8844,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -8885,7 +8880,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -8921,7 +8916,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -8957,7 +8952,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -8993,7 +8988,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -9029,7 +9024,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -9065,7 +9060,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -9101,7 +9096,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -9137,7 +9132,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -9173,7 +9168,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -9209,7 +9204,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -9245,7 +9240,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -9281,7 +9276,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -9317,7 +9312,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -9353,7 +9348,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -9389,7 +9384,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -9425,7 +9420,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -9461,7 +9456,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -9497,7 +9492,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -9533,7 +9528,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -9569,7 +9564,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -9605,7 +9600,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -9641,7 +9636,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -9677,7 +9672,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -9713,7 +9708,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -9749,7 +9744,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -9785,7 +9780,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -9821,7 +9816,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -9857,7 +9852,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -9893,7 +9888,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -9929,7 +9924,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -9965,7 +9960,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -10001,7 +9996,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -10037,7 +10032,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -10073,7 +10068,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -10109,7 +10104,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -10145,7 +10140,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -10181,7 +10176,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -10217,7 +10212,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -10253,7 +10248,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -10289,7 +10284,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -10325,7 +10320,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -10361,7 +10356,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -10397,7 +10392,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -10433,7 +10428,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -10469,7 +10464,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -10505,7 +10500,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -10541,7 +10536,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -10577,7 +10572,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -10613,7 +10608,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -10649,7 +10644,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -10685,7 +10680,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -10721,7 +10716,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -10757,7 +10752,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -10793,7 +10788,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -10829,7 +10824,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -10865,7 +10860,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -10901,7 +10896,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -10937,7 +10932,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -10973,7 +10968,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -11009,7 +11004,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -11045,7 +11040,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -11081,7 +11076,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -11117,7 +11112,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -11153,7 +11148,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -11189,7 +11184,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -11225,7 +11220,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -11261,7 +11256,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -11297,7 +11292,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -11333,7 +11328,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -11369,7 +11364,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -11405,7 +11400,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -11441,7 +11436,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -11477,7 +11472,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -11513,7 +11508,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -11549,7 +11544,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -11585,7 +11580,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -11621,7 +11616,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -11657,7 +11652,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -11693,7 +11688,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -11729,7 +11724,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -11765,7 +11760,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -11801,7 +11796,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -11837,7 +11832,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -11873,7 +11868,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -11909,7 +11904,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -11945,7 +11940,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -11981,7 +11976,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -12017,7 +12012,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -12053,7 +12048,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -12089,7 +12084,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -12125,7 +12120,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -12161,7 +12156,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -12197,7 +12192,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -12233,7 +12228,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -12269,7 +12264,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -12305,7 +12300,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -12341,7 +12336,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -12377,7 +12372,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -12413,7 +12408,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -12449,7 +12444,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -12485,7 +12480,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -12521,7 +12516,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -12557,7 +12552,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -12593,7 +12588,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -12629,7 +12624,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -12665,7 +12660,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -12701,7 +12696,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -12737,7 +12732,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -12773,7 +12768,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -12809,7 +12804,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -12845,7 +12840,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -12881,7 +12876,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -12917,7 +12912,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -12953,7 +12948,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -12989,7 +12984,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -13025,7 +13020,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -13061,7 +13056,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -13097,7 +13092,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -13133,7 +13128,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -13169,7 +13164,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -13205,7 +13200,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -13241,7 +13236,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -13277,7 +13272,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -13313,7 +13308,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -13349,7 +13344,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -13385,7 +13380,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -13421,7 +13416,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -13457,7 +13452,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -13493,7 +13488,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -13529,7 +13524,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -13565,7 +13560,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -13601,7 +13596,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -13637,7 +13632,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -13673,7 +13668,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -13709,7 +13704,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -13745,7 +13740,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -13781,7 +13776,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -13817,7 +13812,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -13853,7 +13848,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -13889,7 +13884,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -13925,7 +13920,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -13961,7 +13956,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -13997,7 +13992,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -14033,7 +14028,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -14069,7 +14064,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -14105,7 +14100,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -14141,7 +14136,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -14177,7 +14172,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -14213,7 +14208,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -14249,7 +14244,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -14285,7 +14280,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -14321,7 +14316,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -14357,7 +14352,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -14393,7 +14388,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -14429,7 +14424,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -14465,7 +14460,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -14501,7 +14496,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -14537,7 +14532,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -14573,7 +14568,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -14609,7 +14604,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -14645,7 +14640,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -14681,7 +14676,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -14717,7 +14712,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -14753,7 +14748,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -14789,7 +14784,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -14825,7 +14820,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -14861,7 +14856,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -14897,7 +14892,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -14933,7 +14928,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -14969,7 +14964,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -15005,7 +15000,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -15041,7 +15036,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -15077,7 +15072,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -15113,7 +15108,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -15149,7 +15144,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -15185,7 +15180,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -15221,7 +15216,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -15257,7 +15252,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -15293,7 +15288,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -15329,7 +15324,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -15365,7 +15360,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -15401,7 +15396,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -15437,7 +15432,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -15473,7 +15468,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -15509,7 +15504,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -15545,7 +15540,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -15581,7 +15576,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -15617,7 +15612,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -15653,7 +15648,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -15689,7 +15684,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -15725,7 +15720,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -15761,7 +15756,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -15797,7 +15792,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -15833,7 +15828,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -15869,7 +15864,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -15905,7 +15900,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -15941,7 +15936,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -15977,7 +15972,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -16013,7 +16008,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -16049,7 +16044,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -16085,7 +16080,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -16121,7 +16116,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -16157,7 +16152,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -16193,7 +16188,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -16229,7 +16224,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -16265,7 +16260,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -16301,7 +16296,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -16337,7 +16332,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -16373,7 +16368,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -16409,7 +16404,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -16445,7 +16440,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -16481,7 +16476,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -16517,7 +16512,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -16553,7 +16548,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -16589,7 +16584,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -16625,7 +16620,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -16661,7 +16656,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -16697,7 +16692,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -16733,7 +16728,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -16769,7 +16764,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -16805,7 +16800,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -16841,7 +16836,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -16877,7 +16872,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -16913,7 +16908,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -16949,7 +16944,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -16985,7 +16980,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -17021,7 +17016,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -17057,7 +17052,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -17093,7 +17088,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -17129,7 +17124,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -17165,7 +17160,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -17201,7 +17196,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -17237,7 +17232,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -17273,7 +17268,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -17309,7 +17304,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -17345,7 +17340,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -17381,7 +17376,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -17417,7 +17412,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -17453,7 +17448,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -17489,7 +17484,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -17525,7 +17520,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -17561,7 +17556,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -17597,7 +17592,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -17633,7 +17628,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -17669,7 +17664,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -17705,7 +17700,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -17741,7 +17736,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -17777,7 +17772,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -17813,7 +17808,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -17849,7 +17844,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -17885,7 +17880,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -17921,7 +17916,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -17957,7 +17952,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -17993,7 +17988,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -18029,7 +18024,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -18065,7 +18060,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -18101,7 +18096,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -18137,7 +18132,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -18173,7 +18168,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -18209,7 +18204,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -18245,7 +18240,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -18281,7 +18276,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -18317,7 +18312,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -18353,7 +18348,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -18389,7 +18384,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -18425,7 +18420,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -18461,7 +18456,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -18497,7 +18492,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -18533,7 +18528,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -18569,7 +18564,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -18605,7 +18600,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -18641,7 +18636,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -18677,7 +18672,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -18713,7 +18708,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -18749,7 +18744,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -18785,7 +18780,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -18821,7 +18816,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -18857,7 +18852,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -18893,7 +18888,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -18929,7 +18924,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -18965,7 +18960,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -19001,7 +18996,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -19037,7 +19032,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -19073,7 +19068,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -19109,7 +19104,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -19145,7 +19140,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -19181,7 +19176,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -19217,7 +19212,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -19253,7 +19248,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -19289,7 +19284,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -19325,7 +19320,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -19361,7 +19356,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -19397,7 +19392,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
@@ -19433,7 +19428,7 @@
     state_first: "Ausente",
     state_second: "Ausente",
     state_beca: "Activo",
-    state_process: "Correcto",
+    state_process: "Conforme",
 
     auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
