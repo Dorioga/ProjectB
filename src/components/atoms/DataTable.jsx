@@ -84,8 +84,12 @@ const DataTable = ({ data, columns, fileName = "export", mode = null }) => {
   };
 
   return (
-    <div>
-      <div className="grid grid-cols-7  gap-4 pb-4 ">
+    <div className="flex flex-col gap-4">
+      <div
+        className={` grid w-full  gap-2  ${
+          mode !== null ? "grid-cols-7 " : "grid-cols-1"
+        } `}
+      >
         <input
           type="text"
           value={globalFilter ?? ""}
@@ -93,13 +97,11 @@ const DataTable = ({ data, columns, fileName = "export", mode = null }) => {
           placeholder="Buscar en la tabla..."
           className="border p-2 rounded col-span-2 bg-white"
         />
-        <div
-          className={` grid w-full col-span-5 gap-2 ${
-            mode !== null ? " grid-cols-3" : "grid-cols-1"
-          } `}
-        >
+
+        <div className="grid grid-cols-2  col-span-4  gap-4">
           {mode !== null && (
-            <div className="grid grid-cols-2 col-span-2 gap-4">
+            <>
+              {" "}
               <SimpleButton
                 onClick={() => {
                   setIsOpen(true);
@@ -120,17 +122,22 @@ const DataTable = ({ data, columns, fileName = "export", mode = null }) => {
                 text="text-white"
                 msj="Descargar Archivos Auditoria"
               />
-            </div>
+            </>
           )}
-          <div className="col-span-1">
-            <SimpleButton
-              onClick={handleExport}
-              bg="bg-green-600"
-              icon="FileUp"
-              text="text-white"
-              msj="Exportar a Excel"
-            />
-          </div>
+        </div>
+
+        <div
+          className={` grid w-full col-end-8 gap-2  ${
+            mode !== null ? "" : ""
+          } `}
+        >
+          <SimpleButton
+            onClick={handleExport}
+            bg="bg-green-600"
+            icon="FileUp"
+            text="text-white"
+            msj="Exportar a Excel"
+          />
         </div>
       </div>
 

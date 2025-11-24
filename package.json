@@ -14,6 +14,7 @@
     "@tanstack/react-table": "^8.21.3",
     "axios": "^1.13.1",
     "html2canvas": "^1.4.1",
+    "htmldocs": "^0.2.30",
     "jspdf": "^3.0.3",
     "lucide-react": "^0.548.0",
     "pdfjs-dist": "^5.4.394",

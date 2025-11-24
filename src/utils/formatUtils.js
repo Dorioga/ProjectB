@@ -152,3 +152,25 @@ export function onlyNumbers(str) {
   if (!str) return "";
   return String(str).replace(/\D/g, "");
 }
+
+/**
+ * Compara si la fecha actual es posterior a la fecha de cierre
+ * @param {string} endDate - Fecha en formato 'YYYY-MM-DD'
+ * @returns {boolean} - true si hoy es después de la fecha de cierre
+ */
+export function isAfterEndDate(endDate) {
+  if (!endDate) return false;
+
+  const today = new Date();
+
+  // ✅ Crear la fecha en zona horaria local sin conversión UTC
+  const [year, month, day] = endDate.split("-");
+  const closeDate = new Date(year, month - 1, day); // mes es 0-indexed
+
+  // Establecer horas a 0 para comparar solo fechas
+  today.setHours(0, 0, 0, 0);
+  closeDate.setHours(0, 0, 0, 0);
+
+  console.log("Comparando fechas:", today, closeDate, today > closeDate);
+  return today > closeDate;
+}

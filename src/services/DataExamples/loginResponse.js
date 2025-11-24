@@ -34,15 +34,17 @@
       icon: "School",
     },
     {
-      option: "Buscar Estudiantes",
-      link: "/dashboard/searchStudents",
-      icon: "UserRoundSearch",
-    },
-    {
       option: "Actualizar Institucion",
       link: "/dashboard/updateSchool",
       icon: "Pencil",
     },
+    {
+      option: "Buscar Estudiantes",
+      link: "/dashboard/searchStudents",
+      icon: "UserRoundSearch",
+    },
+
     { option: "Reportes", link: "/dashboard/reports", icon: "ClipboardPlus" },
+    { option: "Auditoría", link: "/dashboard/auditory", icon: "BookOpenCheck" },
   ],
 };

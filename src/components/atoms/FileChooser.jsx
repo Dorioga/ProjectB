@@ -8,6 +8,7 @@ const FileChooser = ({
   multiple = false,
   disabled = false,
   label = "Seleccionar archivo",
+  mode = "default",
 }) => {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const fileInputRef = useRef(null);
@@ -38,7 +39,11 @@ const FileChooser = ({
   };
 
   return (
-    <div className="w-full flex flex-col lg:flex-row justify-center gap-2">
+    <div
+      className={`w-full flex items-center  justify-center gap-2 ${
+        mode == "default" ? "flex-row" : " flex-col"
+      }`}
+    >
       {/* Input oculto */}
       <input
         ref={fileInputRef}

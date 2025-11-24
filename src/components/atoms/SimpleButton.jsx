@@ -8,6 +8,7 @@ const SimpleButton = ({
   text,
   hover,
   noRounded = false,
+  disabled = false,
 }) => {
   const IconComponent = LucideIcons[icon] || LucideIcons.User;
   return (
@@ -17,6 +18,7 @@ const SimpleButton = ({
         noRounded ? "p-3" : "rounded-md p-2"
       } ${bg} ${text} ${hover}  focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60 `}
       onClick={onClick}
+      disabled={disabled}
     >
       {icon && <IconComponent />}
       {msj ? <p className="pl-2">{msj}</p> : null}
