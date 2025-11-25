@@ -3,6 +3,7 @@ import Modal from "../atoms/Modal";
 import SimpleButton from "../atoms/SimpleButton";
 import FileChooser from "../atoms/FileChooser";
 import { isAfterEndDate } from "../../utils/formatUtils";
+import PdfSchool from "./PdfAudit";
 
 const AuditoryModal = ({ isOpen, onClose, mode, data }) => {
   const getTodayDate = () => {
@@ -146,7 +147,16 @@ const AuditoryModal = ({ isOpen, onClose, mode, data }) => {
     }
   };
 
-  const handleDownloadFile = () => {};
+  const handleDownloadFile = async () => {
+    const data = {
+    school_name: "Colegio Central",
+    rector: "Carlos Gómez",
+    fechaApertura: "2024-02-01",
+    fechaCierre: "2024-02-15",
+  };
+
+  await PdfSchool(data);
+  };
 
   const toggleEditing = () => {
     if (isEditing) {
