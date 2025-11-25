@@ -4,11 +4,23 @@ import { jsPDF } from "jspdf";
 import logo from "../../assets/2399.jpg";
 import estadisticas from "../../assets/Infographics_004.jpg";
 import logo2 from "../../assets/2399.jpg";
+import imagen1 from "../../assets/24752.jpg";
+import imagen2 from "../../assets/colega-de-negocios-hablando-y-viendo-documentos-al-aire-libre.jpg";
+import imagen3 from "../../assets/concepto-de-tecnologia-futurista.jpg";
+import imagen4 from "../../assets/personas-analizando-y-revisando-graficos-financieros-en-la-oficina.jpg";
+import imagen5 from "../../assets/primer-plano-de-empresario-escribiendo-en-una-reunion.jpg";
 
 // Chart.register(ChartDataLabels);
 
 const exportPDF = async (data) => {
   //encabezado en cada página
+  const fotos = [
+  imagen1,
+  imagen2,
+  imagen3,
+  imagen4,
+  imagen5
+];
   const drawHeader = async (pdf) => {
     pdf.rect(10, 10, 181, 20, "D");
 
@@ -535,12 +547,14 @@ const exportPDF = async (data) => {
   // }
   // ================== CIERRE Y ESTADO DE LA AUDITORÍA ==================
   pdf.setFont("helvetica", "bold");
-  pdf.text("COMPONENTE 3: CIERRE Y ESTADO DE LA AUDITORÍA", 10, y);
+  pdf.text("COMPONENTE 3: ESTADO DE LA AUDITORÍA", 10, y);
   y += 8;
 
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(11);
-  //const objetivoTexto6 = `La segunda verificación biométrica en la institución educativa ${dataSchool[0].school_name} ha culminado en su totalidad, sin requerirse jornadas adicionales. La fecha de cierre institucional corresponde al ${formData.fechaCierre}, y el estado del proceso ha sido registrado como Cierre Verificado.`;
+  const objetivoTexto6 = `OBSERVACIONES:`;
+  const objetivoTexto11 = `Todo el proceso de auditoría ha sido documentado y registrado en la plataforma NEXUS, garantizando la trazabilidad y transparencia del procedimiento. Se han cumplido todas las etapas establecidas, desde la verificación física hasta la consolidación digital, asegurando que la información refleje fielmente el estado de los estudiantes beneficiarios. La institución educativa ha demostrado un compromiso constante con la calidad y la integridad del proceso, facilitando la supervisión y el control por parte de las autoridades competentes.`;
+  const objetivoTexto12 = `EVIDENCIAS FOTOGRÁFICAS`;
   const objetivoTexto7 = "ANEXOS";
   const objetivoTexto8 = "ANEXO 1: ";
   const objetivoTexto9 = "ANEXO 2: ";
@@ -555,20 +569,65 @@ const exportPDF = async (data) => {
   //   dataSchool[0].link_evidencia || "No proporcionado"
   // }`
   for (let txt of [
-    //objetivoTexto6,
+    objetivoTexto6,
+    objetivoTexto11,
     objetivoTexto7,
     objetivoTexto8,
     objetivoTexto9,
     objetivoTexto10,
-    //objetivoTexto20,
-    // objetivoTexto21,
-    //objetivoTexto12,
+    objetivoTexto12,
   ]) {
     const lines = pdf.splitTextToSize(txt, 180);
     pdf.text(lines, 10, y, { align: "justify", maxWidth: 180 });
     y += lines.length * 4 + 4;
     y = await checkPageBreak(pdf, y);
   }
+
+  const imgWidth = 65;      // ancho de cada foto
+const imgHeight = 65;     // alto de cada foto (puedes ajustar)
+const marginLeft = 40;    // margen izquierdo
+const marginTop = 10;
+const spaceX = 6;        // espacio horizontal entre imágenes
+const spaceY = 8; 
+
+ let col = 0; // 0 = izquierda, 1 = derecha
+
+for (let fotoSrc of fotos) {
+  const img = new Image();
+  img.src = fotoSrc;
+
+  await new Promise(resolve => {
+    img.onload = async () => {
+
+      // Si estamos al final de página → salto
+      if (y + imgHeight > 270) {
+        pdf.addPage();
+        await drawHeader(pdf);
+        y = 40;  // reset posición
+      }
+
+      // Calcular posición según columna
+      const x = col === 0 
+        ? marginLeft 
+        : marginLeft + imgWidth + spaceX;
+
+      pdf.addImage(img, "JPG", x, y, imgWidth, imgHeight);
+
+      // Cambiar a siguiente columna o fila
+      if (col === 0) {
+        col = 1; // pasar a la derecha
+      } else {
+        col = 0;           // volver a izquierda
+        y += imgHeight + spaceY; // bajar fila
+      }
+
+      resolve();
+    };
+  });
+}
+
+// Ajustar Y final por si necesitábamos espacio adicional
+y += imgHeight + spaceY;
 
   //formData.anexo4 ? y += 12: y += 6;
 
