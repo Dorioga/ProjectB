@@ -24,7 +24,7 @@ const exportPDF = async (data) => {
     pdf.setFontSize(9);
     pdf.setFont("helvetica", "bold");
     pdf.text(
-      "INFORME DE SEGUNDA VERIFICACIÓN BIOMÉTRICA POR\nINSTITUCIÓN EDUCATIVA VERIFICADA",
+      "INFORME DE VERIFICACIÓN DE LA \nINSTITUCIÓN EDUCATIVA",
       100,
       20,
       { align: "center" }
