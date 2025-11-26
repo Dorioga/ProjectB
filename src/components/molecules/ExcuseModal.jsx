@@ -117,7 +117,7 @@ const ExcuseModal = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={mode === "view" ? "Ver Excusa" : "Cargar Excusa"}
+      title={mode === "view" ? "Ver excusa" : "Cargar excusa"}
     >
       <div className="flex flex-col gap-4">
         {mode === "view" && selectedFile ? (

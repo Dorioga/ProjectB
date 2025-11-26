@@ -116,7 +116,7 @@ const AuditoryModal = ({ isOpen, onClose, mode, data }) => {
       setNewObservation("");
       alert("Observación agregada correctamente");
     } else {
-      alert("Por favor escribe una observación antes de agregar");
+      alert("Por favor, escribe una observación antes de agregar.");
     }
   };
 
@@ -149,13 +149,13 @@ const AuditoryModal = ({ isOpen, onClose, mode, data }) => {
 
   const handleDownloadFile = async () => {
     const data = {
-    school_name: "Colegio Central",
-    rector: "Carlos Gómez",
-    fechaApertura: "2024-02-01",
-    fechaCierre: "2024-02-15",
-  };
+      school_name: "Colegio Central",
+      rector: "Carlos Gómez",
+      fechaApertura: "2024-02-01",
+      fechaCierre: "2024-02-15",
+    };
 
-  await PdfSchool(data);
+    await PdfSchool(data);
   };
 
   const toggleEditing = () => {
@@ -169,7 +169,7 @@ const AuditoryModal = ({ isOpen, onClose, mode, data }) => {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={mode === "create" ? "Nueva Auditoría" : "Ver Auditoría"}
+      title={mode === "create" ? "Nueva auditoría" : "Ver auditoría"}
       size="4xl"
     >
       <div
@@ -186,28 +186,23 @@ const AuditoryModal = ({ isOpen, onClose, mode, data }) => {
         </h2>
 
         {mode === "view" && (
-          <div
-            className={`grid gap-4 col-span-2 ${
-              isBlocked ? "grid-cols-1 col-end-4" : "grid-cols-1 col-end-4"
-            }`}
-          >
-            {isBlocked ? (
-              <SimpleButton
-                onClick={handleDownloadFile}
-                msj="Descargar Informe"
-                bg="bg-green-500"
-                text="text-white"
-                icon="Download"
-              />
-            ) : (
-              <SimpleButton
-                onClick={toggleEditing}
-                msj={isEditing ? "Cancelar Edición" : "Editar"}
-                bg="bg-secondary"
-                text="text-white"
-                icon="Edit"
-              />
-            )}
+          <div className="grid gap-4 grid-cols-2 col-span-2 ">
+            <SimpleButton
+              onClick={handleDownloadFile}
+              msj="Descargar informe"
+              bg="bg-green-500"
+              hover="hover:bg-green-600"
+              text="text-white"
+              icon="Download"
+            />
+            <SimpleButton
+              onClick={toggleEditing}
+              msj={isEditing ? "Cancelar Edición" : "Editar"}
+              bg="bg-secondary"
+              hover="hover:bg-yellow-700"
+              text="text-white"
+              icon="Edit"
+            />
           </div>
         )}
       </div>
@@ -266,7 +261,7 @@ const AuditoryModal = ({ isOpen, onClose, mode, data }) => {
         {/* Encargado Auditoria Externa*/}
         <div>
           <label className="block text-sm font-medium mb-2">
-            Encargado Auditoria Externa
+            Encargado auditoría externa
           </label>
           <input
             type="text"
@@ -283,7 +278,7 @@ const AuditoryModal = ({ isOpen, onClose, mode, data }) => {
         {/* Encargado Auditoria Interna*/}
         <div>
           <label className="block text-sm font-medium mb-2">
-            Encargado Auditoria Interna
+            Encargado auditoría interna
           </label>
           <input
             type="text"
@@ -389,7 +384,7 @@ const AuditoryModal = ({ isOpen, onClose, mode, data }) => {
         </div>
         <div className="grid grid-cols-3 gap-2">
           <label className="block text-lg font-medium col-span-5 ">
-            Acta y Anexos
+            Acta y anexos
           </label>
           <div className="w-full flex flex-col items-center">
             <label className="font-semibold text-center">Acta de Inicio</label>
@@ -400,7 +395,7 @@ const AuditoryModal = ({ isOpen, onClose, mode, data }) => {
                 label={
                   filesData.startact
                     ? filesData.startact.name
-                    : "Cargar Archivo"
+                    : "Cargar archivo"
                 }
                 mode="horizontal"
                 disabled={mode === "view"}
@@ -412,13 +407,13 @@ const AuditoryModal = ({ isOpen, onClose, mode, data }) => {
             )}
           </div>
           <div className="w-full flex flex-col items-center">
-            <label className="font-semibold text-center">Acta de Cierre</label>
+            <label className="font-semibold text-center">Acta de cierre</label>
             {(isEditing || mode == "create") && !isBlocked ? (
               <FileChooser
                 onChange={(file) => handleFileChange("endact", file)}
                 accept={".jpg"}
                 label={
-                  filesData.endact ? filesData.endact.name : "Cargar Archivo"
+                  filesData.endact ? filesData.endact.name : "Cargar archivo"
                 }
                 mode="horizontal"
                 disabled={mode === "create"}
@@ -435,7 +430,7 @@ const AuditoryModal = ({ isOpen, onClose, mode, data }) => {
               <FileChooser
                 onChange={(file) => handleFileChange("anex", file)}
                 accept={".jpg"}
-                label={filesData.anex ? filesData.anex.name : "Cargar Archivo"}
+                label={filesData.anex ? filesData.anex.name : "Cargar archivo"}
                 mode="horizontal"
                 disabled={mode === "create"}
               />
@@ -494,7 +489,7 @@ const AuditoryModal = ({ isOpen, onClose, mode, data }) => {
                 <div className="flex justify-end">
                   <SimpleButton
                     onClick={handleAddObservation}
-                    msj="Agregar Observación"
+                    msj="Agregar observación"
                     bg="bg-blue-500"
                     text="text-white"
                     icon="Plus"

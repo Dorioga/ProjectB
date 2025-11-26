@@ -5,7 +5,7 @@ const useStudent = () => {
   const context = useContext(StudentContext);
 
   if (!context) {
-    throw new Error("useStudent debe usarse dentro de StudentProvider");
+    throw new Error("useStudent debe utilizarse dentro de StudentProvider.");
   }
 
   return context;

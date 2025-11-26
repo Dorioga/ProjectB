@@ -1,11 +1,13 @@
 import { ApiClient } from "./ApiClient";
 import { loginResponse } from "./DataExamples/loginResponse";
+
 /**
- * authService: funciones para login/logout/perfil
- * Ajusta rutas según tu backend.
+ * authService: funciones para inicio de sesión, cierre de sesión y perfil.
+ * Ajusta las rutas según tu backend.
  */
 export async function login(credentials) {
   // espera { token, user } o similar
+  // Espera { token, user } o similar.
   if (import.meta.env.DEV) {
     await new Promise((r) => setTimeout(r, 300));
 
@@ -24,7 +26,7 @@ export async function logout() {
 
 export async function getProfile() {
   if (import.meta.env.DEV) {
-    // devuelve la info pública del loginResponse como "perfil"
+    // Devuelve la información pública de loginResponse como "perfil".
     const { token, name, id_person, school_name, img_logo } = loginResponse;
     return { token, name, id_person, school_name, img_logo };
   }

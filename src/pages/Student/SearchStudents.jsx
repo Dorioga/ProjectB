@@ -60,11 +60,11 @@ const SearchStudents = () => {
       {
         accessorFn: (row) =>
           `${row.first_name} ${row.second_name} ${row.first_lastname} ${row.second_lastname}`,
-        header: "Nombre Completo",
+        header: "Nombre completo",
       },
       {
         accessorFn: (row) => `${row.grade_scholar} ${row.group_grade}`,
-        header: "Grado Curso",
+        header: "Grado y curso",
         meta: {
           hideOnLG: true,
         },
@@ -78,7 +78,7 @@ const SearchStudents = () => {
       },
       {
         accessorKey: "state_first",
-        header: "Estado Primera Etapa",
+        header: "Estado primera etapa",
         cell: ({ getValue }) => (
           <span
             className={`block w-full h-full p-4 text-center text-xs font-semibold ${
@@ -96,7 +96,7 @@ const SearchStudents = () => {
       },
       {
         accessorKey: "state_second",
-        header: "Estado Segunda Etapa ",
+        header: "Estado segunda etapa",
         cell: ({ getValue }) => (
           <span
             className={`block w-full h-full p-4 text-center text-xs font-semibold ${
@@ -114,7 +114,7 @@ const SearchStudents = () => {
       },
       {
         accessorKey: "state_institutional",
-        header: "Estado Institucional",
+        header: "Estado institucional",
         cell: ({ getValue }) => (
           <span
             className={`block w-full h-full p-4 text-center text-xs font-semibold ${
@@ -132,7 +132,7 @@ const SearchStudents = () => {
       },
       {
         accessorKey: "state_process",
-        header: "Estado Proceso",
+        header: "Estado del proceso",
         cell: ({ getValue }) => (
           <span
             className={`block w-full h-full p-4 text-center text-xs font-semibold ${
@@ -158,7 +158,7 @@ const SearchStudents = () => {
               noRounded={true}
               bg="bg-primary"
               text="text-white"
-              msj="Ver Perfil"
+              msj="Ver perfil"
               icon="User"
             />
             {/* Puedes añadir más botones aquí, como eliminar */}
@@ -175,12 +175,12 @@ const SearchStudents = () => {
 
   return (
     <div className="border p-6 rounded bg-bg h-full gap-4 flex flex-col">
-      <h1 className="text-2xl font-bold mb-4">Buscar Estudiantes</h1>
+      <h1 className="text-2xl font-bold mb-4">Buscar estudiantes</h1>
       <div className="flex flex-row items-center justify-start gap-4 w-1/2">
-        <h2 className="text-lg font-semibold">Cargar datos de Archivos</h2>
+        <h2 className="text-lg font-semibold">Cargar datos de archivos</h2>
         <div className="flex flex-col gap-2">
           <SimpleButton
-            msj="Cargar Archivos"
+            msj="Cargar archivos"
             bg="bg-primary"
             text="text-white"
             icon="Upload"
@@ -197,7 +197,7 @@ const SearchStudents = () => {
         <DataTable
           data={studentsData}
           columns={columns}
-          title="Datos de Estudiantes Cargados"
+          title="Datos de estudiantes cargados"
         />
       )}
       <StudentModal

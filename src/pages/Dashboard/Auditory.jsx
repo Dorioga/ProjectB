@@ -2,6 +2,7 @@ import { useMemo, useState, useCallback } from "react";
 import DataTable from "../../components/atoms/DataTable";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import AuditoryModal from "../../components/molecules/AuditoryModal";
+
 const data = [
   {
     id: 1,
@@ -10,8 +11,7 @@ const data = [
     enddate: "",
     personext: "Juan Perez",
     personint: "Pedro Gomez",
-    observation:
-      "Se inició con la auditoría en la sede1 y finalizó en la sede2",
+    observation: "Se inició la auditoría en la sede 1 y finalizó en la sede 2.",
   },
   {
     id: 2,
@@ -21,9 +21,10 @@ const data = [
     personext: "Juan Perez",
     personint: "Pedro Gomez",
     observation:
-      "Se realizó la auditoría con algunas ausencias pero con soporte",
+      "Se realizó la auditoría con algunas ausencias, pero con soporte.",
   },
 ];
+
 const Auditory = () => {
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [modeModal, setModeModal] = useState("");
@@ -60,7 +61,7 @@ const Auditory = () => {
       },
       {
         accessorKey: "startdate",
-        header: "Fecha inicio",
+        header: "Fecha de inicio",
         cell: ({ row }) => (
           <div className="text-center">
             {formatDateForDisplay(row.original.startdate)}
@@ -69,7 +70,7 @@ const Auditory = () => {
       },
       {
         accessorKey: "enddate",
-        header: "Fecha cierre",
+        header: "Fecha de cierre",
         cell: ({ row }) => (
           <div className="text-center">
             {formatDateForDisplay(row.original.enddate)}
@@ -117,7 +118,7 @@ const Auditory = () => {
           text="text-white"
         />
       </div>
-      <DataTable data={data} columns={columns} fileName="Report Auditory" />
+      <DataTable data={data} columns={columns} fileName="Reporte_Auditorias" />
       {isOpenModal && (
         <AuditoryModal
           isOpen={isOpenModal}

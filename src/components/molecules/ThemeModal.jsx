@@ -59,11 +59,11 @@ const ThemeModal = ({ isOpen, onClose }) => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Modificar Tema" size="xl">
-      <h1 className="font-bold text-xl">Seleccionar Colores</h1>
+    <Modal isOpen={isOpen} onClose={onClose} title="Modificar tema" size="xl">
+      <h1 className="font-bold text-xl">Seleccionar colores</h1>
       <div className="flex flex-col gap-4 p-4">
         <div className="grid grid-cols-7 gap-6 items-center">
-          <h2 className="text-lg font-semibold col-span-3">Color Primario:</h2>
+          <h2 className="text-lg font-semibold col-span-3">Color primario:</h2>
           <ColorSelector
             color={color.primary}
             setColor={(newColor) =>
@@ -73,7 +73,7 @@ const ThemeModal = ({ isOpen, onClose }) => {
         </div>
         <div className="grid grid-cols-7 gap-6 items-center">
           <h2 className="text-lg font-semibold col-span-3">
-            Color Secundario:
+            Color secundario:
           </h2>
           <ColorSelector
             color={color.secondary}
@@ -83,7 +83,7 @@ const ThemeModal = ({ isOpen, onClose }) => {
           />
         </div>
         <div className="grid grid-cols-7 gap-6 items-center">
-          <h2 className="text-lg font-semibold col-span-3">Color Fondo:</h2>
+          <h2 className="text-lg font-semibold col-span-3">Color de fondo:</h2>
           <ColorSelector
             color={color.bg}
             setColor={(newColor) =>
@@ -93,7 +93,7 @@ const ThemeModal = ({ isOpen, onClose }) => {
         </div>
       </div>
 
-      <h3 className="font-bold text-xl">Vista Previa</h3>
+      <h3 className="font-bold text-xl">Vista previa</h3>
       <div className="w-full grid grid-cols-7 border rounded-lg bg-white h-80">
         <div
           className="col-span-2"
@@ -108,7 +108,7 @@ const ThemeModal = ({ isOpen, onClose }) => {
               className="w-1/3 h-10 rounded-lg flex items-center justify-center"
               style={{ backgroundColor: color.secondary, color: "#fff" }}
             >
-              Boton Prueba
+              Botón de prueba
             </div>
           </div>
         </div>
@@ -116,14 +116,14 @@ const ThemeModal = ({ isOpen, onClose }) => {
 
       <div className="pt-2 flex gap-2">
         <SimpleButton
-          msj="Restaurar Por Defecto"
+          msj="Restaurar por defecto"
           onClick={handleReset}
           bg="bg-gray-500"
           text="text-white"
           icon="RotateCcw"
         />
         <SimpleButton
-          msj="Guardar Cambios"
+          msj="Guardar cambios"
           onClick={handleThemeChange}
           bg="bg-accent"
           text="text-white"

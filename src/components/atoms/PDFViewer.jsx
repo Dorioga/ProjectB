@@ -17,7 +17,7 @@ const PDFViewer = ({ pdfUrl }) => {
   if (!pdfUrl) {
     return (
       <div className="flex items-center justify-center h-full bg-gray-100 rounded">
-        <p className="text-gray-500">No se proporcionó una URL de documento</p>
+        <p className="text-gray-500">No se proporcionó la URL del documento</p>
       </div>
     );
   }
@@ -33,8 +33,8 @@ const PDFViewer = ({ pdfUrl }) => {
       {error && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
           <div className="text-center">
-            <p className="text-red-500 mb-2">Error al cargar el documento</p>
-            <p className="text-sm text-gray-600">URL: {pdfUrl}</p>
+            <p className="text-red-500 mb-2">Error al cargar el documento.</p>
+            <p className="text-sm text-gray-600">URL del documento: {pdfUrl}</p>
           </div>
         </div>
       )}

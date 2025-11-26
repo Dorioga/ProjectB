@@ -11,7 +11,7 @@ import { useNavigate } from "react-router-dom";
 
 export const AuthContext = createContext(null);
 
-// Helpers para sessionStorage
+// Funciones auxiliares para sessionStorage
 const loadFromSession = (key, fallback = null) => {
   try {
     const item = sessionStorage.getItem(key);
@@ -52,7 +52,7 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  //Mneja el estado del
+  // Maneja el estado de la barra lateral
   const [isOpen, setIsOpen] = useState(true);
 
   const loadProfile = useCallback(async () => {
@@ -83,7 +83,7 @@ export function AuthProvider({ children }) {
     }
   }, [token]);
 
-  // ✅ Un solo useEffect que guarda todo en sessionStorage
+  // ✅ Un solo useEffect que guarda todo en sessionStorage.
   useEffect(() => {
     saveToSession("user", user);
     saveToSession("nameSchool", nameSchool);

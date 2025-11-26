@@ -23,7 +23,7 @@ const SingleStudent = () => {
   };
   const handleSearch = async () => {
     if (!studentId) {
-      alert("Por favor ingrese un documento de identidad");
+      alert("Por favor, ingresa un documento de identidad.");
       return;
     }
     //1096252058
@@ -33,7 +33,7 @@ const SingleStudent = () => {
       console.log("Estudiante encontrado (retornado):", student);
     } catch (err) {
       console.error("Error al buscar estudiante:", err);
-      alert("Estudiante no encontrado");
+      alert("Estudiante no encontrado.");
     }
   };
 
@@ -43,14 +43,14 @@ const SingleStudent = () => {
 
   return (
     <div className="border p-6 rounded bg-bg h-full gap-4 flex flex-col">
-      <h2 className="font-bold text-2xl ">Perfil Estudiante</h2>
+      <h2 className="font-bold text-2xl ">Perfil del estudiante</h2>
 
       <div className="w-full flex flex-col gap-4 border-b pb-4">
         <div className="grid grid-cols-4 xl:grid-cols-8  items-center justify-center gap-4">
           <div className="grid grid-cols-1 md:grid-cols-3  xl:grid-cols-12 items-center w-full col-span-4 xl:col-span-8 gap-2">
             <div className="md:col-span-2 xl:col-span-4 flex flex-col ">
               <label className=" text-lg font-semibold">
-                Documento de Identidad
+                Documento de identidad
               </label>
               <input
                 className="bg-white rounded-sm p-2 border border-gray-300 col-span-3 focus:outline-none focus:ring-2 focus:ring-secondary"
@@ -65,7 +65,7 @@ const SingleStudent = () => {
             </div>
             <div className="md:col-span-1 xl:col-span-2 flex w-full h-full items-end">
               <SimpleButton
-                msj={loading ? "Buscando..." : "Buscar"}
+                msj={loading ? "Buscando…" : "Buscar"}
                 onClick={handleSearch}
                 bg={"bg-secondary"}
                 text={"text-white"}
@@ -76,7 +76,7 @@ const SingleStudent = () => {
             </div>
             <div className="md:col-span-3 xl:col-span-3 flex w-full h-full items-end">
               <SimpleButton
-                msj={"Escanear QR"}
+                msj={"Escanear código QR"}
                 onClick={() => setQrOpen(true)}
                 bg={"bg-secondary"}
                 text={"text-white"}
@@ -87,13 +87,13 @@ const SingleStudent = () => {
                 isOpen={qrOpen}
                 onClose={() => setQrOpen(false)}
                 onScan={handleQRCodeScan}
-                title="Escanear QR del estudiante"
+                title="Escanear código QR del estudiante"
               />
             </div>
             {selected ? (
               <div className="md:col-span-3  xl:col-span-3 flex w-full h-full items-end">
                 <SimpleButton
-                  msj={"Generar Carnet"}
+                  msj={"Generar carné"}
                   onClick={() => setCarnetOpen(true)}
                   bg={"bg-secondary"}
                   text={"text-white"}
@@ -114,14 +114,14 @@ const SingleStudent = () => {
       {/* Mostrar loading */}
       {loading && (
         <div className="text-center py-4">
-          <p className="text-gray-600">Buscando estudiante...</p>
+          <p className="text-gray-600">Buscando estudiante…</p>
         </div>
       )}
 
       {/* Mostrar error */}
       {error && !loading && (
         <div className="text-center py-4">
-          <p className="text-red-600">Error: Estudiante no encontrado</p>
+          <p className="text-red-600">Error: estudiante no encontrado.</p>
         </div>
       )}
 

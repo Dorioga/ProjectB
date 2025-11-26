@@ -3,6 +3,7 @@ import { SchoolContext } from "../context/SchoolContext";
 
 export default function useSchool() {
   const ctx = useContext(SchoolContext);
-  if (!ctx) throw new Error("useSchool debe usarse dentro de SchoolProvider");
+  if (!ctx)
+    throw new Error("useSchool debe utilizarse dentro de SchoolProvider.");
   return ctx;
 }

@@ -71,7 +71,7 @@ const DashHome = () => {
     <div className="h-full gap-6 flex flex-col text-text overflow-auto">
       {/* --- Encabezado con selector de jornada --- */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Dashboard Principal</h1>
+        <h1 className="text-2xl font-bold">Panel principal</h1>
 
         <div className="flex items-center gap-2">
           <label htmlFor="journey-select" className="text-sm font-medium">
@@ -96,13 +96,13 @@ const DashHome = () => {
       {/* --- Tarjetas de Estadísticas --- */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Total Estudiantes"
+          title="Total de estudiantes"
           value={filteredStudents.length + " / " + students.length}
         />
         <StatCard title="Grados Activos" value={studentData.length} />
         <StatCard title="Jornadas" value={jornadas.length} />
         <StatCard
-          title="Jornada Actual"
+          title="Jornada actual"
           value={selectedJourney === "todas" ? "Todas" : selectedJourney}
         />
       </div>
@@ -112,7 +112,7 @@ const DashHome = () => {
         {/* Gráfico Apilado */}
         <div className="lg:col-span-2 bg-background p-6 rounded-lg shadow flex flex-col">
           <h3 className="font-semibold mb-4">
-            Estudiantes por Grado y Jornada (Apilado)
+            Estudiantes por grado y jornada (apilado)
             {selectedJourney !== "todas" && ` - ${selectedJourney}`}
           </h3>
           <div className="flex-1 flex items-center justify-center min-h-[300px]">
@@ -138,7 +138,7 @@ const DashHome = () => {
 
         {/* Tabla de Resumen por Grado */}
         <div className="bg-background p-6 rounded-lg shadow">
-          <h3 className="font-semibold mb-4">Resumen por Grado</h3>
+          <h3 className="font-semibold mb-4">Resumen por grado</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-primary text-white">
@@ -168,7 +168,7 @@ const DashHome = () => {
                 ))}
                 {studentData.length > 0 && (
                   <tr className="bg-gray-100 font-bold">
-                    <td className="p-2">TOTAL</td>
+                    <td className="p-2">Total</td>
                     {selectedJourney === "todas" && (
                       <>
                         <td className="p-2 text-center">

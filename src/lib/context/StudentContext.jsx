@@ -31,7 +31,7 @@ export function StudentProvider({ children }) {
     setError(null);
     try {
       const student = await studentService.getStudent(identification);
-      // guardar en el contexto para que componentes que lean 'selected' se actualicen
+      // Guardar en el contexto para que los componentes que lean 'selected' se actualicen
       setSelected(student);
       return student;
     } catch (err) {

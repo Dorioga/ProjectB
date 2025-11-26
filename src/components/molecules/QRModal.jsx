@@ -38,8 +38,8 @@ const QRModal = ({ isOpen, onClose, onScan, title = "Escanear código QR" }) => 
         </div> */}
 
         <p className="text-sm text-gray-500">
-          Sugerencia: integra un lector real con "react-qr-reader" o
-          "html5-qrcode".
+          Sugerencia: integra un lector real (por ejemplo, 'react-qr-reader' o
+          'html5-qrcode').
         </p>
       </div>
     </Modal>

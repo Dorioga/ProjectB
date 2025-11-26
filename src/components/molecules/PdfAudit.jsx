@@ -1,26 +1,20 @@
 import { jsPDF } from "jspdf";
 // import Chart from "chart.js/auto";
 // import ChartDataLabels from "chartjs-plugin-datalabels";
-import logo from "../../assets/2399.jpg";
-import estadisticas from "../../assets/Infographics_004.jpg";
-import logo2 from "../../assets/2399.jpg";
-import imagen1 from "../../assets/24752.jpg";
-import imagen2 from "../../assets/colega-de-negocios-hablando-y-viendo-documentos-al-aire-libre.jpg";
-import imagen3 from "../../assets/concepto-de-tecnologia-futurista.jpg";
-import imagen4 from "../../assets/personas-analizando-y-revisando-graficos-financieros-en-la-oficina.jpg";
-import imagen5 from "../../assets/primer-plano-de-empresario-escribiendo-en-una-reunion.jpg";
+import logo from "../../assets/2399.webp";
+import estadisticas from "../../assets/Infographics_004.webp";
+import logo2 from "../../assets/2399.webp";
+import imagen1 from "../../assets/24752.webp";
+import imagen2 from "../../assets/colega-de-negocios-hablando-y-viendo-documentos-al-aire-libre.webp";
+import imagen3 from "../../assets/concepto-de-tecnologia-futurista.webp";
+import imagen4 from "../../assets/personas-analizando-y-revisando-graficos-financieros-en-la-oficina.webp";
+import imagen5 from "../../assets/primer-plano-de-empresario-escribiendo-en-una-reunion.webp";
 
 // Chart.register(ChartDataLabels);
 
 const exportPDF = async (data) => {
   //encabezado en cada página
-  const fotos = [
-  imagen1,
-  imagen2,
-  imagen3,
-  imagen4,
-  imagen5
-];
+  const fotos = [imagen1, imagen2, imagen3, imagen4, imagen5];
   const drawHeader = async (pdf) => {
     pdf.rect(10, 10, 181, 20, "D");
 
@@ -35,12 +29,9 @@ const exportPDF = async (data) => {
 
     pdf.setFontSize(9);
     pdf.setFont("helvetica", "bold");
-    pdf.text(
-      "INFORME DE VERIFICACIÓN DE LA \nINSTITUCIÓN EDUCATIVA",
-      100,
-      20,
-      { align: "center" }
-    );
+    pdf.text("INFORME DE VERIFICACIÓN DE LA \nINSTITUCIÓN EDUCATIVA", 100, 20, {
+      align: "center",
+    });
 
     const img2 = new Image();
     img2.src = logo2;
@@ -583,51 +574,48 @@ const exportPDF = async (data) => {
     y = await checkPageBreak(pdf, y);
   }
 
-  const imgWidth = 65;      // ancho de cada foto
-const imgHeight = 65;     // alto de cada foto (puedes ajustar)
-const marginLeft = 40;    // margen izquierdo
-const marginTop = 10;
-const spaceX = 6;        // espacio horizontal entre imágenes
-const spaceY = 8; 
+  const imgWidth = 65; // ancho de cada foto
+  const imgHeight = 65; // alto de cada foto (puedes ajustar)
+  const marginLeft = 40; // margen izquierdo
+  const marginTop = 10;
+  const spaceX = 6; // espacio horizontal entre imágenes
+  const spaceY = 8;
 
- let col = 0; // 0 = izquierda, 1 = derecha
+  let col = 0; // 0 = izquierda, 1 = derecha
 
-for (let fotoSrc of fotos) {
-  const img = new Image();
-  img.src = fotoSrc;
+  for (let fotoSrc of fotos) {
+    const img = new Image();
+    img.src = fotoSrc;
 
-  await new Promise(resolve => {
-    img.onload = async () => {
+    await new Promise((resolve) => {
+      img.onload = async () => {
+        // Si estamos al final de página → salto
+        if (y + imgHeight > 270) {
+          pdf.addPage();
+          await drawHeader(pdf);
+          y = 40; // reset posición
+        }
 
-      // Si estamos al final de página → salto
-      if (y + imgHeight > 270) {
-        pdf.addPage();
-        await drawHeader(pdf);
-        y = 40;  // reset posición
-      }
+        // Calcular posición según columna
+        const x = col === 0 ? marginLeft : marginLeft + imgWidth + spaceX;
 
-      // Calcular posición según columna
-      const x = col === 0 
-        ? marginLeft 
-        : marginLeft + imgWidth + spaceX;
+        pdf.addImage(img, "JPG", x, y, imgWidth, imgHeight);
 
-      pdf.addImage(img, "JPG", x, y, imgWidth, imgHeight);
+        // Cambiar a siguiente columna o fila
+        if (col === 0) {
+          col = 1; // pasar a la derecha
+        } else {
+          col = 0; // volver a izquierda
+          y += imgHeight + spaceY; // bajar fila
+        }
 
-      // Cambiar a siguiente columna o fila
-      if (col === 0) {
-        col = 1; // pasar a la derecha
-      } else {
-        col = 0;           // volver a izquierda
-        y += imgHeight + spaceY; // bajar fila
-      }
+        resolve();
+      };
+    });
+  }
 
-      resolve();
-    };
-  });
-}
-
-// Ajustar Y final por si necesitábamos espacio adicional
-y += imgHeight + spaceY;
+  // Ajustar Y final por si necesitábamos espacio adicional
+  y += imgHeight + spaceY;
 
   //formData.anexo4 ? y += 12: y += 6;
 

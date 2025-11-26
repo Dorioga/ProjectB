@@ -30,7 +30,7 @@ const PDFViewerModal = ({
             <PDFViewer pdfUrl={pdfUrl} />
           ) : (
             <div className="flex items-center justify-center h-full">
-              <p className="text-gray-500">No hay documento disponible</p>
+              <p className="text-gray-500">No hay documento disponible.</p>
             </div>
           )}
         </div>
@@ -38,7 +38,7 @@ const PDFViewerModal = ({
         <div className="flex gap-2 pt-4 justify-end">
           <SimpleButton
             onClick={handleDownload}
-            msj="Descargar"
+            msj="Descargar documento"
             icon="Download"
             bg="bg-accent"
             text="text-white"

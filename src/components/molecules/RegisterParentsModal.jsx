@@ -7,7 +7,7 @@ const RegisterParentsModal = ({ isOpen, onClose }) => {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Registrar Acudiente"
+      title="Registrar acudiente"
       size="xl"
     >
       <RegisterParents />

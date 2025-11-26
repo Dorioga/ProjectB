@@ -25,7 +25,7 @@ const Login = () => {
     navigate("/dashboard/home");
     setLoading(false);
 
-    // Peticion de Iniciar Sesion
+    // Petición de iniciar sesión
   };
   return (
     <div className="w-full grid grid-cols-1 lg:grid-cols-2 h-full">
@@ -50,12 +50,15 @@ const Login = () => {
               name="user"
               value={formData.user}
               onChange={handleChange}
-              placeholder="Username"
+              placeholder="Usuario"
               className="bg-surface px-2 py-1 rounded-md"
             />
           </div>
           <div className="flex flex-col justify-between gap-1">
-            <label htmlFor="user" className="text-surface text-xl font-bold">
+            <label
+              htmlFor="password"
+              className="text-surface text-xl font-bold"
+            >
               Contraseña
             </label>
             <input
@@ -63,13 +66,13 @@ const Login = () => {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              placeholder="Password"
+              placeholder="Contraseña"
               className="bg-surface px-2 py-1 rounded-md"
             />
           </div>
           <div className="flex flex-col justify-between pt-2">
             <SimpleButton
-              msj={"Iniciar Sesión"}
+              msj={"Iniciar sesión"}
               onClick={handleSubmit}
               bg={"bg-secondary"}
               text={"text-white"}

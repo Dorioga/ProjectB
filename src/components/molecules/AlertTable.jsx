@@ -8,7 +8,7 @@ const AlertTable = ({ alerts }) => {
     () => [
       {
         accessorKey: "nombreEstudiante",
-        header: "Nombre Estudiante",
+        header: "Nombre del estudiante",
         cell: ({ row }) => (
           <span className="font-medium">{row.original.nombreEstudiante}</span>
         ),
@@ -30,7 +30,7 @@ const AlertTable = ({ alerts }) => {
       },
       {
         accessorKey: "motivoAlerta",
-        header: "Motivo de Alerta",
+        header: "Motivo de alerta",
         cell: ({ row }) => (
           <span className="text-sm">{row.original.motivoAlerta}</span>
         ),

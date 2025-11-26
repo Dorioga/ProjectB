@@ -2,30 +2,29 @@ import { ApiClient } from "./ApiClient";
 import { studentsResponse as studentsMock } from "./DataExamples/studentsResponse";
 
 /**
- * studentService: adaptarlo a tus endpoints reales
+ * studentService: adáptalo a tus endpoints reales.
  */
 export async function getStudents(params = {}) {
   // return Promise.resolve(studentsMock);
   if (import.meta.env.DEV) {
-  } //ApiClient.get("/students", params)
+  } // ApiClient.get("/students", params)
   return studentsMock;
 }
 
 export async function getStudent(id) {
-  // intenta obtener desde API si existe (omitir aquí) y usa mock como fallback
+  // Intenta obtener desde la API si existe (omitido aquí) y usa el mock como fallback.
   const key = (id ?? "").toString().trim();
-  if (!key) throw new Error("Identificación vacía");
+  if (!key) throw new Error("Identificación vacía.");
 
   const source = Array.isArray(studentsMock) ? studentsMock : [];
 
   const found = source.find((s) => {
-    // lista de posibles campos que pueden contener la identificación
+    // Lista de posibles campos que pueden contener la identificación
     const candidates = [
       s.identification,
       s.numero_identificacion,
       s.documento,
       s.id,
-      s.identificacion,
       s.numeroDocumento,
       s.numero_identificacion_acudiente, // por si acaso
     ];
@@ -33,8 +32,8 @@ export async function getStudent(id) {
   });
 
   if (!found) {
-    // opcional: intentar llamada a API real aquí
-    throw new Error("Estudiante no encontrado");
+    // Opcional: intentar llamada a la API real aquí
+    throw new Error("Estudiante no encontrado.");
   }
 
   return found;
@@ -52,7 +51,7 @@ export async function deleteStudent(id) {
   return ApiClient.del(`/students/${id}`);
 }
 
-/* Opcional: subir foto (FormData) */
+/* Opcional: subir foto (FormData). */
 export async function uploadStudentPhoto(id, formData) {
   return ApiClient.post(`/students/${id}/photo`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
@@ -60,14 +59,14 @@ export async function uploadStudentPhoto(id, formData) {
 }
 
 export async function getRandomStudents(count = 5) {
-  // fuente de datos (usa el mock si está disponible)
+  // Fuente de datos (usa el mock si está disponible)
   const source =
     Array.isArray(studentsMock) && studentsMock.length
       ? studentsMock
       : await getStudents();
 
   const n = Math.max(0, Math.min(count, source.length));
-  // copia y baraja (Fisher-Yates)
+  // Copia y baraja (Fisher–Yates)
   const arr = source.slice();
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));

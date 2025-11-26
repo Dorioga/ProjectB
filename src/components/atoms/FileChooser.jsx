@@ -44,7 +44,7 @@ const FileChooser = ({
         mode == "default" ? "flex-row" : " flex-col"
       }`}
     >
-      {/* Input oculto */}
+      {/* Entrada de archivo oculta */}
       <input
         ref={fileInputRef}
         type="file"
@@ -60,6 +60,7 @@ const FileChooser = ({
         type="button"
         onClick={handleButtonClick}
         disabled={disabled}
+        aria-label={label}
         className={`
           flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-dashed
           transition-all duration-200 font-medium

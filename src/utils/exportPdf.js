@@ -2,13 +2,13 @@ import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 
 /**
- * Espera a que las webfonts carguen (si el navegador lo soporta)
+ * Espera a que las webfonts se carguen (si el navegador lo soporta).
  */
 async function waitForFonts() {
   try {
     if (document.fonts && document.fonts.ready) {
       await document.fonts.ready;
-      // pequeña pausa para evitar layout shift
+      // pequeña pausa para evitar layout shift.
       await new Promise((r) => setTimeout(r, 50));
     }
   } catch {}
@@ -22,7 +22,7 @@ export async function exportElementToPNG(
   filename = "export.png",
   options = {}
 ) {
-  if (!element) throw new Error("Elemento inválido para exportar a PNG");
+  if (!element) throw new Error("Elemento inválido para exportar a PNG.");
   const {
     scale = 2,
     backgroundColor = "#ffffff",
@@ -48,21 +48,23 @@ export async function exportElementToPNG(
 
 /**
  * Exporta frente y reverso del carné a un solo PDF.
- * twoPages=true → 2 páginas (cada cara en su página)
- * twoPages=false → 1 página con ambas caras lado a lado
+ * twoPages=true → 2 páginas (cada cara en su página).
+ * twoPages=false → 1 página con ambas caras lado a lado.
  */
 export async function exportCardToPDF(frontEl, backEl, opts = {}) {
   if (!frontEl || !backEl)
-    throw new Error("Faltan elementos front/back para exportar a PDF");
+    throw new Error(
+      "Faltan los elementos frontal y/o reverso para exportar a PDF."
+    );
 
   const {
     twoPages = true,
-    mmWidth = 88, // ancho típico tarjeta (mm)
-    mmHeight = 54, // alto típico tarjeta (mm)
+    mmWidth = 88, // ancho típico de tarjeta (mm)
+    mmHeight = 54, // alto típico de tarjeta (mm)
     scale = 2,
     backgroundColor = "#ffffff",
     useCORS = true,
-    fileName = "Carnet.pdf",
+    fileName = "Carné.pdf",
     logging = false,
   } = opts;
 

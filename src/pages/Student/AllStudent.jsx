@@ -50,7 +50,7 @@ const AllStudent = () => {
       },
       {
         accessorFn: (row) => `${row.grade_scholar} ${row.group_grade}`,
-        header: "Grado Curso",
+        header: "Grado / Curso",
         meta: {
           hideOnLG: true,
         },
@@ -82,7 +82,7 @@ const AllStudent = () => {
       },
       {
         accessorKey: "state_second",
-        header: "Estado Segunda Etapa ",
+        header: "Estado Segunda etapa",
         cell: ({ getValue }) => (
           <span
             className={`block w-full h-full p-4 text-center text-xs font-semibold ${
@@ -100,7 +100,7 @@ const AllStudent = () => {
       },
       {
         accessorKey: "state_beca",
-        header: "Estado Beca",
+        header: "Estado de la beca",
         cell: ({ getValue }) => (
           <span
             className={`block w-full h-full p-4 text-center text-xs font-semibold ${
@@ -118,7 +118,7 @@ const AllStudent = () => {
       },
       {
         accessorKey: "state_process",
-        header: "Estado Proceso",
+        header: "Estado del proceso",
         cell: ({ getValue }) => (
           <span
             className={`block w-full h-full p-4 text-center text-xs font-semibold ${
@@ -162,7 +162,7 @@ const AllStudent = () => {
     <div className="border p-6 rounded bg-bg h-full gap-4 flex flex-col">
       {alerts.length > 0 && <AlertTable alerts={alerts} />}
       <div className="w-full flex justify-between items-center bg-primary text-white p-3 rounded-t-lg">
-        <h2 className="text-2xl font-bold">Datos Estudiantes</h2>
+        <h2 className="text-2xl font-bold">Datos de estudiantes</h2>
       </div>
       <DataTable
         data={students}

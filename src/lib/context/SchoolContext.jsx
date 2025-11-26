@@ -15,11 +15,11 @@ export function SchoolProvider({ children }) {
     setError(null);
     try {
       const res = await schoolService.getSchools();
-      // Ajusta según la forma en que tu API devuelve datos
+      // Ajusta según la forma en que tu API devuelve los datos
       setSchools(Array.isArray(res) ? res : res?.data ?? []);
     } catch (err) {
       setError(err);
-      // no throw aquí para no romper montaje
+      // No volver a lanzar aquí para no interrumpir el montaje
     } finally {
       setLoading(false);
     }

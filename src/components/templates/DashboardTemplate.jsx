@@ -8,10 +8,10 @@ const DashboardTemplate = ({ data, options }) => {
     <div className="min-h-screen flex flex-row w-full">
       <Sidebar />
 
-      {/* Main con margen para el sidebar */}
+      {/* Área principal con margen para la barra lateral */}
       <main
         className={`flex-1 flex flex-col py-10 px-5  overflow-y-auto ${
-          isOpen ? "xl:pl-85 " : "pl-20"
+          isOpen ? "xl:pl-85" : "pl-20"
         }`}
       >
         <Outlet />

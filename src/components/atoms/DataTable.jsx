@@ -110,7 +110,7 @@ const DataTable = ({ data, columns, fileName = "export", mode = null }) => {
                 bg="bg-green-600"
                 icon="Download"
                 text="text-white"
-                msj="Descargar Archivos Habeas Data"
+                msj="Descargar archivos (Habeas Data)"
               />
               <SimpleButton
                 onClick={() => {
@@ -120,7 +120,7 @@ const DataTable = ({ data, columns, fileName = "export", mode = null }) => {
                 bg="bg-green-600"
                 icon="Download"
                 text="text-white"
-                msj="Descargar Archivos Auditoria"
+                msj="Descargar archivos de auditoria"
               />
             </>
           )}
@@ -292,7 +292,7 @@ const DataTable = ({ data, columns, fileName = "export", mode = null }) => {
         onClose={() => setIsOpen(false)}
         type={downloadTypeMode}
         title={
-          downloadTypeMode === "all" ? "Documentos Auditoria" : "Habeas Data"
+          downloadTypeMode === "all" ? "Documentos de auditoría" : "Habeas Data"
         }
       />
     </div>

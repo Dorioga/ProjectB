@@ -5,7 +5,7 @@ import SimpleButton from "../atoms/SimpleButton.jsx";
 import RegisterParentsModal from "./RegisterParentsModal.jsx";
 const HabeasDataModal = ({ isOpen, onClose, idEstudiante, mode = "view" }) => {
   const [isLoading, setIsLoading] = useState(false);
-  console.log("ID Estudiante en SignatureFormatModal:", idEstudiante);
+  console.log("ID del estudiante en HabeasDataModal:", idEstudiante);
 
   const { getStudent } = useStudent();
   const [idStudentSelected, setIdStudentSelected] = useState(
@@ -55,7 +55,7 @@ const HabeasDataModal = ({ isOpen, onClose, idEstudiante, mode = "view" }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idEstudiante]);
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Formato de Firma" size="xl">
+    <Modal isOpen={isOpen} onClose={onClose} title="Formato de firma" size="xl">
       <div className="signature-format-modal">
         <div className="modal-content">
           <div className="p-4 border-2 border-dashed rounded-lg w-full">
@@ -99,10 +99,10 @@ const HabeasDataModal = ({ isOpen, onClose, idEstudiante, mode = "view" }) => {
                 (idEstudiante || idStudentSelected || "").toString().trim()
               ) && (
                 <div className="gap-2 mt-4 flex flex-row items-center">
-                  <h3>Es usted el acudiente actual del estudiante?</h3>
+                  <h3>¿Es usted el acudiente actual del estudiante?</h3>
                   <div className="w-1/3 flex flex-row gap-4">
                     <SimpleButton
-                      msj="Si"
+                      msj="Sí"
                       bg="bg-accent"
                       text="text-white"
                       icon="Check"
@@ -127,12 +127,12 @@ const HabeasDataModal = ({ isOpen, onClose, idEstudiante, mode = "view" }) => {
                 <div>
                   <div>
                     <p className="mt-4 text-sm">
-                      AUTORIZACIÓN Yo,
+                      AUTORIZACIÓN. Yo,
                       <strong>
                         {" " + studentSelected?.nombre_acudiente + ", "}
                       </strong>
                       identificado(a) con{" "}
-                      {studentSelected?.tipo_documento_acudiente} No.
+                      {studentSelected?.tipo_documento_acudiente} n.º{" "}
                       <strong>
                         {studentSelected?.numero_identificacion_acudiente}
                       </strong>
@@ -147,7 +147,7 @@ const HabeasDataModal = ({ isOpen, onClose, idEstudiante, mode = "view" }) => {
                           studentSelected?.second_lastname}
                       </strong>
                       , identificado(a) con{" "}
-                      {studentSelected?.identificationType} No.
+                      {studentSelected?.identificationType} n.º{" "}
                       {studentSelected?.identification}, autorizo de manera
                       expresa a la institución{" "}
                       <strong>{studentSelected?.name_school}</strong> para la

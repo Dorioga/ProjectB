@@ -25,7 +25,8 @@ const PreviewIMG = ({ path, size }) => {
     <div className="">
       <img
         src={path}
-        alt="Preview"
+        alt="Vista previa"
+        title="Vista previa"
         className={`${imgSizeClass} ${aspectRatioClass} object-cover rounded`}
       />
     </div>

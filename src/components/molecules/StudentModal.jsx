@@ -4,8 +4,8 @@ import ProfileStudent from "./ProfileStudent";
 const StudentModal = ({ isOpen, onClose, student, onSave }) => {
   // Determina el título del modal
   const modalTitle = student
-    ? "Perfil del Estudiante"
-    : "Crear Nuevo Estudiante";
+    ? "Perfil del estudiante"
+    : "Crear nuevo estudiante";
 
   return (
     <Modal

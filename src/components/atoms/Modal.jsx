@@ -7,15 +7,15 @@ const Modal = ({
   onClose = () => {},
   children,
   title,
-  size = "lg", // 1. Añade la prop 'size' con un valor por defecto
+  size = "lg", // tamaño por defecto
 }) => {
   const containerRef = useRef(null);
 
-  // 2. Mapea los tamaños a las clases de Tailwind CSS
+  // Mapear tamaños a clases Tailwind
   const sizeClasses = {
     sm: "max-w-sm",
     md: "max-w-md",
-    lg: "max-w-lg", // El que tenías por defecto
+    lg: "max-w-lg",
     xl: "max-w-xl",
     "2xl": "max-w-2xl",
     "3xl": "max-w-3xl",
@@ -26,7 +26,7 @@ const Modal = ({
   useEffect(() => {
     if (!isOpen) return;
     const onKey = (e) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") onClose(); // tecla Escape cierra el modal
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
@@ -35,7 +35,7 @@ const Modal = ({
   if (!isOpen) return null;
 
   const onBackdropMouseDown = (e) => {
-    // close when clicking outside the modal content
+    // cerrar al hacer click fuera del contenido del modal
     if (containerRef.current && !containerRef.current.contains(e.target)) {
       onClose();
     }
@@ -50,7 +50,6 @@ const Modal = ({
     >
       <div
         ref={containerRef}
-        // 3. Aplica la clase de tamaño dinámicamente
         className={`bg-white rounded shadow-lg w-full max-h-[90vh] flex flex-col ${
           sizeClasses[size] || sizeClasses.lg
         }`}
@@ -63,6 +62,8 @@ const Modal = ({
               <CircleX
                 className="cursor-pointer text-white h-10 w-10"
                 onClick={onClose}
+                role="button"
+                aria-label="Cerrar"
               />
             </div>
           </div>

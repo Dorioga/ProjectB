@@ -5,18 +5,18 @@ const BASE = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
 let authToken = null;
 
 /**
- * Instancia axios centralizada
+ * Instancia axios centralizada.
  */
 const instance = axios.create({
   baseURL: BASE,
   headers: {
     Accept: "application/json",
   },
-  withCredentials: true, // útil si el backend usa cookies HttpOnly
+  withCredentials: true, // Útil si el backend usa cookies HttpOnly.
 });
 
 /**
- * Request interceptor: añade Authorization si hay token en memoria
+ * Interceptor de peticiones: añade Authorization si hay token en memoria.
  */
 instance.interceptors.request.use((config) => {
   if (authToken) {
@@ -27,13 +27,15 @@ instance.interceptors.request.use((config) => {
 });
 
 /**
- * Response interceptor: normaliza errores
+ * Interceptor de respuestas: normaliza errores.
  */
 instance.interceptors.response.use(
   (res) => res.data,
   (error) => {
     const res = error.response;
-    const err = new Error(res?.data?.message || error.message || "API error");
+    const err = new Error(
+      res?.data?.message || error.message || "Error de la API"
+    );
     err.status = res?.status;
     err.data = res?.data;
     return Promise.reject(err);
@@ -41,7 +43,7 @@ instance.interceptors.response.use(
 );
 
 /**
- * Establecer token en memoria (y en headers por si se quiere)
+ * Establecer token en memoria (y en headers por si se desea).
  */
 export function setAuthToken(token) {
   authToken = token;

@@ -138,38 +138,40 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
             <PreviewIMG path={photoPreview} size="profile" />
           </div>
           <div className="flex flex-col pb-4 lg:col-span-2">
-            <h2 className="text-2xl font-semibold pb-4">Información Básica</h2>
+            <h2 className="text-2xl font-semibold pb-4">Información básica</h2>
             <div className="flex flex-row gap-4 items-center">
               <label className="text-lg font-medium">
-                Tipo de Identificación:
+                Tipo de identificación:
               </label>
               <p>{data.identificationType}</p>
             </div>
             <div className="flex flex-row gap-4 items-center">
               <label className="text-lg font-medium">
-                Numero de Identificacion:
+                Número de identificación:
               </label>
               <p>{data.identification}</p>
             </div>
             <div className="flex flex-row gap-4 items-center">
-              <label className="text-lg font-medium">Nombre Completo:</label>
+              <label className="text-lg font-medium">Nombre completo:</label>
               <p>
                 {data.first_name} {data.second_name} {data.first_lastname}{" "}
                 {data.second_lastname}
               </p>
             </div>
             <div className="flex flex-row gap-4 items-center">
-              <label className="text-lg font-medium">Genero:</label>
+              <label className="text-lg font-medium">Género:</label>
               <p>{data.genre}</p>
             </div>
             <div className="flex flex-row gap-4 items-center">
-              <label className="text-lg font-medium">Fecha Nacimiento:</label>
+              <label className="text-lg font-medium">
+                Fecha de nacimiento:
+              </label>
               <p>{data.birthday}</p>
             </div>
           </div>
         </div>
         <div className="p-4 bg-bg rounded-lg shadow-md">
-          <h2 className="text-2xl font-semibold pb-4">Información Escolar</h2>
+          <h2 className="text-2xl font-semibold pb-4">Información escolar</h2>
           <div className="flex flex-row gap-4 items-center">
             <label className="text-lg font-medium">Institución:</label>
             <p>{data.name_school}</p>
@@ -184,7 +186,7 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
           </div>
         </div>
         <div className="p-4 bg-bg rounded-lg shadow-md">
-          <h2 className="text-2xl font-semibold pb-4">Informacion Familiar</h2>
+          <h2 className="text-2xl font-semibold pb-4">Información familiar</h2>
           <div className="flex flex-row gap-4 items-center">
             <label className="text-lg font-medium">
               Tipo Documento Acudiente:
@@ -208,7 +210,7 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
         </div>
         <div className="p-4 bg-bg rounded-lg shadow-md">
           <h2 className="text-2xl font-semibold pb-4">
-            Estados del Estudiante
+            Estados del estudiante
           </h2>
 
           <div className="flex flex-col gap-3">
@@ -228,7 +230,7 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
                 <div className="">
                   <SimpleButton
                     onClick={() => setIsOpenCamera(true)}
-                    msj="Tomar Foto"
+                    msj="Tomar foto"
                     bg="bg-accent"
                     icon="Camera"
                     text="text-white"
@@ -265,7 +267,9 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
 
             {/* Estado Institucional */}
             <div className="grid grid-cols-3 gap-4 items-center">
-              <label className="text-lg font-medium w-48">Estado Beca:</label>
+              <label className="text-lg font-medium w-48">
+                Estado de la beca:
+              </label>
 
               {isEditing ? (
                 <select
@@ -294,7 +298,7 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
             {/* Estado Proceso */}
             <div className="grid grid-cols-3 gap-4 items-center">
               <label className="text-lg font-medium w-48">
-                Estado Proceso:
+                Estado del proceso:
               </label>
 
               {isEditing ? (
@@ -330,7 +334,7 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
                 editedData.state_process === "SinExcusa") && (
                 <SimpleButton
                   onClick={() => setIsOpenExcuse(true)}
-                  msj={isEditing ? "Cargar Excusa" : "Ver Excusa"}
+                  msj={isEditing ? "Cargar excusa" : "Ver excusa"}
                   bg="bg-accent"
                   icon="Save"
                   text="text-white"
@@ -371,7 +375,7 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
                   label={
                     documentFiles.habeas_data
                       ? documentFiles.habeas_data.name
-                      : "Cargar Archivo"
+                      : "Cargar archivo"
                   }
                 />
               </div>
@@ -384,7 +388,7 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
                     name: "Documento Habeas Data",
                   });
                 }}
-                msj="Ver Documento"
+                msj="Ver documento"
                 bg="bg-accent"
                 icon="View"
                 text="text-white"
@@ -396,13 +400,13 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
                 label={
                   documentFiles.habeas_data
                     ? documentFiles.habeas_data.name
-                    : "Cargar Archivo"
+                    : "Cargar archivo"
                 }
               />
             )}
           </div>
           <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-4 items-center">
-            <label className="text-lg font-medium">Ficha Matricula:</label>
+            <label className="text-lg font-medium">Ficha de matrícula:</label>
             <span
               className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
                 data.auDoc_matricula.includes("https://")
@@ -464,7 +468,7 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
                   label={
                     documentFiles.id_Acudiente
                       ? documentFiles.id_Acudiente.name
-                      : "Cargar Archivo"
+                      : "Cargar archivo"
                   }
                 />
               </div>
@@ -489,7 +493,7 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
                 label={
                   documentFiles.id_Acudiente
                     ? documentFiles.id_Acudiente.name
-                    : "Cargar Archivo"
+                    : "Cargar archivo"
                 }
               />
             )}
@@ -525,7 +529,7 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
                   label={
                     documentFiles.id_Student
                       ? documentFiles.id_Student.name
-                      : "Cargar Archivo"
+                      : "Cargar archivo"
                   }
                 />
               </div>
@@ -550,7 +554,7 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
                 label={
                   documentFiles.id_Student
                     ? documentFiles.id_Student.name
-                    : "Cargar Archivo"
+                    : "Cargar archivo"
                 }
               />
             )}
@@ -558,8 +562,8 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
         </div>
         <div className="p-4 bg-bg rounded-lg shadow-md">
           <h2 className="text-2xl font-semibold pb-4">Historial</h2>
-          <p>Fecha de Ingreso: {data.fecha_ingreso}</p>
-          <p>Ultima Actualización: {data.ultima_actualizacion}</p>
+          <p>Fecha de ingreso: {data.fecha_ingreso}</p>
+          <p>Última actualización: {data.ultima_actualizacion}</p>
         </div>
       </div>
       <CameraModal

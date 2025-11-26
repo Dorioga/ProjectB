@@ -45,10 +45,10 @@ const UpdateSchool = ({ isUpdate = true }) => {
         className="grid grid-cols-1 md:grid-cols-2 gap-4"
       >
         <h2 className="text-xl font-semibold mb-2 md:col-span-2">
-          {isUpdate ? "Actualizar Institución" : "Registrar Nueva Institución"}
+          {isUpdate ? "Actualizar institución" : "Registrar nueva institución"}
         </h2>
         <div className="md:col-span-2">
-          <label>Nombre de la Institución</label>
+          <label>Nombre de la institución</label>
           <input
             type="text"
             name="name"
@@ -79,7 +79,7 @@ const UpdateSchool = ({ isUpdate = true }) => {
           />
         </div>
         <div>
-          <label>Correo Electrónico</label>
+          <label>Correo electrónico</label>
           <input
             type="email"
             name="email"
@@ -89,7 +89,7 @@ const UpdateSchool = ({ isUpdate = true }) => {
           />
         </div>
         <div className="">
-          <label>Nombre del Director</label>
+          <label>Nombre del director</label>
           <input
             type="text"
             name="principalName"
@@ -99,7 +99,7 @@ const UpdateSchool = ({ isUpdate = true }) => {
           />
         </div>
         <div className="">
-          <label>Firma del Director</label>
+          <label>Firma del director</label>
           <FileChooser
             name="signaturePrincipal"
             onChange={handleChange}
@@ -107,7 +107,7 @@ const UpdateSchool = ({ isUpdate = true }) => {
           />
         </div>
         <div className="md:col-span-2">
-          <label>Nombre del Coordinador</label>
+          <label>Nombre del coordinador</label>
           <input
             type="text"
             name="coordinadorName"
@@ -117,7 +117,7 @@ const UpdateSchool = ({ isUpdate = true }) => {
           />
         </div>
         <div className="">
-          <label>Logo de la Institución</label>
+          <label>Logo de la institución</label>
           <FileChooser
             name="logo"
             onChange={handleChange}
@@ -129,7 +129,7 @@ const UpdateSchool = ({ isUpdate = true }) => {
           <SimpleButton
             onClick={() => setIsThemeModalOpen(true)}
             className="mt-2"
-            msj={"Modificar Tema"}
+            msj={"Modificar tema"}
             icon={"Pencil"}
             text={"text-white"}
             bg={"bg-accent"}
@@ -139,7 +139,7 @@ const UpdateSchool = ({ isUpdate = true }) => {
           <SimpleButton
             onClick={() => console.log("Acción secundaria")}
             className="mt-2"
-            msj={"Actualizar Institucion"}
+            msj={"Actualizar institución"}
             icon={"Save"}
             text={"text-white"}
             bg={"bg-accent"}

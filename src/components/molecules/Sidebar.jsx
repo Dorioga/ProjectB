@@ -81,7 +81,7 @@ const Sidebar = () => {
           onClick={logout}
         >
           <LogOut className="text-xl" />
-          {isOpen ? <h2 className="text-lg">Cerrar Sesión</h2> : null}
+          {isOpen ? <h2 className="text-lg">Cerrar sesión</h2> : null}
         </button>
       </div>
     </div>

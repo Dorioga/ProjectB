@@ -41,13 +41,13 @@ const RegisterParents = () => {
 
   return (
     <div className="border p-6 rounded bg-bg h-full gap-4 flex flex-col">
-      <h2 className="text-xl font-semibold mb-4">Registrar Acudiente</h2>
+      <h2 className="text-xl font-semibold mb-4">Registrar acudiente</h2>
       <form
         onSubmit={handleSubmit}
         className="grid grid-cols-1 md:grid-cols-2 gap-4"
       >
         <div>
-          <label>Tipo de Documento</label>
+          <label>Tipo de documento</label>
           <select
             name="tipo_documento_acudiente"
             value={formData.tipo_documento_acudiente}
@@ -61,7 +61,7 @@ const RegisterParents = () => {
           </select>
         </div>
         <div>
-          <label>N° Identificación</label>
+          <label>N.º de identificación</label>
           <input
             type="text"
             name="numero_identificacion_acudiente"
@@ -71,7 +71,7 @@ const RegisterParents = () => {
           />
         </div>
         <div className="md:col-span-2">
-          <label>Nombre Completo</label>
+          <label>Nombre completo</label>
           <input
             type="text"
             name="nombre_acudiente"
@@ -91,12 +91,12 @@ const RegisterParents = () => {
           />
         </div>
         <div>
-          <label>Foto Documento Acudiente</label>
+          <label>Foto del documento del acudiente</label>
           <FileChooser name="img_idacudiente" onChange={handleChange} />
         </div>
         <div className="md:col-span-2 mt-4">
           <SimpleButton
-            msj="Registrar Acudiente"
+            msj="Registrar acudiente"
             text={"text-white"}
             bg={"bg-accent"}
             icon={"Save"}

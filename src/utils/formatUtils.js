@@ -1,6 +1,6 @@
 /**
  * Formatea una fecha tipo 'YYYYMMDD' o 'YYYY-MM-DD' a 'DD/MM/YYYY'.
- * Si no es válida, retorna el string original o "N/A".
+ * Si no es válida, devuelve la cadena original o "N/A".
  */
 export function formatDate(dateStr) {
   if (!dateStr) return "N/A";
@@ -19,8 +19,8 @@ export function formatDate(dateStr) {
 }
 
 /**
- * Formatea un número a string con separador de miles y decimales.
- * Si no es válido, retorna el string original o "N/A".
+ * Formatea un número a cadena con separador de miles y decimales.
+ * Si no es válido, devuelve la cadena original o "N/A".
  */
 export function formatNumber(num) {
   if (num === null || num === undefined || num === "") return "N/A";
@@ -31,7 +31,7 @@ export function formatNumber(num) {
 
 /**
  * Valida un correo electrónico simple.
- * Retorna true si el string cumple un patrón razonable de email.
+ * Devuelve true si la cadena cumple un patrón razonable de email.
  * No pretende validar todos los casos RFC, pero es suficiente para UI.
  * @param {string} email
  * @returns {boolean}
@@ -48,7 +48,7 @@ export function isValidEmail(email) {
  * - mínimo 8 caracteres
  * - al menos una letra
  * - al menos un número
- * Opcional: puedes ajustar la regex para requerir mayúsculas, símbolos, etc.
+ * Opcional: puedes ajustar la expresión regular (regex) para requerir mayúsculas, símbolos, etc.
  * @param {string} password
  * @returns {boolean}
  */
@@ -69,9 +69,9 @@ export function passwordsMatch(p1, p2) {
 }
 
 /**
- * Permite solo números en un input.
+ * Permite solo números en una entrada.
  * Uso: onChange={(e) => handleNumericInput(e, setValor)}
- * @param {Event} event - El evento del input
+ * @param {Event} event - El evento de la entrada
  * @param {Function} setter - Función setState para actualizar el valor
  * @param {Object} options - Opciones adicionales
  * @param {number} options.maxLength - Longitud máxima permitida
@@ -106,7 +106,7 @@ export function handleNumericInput(event, setter, options = {}) {
 }
 
 /**
- * Valida que un string contenga solo números.
+ * Valida que una cadena contenga solo números.
  * @param {string} str
  * @returns {boolean}
  */
@@ -116,7 +116,7 @@ export function isNumeric(str) {
 }
 
 /**
- * Formatea un número de teléfono (ej: 3001234567 -> 300 123 4567)
+ * Formatea un número de teléfono (p. ej.: 3001234567 -> 300 123 4567)
  * @param {string} phone
  * @returns {string}
  */
@@ -133,7 +133,7 @@ export function formatPhoneNumber(phone) {
 }
 
 /**
- * Formatea un número de documento (ej: 1234567890 -> 1.234.567.890)
+ * Formatea un número de documento (p. ej.: 1234567890 -> 1.234.567.890)
  * @param {string} doc
  * @returns {string}
  */
@@ -144,7 +144,7 @@ export function formatDocument(doc) {
 }
 
 /**
- * Limpia un string dejando solo números.
+ * Limpia una cadena dejando solo números.
  * @param {string} str
  * @returns {string}
  */
@@ -154,7 +154,7 @@ export function onlyNumbers(str) {
 }
 
 /**
- * Compara si la fecha actual es posterior a la fecha de cierre
+ * Comprueba si la fecha actual es posterior a la fecha de cierre.
  * @param {string} endDate - Fecha en formato 'YYYY-MM-DD'
  * @returns {boolean} - true si hoy es después de la fecha de cierre
  */
@@ -163,7 +163,7 @@ export function isAfterEndDate(endDate) {
 
   const today = new Date();
 
-  // ✅ Crear la fecha en zona horaria local sin conversión UTC
+  // Crear la fecha en zona horaria local sin conversión UTC
   const [year, month, day] = endDate.split("-");
   const closeDate = new Date(year, month - 1, day); // mes es 0-indexed
 

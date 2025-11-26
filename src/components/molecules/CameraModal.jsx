@@ -35,9 +35,9 @@ const CameraModal = ({ isOpen, onClose, onImageCapture }) => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Tomar Foto con Cámara">
+    <Modal isOpen={isOpen} onClose={handleClose} title="Tomar foto con cámara">
       <div className="grid grid-cols-2 gap-4 bg-white text-center">
-        <h1 className="text-3xl font-bold col-span-2">Foto Estudiante</h1>
+        <h1 className="text-3xl font-bold col-span-2">Foto del estudiante</h1>
         <div className="grid grid-cols-1 xl:grid-cols-2 col-span-2 gap-2 place-items-center">
           <div className="grid grid-cols-1 place-items-center gap-4">
             <h2 className="text-2xl text-center font-semibold">Cámara</h2>
@@ -54,7 +54,7 @@ const CameraModal = ({ isOpen, onClose, onImageCapture }) => {
           {image && (
             <div className="grid grid-cols-1 gap-4 h-full place-items-center text-center xl:place-items-start">
               <h2 className="text-2xl text-center font-semibold w-full">
-                Vista Previa
+                Vista previa
               </h2>
               <img
                 src={image}
@@ -67,7 +67,7 @@ const CameraModal = ({ isOpen, onClose, onImageCapture }) => {
 
         <SimpleButton
           onClick={capture}
-          msj="Tomar Foto"
+          msj="Tomar foto"
           bg="bg-accent"
           icon="Aperture"
           text="text-white"
@@ -75,7 +75,7 @@ const CameraModal = ({ isOpen, onClose, onImageCapture }) => {
         <SimpleButton
           onClick={savePhoto}
           disabled={!image}
-          msj="Guardar Foto"
+          msj="Guardar foto"
           icon="Save"
           bg={image ? "bg-primary" : "bg-gray-400"}
           text="text-white"

@@ -51,15 +51,15 @@ const RegisterStudent = () => {
 
   return (
     <div className="border p-6 rounded bg-bg h-full gap-4 flex flex-col">
-      <h2 className="text-xl font-semibold mb-4">Registrar Estudiante</h2>
+      <h2 className="text-xl font-semibold mb-4">Registrar estudiante</h2>
       <form
         onSubmit={handleSubmit}
         className="grid grid-cols-1 md:grid-cols-3 gap-4"
       >
         {/* -- Campos del formulario -- */}
-        <div className="md:col-span-3 font-bold">Información Personal</div>
+        <div className="md:col-span-3 font-bold">Información personal</div>
         <div>
-          <label>Tipo de Documento</label>
+          <label>Tipo de documento</label>
           <select
             name="identificationType"
             value={formData.identificationType}
@@ -73,7 +73,7 @@ const RegisterStudent = () => {
           </select>
         </div>
         <div>
-          <label>N° Identificación</label>
+          <label>N.º de identificación</label>
           <input
             type="text"
             name="identification"
@@ -93,7 +93,7 @@ const RegisterStudent = () => {
           />
         </div>
         <div>
-          <label>Primer Nombre</label>
+          <label>Primer nombre</label>
           <input
             type="text"
             name="first_name"
@@ -103,7 +103,7 @@ const RegisterStudent = () => {
           />
         </div>
         <div>
-          <label>Segundo Nombre</label>
+          <label>Segundo nombre</label>
           <input
             type="text"
             name="second_name"
@@ -113,7 +113,7 @@ const RegisterStudent = () => {
           />
         </div>
         <div>
-          <label>Primer Apellido</label>
+          <label>Primer apellido</label>
           <input
             type="text"
             name="first_lastname"
@@ -123,7 +123,7 @@ const RegisterStudent = () => {
           />
         </div>
         <div>
-          <label>Segundo Apellido</label>
+          <label>Segundo apellido</label>
           <input
             type="text"
             name="second_lastname"
@@ -145,7 +145,7 @@ const RegisterStudent = () => {
           </select>
         </div>
         <div>
-          <label>Fecha de Nacimiento</label>
+          <label>Fecha de nacimiento</label>
           <input
             type="date"
             name="birthday"
@@ -156,7 +156,7 @@ const RegisterStudent = () => {
         </div>
 
         <div className="md:col-span-3 font-bold mt-4">
-          Información Académica
+          Información académica
         </div>
         <div>
           <label>Jornada</label>
@@ -193,10 +193,10 @@ const RegisterStudent = () => {
         </div>
 
         <div className="md:col-span-3 font-bold mt-4">
-          Datos Complementarios
+          Datos complementarios
         </div>
         <div>
-          <label>Foto del Estudiante</label>
+          <label>Foto del estudiante</label>
           <FileChooser name="url_photo" onChange={handleChange} />
         </div>
         <div>
@@ -208,7 +208,7 @@ const RegisterStudent = () => {
             className="w-full p-2 border rounded bg-white"
           >
             <option value=""></option>
-            <option value={true}>Si</option>
+            <option value={true}>Sí</option>
             <option value={false}>No</option>
           </select>
         </div>
@@ -216,20 +216,20 @@ const RegisterStudent = () => {
           <input
             type="checkbox"
             name="habeas_data"
-            checked={formData.habeas_data === "Si"}
+            checked={formData.habeas_data === "Sí"}
             onChange={(e) =>
               setFormData((prev) => ({
                 ...prev,
-                habeas_data: e.target.checked ? "Si" : "No",
+                habeas_data: e.target.checked ? "Sí" : "No",
               }))
             }
           />
-          <label>Acepta Habeas Data</label>
+          <label>¿Acepta Habeas Data?</label>
         </div>
 
         <div className="md:col-span-3 mt-4 flex justify-center ">
           <SimpleButton
-            msj="Registrar"
+            msj="Registrar estudiante"
             text={"text-white"}
             bg={"bg-accent"}
             icon={"Save"}

@@ -1,6 +1,6 @@
 /**
  * Sistema centralizado de gestión de temas
- * No necesita Context porque manipula directamente CSS variables
+ * No necesita Contexto de React porque manipula directamente las variables CSS.
  */
 
 const STORAGE_KEY = "app-theme";
@@ -20,11 +20,11 @@ export const DEFAULT_THEME = {
 };
 
 /**
- * Aplica un tema al DOM (CSS variables en :root)
+ * Aplica un tema al DOM (variables CSS en :root).
  */
 export function applyTheme(themeObj) {
   if (!themeObj || typeof themeObj !== "object") {
-    console.warn("Tema inválido");
+    console.warn("Tema inválido.");
     return;
   }
 
@@ -35,37 +35,37 @@ export function applyTheme(themeObj) {
 }
 
 /**
- * Guarda el tema en localStorage
+ * Guarda el tema en localStorage.
  */
 export function saveTheme(themeObj) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(themeObj));
   } catch (error) {
-    console.error("Error guardando tema:", error);
+    console.error("Error al guardar el tema:", error);
   }
 }
 
 /**
- * Carga el tema desde localStorage (o default si no existe)
+ * Carga el tema desde localStorage (o por defecto si no existe).
  */
 export function loadTheme() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
-      // Validar que tenga las keys esperadas
+      // Validar que tenga las claves esperadas
       if (Object.keys(DEFAULT_THEME).every((k) => k in parsed)) {
         return parsed;
       }
     }
   } catch (error) {
-    console.error("Error cargando tema:", error);
+    console.error("Error al cargar el tema:", error);
   }
   return DEFAULT_THEME;
 }
 
 /**
- * Aplica y guarda un tema (operación atómica)
+ * Aplica y guarda un tema (operación atómica).
  */
 export function setTheme(themeObj) {
   applyTheme(themeObj);
@@ -73,7 +73,7 @@ export function setTheme(themeObj) {
 }
 
 /**
- * Inicializa el tema al arrancar la app
+ * Inicializa el tema al iniciar la app.
  */
 export function initTheme() {
   const theme = loadTheme();
@@ -82,7 +82,7 @@ export function initTheme() {
 }
 
 /**
- * Restaura el tema por defecto
+ * Restaura el tema por defecto.
  */
 export function resetTheme() {
   setTheme(DEFAULT_THEME);
@@ -90,7 +90,7 @@ export function resetTheme() {
 }
 
 /**
- * Obtiene el tema actual desde el DOM
+ * Obtiene el tema actual desde el DOM.
  */
 export function getCurrentTheme() {
   const root = document.documentElement;

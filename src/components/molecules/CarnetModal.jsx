@@ -33,7 +33,7 @@ const CarnetModal = ({ isOpen, onClose, data }) => {
     );
   };
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Carné del Estudiante">
+    <Modal isOpen={isOpen} onClose={onClose} title="Carné del estudiante">
       {/* Estilos de impresión: sólo imprime el contenedor del carné */}
       <div className="flex flex-col gap-4  rounded-lg " ref={cardRef}>
         {data ? (
@@ -53,19 +53,19 @@ const CarnetModal = ({ isOpen, onClose, data }) => {
               </div>
               <div className="col-span-3 px-1 py-2 text-center">
                 <div>
-                  <h3 className="font-semibold">Nombre Completo</h3>
+                  <h3 className="font-semibold">Nombre completo</h3>
                   <p>{fullName}</p>
                 </div>
                 <div>
-                  <h3 className="font-semibold">Genero</h3>
+                  <h3 className="font-semibold">Género</h3>
                   <p>{data.genre}</p>
                 </div>
                 <div>
-                  <h3 className="font-semibold">Documento de Identidad</h3>
+                  <h3 className="font-semibold">Documento de identidad</h3>
                   <p>{data.identification}</p>
                 </div>
                 <div>
-                  <h3 className="font-semibold">Grado y Curso</h3>
+                  <h3 className="font-semibold">Grado y curso</h3>
                   <p>
                     {data.grade_scholar} {data.group_grade}
                   </p>
@@ -88,8 +88,8 @@ const CarnetModal = ({ isOpen, onClose, data }) => {
                 <div className="py-2">
                   <h3 className="font-bold text-3xl">Información</h3>
                   <p className="text-center">
-                    Este carnet es personal e intransferible, el uso inadecuado
-                    de este documento es responsabilidad del titular
+                    Este carné es personal e intransferible; el uso inadecuado
+                    de este documento es responsabilidad del titular.
                   </p>
                 </div>
                 <div className="w-full">
