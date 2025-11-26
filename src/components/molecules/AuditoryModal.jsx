@@ -47,10 +47,6 @@ const AuditoryModal = ({ isOpen, onClose, mode, data }) => {
       ? isAfterEndDate(formData.enddate)
       : false;
 
-  console.log("isBlocked:", isBlocked);
-  console.log("enddate:", formData.enddate);
-  console.log("endact:", filesData.endact);
-
   useEffect(() => {
     if (mode === "view" && data) {
       setFormData({
@@ -122,7 +118,6 @@ const AuditoryModal = ({ isOpen, onClose, mode, data }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Datos de auditoría:", formData);
     setIsEditing(false);
     onClose();
   };

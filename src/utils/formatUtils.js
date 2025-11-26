@@ -171,6 +171,5 @@ export function isAfterEndDate(endDate) {
   today.setHours(0, 0, 0, 0);
   closeDate.setHours(0, 0, 0, 0);
 
-  console.log("Comparando fechas:", today, closeDate, today > closeDate);
   return today > closeDate;
 }

@@ -1,6 +1,4 @@
 import { jsPDF } from "jspdf";
-// import Chart from "chart.js/auto";
-// import ChartDataLabels from "chartjs-plugin-datalabels";
 import logo from "../../assets/2399.webp";
 import estadisticas from "../../assets/Infographics_004.webp";
 import logo2 from "../../assets/2399.webp";
@@ -10,56 +8,84 @@ import imagen3 from "../../assets/concepto-de-tecnologia-futurista.webp";
 import imagen4 from "../../assets/personas-analizando-y-revisando-graficos-financieros-en-la-oficina.webp";
 import imagen5 from "../../assets/primer-plano-de-empresario-escribiendo-en-una-reunion.webp";
 
-// Chart.register(ChartDataLabels);
+/**
+ * Función auxiliar para redimensionar y comprimir imágenes.
+ * @param {string} src - Ruta de la imagen.
+ * @param {number} quality - Calidad JPEG (0 a 1). 0.6 es buen balance.
+ * @param {number} maxWidth - Ancho máximo en píxeles (800px es suficiente para A4).
+ */
+const compressImage = (src, quality = 0.6, maxWidth = 800) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.src = src;
+    img.crossOrigin = "Anonymous"; // Importante si las imágenes vienen de otro dominio
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      let width = img.width;
+      let height = img.height;
+
+      // Calcular nuevas dimensiones manteniendo el aspecto
+      if (width > maxWidth) {
+        height = Math.round((height * maxWidth) / width);
+        width = maxWidth;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Convertir a Data URL (JPEG comprimido)
+      const dataUrl = canvas.toDataURL("image/jpeg", quality);
+      resolve(dataUrl);
+    };
+    img.onerror = (err) => reject(err);
+  });
+};
 
 const exportPDF = async (data) => {
-  //encabezado en cada página
-  const fotos = [imagen1, imagen2, imagen3, imagen4, imagen5];
-  const drawHeader = async (pdf) => {
-    pdf.rect(10, 10, 181, 20, "D");
+  const pdf = new jsPDF("p", "mm", "a4");
 
-    const img = new Image();
-    img.src = logo;
-    await new Promise((resolve) => {
-      img.onload = () => {
-        pdf.addImage(img, "PNG", 12, 14, 36, 12);
-        resolve();
-      };
-    });
+  // 1. PRE-COMPRIMIR LOGOS (Cargarlos una sola vez)
+  // Usamos maxWidth pequeño (300px) porque los logos son pequeños en el header
+  const logoCompressed = await compressImage(logo, 0.7, 300);
+  const logo2Compressed = await compressImage(logo2, 0.7, 300);
 
-    pdf.setFontSize(9);
-    pdf.setFont("helvetica", "bold");
-    pdf.text("INFORME DE VERIFICACIÓN DE LA \nINSTITUCIÓN EDUCATIVA", 100, 20, {
-      align: "center",
-    });
+  // Función header optimizada: usa las imágenes ya cargadas en memoria
+  const drawHeader = (pdfInstance) => {
+    pdfInstance.rect(10, 10, 181, 20, "D");
+    // Ya no hacemos new Image() aquí, usamos el string base64 comprimido
+    pdfInstance.addImage(logoCompressed, "JPEG", 12, 14, 36, 12);
 
-    const img2 = new Image();
-    img2.src = logo2;
-    await new Promise((resolve) => {
-      img2.onload = () => {
-        pdf.addImage(img2, "PNG", 154, 14, 36, 12);
-        resolve();
-      };
-    });
+    pdfInstance.setFontSize(9);
+    pdfInstance.setFont("helvetica", "bold");
+    pdfInstance.text(
+      "INFORME DE VERIFICACIÓN DE LA \nINSTITUCIÓN EDUCATIVA",
+      100,
+      20,
+      {
+        align: "center",
+      }
+    );
+
+    pdfInstance.addImage(logo2Compressed, "JPEG", 154, 14, 36, 12);
   };
 
-  //salto de página
-  const checkPageBreak = async (pdf, y, space = 20) => {
+  // Salto de página
+  const checkPageBreak = async (pdfInstance, y, space = 20) => {
     if (y + space > 270) {
-      pdf.addPage();
-      await drawHeader(pdf);
-      // 🔹 Forzar volver a normal
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(11);
+      pdfInstance.addPage();
+      drawHeader(pdfInstance); // Ya no es async porque las imgs están en memoria
+      pdfInstance.setFont("helvetica", "normal");
+      pdfInstance.setFontSize(11);
       return 40;
     }
     return y;
   };
-  const pdf = new jsPDF("p", "mm", "a4");
+
+  // Dibujar primer header
+  drawHeader(pdf);
   let y = 40;
-
-  await drawHeader(pdf);
-
   const lineHeight = 8;
 
   // ================== TABLA DE DATOS ==================
@@ -107,7 +133,7 @@ const exportPDF = async (data) => {
 
   y = drawRow("FECHA ACTA DE CIERRE AUDITORÍA:", "FECHA DE CIERRE", y);
 
-  y = drawRow("DIRECTOR OPERATIVO:", "NOMBRE DIRECTOR DE OPERATIVO", y);
+  y = drawRow("DIRECTOR OPERATIVO:", "NOMBRE DIRECTOR  OPERATIVO", y);
   y += lineHeight;
 
   const tableX = 10;
@@ -376,7 +402,7 @@ const exportPDF = async (data) => {
 
   // ================== CONSOLIDACIÓN DIGITAL ==================
   pdf.setFont("helvetica", "bold");
-  pdf.text("COMPONENTE 2: ESTADSÍSTICAS Y CONSOLIDACIÓN DIGITAL", 10, y);
+  pdf.text("COMPONENTE 2: ESTADÍSTICAS Y CONSOLIDACIÓN DIGITAL", 10, y);
   y += 8;
 
   pdf.setFont("helvetica", "normal");
@@ -403,24 +429,25 @@ const exportPDF = async (data) => {
 
   // ================== REPORTES POR INSTITUCIÓN ==================
 
-  const imgReporte = new Image();
-  imgReporte.src = estadisticas;
+  // ================== IMAGEN GRANDE (ESTADÍSTICAS) ==================
+  // Comprimir la imagen grande antes de agregarla
+  const estadisticasCompressed = await compressImage(estadisticas, 0.6, 1000);
 
-  await new Promise((resolve) => {
-    imgReporte.onload = () => {
-      const maxWidth = 180;
-      const ratio = imgReporte.height / imgReporte.width;
-      const imgWidth = maxWidth;
-      const imgHeight = maxWidth * ratio;
+  // Calcular ratio para que no se deforme
+  const imgProps = pdf.getImageProperties(estadisticasCompressed);
+  const pdfImgWidth = 180;
+  const pdfImgHeight = (imgProps.height * pdfImgWidth) / imgProps.width;
 
-      pdf.addImage(imgReporte, "JPG", 15, y, imgWidth, imgHeight);
-      resolve();
-    };
-  });
-
-  // mover Y debajo de la imagen
-  y += 280;
-  y = await checkPageBreak(pdf, y);
+  y = await checkPageBreak(pdf, y, pdfImgHeight);
+  pdf.addImage(
+    estadisticasCompressed,
+    "JPEG",
+    15,
+    y,
+    pdfImgWidth,
+    pdfImgHeight
+  );
+  y += pdfImgHeight + 10;
 
   // for (let index = 0; index < dataSchool.length; index++) {
   //   const item = dataSchool[index];
@@ -573,7 +600,7 @@ const exportPDF = async (data) => {
     y += lines.length * 4 + 4;
     y = await checkPageBreak(pdf, y);
   }
-
+  const fotos = [imagen1, imagen2, imagen3, imagen4, imagen5];
   const imgWidth = 65; // ancho de cada foto
   const imgHeight = 65; // alto de cada foto (puedes ajustar)
   const marginLeft = 40; // margen izquierdo
@@ -584,34 +611,26 @@ const exportPDF = async (data) => {
   let col = 0; // 0 = izquierda, 1 = derecha
 
   for (let fotoSrc of fotos) {
-    const img = new Image();
-    img.src = fotoSrc;
+    // AQUÍ ESTÁ LA CLAVE: Comprimir cada foto a max 800px de ancho y calidad 0.6
+    const compressedPhoto = await compressImage(fotoSrc, 0.6, 800);
 
-    await new Promise((resolve) => {
-      img.onload = async () => {
-        // Si estamos al final de página → salto
-        if (y + imgHeight > 270) {
-          pdf.addPage();
-          await drawHeader(pdf);
-          y = 40; // reset posición
-        }
+    if (y + imgHeight > 270) {
+      pdf.addPage();
+      drawHeader(pdf);
+      y = 40;
+    }
 
-        // Calcular posición según columna
-        const x = col === 0 ? marginLeft : marginLeft + imgWidth + spaceX;
+    const x = col === 0 ? marginLeft : marginLeft + imgWidth + spaceX;
 
-        pdf.addImage(img, "JPG", x, y, imgWidth, imgHeight);
+    // Agregamos la versión comprimida
+    pdf.addImage(compressedPhoto, "JPEG", x, y, imgWidth, imgHeight);
 
-        // Cambiar a siguiente columna o fila
-        if (col === 0) {
-          col = 1; // pasar a la derecha
-        } else {
-          col = 0; // volver a izquierda
-          y += imgHeight + spaceY; // bajar fila
-        }
-
-        resolve();
-      };
-    });
+    if (col === 0) {
+      col = 1;
+    } else {
+      col = 0;
+      y += imgHeight + spaceY;
+    }
   }
 
   // Ajustar Y final por si necesitábamos espacio adicional
@@ -634,7 +653,7 @@ const exportPDF = async (data) => {
   // const link = dataSchool[0].link_evidencia || "No proporcionado";
   // pdf.text(link, pageWidth / 2, y, { align: "center" });
 
-  // Subrayar el texto
+  // // Subrayar el texto
   // const textWidth = pdf.getTextWidth(link);
   // const x = (pageWidth - textWidth) / 2;
   // pdf.setLineWidth(0.5);
