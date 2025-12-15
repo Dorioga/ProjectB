@@ -45,5 +45,26 @@
     },
     { option: "Reportes", link: "/dashboard/reports", icon: "ClipboardPlus" },
     { option: "Auditoría", link: "/dashboard/auditory", icon: "BookOpenCheck" },
+    {
+      option: "Registrar asignatura",
+      link: "/dashboard/registerAsignature",
+      icon: "BookA",
+    },
+    {
+      option: "Registrar notas",
+      link: "/dashboard/registerRecords",
+      icon: "BookPlus",
+    },
+    {
+      option: "Registrar docente",
+      link: "/dashboard/registerTeacher",
+      icon: "UserStar",
+    },
+
+    {
+      option: "Registrar grado",
+      link: "/dashboard/registerGrade",
+      icon: "GraduationCap",
+    },
   ],
 };

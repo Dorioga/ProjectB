@@ -47,7 +47,7 @@ const Sidebar = () => {
           </div>
         )}
       </div>
-      <div className="row-span-7 flex flex-col justify-start xl:justify-center 2xl:justify-start ">
+      <div className="row-span-7 flex flex-col justify-start xl:justify-center 2xl:justify-start overflow-y-auto ">
         <ul className="">
           {menu &&
             menu.map((item, id) => {

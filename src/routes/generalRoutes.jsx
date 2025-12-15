@@ -11,6 +11,10 @@ import UpdateSchool from "../pages/School/UpdateSchool";
 import SingleStudent from "../pages/Student/SingleStudent";
 import SearchStudents from "../pages/Student/SearchStudents";
 import Auditory from "../pages/Dashboard/Auditory";
+import RegisterAsignature from "../pages/GradeRecords/RegisterAsignature";
+import RegisterRecords from "../pages/GradeRecords/RegisterRecords";
+import RegisterTeacher from "../pages/Teacher/RegisterTeacher";
+import RegisterGrade from "../pages/School/RegisterGrade";
 const GeneralRoutes = () => {
   return (
     <div id="body" className="w-full h-screen flex flex-col ">
@@ -29,6 +33,10 @@ const GeneralRoutes = () => {
             <Route path="updateSchool" element={<UpdateSchool />} />
             <Route path="reports" element={<Reports />} />
             <Route path="auditory" element={<Auditory />} />
+            <Route path="registerAsignature" element={<RegisterAsignature />} />
+            <Route path="registerRecords" element={<RegisterRecords />} />
+            <Route path="registerTeacher" element={<RegisterTeacher />} />
+            <Route path="registerGrade" element={<RegisterGrade />} />
           </Route>
         </Routes>
       </div>
