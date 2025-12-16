@@ -1,11 +1,17 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import SimpleButton from "../../components/atoms/SimpleButton";
+import JourneySelect from "../../components/atoms/JourneySelect";
+import SedeSelect from "../../components/atoms/SedeSelect";
+import useSchool from "../../lib/hooks/useSchool";
 import useStudent from "../../lib/hooks/useStudent";
 import { asignatureResponse } from "../../services/DataExamples/asignatureResponse";
 
 const RegisterTeacher = () => {
+  const { sedes } = useSchool();
   const { students, loading: studentsLoading } = useStudent();
   const [formData, setFormData] = useState({
+    sedeId: "",
+    jornada: "",
     identification: "",
     identification_type: "",
     first_name: "",
@@ -33,6 +39,44 @@ const RegisterTeacher = () => {
     );
     return Array.from(unique).sort((a, b) => Number(a) - Number(b));
   }, [students]);
+
+  const sedeJornada = useMemo(() => {
+    const sedeId = String(formData.sedeId ?? "").trim();
+    if (!sedeId) return "";
+
+    const source = Array.isArray(sedes) ? sedes : [];
+    const sede = source.find((s) => String(s?.id ?? "").trim() === sedeId);
+    return String(sede?.jornada ?? sede?.journeys ?? "").trim();
+  }, [formData.sedeId, sedes]);
+
+  useEffect(() => {
+    const sedeId = String(formData.sedeId ?? "").trim();
+
+    // Si no hay sede, no hay restricción: limpiamos jornada
+    if (!sedeId) {
+      setFormData((prev) => ({ ...prev, jornada: "" }));
+      return;
+    }
+
+    const ref = String(sedeJornada ?? "")
+      .trim()
+      .toLowerCase();
+    if (!ref) return;
+
+    setFormData((prev) => {
+      const current = String(prev.jornada ?? "")
+        .trim()
+        .toLowerCase();
+
+      if (ref === "ambas") {
+        const isAllowed = current === "mañana" || current === "tarde";
+        return isAllowed ? prev : { ...prev, jornada: "" };
+      }
+
+      // Si la sede solo tiene una jornada, forzamos esa jornada
+      return current === ref ? prev : { ...prev, jornada: ref };
+    });
+  }, [formData.sedeId, sedeJornada]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -128,6 +172,14 @@ const RegisterTeacher = () => {
         className="grid grid-cols-1 md:grid-cols-3 gap-4"
       >
         <div className="md:col-span-3 font-bold">Información personal</div>
+
+        <SedeSelect value={formData.sedeId} onChange={handleChange} />
+        <JourneySelect
+          value={formData.jornada}
+          filterValue={sedeJornada}
+          onChange={handleChange}
+          disabled={!String(formData.sedeId ?? "").trim()}
+        />
 
         <div>
           <label>Tipo de documento</label>

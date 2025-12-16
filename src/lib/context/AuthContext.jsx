@@ -58,6 +58,7 @@ export function AuthProvider({ children }) {
   const loadProfile = useCallback(async () => {
     if (!token) {
       setLoading(false);
+      setError(null);
       return;
     }
     setLoading(true);

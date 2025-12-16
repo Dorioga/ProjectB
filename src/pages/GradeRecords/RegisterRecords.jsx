@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import SimpleButton from "../../components/atoms/SimpleButton";
+import SedeSelect from "../../components/atoms/SedeSelect";
 import { asignatureResponse } from "../../services/DataExamples/asignatureResponse";
 
 const RegisterRecords = () => {
+  const [sedeSelected, setSedeSelected] = useState("");
   const [asignatureSelected, setAsignatureSelected] = useState("");
   const [numberRecords, setNumberRecords] = useState(0);
   const [auxRecords, setAuxRecords] = useState([]);
@@ -68,7 +70,9 @@ const RegisterRecords = () => {
   }, [numberRecords, porcentualTotal]);
 
   const canSetNumberRecords =
-    Boolean(asignatureSelected) && Boolean(periodSelected);
+    Boolean(sedeSelected) &&
+    Boolean(asignatureSelected) &&
+    Boolean(periodSelected);
 
   const handleRecordChange = (index, field, value) => {
     setAuxRecords((prev) => {
@@ -185,6 +189,7 @@ const RegisterRecords = () => {
     e.preventDefault();
 
     console.log("Registro de notas:", {
+      sedeSelected,
       asignatureSelected,
       periodSelected,
       numberRecords: Number(numberRecords),
@@ -199,7 +204,14 @@ const RegisterRecords = () => {
     <div className="border p-6 rounded bg-bg h-full gap-4 flex flex-col">
       <h2 className="font-bold text-2xl ">Registrar Notas</h2>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <SedeSelect
+            value={sedeSelected}
+            onChange={(e) => setSedeSelected(e.target.value)}
+            className="w-full p-2 border rounded bg-white"
+            labelClassName="text-lg font-semibold"
+          />
+
           <div>
             <label className="text-lg font-semibold">Asignatura</label>
             <select
@@ -245,7 +257,7 @@ const RegisterRecords = () => {
             />
             {!canSetNumberRecords ? (
               <div className="text-xs opacity-70 mt-1">
-                Selecciona asignatura y periodo para habilitar este campo.
+                Selecciona sede, asignatura y periodo para habilitar este campo.
               </div>
             ) : null}
           </div>
@@ -272,7 +284,7 @@ const RegisterRecords = () => {
             {auxRecords.map((rec, idx) => (
               <div
                 key={idx}
-                className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-white border border-gray-300 rounded-sm p-3"
+                className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-white border border-gray-300 rounded-sm p-3"
               >
                 <div>
                   <label className="text-sm font-semibold">Nombre</label>
@@ -288,19 +300,9 @@ const RegisterRecords = () => {
                 </div>
 
                 <div>
-                  <label className="text-sm font-semibold">Nota</label>
-                  <input
-                    type="number"
-                    className="w-full p-2 border rounded bg-white"
-                    value={rec?.record ?? 0}
-                    onChange={(e) =>
-                      handleRecordChange(idx, "record", Number(e.target.value))
-                    }
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-semibold">Porcentual</label>
+                  <label className="text-sm font-semibold">
+                    Porcentual (%)
+                  </label>
                   <div className="flex items-center gap-2">
                     <input
                       type="number"
@@ -339,7 +341,7 @@ const RegisterRecords = () => {
             ))}
 
             {isTest ? (
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-white border border-gray-300 rounded-sm p-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-white border border-gray-300 rounded-sm p-3">
                 <div>
                   <label className="text-sm font-semibold">Nombre</label>
                   <input
@@ -351,22 +353,9 @@ const RegisterRecords = () => {
                 </div>
 
                 <div>
-                  <label className="text-sm font-semibold">Nota</label>
-                  <input
-                    type="number"
-                    className="w-full p-2 border rounded bg-white"
-                    value={finalTest.record}
-                    onChange={(e) =>
-                      setFinalTest((prev) => ({
-                        ...prev,
-                        record: Number(e.target.value),
-                      }))
-                    }
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-semibold">Porcentual</label>
+                  <label className="text-sm font-semibold">
+                    Porcentual (%)
+                  </label>
                   <input
                     type="text"
                     className="w-full p-2 border rounded bg-white"

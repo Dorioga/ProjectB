@@ -6,8 +6,7 @@ import Reports from "../pages/Dashboard/Reports";
 import AllStudent from "../pages/Student/AllStudent";
 import RegisterStudent from "../pages/Student/RegisterStudent";
 import RegisterParents from "../pages/Student/RegisterParents";
-import RegisterSchool from "../pages/School/RegisterSchool";
-import UpdateSchool from "../pages/School/UpdateSchool";
+import ManageSchool from "../pages/School/ManageSchool";
 import SingleStudent from "../pages/Student/SingleStudent";
 import SearchStudents from "../pages/Student/SearchStudents";
 import Auditory from "../pages/Dashboard/Auditory";
@@ -29,8 +28,15 @@ const GeneralRoutes = () => {
             <Route path="searchStudents" element={<SearchStudents />} />
             <Route path="registerStudent" element={<RegisterStudent />} />
             <Route path="registerParents" element={<RegisterParents />} />
-            <Route path="registerSchool" element={<RegisterSchool />} />
-            <Route path="updateSchool" element={<UpdateSchool />} />
+            <Route
+              path="registerSchool"
+              element={<Navigate to="../manageSchool/register" replace />}
+            />
+            <Route
+              path="updateSchool"
+              element={<Navigate to="../manageSchool/update" replace />}
+            />
+            <Route path="manageSchool/:mode" element={<ManageSchool />} />
             <Route path="reports" element={<Reports />} />
             <Route path="auditory" element={<Auditory />} />
             <Route path="registerAsignature" element={<RegisterAsignature />} />

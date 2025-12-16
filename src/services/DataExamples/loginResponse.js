@@ -30,12 +30,12 @@
     },
     {
       option: "Registrar institución",
-      link: "/dashboard/registerSchool",
+      link: "/dashboard/manageSchool/register",
       icon: "School",
     },
     {
       option: "Actualizar institución",
-      link: "/dashboard/updateSchool",
+      link: "/dashboard/manageSchool/update",
       icon: "Pencil",
     },
     {

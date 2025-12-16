@@ -1,10 +1,13 @@
 import { useState } from "react";
 import SimpleButton from "../../components/atoms/SimpleButton";
+import JourneySelect from "../../components/atoms/JourneySelect";
+import SedeSelect from "../../components/atoms/SedeSelect";
 
 const RegisterGrade = () => {
   const [formData, setFormData] = useState({
     name: "",
     jornada: "",
+    sedeId: "",
     group: [],
   });
   const [numGroups, setNumGroups] = useState(0);
@@ -28,6 +31,11 @@ const RegisterGrade = () => {
   const handleJornadaChange = (event) => {
     const value = event.target.value;
     setFormData((prev) => ({ ...prev, jornada: value }));
+  };
+
+  const handleSedeChange = (event) => {
+    const value = event.target.value;
+    setFormData((prev) => ({ ...prev, sedeId: value }));
   };
 
   const handleNumGroupsChange = (event) => {
@@ -64,9 +72,9 @@ const RegisterGrade = () => {
 
       <form
         onSubmit={handleSubmit}
-        className="grid grid-cols-1 md:grid-cols-3 gap-4"
+        className="grid grid-cols-1 md:grid-cols-4 gap-4"
       >
-        <div className="md:col-span-3 font-bold">Información del grado</div>
+        <div className="md:col-span-4 font-bold">Información del grado</div>
 
         <div>
           <label>Nombre del grado</label>
@@ -80,20 +88,13 @@ const RegisterGrade = () => {
           />
         </div>
 
-        <div>
-          <label>Jornada</label>
-          <select
-            name="jornada"
-            value={formData.jornada}
-            onChange={handleJornadaChange}
-            className="w-full p-2 border rounded bg-white"
-          >
-            <option value="">Selecciona una jornada</option>
-            <option value="mañana">Mañana</option>
-            <option value="tarde">Tarde</option>
-            <option value="unica">Única</option>
-          </select>
-        </div>
+        <JourneySelect
+          value={formData.jornada}
+          onChange={handleJornadaChange}
+          includeAmbas={false}
+        />
+
+        <SedeSelect value={formData.sedeId} onChange={handleSedeChange} />
 
         <div>
           <label>¿Cuántos grupos?</label>
@@ -109,7 +110,7 @@ const RegisterGrade = () => {
           />
         </div>
 
-        <div className="md:col-span-3">
+        <div className="md:col-span-4">
           <label>Grupos a crear</label>
           {formData.group.length === 0 ? (
             <div className="w-full p-2 border rounded bg-white text-sm">

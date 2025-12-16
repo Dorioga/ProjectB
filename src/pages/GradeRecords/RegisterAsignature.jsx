@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import SimpleButton from "../../components/atoms/SimpleButton";
+import JourneySelect from "../../components/atoms/JourneySelect";
+import SedeSelect from "../../components/atoms/SedeSelect";
 import useStudent from "../../lib/hooks/useStudent";
 
 const RegisterAsignature = () => {
@@ -8,8 +10,14 @@ const RegisterAsignature = () => {
     name: "",
     code: "",
     description: "",
+    jornada: "",
+    sedeId: "",
     grades_scholar: [],
   });
+
+  const inputClassName =
+    "bg-white rounded-sm p-2 border border-gray-300 w-full focus:outline-none focus:ring-2 focus:ring-secondary";
+  const labelClassName = "text-lg font-semibold";
 
   const [submitError, setSubmitError] = useState("");
   const [submitOk, setSubmitOk] = useState(false);
@@ -25,6 +33,15 @@ const RegisterAsignature = () => {
     return Array.from(unique).sort((a, b) => Number(a) - Number(b));
   }, [students]);
 
+  const allGradesSelected = useMemo(() => {
+    if (!Array.isArray(availableGrades) || availableGrades.length === 0)
+      return false;
+    const selected = new Set(
+      Array.isArray(formData.grades_scholar) ? formData.grades_scholar : []
+    );
+    return availableGrades.every((grade) => selected.has(grade));
+  }, [availableGrades, formData.grades_scholar]);
+
   const toggleGrade = (grade) => {
     setFormData((prev) => {
       const current = Array.isArray(prev.grades_scholar)
@@ -38,6 +55,34 @@ const RegisterAsignature = () => {
           : [...current, grade],
       };
     });
+  };
+
+  const toggleAllGrades = () => {
+    setFormData((prev) => {
+      const current = Array.isArray(prev.grades_scholar)
+        ? prev.grades_scholar
+        : [];
+
+      if (!Array.isArray(availableGrades) || availableGrades.length === 0) {
+        return prev;
+      }
+
+      const selected = new Set(current);
+      const everySelected = availableGrades.every((g) => selected.has(g));
+
+      return {
+        ...prev,
+        grades_scholar: everySelected ? [] : availableGrades.slice(),
+      };
+    });
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   const handleSubmit = (e) => {
@@ -77,11 +122,9 @@ const RegisterAsignature = () => {
       <h2 className="font-bold text-2xl ">Registrar Asignatura</h2>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div>
-          <label className=" text-lg font-semibold">
-            Nombre de la asignatura
-          </label>
+          <label className={labelClassName}>Nombre de la asignatura</label>
           <input
-            className="bg-white rounded-sm p-2 border border-gray-300 w-full focus:outline-none focus:ring-2 focus:ring-secondary"
+            className={inputClassName}
             type="text"
             placeholder="Ingrese el nombre de la asignatura"
             value={formData.name}
@@ -90,11 +133,9 @@ const RegisterAsignature = () => {
         </div>
 
         <div>
-          <label className=" text-lg font-semibold">
-            Código de la asignatura
-          </label>
+          <label className={labelClassName}>Código de la asignatura</label>
           <input
-            className="bg-white rounded-sm p-2 border border-gray-300 w-full focus:outline-none focus:ring-2 focus:ring-secondary"
+            className={inputClassName}
             type="text"
             placeholder="Ingrese el código de la asignatura"
             value={formData.code}
@@ -103,11 +144,9 @@ const RegisterAsignature = () => {
         </div>
 
         <div>
-          <label className=" text-lg font-semibold">
-            Descripción de la asignatura
-          </label>
+          <label className={labelClassName}>Descripción de la asignatura</label>
           <input
-            className="bg-white rounded-sm p-2 border border-gray-300 w-full focus:outline-none focus:ring-2 focus:ring-secondary"
+            className={inputClassName}
             type="text"
             placeholder="Ingrese la descripción de la asignatura"
             value={formData.description}
@@ -117,6 +156,21 @@ const RegisterAsignature = () => {
           />
         </div>
 
+        <JourneySelect
+          value={formData.jornada}
+          onChange={handleChange}
+          includeAmbas={false}
+          className={inputClassName}
+          labelClassName={labelClassName}
+        />
+
+        <SedeSelect
+          value={formData.sedeId}
+          onChange={handleChange}
+          className={inputClassName}
+          labelClassName={labelClassName}
+        />
+
         <div>
           <div className="text-lg font-semibold">Grados donde se dictará</div>
           {studentsLoading ? (
@@ -124,26 +178,37 @@ const RegisterAsignature = () => {
           ) : availableGrades.length === 0 ? (
             <div className="text-sm opacity-80">No hay grados disponibles.</div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mt-2">
-              {availableGrades.map((grade) => {
-                const checked = Array.isArray(formData.grades_scholar)
-                  ? formData.grades_scholar.includes(grade)
-                  : false;
-                return (
-                  <label
-                    key={grade}
-                    className="flex items-center gap-2 bg-white rounded-sm p-2 border border-gray-300"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleGrade(grade)}
-                    />
-                    <span>Grado {grade}</span>
-                  </label>
-                );
-              })}
-            </div>
+            <>
+              <label className="flex items-center gap-2 bg-white rounded-sm p-2 border border-gray-300 mt-2">
+                <input
+                  type="checkbox"
+                  checked={allGradesSelected}
+                  onChange={toggleAllGrades}
+                />
+                <span>Seleccionar todos</span>
+              </label>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mt-2">
+                {availableGrades.map((grade) => {
+                  const checked = Array.isArray(formData.grades_scholar)
+                    ? formData.grades_scholar.includes(grade)
+                    : false;
+                  return (
+                    <label
+                      key={grade}
+                      className="flex items-center gap-2 bg-white rounded-sm p-2 border border-gray-300"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleGrade(grade)}
+                      />
+                      <span>Grado {grade}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
 
