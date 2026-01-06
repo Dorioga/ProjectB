@@ -13,6 +13,9 @@ export function SchoolProvider({ children }) {
   const [journeys, setJourneys] = useState([]);
   const [loadingJourneys, setLoadingJourneys] = useState(false);
   const [errorJourneys, setErrorJourneys] = useState(null);
+  const [records, setRecords] = useState([]);
+  const [loadingRecords, setLoadingRecords] = useState(false);
+  const [errorRecords, setErrorRecords] = useState(null);
   const [pathSignature, setPathSignature] = useState(
     "https://a.storyblok.com/f/191576/1200x800/b7ad4902a2/signature_maker_after_.webp"
   );
@@ -40,6 +43,19 @@ export function SchoolProvider({ children }) {
       setErrorJourneys(err);
     } finally {
       setLoadingJourneys(false);
+    }
+  }, []);
+
+  const loadRecords = useCallback(async (params = {}) => {
+    setLoadingRecords(true);
+    setErrorRecords(null);
+    try {
+      const res = await schoolService.loadRecords(params);
+      setRecords(Array.isArray(res) ? res : res?.data ?? []);
+    } catch (err) {
+      setErrorRecords(err);
+    } finally {
+      setLoadingRecords(false);
     }
   }, []);
 
@@ -124,9 +140,13 @@ export function SchoolProvider({ children }) {
         journeys,
         loadingJourneys,
         errorJourneys,
+        records,
+        loadingRecords,
+        errorRecords,
         reload: loadSchools,
         reloadSedes: loadSedes,
         reloadJourneys: loadJourneys,
+        reloadRecords: loadRecords,
         addSchool,
         updateSchool,
         removeSchool,

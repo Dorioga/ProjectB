@@ -80,6 +80,22 @@ export function StudentProvider({ children }) {
       setLoading(false);
     }
   };
+
+  // Sube un Excel para carga masiva de estudiantes.
+  const uploadStudentsExcel = useCallback(async (file, options = {}) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await studentService.uploadStudentsExcel(file, options);
+      return res;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // obtiene N estudiantes aleatorios (usa studentService.getRandomStudents)
   const getRandomStudents = useCallback(async (count = 5) => {
     setLoading(true);
@@ -108,6 +124,7 @@ export function StudentProvider({ children }) {
         getRandomStudents,
         addStudent,
         removeStudent,
+        uploadStudentsExcel,
       }}
     >
       {children}

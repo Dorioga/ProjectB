@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import JourneySelect from "../../components/atoms/JourneySelect";
 import SedeSelect from "../../components/atoms/SedeSelect";
+import TypeDocumentSelector from "../../components/molecules/TypeDocumentSelector";
 import useSchool from "../../lib/hooks/useSchool";
 import useStudent from "../../lib/hooks/useStudent";
 import { asignatureResponse } from "../../services/DataExamples/asignatureResponse";
@@ -13,7 +14,7 @@ const RegisterTeacher = () => {
     sedeId: "",
     jornada: "",
     identification: "",
-    identification_type: "",
+    identificationType: "",
     first_name: "",
     second_name: "",
     first_lastname: "",
@@ -119,7 +120,7 @@ const RegisterTeacher = () => {
     setSubmitOk(false);
     setSubmitError("");
 
-    if (!String(formData.identification_type ?? "").trim()) {
+    if (!String(formData.identificationType ?? "").trim()) {
       setSubmitError("El tipo de documento es obligatorio.");
       return;
     }
@@ -156,6 +157,8 @@ const RegisterTeacher = () => {
 
     console.log("Docente a registrar:", {
       ...formData,
+      // Alias para backend si espera snake_case
+      identification_type: formData.identificationType,
       grades_scholar: formData.grades_scholar
         .slice()
         .sort((a, b) => Number(a) - Number(b)),
@@ -181,21 +184,12 @@ const RegisterTeacher = () => {
           disabled={!String(formData.sedeId ?? "").trim()}
         />
 
-        <div>
-          <label>Tipo de documento</label>
-          <select
-            name="identification_type"
-            value={formData.identification_type}
-            onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
-          >
-            <option value=""></option>
-            <option value="RC">RC</option>
-            <option value="TI">TI</option>
-            <option value="CC">CC</option>
-            <option value="CE">CE</option>
-          </select>
-        </div>
+        <TypeDocumentSelector
+          name="identificationType"
+          value={formData.identificationType}
+          onChange={handleChange}
+          placeholder="Selecciona un tipo"
+        />
 
         <div>
           <label>N.º de identificación</label>

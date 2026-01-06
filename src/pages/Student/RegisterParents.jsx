@@ -2,18 +2,20 @@ import React, { useState } from "react";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import ProgressPage from "../../components/atoms/progressPage";
 import FileChooser from "../../components/atoms/FileChooser";
+import TypeDocumentSelector from "../../components/molecules/TypeDocumentSelector";
 
 const RegisterParents = () => {
   const [formData, setFormData] = useState({
-    tipo_documento_acudiente: "",
-    numero_identificacion_acudiente: "",
-    nombre_acudiente: "",
-    telefono_acudiente: "",
-    img_idacudiente: null,
+    identificationType: "",
+    identification: "",
+    fullName: "",
+    phone: "",
+    idDocumentPhoto: null,
   });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -24,10 +26,16 @@ const RegisterParents = () => {
     e.preventDefault();
     const dataToSend = new FormData();
 
-    // Agrega todos los campos del estado al FormData
-    for (const key in formData) {
-      dataToSend.append(key, formData[key]);
-    }
+    // Enviar al backend con nombres esperados (español),
+    // pero mantener el estado del formulario en inglés.
+    dataToSend.append("tipo_documento_acudiente", formData.identificationType);
+    dataToSend.append(
+      "numero_identificacion_acudiente",
+      formData.identification
+    );
+    dataToSend.append("nombre_acudiente", formData.fullName);
+    dataToSend.append("telefono_acudiente", formData.phone);
+    dataToSend.append("img_idacudiente", formData.idDocumentPhoto);
 
     // Aquí puedes ver el contenido del FormData
     console.log("FormData a enviar:");
@@ -46,26 +54,18 @@ const RegisterParents = () => {
         onSubmit={handleSubmit}
         className="grid grid-cols-1 md:grid-cols-2 gap-4"
       >
-        <div>
-          <label>Tipo de documento</label>
-          <select
-            name="tipo_documento_acudiente"
-            value={formData.tipo_documento_acudiente}
-            onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
-          >
-            <option value=""></option>
-            <option value="CC">Cédula de Ciudadanía</option>
-            <option value="CE">Cédula de Extranjería</option>
-            <option value="PA">Pasaporte</option>
-          </select>
-        </div>
+        <TypeDocumentSelector
+          name="identificationType"
+          value={formData.identificationType}
+          onChange={handleChange}
+          placeholder="Selecciona un tipo"
+        />
         <div>
           <label>N.º de identificación</label>
           <input
             type="text"
-            name="numero_identificacion_acudiente"
-            value={formData.numero_identificacion_acudiente}
+            name="identification"
+            value={formData.identification}
             onChange={handleChange}
             className="w-full p-2 border rounded bg-white"
           />
@@ -74,8 +74,8 @@ const RegisterParents = () => {
           <label>Nombre completo</label>
           <input
             type="text"
-            name="nombre_acudiente"
-            value={formData.nombre_acudiente}
+            name="fullName"
+            value={formData.fullName}
             onChange={handleChange}
             className="w-full p-2 border rounded bg-white"
           />
@@ -84,15 +84,19 @@ const RegisterParents = () => {
           <label>Teléfono</label>
           <input
             type="tel"
-            name="telefono_acudiente"
-            value={formData.telefono_acudiente}
+            name="phone"
+            value={formData.phone}
             onChange={handleChange}
             className="w-full p-2 border rounded bg-white"
           />
         </div>
         <div>
           <label>Foto del documento del acudiente</label>
-          <FileChooser name="img_idacudiente" onChange={handleChange} />
+          <FileChooser
+            onChange={(file) =>
+              setFormData((prev) => ({ ...prev, idDocumentPhoto: file }))
+            }
+          />
         </div>
         <div className="md:col-span-2 mt-4">
           <SimpleButton

@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const BASE = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
+const BASE =
+  import.meta.env.VITE_API_URL || "https://backend-barranquilla.onrender.com";
 
 let authToken = null;
 
@@ -12,7 +13,7 @@ const instance = axios.create({
   headers: {
     Accept: "application/json",
   },
-  withCredentials: true, // Útil si el backend usa cookies HttpOnly.
+  withCredentials: false, // Evita CORS por credenciales; auth por Bearer token.
 });
 
 /**

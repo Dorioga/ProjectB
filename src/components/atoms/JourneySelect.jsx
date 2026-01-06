@@ -56,12 +56,13 @@ const JourneySelect = ({
       ? DEFAULT_OPTIONS
       : DEFAULT_OPTIONS.filter((opt) => opt.value !== "ambas");
 
-    // Si NO usamos servicio, y llega un valor (por ejemplo desde sedesResponse):
+    // Si NO usamos servicio y llega un filterValue (por ejemplo desde sedesResponse):
     // - si es "ambas": mostrar "mañana" y "tarde"
     // - si no: mostrar SOLO el valor que entra
-    // - si no hay valor (""), mantener comportamiento actual (todas las opciones)
-    if (!useServiceJourneys) {
-      const refValue = normalizedFilterValue || normalizedValue;
+    // Nota: NO restringimos por el value seleccionado, para que el usuario
+    // pueda volver a abrir el select y ver todas las opciones.
+    if (!useServiceJourneys && normalizedFilterValue) {
+      const refValue = normalizedFilterValue;
 
       if (refValue === "ambas") {
         return base.filter(
@@ -70,7 +71,7 @@ const JourneySelect = ({
       }
 
       const isKnown = base.some((opt) => opt.value === refValue);
-      if (refValue && isKnown) {
+      if (isKnown) {
         return base.filter((opt) => opt.value === refValue);
       }
     }

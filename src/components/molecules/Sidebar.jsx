@@ -4,6 +4,8 @@ import { Link } from "react-router-dom";
 import { User, LogOut } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import PreviewIMG from "../atoms/PreviewIMG";
+import PdfReportCard from "./PdfReportCard";
+import reportCardResponse from "../../services/DataExamples/reportCardResponse";
 const Sidebar = () => {
   const {
     nameSchool,
@@ -67,9 +69,30 @@ const Sidebar = () => {
                 </Link>
               );
             })}
+
+          {/* Botón de prueba: Generar Boletín */}
+          <button
+            type="button"
+            className="w-full flex flex-row px-4 py-2 items-center gap-2 hover:bg-secondary rounded"
+            onClick={async () => {
+              try {
+                await PdfReportCard(reportCardResponse);
+              } catch (err) {
+                console.error(err);
+                alert("No fue posible generar el boletín.");
+              }
+            }}
+          >
+            <LucideIcons.FileText className="text-white text-2xl" />
+            {isOpen ? (
+              <li className="px-2 hover:bg-secondary rounded text-xl text-white">
+                Boletín (PDF)
+              </li>
+            ) : null}
+          </button>
         </ul>
       </div>
-      <div className="flex flex-col items-center row-span-2 justify-center gap-2 ">
+      <div className="flex flex-col items-center row-span-3 justify-center ">
         <div className="flex flex-row items-center gap-2 ">
           <User className="text-white text-2xl" />
           {isOpen ? (
@@ -83,6 +106,11 @@ const Sidebar = () => {
           <LogOut className="text-xl" />
           {isOpen ? <h2 className="text-lg">Cerrar sesión</h2> : null}
         </button>
+        <div className="flex flex-row items-center gap-2 ">
+          {isOpen ? (
+            <h2 className="text-white font-bold text-xl">NEXUS</h2>
+          ) : null}
+        </div>
       </div>
     </div>
   );

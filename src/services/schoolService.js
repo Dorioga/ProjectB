@@ -1,6 +1,7 @@
 import { ApiClient } from "./ApiClient";
 import { sedesResponses } from "./DataExamples/sedesResponse";
 import { journeysResponse } from "./DataExamples/journeysResponse";
+import { recordResponse } from "./DataExamples/recordResponse";
 
 export async function getSchools(params = {}) {
   return ApiClient.get("/schools", params);
@@ -34,4 +35,9 @@ export async function getSedes(params = {}) {
 // Mock / DataExample: journeys
 export async function getJourneys(params = {}) {
   return journeysResponse;
+}
+
+// Mock / DataExample: records (notas)
+export async function loadRecords(params = {}) {
+  return recordResponse;
 }

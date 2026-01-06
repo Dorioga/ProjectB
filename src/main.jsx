@@ -6,16 +6,19 @@ import { BrowserRouter } from "react-router-dom";
 import { SchoolProvider } from "./lib/context/SchoolContext.jsx";
 import { AuthProvider } from "./lib/context/AuthContext.jsx";
 import { StudentProvider } from "./lib/context/StudentContext.jsx";
+import { DataProvider } from "./lib/context/DataContext.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <SchoolProvider>
-          <StudentProvider>
-            <App />
-          </StudentProvider>
-        </SchoolProvider>
+        <DataProvider>
+          <SchoolProvider>
+            <StudentProvider>
+              <App />
+            </StudentProvider>
+          </SchoolProvider>
+        </DataProvider>
       </AuthProvider>
     </BrowserRouter>
   </StrictMode>

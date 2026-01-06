@@ -58,6 +58,43 @@ export async function uploadStudentPhoto(id, formData) {
   });
 }
 
+/**
+ * Sube un archivo Excel para carga masiva de estudiantes.
+ *
+ * Espera que el backend reciba un multipart/form-data con un campo de archivo.
+ * Ajusta `endpoint` y `fieldName` según tu API.
+ */
+export async function uploadStudentsExcel(file, options = {}) {
+  const {
+    endpoint = "/students/import",
+    fieldName = "file",
+    params,
+    data,
+    onUploadProgress,
+  } = options;
+
+  if (!file) {
+    throw new Error("Debes enviar un archivo Excel.");
+  }
+
+  const formData = new FormData();
+  const fileName = file?.name || "students.xlsx";
+  formData.append(fieldName, file, fileName);
+
+  if (data && typeof data === "object") {
+    for (const [key, value] of Object.entries(data)) {
+      if (value === undefined || value === null) continue;
+      formData.append(key, String(value));
+    }
+  }
+
+  return ApiClient.post(endpoint, formData, {
+    params,
+    onUploadProgress,
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+}
+
 export async function getRandomStudents(count = 5) {
   // Fuente de datos (usa el mock si está disponible)
   const source =

@@ -7,7 +7,7 @@
   school_name: "Centro de Capacitación Especial CENCAES",
   img_logo: "/logo-school.svg", // Ruta al SVG en la carpeta public
   menu: [
-    { option: "Inicio", link: "/dashboard/Home", icon: "/Home" },
+    { option: "Inicio", link: "/dashboard/Home", icon: "Home" },
     {
       option: "Ver estudiantes",
       link: "/dashboard/studentSchool",
@@ -24,9 +24,19 @@
       icon: "UserRoundPlus",
     },
     {
+      option: "Registrar usuario",
+      link: "/dashboard/registerUser",
+      icon: "UserPlus",
+    },
+    {
       option: "Registrar acudiente",
       link: "/dashboard/registerParents",
       icon: "UsersRound",
+    },
+    {
+      option: "Cargar estudiantes (Excel)",
+      link: "/dashboard/uploadStudentExcel",
+      icon: "FileSpreadsheet",
     },
     {
       option: "Registrar institución",
@@ -62,8 +72,19 @@
     },
 
     {
+      option: "Registrar asistencia",
+      link: "/dashboard/registerAssistance",
+      icon: "ClipboardCheck",
+    },
+
+    {
       option: "Registrar grado",
       link: "/dashboard/registerGrade",
+      icon: "GraduationCap",
+    },
+    {
+      option: "Registrar notas estudiante",
+      link: "/dashboard/registerStudentRecords",
       icon: "GraduationCap",
     },
   ],
