@@ -15,28 +15,62 @@ export function DataProvider({ children }) {
     useState(false);
   const [errorTypeIdentification, setErrorTypeIdentification] = useState(null);
 
-  const loadTypeIdentification = useCallback(
-    async (params = {}, options = {}) => {
-      setLoadingTypeIdentification(true);
-      setErrorTypeIdentification(null);
-      try {
-        const res = await dataService.getTypeIdentification(params, options);
-        setTypeIdentification(Array.isArray(res) ? res : res?.data ?? []);
-        return res;
-      } catch (err) {
-        setErrorTypeIdentification(err);
-        throw err;
-      } finally {
-        setLoadingTypeIdentification(false);
-      }
-    },
-    []
-  );
+  const [roles, setRoles] = useState([]);
+  const [loadingRoles, setLoadingRoles] = useState(false);
+  const [errorRoles, setErrorRoles] = useState(null);
+
+  const [loadingRegisterUser, setLoadingRegisterUser] = useState(false);
+  const [errorRegisterUser, setErrorRegisterUser] = useState(null);
+
+  const loadTypeIdentification = useCallback(async () => {
+    setLoadingTypeIdentification(true);
+    setErrorTypeIdentification(null);
+    try {
+      const res = await dataService.getTypeIdentification();
+      setTypeIdentification(Array.isArray(res) ? res : res?.data ?? []);
+      return res;
+    } catch (err) {
+      setErrorTypeIdentification(err);
+      throw err;
+    } finally {
+      setLoadingTypeIdentification(false);
+    }
+  }, []);
+
+  const loadRoles = useCallback(async () => {
+    setLoadingRoles(true);
+    setErrorRoles(null);
+    try {
+      const res = await dataService.getRol();
+      setRoles(Array.isArray(res) ? res : res?.data ?? []);
+      return res;
+    } catch (err) {
+      setErrorRoles(err);
+      throw err;
+    } finally {
+      setLoadingRoles(false);
+    }
+  }, []);
 
   useEffect(() => {
     // Carga inicial de catálogos.
     loadTypeIdentification().catch(() => {});
-  }, [loadTypeIdentification]);
+    loadRoles().catch(() => {});
+  }, [loadTypeIdentification, loadRoles]);
+
+  const registerUser = useCallback(async (formData) => {
+    setLoadingRegisterUser(true);
+    setErrorRegisterUser(null);
+    try {
+      const res = await dataService.registerUser(formData);
+      return res;
+    } catch (err) {
+      setErrorRegisterUser(err);
+      throw err;
+    } finally {
+      setLoadingRegisterUser(false);
+    }
+  }, []);
 
   const value = useMemo(
     () => ({
@@ -44,12 +78,30 @@ export function DataProvider({ children }) {
       loadingTypeIdentification,
       errorTypeIdentification,
       reloadTypeIdentification: loadTypeIdentification,
+
+      roles,
+      loadingRoles,
+      errorRoles,
+      reloadRoles: loadRoles,
+
+      registerUser,
+      loadingRegisterUser,
+      errorRegisterUser,
     }),
     [
       typeIdentification,
       loadingTypeIdentification,
       errorTypeIdentification,
       loadTypeIdentification,
+
+      roles,
+      loadingRoles,
+      errorRoles,
+      loadRoles,
+
+      registerUser,
+      loadingRegisterUser,
+      errorRegisterUser,
     ]
   );
 

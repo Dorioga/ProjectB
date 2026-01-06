@@ -1,20 +1,18 @@
 import React, { useMemo, useState } from "react";
+import { sha256 } from "js-sha256";
+import Loader from "../../components/atoms/Loader";
 import SimpleButton from "../../components/atoms/SimpleButton";
+import RoleSelector from "../../components/molecules/RoleSelector";
 import TypeDocumentSelector from "../../components/molecules/TypeDocumentSelector";
 import useSchool from "../../lib/hooks/useSchool";
-
-const ROLE_OPTIONS = [
-  { value: "ADMIN", label: "Administrador" },
-  { value: "TEACHER", label: "Docente" },
-  { value: "STUDENT", label: "Estudiante" },
-  { value: "PARENT", label: "Acudiente" },
-];
+import useData from "../../lib/hooks/useData";
 
 const RegisterUser = () => {
   const { schools, loading } = useSchool();
+  const { registerUser, loadingRegisterUser, errorRegisterUser } = useData();
 
   const [formData, setFormData] = useState({
-    identificationType: "",
+    identificationtype: "",
     identification: "",
     telephone: "",
     email: "",
@@ -49,9 +47,25 @@ const RegisterUser = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Usuario a registrar:", formData);
+
+    const payload = {
+      ...formData,
+      password: formData.password ? sha256(formData.password) : "",
+    };
+
+    const fd = new FormData();
+    for (const [key, value] of Object.entries(payload)) {
+      fd.append(key, value ?? "");
+    }
+
+    try {
+      const res = await registerUser(fd);
+      console.log("Usuario registrado:", res);
+    } catch (err) {
+      console.error("Error registrando usuario:", err);
+    }
   };
 
   return (
@@ -62,13 +76,25 @@ const RegisterUser = () => {
         onSubmit={handleSubmit}
         className="grid grid-cols-1 md:grid-cols-3 gap-4"
       >
+        {(loadingRegisterUser || errorRegisterUser) && (
+          <div className="md:col-span-3 flex flex-col gap-2">
+            {loadingRegisterUser && <Loader message="Registrando…" />}
+            {!loadingRegisterUser && errorRegisterUser && (
+              <div className="p-3 rounded border border-error bg-error/10 text-error">
+                {errorRegisterUser?.message || "Ocurrió un error."}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="md:col-span-3 font-bold">Información personal</div>
 
         <TypeDocumentSelector
-          name="identificationType"
-          value={formData.identificationType}
+          name="identificationtype"
+          value={formData.identificationtype}
           onChange={handleChange}
           placeholder="Selecciona un tipo"
+          disabled={loadingRegisterUser}
         />
 
         <div>
@@ -79,6 +105,7 @@ const RegisterUser = () => {
             value={formData.identification}
             onChange={handleChange}
             className="w-full p-2 border rounded bg-white"
+            disabled={loadingRegisterUser}
           />
         </div>
 
@@ -90,6 +117,7 @@ const RegisterUser = () => {
             value={formData.telephone}
             onChange={handleChange}
             className="w-full p-2 border rounded bg-white"
+            disabled={loadingRegisterUser}
           />
         </div>
 
@@ -101,6 +129,7 @@ const RegisterUser = () => {
             value={formData.email}
             onChange={handleChange}
             className="w-full p-2 border rounded bg-white"
+            disabled={loadingRegisterUser}
           />
         </div>
 
@@ -112,6 +141,7 @@ const RegisterUser = () => {
             value={formData.first_name}
             onChange={handleChange}
             className="w-full p-2 border rounded bg-white"
+            disabled={loadingRegisterUser}
           />
         </div>
 
@@ -123,6 +153,7 @@ const RegisterUser = () => {
             value={formData.second_name}
             onChange={handleChange}
             className="w-full p-2 border rounded bg-white"
+            disabled={loadingRegisterUser}
           />
         </div>
 
@@ -134,6 +165,7 @@ const RegisterUser = () => {
             value={formData.first_lastname}
             onChange={handleChange}
             className="w-full p-2 border rounded bg-white"
+            disabled={loadingRegisterUser}
           />
         </div>
 
@@ -145,6 +177,7 @@ const RegisterUser = () => {
             value={formData.second_lastname}
             onChange={handleChange}
             className="w-full p-2 border rounded bg-white"
+            disabled={loadingRegisterUser}
           />
         </div>
 
@@ -158,24 +191,18 @@ const RegisterUser = () => {
             value={formData.password}
             onChange={handleChange}
             className="w-full p-2 border rounded bg-white"
+            disabled={loadingRegisterUser}
           />
         </div>
 
         <div>
-          <label>Rol</label>
-          <select
+          <RoleSelector
             name="role"
             value={formData.role}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
-          >
-            <option value=""></option>
-            {ROLE_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+            placeholder="Selecciona un rol"
+            disabled={loadingRegisterUser}
+          />
         </div>
 
         <div>
@@ -185,6 +212,7 @@ const RegisterUser = () => {
             value={formData.institutionId}
             onChange={handleChange}
             className="w-full p-2 border rounded bg-white"
+            disabled={loadingRegisterUser}
           >
             <option value="">
               {loading
@@ -202,10 +230,11 @@ const RegisterUser = () => {
         <div className="md:col-span-3 mt-4 flex justify-center">
           <div className="w-full md:w-1/2">
             <SimpleButton
-              msj="Registrar usuario"
+              msj={loadingRegisterUser ? "Registrando..." : "Registrar usuario"}
               text={"text-white"}
               bg={"bg-accent"}
               icon={"Save"}
+              disabled={loadingRegisterUser}
             />
           </div>
         </div>

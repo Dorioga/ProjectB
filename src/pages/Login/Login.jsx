@@ -6,11 +6,10 @@ import SimpleButton from "../../components/atoms/SimpleButton";
 import { School } from "lucide-react";
 const Login = () => {
   const [formData, setFormData] = useState({
-    user: "",
-    password: "",
+    email: "",
+    infokey: "",
   });
-  const { login } = useAuth();
-  const [loading, setLoading] = useState(false);
+  const { login, loading, error } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -18,14 +17,15 @@ const Login = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    login(formData);
-    navigate("/dashboard/home");
-    setLoading(false);
-
-    // Petición de iniciar sesión
+    console.log("entra login");
+    try {
+      await login(formData);
+      navigate("/dashboard/home");
+    } catch {
+      // El error ya queda en el AuthContext.
+    }
   };
   return (
     <div className="w-full grid grid-cols-1 lg:grid-cols-2 h-full">
@@ -42,29 +42,26 @@ const Login = () => {
             <h3 className="text-surface font-bold text-3xl">Inicie sesión</h3>
           </div>
           <div className="flex flex-col  justify-between gap-1">
-            <label htmlFor="user" className="text-surface text-xl font-bold">
+            <label htmlFor="email" className="text-surface text-xl font-bold">
               Usuario
             </label>
             <input
               type="text"
-              name="user"
-              value={formData.user}
+              name="email"
+              value={formData.email}
               onChange={handleChange}
               placeholder="Usuario"
               className="bg-surface px-2 py-1 rounded-md"
             />
           </div>
           <div className="flex flex-col justify-between gap-1">
-            <label
-              htmlFor="password"
-              className="text-surface text-xl font-bold"
-            >
+            <label htmlFor="infokey" className="text-surface text-xl font-bold">
               Contraseña
             </label>
             <input
               type="password"
-              name="password"
-              value={formData.password}
+              name="infokey"
+              value={formData.infokey}
               onChange={handleChange}
               placeholder="Contraseña"
               className="bg-surface px-2 py-1 rounded-md"
@@ -74,11 +71,17 @@ const Login = () => {
             <SimpleButton
               msj={"Iniciar sesión"}
               onClick={handleSubmit}
+              disabled={loading}
               bg={"bg-secondary"}
               text={"text-white"}
               hover={"hover:bg-secondary/80"}
             />
             {loading && <Loader />}
+            {!loading && error && (
+              <div className="mt-2 p-3 rounded border border-error bg-error/10 text-error">
+                {error?.message || "No fue posible iniciar sesión."}
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -8,6 +8,7 @@ import PdfReportCard from "./PdfReportCard";
 import reportCardResponse from "../../services/DataExamples/reportCardResponse";
 const Sidebar = () => {
   const {
+    user,
     nameSchool,
     id_School,
     imgSchool,
@@ -21,6 +22,8 @@ const Sidebar = () => {
   const toggleIsOpen = () => {
     toggleSidebar();
   };
+
+  const displayName = String(user?.name ?? "").trim();
   return (
     <div
       className={`fixed left-0 top-0  z-50 h-screen grid grid-rows-12 border  bg-primary transition-all duration-300 ease-in-out${
@@ -96,7 +99,12 @@ const Sidebar = () => {
         <div className="flex flex-row items-center gap-2 ">
           <User className="text-white text-2xl" />
           {isOpen ? (
-            <h2 className="text-white font-bold text-xl">{nameRole}</h2>
+            <div className="flex flex-col">
+              {displayName ? (
+                <h2 className="text-white font-bold text-xl">{displayName}</h2>
+              ) : null}
+              <div className="text-white text-sm text-center">{nameRole}</div>
+            </div>
           ) : null}
         </div>
         <button

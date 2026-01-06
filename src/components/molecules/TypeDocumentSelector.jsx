@@ -26,20 +26,6 @@ const TypeDocumentSelector = ({
     // errorTypeIdentification,
   } = useData();
 
-  const effectiveParams = useMemo(() => {
-    if (params && typeof params === "object" && !Array.isArray(params))
-      return params;
-    const optParams = options?.params;
-    if (
-      optParams &&
-      typeof optParams === "object" &&
-      !Array.isArray(optParams)
-    ) {
-      return optParams;
-    }
-    return {};
-  }, [options?.params, params]);
-
   const shouldAutoLoad = useMemo(() => {
     if (typeof autoLoad === "boolean") return autoLoad;
     if (typeof options?.autoLoad === "boolean") return options.autoLoad;
@@ -52,10 +38,9 @@ const TypeDocumentSelector = ({
     if (Array.isArray(data) && data.length > 0) return;
     if (Array.isArray(typeIdentification) && typeIdentification.length > 0)
       return;
-    reloadTypeIdentification(effectiveParams).catch(() => {});
+    reloadTypeIdentification().catch(() => {});
   }, [
     data,
-    effectiveParams,
     loadingTypeIdentification,
     reloadTypeIdentification,
     shouldAutoLoad,

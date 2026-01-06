@@ -8,25 +8,26 @@ import React, {
 import * as authService from "../../services/authService";
 import { setAuthToken } from "../../services/ApiClient";
 import { useNavigate } from "react-router-dom";
+import { getMenuRol } from "../../services/dataService";
 
 export const AuthContext = createContext(null);
 
-// Funciones auxiliares para sessionStorage
-const loadFromSession = (key, fallback = null) => {
+// Funciones auxiliares para localStorage
+const loadFromStorage = (key, fallback = null) => {
   try {
-    const item = sessionStorage.getItem(key);
+    const item = localStorage.getItem(key);
     return item ? JSON.parse(item) : fallback;
   } catch {
     return fallback;
   }
 };
 
-const saveToSession = (key, value) => {
+const saveToStorage = (key, value) => {
   try {
     if (value === null || value === undefined) {
-      sessionStorage.removeItem(key);
+      localStorage.removeItem(key);
     } else {
-      sessionStorage.setItem(key, JSON.stringify(value));
+      localStorage.setItem(key, JSON.stringify(value));
     }
   } catch (err) {
     console.error(`Error saving ${key}:`, err);
@@ -34,19 +35,19 @@ const saveToSession = (key, value) => {
 };
 
 export function AuthProvider({ children }) {
-  // Cargar datos iniciales desde sessionStorage
-  const [user, setUser] = useState(() => loadFromSession("user"));
+  // Cargar datos iniciales desde localStorage
+  const [user, setUser] = useState(() => loadFromStorage("user"));
   const [nameSchool, setNameSchool] = useState(() =>
-    loadFromSession("nameSchool")
+    loadFromStorage("nameSchool")
   );
-  const [id_School, setIdSchool] = useState(() => loadFromSession("id_School"));
+  const [id_School, setIdSchool] = useState(() => loadFromStorage("id_School"));
   const [imgSchool, setImgSchool] = useState(() =>
-    loadFromSession("imgSchool")
+    loadFromStorage("imgSchool")
   );
-  const [nameRole, setNameRole] = useState(() => loadFromSession("nameRole"));
-  const [menu, setMenu] = useState(() => loadFromSession("menu"));
+  const [nameRole, setNameRole] = useState(() => loadFromStorage("nameRole"));
+  const [menu, setMenu] = useState(() => loadFromStorage("menu"));
   const [token, setToken] = useState(
-    () => sessionStorage.getItem("token") || null
+    () => localStorage.getItem("token") || null
   );
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -76,7 +77,7 @@ export function AuthProvider({ children }) {
       setNameRole(null);
       setMenu(null);
       setToken(null);
-      sessionStorage.clear();
+      localStorage.clear();
       setAuthToken(null);
       setError(err);
     } finally {
@@ -84,20 +85,20 @@ export function AuthProvider({ children }) {
     }
   }, [token]);
 
-  // ✅ Un solo useEffect que guarda todo en sessionStorage.
+  // ✅ Un solo useEffect que guarda todo en localStorage.
   useEffect(() => {
-    saveToSession("user", user);
-    saveToSession("nameSchool", nameSchool);
-    saveToSession("id_School", id_School);
-    saveToSession("imgSchool", imgSchool);
-    saveToSession("nameRole", nameRole);
-    saveToSession("menu", menu);
+    saveToStorage("user", user);
+    saveToStorage("nameSchool", nameSchool);
+    saveToStorage("id_School", id_School);
+    saveToStorage("imgSchool", imgSchool);
+    saveToStorage("nameRole", nameRole);
+    saveToStorage("menu", menu);
 
     if (token) {
-      sessionStorage.setItem("token", token);
+      localStorage.setItem("token", token);
       setAuthToken(token);
     } else {
-      sessionStorage.removeItem("token");
+      localStorage.removeItem("token");
       setAuthToken(null);
     }
   }, [user, nameSchool, id_School, imgSchool, nameRole, menu, token]);
@@ -113,25 +114,53 @@ export function AuthProvider({ children }) {
     try {
       const res = await authService.login(credentials);
       const t = res?.token || res?.accessToken || null;
-      const u = res?.id_person || res;
 
-      if (t) setToken(t);
+      // Asegura que el token se use inmediatamente (antes de pedir menú).
+      if (t) {
+        setToken(t);
+        setAuthToken(t);
+      }
+
+      // Adaptación a la respuesta real:
+      // { token, id, name, email, rol, name_rol }
+      const u = {
+        id: res?.id ?? res?.id_person ?? null,
+        name: res?.name ?? "",
+        email: res?.email ?? "",
+        rol: res?.rol ?? null,
+        name_rol: res?.name_rol ?? "",
+        raw: res,
+      };
+
       setUser(u);
 
-      // Actualizar todos los estados del login
-      if (res.school_name) setNameSchool(res.school_name);
-      if (res.id_school) setIdSchool(res.id_school);
-      if (res.img_logo) setImgSchool(res.img_logo);
-      if (res.menu) setMenu(res.menu);
-      if (res.name) setNameRole(res.name);
+      // Actualizar estados opcionales si el backend los provee.
+      if (res?.school_name) setNameSchool(res.school_name);
+      if (res?.id_school) setIdSchool(res.id_school);
+      if (res?.img_logo) setImgSchool(res.img_logo);
 
-      return {
-        user: u,
-        token: t,
-        nameSchool: res.school_name,
-        id_School: res.id_school,
-        imgSchool: res.img_logo,
-      };
+      // En sidebar se muestra el rol, no el nombre del usuario.
+      if (res?.name_rol) setNameRole(res.name_rol);
+
+      // Cargar menú por rol al iniciar sesión.
+      if (res?.rol) {
+        const fd = new FormData();
+        // En tu API de roles el campo es id_rol.
+        fd.append("id_rol", String(res.rol));
+        // Compatibilidad por si el backend espera 'rol'.
+        fd.append("rol", String(res.rol));
+
+        try {
+          const menuRes = await getMenuRol(fd);
+          setMenu(menuRes);
+        } catch (menuErr) {
+          // No bloquea el login, pero deja el error disponible.
+          setMenu([]);
+          setError(menuErr);
+        }
+      }
+
+      return { user: u, token: t };
     } catch (err) {
       setError(err);
       throw err;
@@ -152,7 +181,7 @@ export function AuthProvider({ children }) {
       setNameRole(null);
       setMenu(null);
       setToken(null);
-      sessionStorage.clear();
+      localStorage.clear();
       setAuthToken(null);
       setLoading(false);
       navigate("/login");

@@ -1,20 +1,31 @@
 import { ApiClient } from "./ApiClient";
 import { loginResponse } from "./DataExamples/loginResponse";
+import { sha256 } from "js-sha256";
 
 /**
  * authService: funciones para inicio de sesión, cierre de sesión y perfil.
  * Ajusta las rutas según tu backend.
  */
 export async function login(credentials) {
-  // espera { token, user } o similar
-  // Espera { token, user } o similar.
-  if (import.meta.env.DEV) {
-    await new Promise((r) => setTimeout(r, 300));
+  console.log("AuthService - login called with:", credentials);
 
-    return loginResponse;
-  }
-  return loginResponse;
-  // return ApiClient.post("/auth/login", credentials);
+  const payload = {
+    ...credentials,
+    // En este proyecto el campo de contraseña del form se llama `infokey`.
+    infokey: credentials.infokey ? sha256(String(credentials.infokey)) : "",
+  };
+
+  const res = await ApiClient.instance.post("/login", payload);
+
+  // ApiClient tiene interceptor que normalmente devuelve res.data.
+  // Pero aquí usamos instance.post directamente; res ya es data por interceptor.
+  const data = res;
+  console.log("AuthService - login:", data);
+
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de login.");
 }
 
 export async function logout() {
