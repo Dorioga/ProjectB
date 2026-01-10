@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 
 import useSchool from "../../lib/hooks/useSchool";
 
@@ -15,7 +15,15 @@ const JourneySelect = ({
   useServiceJourneys = true,
   disabled = false,
 }) => {
-  const { journeys, loadingJourneys, errorJourneys } = useSchool();
+  const { journeys, loadingJourneys, errorJourneys, reloadJourneys } =
+    useSchool();
+
+  // Cargar jornadas cuando se monta el componente
+  useEffect(() => {
+    if (!journeys || journeys.length === 0) {
+      reloadJourneys();
+    }
+  }, []);
 
   const normalizedFilterValue = useMemo(() => {
     if (typeof filterValue !== "string") return "";

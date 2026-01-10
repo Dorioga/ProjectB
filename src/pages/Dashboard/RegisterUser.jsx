@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { sha256 } from "js-sha256";
 import Loader from "../../components/atoms/Loader";
 import SimpleButton from "../../components/atoms/SimpleButton";
@@ -9,7 +9,7 @@ import useData from "../../lib/hooks/useData";
 import useAuth from "../../lib/hooks/useAuth";
 
 const RegisterUser = () => {
-  const { schools, loading } = useSchool();
+  const { schools, loading, reload } = useSchool();
   const { registerUser, loadingRegisterUser, errorRegisterUser } = useData();
   const { idInstitution } = useAuth();
 
@@ -26,6 +26,11 @@ const RegisterUser = () => {
     role: "",
     institutionId: "",
   });
+
+  // Cargar las escuelas cuando se monta el componente
+  useEffect(() => {
+    reload();
+  }, [reload]);
 
   const institutionOptions = useMemo(() => {
     const source = Array.isArray(schools) ? schools : [];

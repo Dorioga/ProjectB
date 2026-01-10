@@ -111,12 +111,14 @@ export function DataProvider({ children }) {
     }
   }, []);
 
-  useEffect(() => {
-    // Carga inicial de catálogos.
-    loadTypeIdentification().catch(() => {});
-    loadRoles().catch(() => {});
-    loadDepartments().catch(() => {});
-  }, [loadTypeIdentification, loadRoles, loadDepartments]);
+  // Eliminados los useEffect automáticos para cargar solo cuando se necesite
+  // Los componentes selectores cargarán los datos con autoLoad cuando se monten
+  // useEffect(() => {
+  //   // Carga inicial de catálogos.
+  //   loadTypeIdentification().catch(() => {});
+  //   loadRoles().catch(() => {});
+  //   loadDepartments().catch(() => {});
+  // }, [loadTypeIdentification, loadRoles, loadDepartments]);
 
   const loadInstitutionSedes = useCallback(async (idInstitucion) => {
     if (!idInstitucion) {

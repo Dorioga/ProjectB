@@ -22,9 +22,10 @@ export function StudentProvider({ children }) {
     }
   }, []);
 
-  useEffect(() => {
-    loadStudents();
-  }, [loadStudents]);
+  // Eliminado el useEffect automático para cargar solo cuando se necesite en cada página
+  // useEffect(() => {
+  //   loadStudents();
+  // }, [loadStudents]);
 
   const getStudent = useCallback(async (identification) => {
     setLoading(true);

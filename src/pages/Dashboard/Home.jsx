@@ -15,9 +15,10 @@ const DashHome = () => {
   const { students, reload } = useStudent();
   const [selectedJourney, setSelectedJourney] = useState("todas");
 
+  // Cargar estudiantes cuando se monta el componente
   useEffect(() => {
     reload();
-  }, []);
+  }, [reload]);
 
   // Extraer jornadas únicas de los estudiantes
   const jornadas = useMemo(() => {

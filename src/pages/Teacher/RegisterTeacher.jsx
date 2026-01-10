@@ -8,8 +8,8 @@ import useStudent from "../../lib/hooks/useStudent";
 import { asignatureResponse } from "../../services/DataExamples/asignatureResponse";
 
 const RegisterTeacher = () => {
-  const { sedes } = useSchool();
-  const { students, loading: studentsLoading } = useStudent();
+  const { sedes, reloadSedes } = useSchool();
+  const { students, loading: studentsLoading, reload } = useStudent();
   const [formData, setFormData] = useState({
     sedeId: "",
     jornada: "",
@@ -28,6 +28,16 @@ const RegisterTeacher = () => {
   });
 
   const [submitError, setSubmitError] = useState("");
+
+  // Cargar estudiantes cuando se monta el componente
+  useEffect(() => {
+    reload();
+  }, [reload]);
+
+  // Cargar sedes cuando se monta el componente
+  useEffect(() => {
+    reloadSedes();
+  }, [reloadSedes]);
   const [submitOk, setSubmitOk] = useState(false);
 
   const availableGrades = useMemo(() => {

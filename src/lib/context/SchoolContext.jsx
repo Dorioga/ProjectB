@@ -102,17 +102,18 @@ export function SchoolProvider({ children }) {
     }
   }, []);
 
-  useEffect(() => {
-    loadSchools();
-  }, [loadSchools]);
+  // Eliminados los useEffect automáticos para cargar solo cuando se necesite
+  // useEffect(() => {
+  //   loadSchools();
+  // }, [loadSchools]);
 
-  useEffect(() => {
-    loadSedes();
-  }, [loadSedes]);
+  // useEffect(() => {
+  //   loadSedes();
+  // }, [loadSedes]);
 
-  useEffect(() => {
-    loadJourneys();
-  }, [loadJourneys]);
+  // useEffect(() => {
+  //   loadJourneys();
+  // }, [loadJourneys]);
 
   const addSchool = async (payload) => {
     setLoading(true);

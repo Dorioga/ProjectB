@@ -1,11 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import JourneySelect from "../../components/atoms/JourneySelect";
 import SedeSelect from "../../components/atoms/SedeSelect";
 import useStudent from "../../lib/hooks/useStudent";
 
 const RegisterAsignature = () => {
-  const { students, loading: studentsLoading } = useStudent();
+  const { students, loading: studentsLoading, reload } = useStudent();
   const [formData, setFormData] = useState({
     name: "",
     code: "",
@@ -21,6 +21,11 @@ const RegisterAsignature = () => {
 
   const [submitError, setSubmitError] = useState("");
   const [submitOk, setSubmitOk] = useState(false);
+
+  // Cargar estudiantes cuando se monta el componente
+  useEffect(() => {
+    reload();
+  }, [reload]);
 
   const availableGrades = useMemo(() => {
     const source = Array.isArray(students) ? students : [];
