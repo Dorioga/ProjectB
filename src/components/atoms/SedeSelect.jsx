@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo } from "react";
-import useSchool from "../../lib/hooks/useSchool";
+import useData from "../../lib/hooks/useData";
+import useAuth from "../../lib/hooks/useAuth";
 
 const SedeSelect = ({
   name = "sedeId",
@@ -12,31 +13,30 @@ const SedeSelect = ({
   disabled = false,
   autoSelectPrincipal = false,
 }) => {
-  const { sedes, loadingSedes } = useSchool();
+  const { institutionSedes, loadingInstitutionSedes, loadInstitutionSedes } =
+    useData();
+  const { idInstitution } = useAuth();
+
+  // Cargar sedes cuando se monta el componente o cambia idInstitution
+  useEffect(() => {
+    if (idInstitution) {
+      loadInstitutionSedes(idInstitution).catch(() => {});
+    }
+  }, [idInstitution, loadInstitutionSedes]);
 
   const sedeOptions = useMemo(() => {
-    const source = Array.isArray(sedes) ? sedes : [];
+    const source = Array.isArray(institutionSedes) ? institutionSedes : [];
 
     const normalized = source
       .filter(Boolean)
       .map((sede) => {
         const id = String(sede?.id ?? "").trim();
         const nombre = String(sede?.nombre ?? "").trim();
-        const tipo = String(sede?.tipo ?? "")
-          .toUpperCase()
-          .trim();
-        const estado = String(sede?.estado ?? "")
-          .toUpperCase()
-          .trim();
 
-        const isPrincipal = tipo === "PRINCIPAL";
-        const isActive = estado === "ACTIVA";
         const labelBase = nombre || id || "Sede";
-        const optionLabel = `${
-          isPrincipal ? `Principal (${labelBase})` : labelBase
-        }${isActive ? "" : " (Inactiva)"}`;
+        const optionLabel = labelBase;
 
-        return { id, label: optionLabel, isPrincipal, isActive };
+        return { id, label: optionLabel, isPrincipal: false, isActive: true };
       })
       .filter((opt) => opt.id);
 
@@ -53,7 +53,7 @@ const SedeSelect = ({
       if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
       return a.label.localeCompare(b.label, "es", { sensitivity: "base" });
     });
-  }, [sedes]);
+  }, [institutionSedes]);
 
   useEffect(() => {
     if (!autoSelectPrincipal) return;
@@ -77,7 +77,7 @@ const SedeSelect = ({
         disabled={disabled}
       >
         <option value="">
-          {loadingSedes ? "Cargando sedes..." : placeholder}
+          {loadingInstitutionSedes ? "Cargando sedes..." : placeholder}
         </option>
         {sedeOptions.map((sede) => (
           <option key={sede.id} value={sede.id}>

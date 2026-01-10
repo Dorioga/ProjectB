@@ -8,12 +8,13 @@ import PdfReportCard from "./PdfReportCard";
 import reportCardResponse from "../../services/DataExamples/reportCardResponse";
 const Sidebar = () => {
   const {
-    user,
+    userName,
     nameSchool,
-    id_School,
+    idInstitution,
     imgSchool,
     menu,
     nameRole,
+    nameSede,
     logout,
     isOpen,
     toggleSidebar,
@@ -23,7 +24,7 @@ const Sidebar = () => {
     toggleSidebar();
   };
 
-  const displayName = String(user?.name ?? "").trim();
+  const displayName = String(userName ?? "").trim();
   return (
     <div
       className={`fixed left-0 top-0  z-50 h-screen grid grid-rows-12 border  bg-primary transition-all duration-300 ease-in-out${
@@ -44,17 +45,25 @@ const Sidebar = () => {
           )}
         </div>
         {isOpen && (
-          <div className="flex flex-col items-center justify-center text-center gap-4 p-4 transition-all duration-300 ease-in-out">
-            {imgSchool && <PreviewIMG path={imgSchool} size={"logo"} />}
-            <div className="text-white font-bold text-lg ml-2">
-              {nameSchool}
+          <div className="flex flex-col items-center justify-center text-center gap-2 p-4 transition-all duration-300 ease-in-out">
+            <PreviewIMG
+              path={
+                imgSchool ||
+                "https://i.pinimg.com/736x/2d/5f/10/2d5f106e7866848b4bf3b0673904a143.jpg"
+              }
+              size={"logo"}
+            />
+            <div className="text-white font-bold text-lg">
+              {nameSchool || "NEXUS"}
             </div>
+            <div className="text-white text-sm">{nameSede || "Software"}</div>
           </div>
         )}
       </div>
       <div className="row-span-7 flex flex-col justify-start xl:justify-center 2xl:justify-start overflow-y-auto ">
         <ul className="">
           {menu &&
+            Array.isArray(menu) &&
             menu.map((item, id) => {
               const IconComponent = LucideIcons[item.icon] || LucideIcons.User;
               return (
@@ -101,7 +110,20 @@ const Sidebar = () => {
           {isOpen ? (
             <div className="flex flex-col">
               {displayName ? (
-                <h2 className="text-white font-bold text-xl">{displayName}</h2>
+                <h2 className="text-white font-bold text-xl text-center">
+                  {(() => {
+                    const words = displayName.split(" ");
+                    if (words.length >= 4) {
+                      return (
+                        <>
+                          <div>{words.slice(0, 2).join(" ")}</div>
+                          <div>{words.slice(2).join(" ")}</div>
+                        </>
+                      );
+                    }
+                    return displayName;
+                  })()}
+                </h2>
               ) : null}
               <div className="text-white text-sm text-center">{nameRole}</div>
             </div>

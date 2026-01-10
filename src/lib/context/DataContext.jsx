@@ -19,8 +19,21 @@ export function DataProvider({ children }) {
   const [loadingRoles, setLoadingRoles] = useState(false);
   const [errorRoles, setErrorRoles] = useState(null);
 
+  const [departments, setDepartments] = useState([]);
+  const [loadingDepartments, setLoadingDepartments] = useState(false);
+  const [errorDepartments, setErrorDepartments] = useState(null);
+
+  const [cities, setCities] = useState([]);
+  const [loadingCities, setLoadingCities] = useState(false);
+  const [errorCities, setErrorCities] = useState(null);
+  const [selectedDepartment, setSelectedDepartment] = useState(null);
+
   const [loadingRegisterUser, setLoadingRegisterUser] = useState(false);
   const [errorRegisterUser, setErrorRegisterUser] = useState(null);
+
+  const [institutionSedes, setInstitutionSedes] = useState([]);
+  const [loadingInstitutionSedes, setLoadingInstitutionSedes] = useState(false);
+  const [errorInstitutionSedes, setErrorInstitutionSedes] = useState(null);
 
   const loadTypeIdentification = useCallback(async () => {
     setLoadingTypeIdentification(true);
@@ -52,11 +65,91 @@ export function DataProvider({ children }) {
     }
   }, []);
 
+  const loadDepartments = useCallback(async () => {
+    setLoadingDepartments(true);
+    setErrorDepartments(null);
+    try {
+      const res = await dataService.getDepartments();
+      setDepartments(Array.isArray(res) ? res : res?.data ?? []);
+      return res;
+    } catch (err) {
+      setErrorDepartments(err);
+      throw err;
+    } finally {
+      setLoadingDepartments(false);
+    }
+  }, []);
+
+  const loadCities = useCallback(async (departmentId) => {
+    if (!departmentId) {
+      setCities([]);
+      setSelectedDepartment(null);
+      return [];
+    }
+
+    setLoadingCities(true);
+    setErrorCities(null);
+    try {
+      const res = await dataService.getCities(departmentId);
+      const citiesData = Array.isArray(res) ? res : res?.data ?? [];
+
+      // Normalizar formato de municipios: id_municipio -> id, nombre -> name
+      const normalizedCities = citiesData.map((city) => ({
+        id: city.id_municipio || city.id,
+        name: city.nombre || city.name,
+      }));
+
+      setCities(normalizedCities);
+      setSelectedDepartment(departmentId);
+      return normalizedCities;
+    } catch (err) {
+      setErrorCities(err);
+      setCities([]);
+      throw err;
+    } finally {
+      setLoadingCities(false);
+    }
+  }, []);
+
   useEffect(() => {
     // Carga inicial de catálogos.
     loadTypeIdentification().catch(() => {});
     loadRoles().catch(() => {});
-  }, [loadTypeIdentification, loadRoles]);
+    loadDepartments().catch(() => {});
+  }, [loadTypeIdentification, loadRoles, loadDepartments]);
+
+  const loadInstitutionSedes = useCallback(async (idInstitucion) => {
+    if (!idInstitucion) {
+      setInstitutionSedes([]);
+      return [];
+    }
+
+    setLoadingInstitutionSedes(true);
+    setErrorInstitutionSedes(null);
+    try {
+      const formData = new FormData();
+      formData.append("idInstitution", String(idInstitucion));
+
+      const res = await dataService.getInstitutionSede(formData);
+      const sedesData = Array.isArray(res) ? res : res?.data ?? [];
+
+      // Normalizar formato: id_sede -> id, nombre_sede -> nombre
+      const normalizedSedes = sedesData.map((sede) => ({
+        id: sede.id_sede || sede.id,
+        nombre: sede.nombre_sede || sede.nombre,
+        fk_institucion: sede.fk_institucion,
+      }));
+
+      setInstitutionSedes(normalizedSedes);
+      return normalizedSedes;
+    } catch (err) {
+      setErrorInstitutionSedes(err);
+      setInstitutionSedes([]);
+      throw err;
+    } finally {
+      setLoadingInstitutionSedes(false);
+    }
+  }, []);
 
   const registerUser = useCallback(async (formData) => {
     setLoadingRegisterUser(true);
@@ -84,9 +177,25 @@ export function DataProvider({ children }) {
       errorRoles,
       reloadRoles: loadRoles,
 
+      departments,
+      loadingDepartments,
+      errorDepartments,
+      reloadDepartments: loadDepartments,
+
+      cities,
+      loadingCities,
+      errorCities,
+      loadCities,
+      selectedDepartment,
+
       registerUser,
       loadingRegisterUser,
       errorRegisterUser,
+
+      institutionSedes,
+      loadingInstitutionSedes,
+      errorInstitutionSedes,
+      loadInstitutionSedes,
     }),
     [
       typeIdentification,
@@ -99,9 +208,25 @@ export function DataProvider({ children }) {
       errorRoles,
       loadRoles,
 
+      departments,
+      loadingDepartments,
+      errorDepartments,
+      loadDepartments,
+
+      cities,
+      loadingCities,
+      errorCities,
+      loadCities,
+      selectedDepartment,
+
       registerUser,
       loadingRegisterUser,
       errorRegisterUser,
+
+      institutionSedes,
+      loadingInstitutionSedes,
+      errorInstitutionSedes,
+      loadInstitutionSedes,
     ]
   );
 

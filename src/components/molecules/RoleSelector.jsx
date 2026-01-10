@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import useData from "../../lib/hooks/useData";
+import useAuth from "../../lib/hooks/useAuth";
 
 const RoleSelector = ({
   name = "rol",
@@ -18,6 +19,7 @@ const RoleSelector = ({
   autoLoad,
 }) => {
   const { roles, loadingRoles, reloadRoles } = useData();
+  const { rol } = useAuth();
 
   const shouldAutoLoad = useMemo(() => {
     if (typeof autoLoad === "boolean") return autoLoad;
@@ -35,7 +37,7 @@ const RoleSelector = ({
 
   const items = useMemo(() => {
     const source = Array.isArray(data) && data.length ? data : roles;
-    return (Array.isArray(source) ? source : [])
+    const allItems = (Array.isArray(source) ? source : [])
       .filter(Boolean)
       .map((x) => {
         const id = String(
@@ -47,7 +49,25 @@ const RoleSelector = ({
         return { id, name };
       })
       .filter((x) => x.id && x.name);
-  }, [data, roles]);
+
+    console.log("rol in RoleSelector:", rol);
+
+    // Filtrar roles según el valor numérico de rol
+    const rolNumber = String(rol).trim();
+
+    if (rolNumber === "1") {
+      // Si es rol 1 (Administrador), mostrar todos los roles
+      return allItems;
+    } else if (rolNumber === "2" || rolNumber === "3" || rolNumber === "4") {
+      // Si es rol 2, 3 o 4, solo mostrar roles 2, 3 y 4
+      return allItems.filter(
+        (item) => item.id === "2" || item.id === "3" || item.id === "4"
+      );
+    }
+
+    // Por defecto, mostrar todos
+    return allItems;
+  }, [data, roles, rol]);
 
   return (
     <div>

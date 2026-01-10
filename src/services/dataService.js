@@ -29,11 +29,7 @@ export async function registerUser(formData) {
   if (!(formData instanceof FormData)) {
     throw new Error("formData debe ser una instancia de FormData.");
   }
-  const res = await ApiClient.instance.post("/register_user", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+  const res = await ApiClient.instance.post("/register_user", formData);
 
   // ApiClient tiene interceptor que normalmente devuelve res.data.
   // Pero aquí usamos instance.post directamente; res ya es data por interceptor.
@@ -94,4 +90,112 @@ export async function getMenuRol(formData) {
   if (data !== undefined && data !== null) return data;
 
   throw new Error("Respuesta inesperada de menu_rol.");
+}
+
+/**
+ * Obtiene los departamentos desde el backend.
+ *
+ * Endpoint esperado: GET /departments
+ */
+export async function getDepartments() {
+  const res = await ApiClient.instance.get("/departament");
+
+  // ApiClient tiene interceptor que normalmente devuelve res.data.
+  // Pero aquí usamos instance.get directamente; res ya es data por interceptor.
+  const data = res;
+  console.log("DataService - getDepartments:", data);
+
+  // Validación suave del payload: aceptamos array o { data: array }.
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === "object" && Array.isArray(data.data))
+    return data.data;
+
+  throw new Error("Respuesta inesperada de departments.");
+}
+
+/**
+ * Obtiene los municipios por departamento desde el backend.
+ *
+ * Endpoint esperado: GET /cities/{departmentId}
+ */
+export async function getCities(departmentId) {
+  if (!departmentId) {
+    throw new Error("El ID del departamento es requerido.");
+  }
+
+  const payload = {
+    idDepartament: parseInt(departmentId),
+  };
+
+  const res = await ApiClient.instance.post("/municipality", payload);
+
+  // ApiClient tiene interceptor que normalmente devuelve res.data.
+  // Pero aquí usamos instance.get directamente; res ya es data por interceptor.
+  const data = res;
+  console.log("DataService - getCities:", data);
+
+  // Validación suave del payload: aceptamos array o { data: array }.
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === "object" && Array.isArray(data.data))
+    return data.data;
+
+  throw new Error("Respuesta inesperada de cities.");
+}
+
+/**
+ * Obtiene las instituciones con sede desde el backend.
+ *
+ * Endpoint esperado: POST /institution_sede
+ */
+export async function getInstitutionSede(formData) {
+  if (!(formData instanceof FormData)) {
+    throw new Error("formData debe ser una instancia de FormData.");
+  }
+
+  const res = await ApiClient.instance.post("/institution_sede", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+  const data = res;
+  console.log("DataService - getInstitutionSede:", data);
+
+  // Validación suave del payload: devolvemos data o data.data.
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === "object" && Array.isArray(data.data))
+    return data.data;
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de institution_sede.");
+}
+
+/**
+ * Obtiene las sedes desde el backend.
+ *
+ * Endpoint esperado: POST /sede
+ */
+export async function getSede(formData) {
+  if (!(formData instanceof FormData)) {
+    throw new Error("formData debe ser una instancia de FormData.");
+  }
+
+  const res = await ApiClient.instance.post("/sede", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+  const data = res;
+  console.log("DataService - getSede:", data);
+
+  // Validación suave del payload: devolvemos data o data.data.
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === "object" && Array.isArray(data.data))
+    return data.data;
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de sede.");
 }

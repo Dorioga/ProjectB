@@ -1,13 +1,6 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 
 import useSchool from "../../lib/hooks/useSchool";
-
-const DEFAULT_OPTIONS = [
-  { value: "mañana", label: "Mañana" },
-  { value: "tarde", label: "Tarde" },
-  { value: "unica", label: "Única" },
-  { value: "ambas", label: "Ambas" },
-];
 
 const JourneySelect = ({
   name = "jornada",
@@ -19,82 +12,63 @@ const JourneySelect = ({
   placeholder = "Selecciona una jornada",
   className = "w-full p-2 border rounded bg-white",
   includeAmbas = true,
-  useServiceJourneys = false,
+  useServiceJourneys = true,
   disabled = false,
 }) => {
-  const {
-    journeys,
-    loadingJourneys,
-    reloadJourneys,
-    // errorJourneys,
-  } = useSchool();
-
-  const normalizedValue = useMemo(() => {
-    return typeof value === "string" ? value.trim().toLowerCase() : "";
-  }, [value]);
+  const { journeys, loadingJourneys, errorJourneys } = useSchool();
 
   const normalizedFilterValue = useMemo(() => {
     if (typeof filterValue !== "string") return "";
     return filterValue.trim().toLowerCase();
   }, [filterValue]);
 
-  useEffect(() => {
-    if (!useServiceJourneys) return;
-    if (loadingJourneys) return;
-    if (Array.isArray(journeys) && journeys.length > 0) return;
-    reloadJourneys();
-  }, [journeys, loadingJourneys, reloadJourneys, useServiceJourneys]);
-
   const options = useMemo(() => {
-    const baseFromService =
-      Array.isArray(journeys) && journeys.length > 0
-        ? journeys
-        : DEFAULT_OPTIONS;
-    const base = useServiceJourneys
-      ? baseFromService
-      : includeAmbas
-      ? DEFAULT_OPTIONS
-      : DEFAULT_OPTIONS.filter((opt) => opt.value !== "ambas");
+    if (!Array.isArray(journeys) || journeys.length === 0) {
+      return [];
+    }
 
-    // Si NO usamos servicio y llega un filterValue (por ejemplo desde sedesResponse):
-    // - si es "ambas": mostrar "mañana" y "tarde"
-    // - si no: mostrar SOLO el valor que entra
-    // Nota: NO restringimos por el value seleccionado, para que el usuario
-    // pueda volver a abrir el select y ver todas las opciones.
-    if (!useServiceJourneys && normalizedFilterValue) {
-      const refValue = normalizedFilterValue;
+    let filtered = [...journeys];
 
-      if (refValue === "ambas") {
-        return base.filter(
-          (opt) => opt.value === "mañana" || opt.value === "tarde"
+    // Aplicar filtro por filterValue (cuando viene desde sedesResponse)
+    if (normalizedFilterValue) {
+      // Si filterValue es "ambas" (id=3), mostrar solo Mañana (id=1) y Tarde (id=2)
+      if (normalizedFilterValue === "ambas" || normalizedFilterValue === "3") {
+        filtered = filtered.filter(
+          (opt) => opt.value === "1" || opt.value === "2"
         );
-      }
-
-      const isKnown = base.some((opt) => opt.value === refValue);
-      if (isKnown) {
-        return base.filter((opt) => opt.value === refValue);
+      } else {
+        // Buscar coincidencia exacta por value o label
+        const match = filtered.find(
+          (opt) =>
+            String(opt.value).toLowerCase() === normalizedFilterValue ||
+            String(opt.label).toLowerCase() === normalizedFilterValue
+        );
+        filtered = match ? [match] : [];
       }
     }
 
-    return includeAmbas ? base : base.filter((opt) => opt.value !== "ambas");
-  }, [
-    includeAmbas,
-    journeys,
-    normalizedFilterValue,
-    normalizedValue,
-    useServiceJourneys,
-  ]);
-
-  const effectiveValue = useMemo(() => {
-    if (!useServiceJourneys) {
-      const hasValueOption = options.some(
-        (opt) => String(opt.value).toLowerCase() === normalizedValue
+    // Excluir "Ambas" (id=3) si includeAmbas es false
+    if (!includeAmbas) {
+      filtered = filtered.filter(
+        (opt) =>
+          opt.value !== "3" && String(opt.label).toLowerCase() !== "ambas"
       );
-      if (normalizedValue && !hasValueOption) return "";
     }
 
-    return value;
-  }, [normalizedValue, options, useServiceJourneys, value]);
+    return filtered;
+  }, [includeAmbas, journeys, normalizedFilterValue]);
+
+  // Validar que el valor seleccionado existe en las opciones disponibles
+  const effectiveValue = useMemo(() => {
+    if (!value) return "";
+
+    const isValidOption = options.some(
+      (opt) => String(opt.value) === String(value)
+    );
+
+    // Si el valor no existe en opciones y hay opciones disponibles, limpiar
+    return isValidOption || options.length === 0 ? value : "";
+  }, [options, value]);
 
   return (
     <div>
@@ -104,11 +78,15 @@ const JourneySelect = ({
         value={effectiveValue}
         onChange={onChange}
         className={className}
-        disabled={disabled || (useServiceJourneys && loadingJourneys)}
+        disabled={disabled || loadingJourneys}
       >
         <option value="">
-          {useServiceJourneys && loadingJourneys
+          {loadingJourneys
             ? "Cargando jornadas..."
+            : errorJourneys
+            ? "Error al cargar jornadas"
+            : options.length === 0
+            ? "No hay jornadas disponibles"
             : placeholder}
         </option>
         {options.map((opt) => (

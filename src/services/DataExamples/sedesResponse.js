@@ -2,7 +2,7 @@
 
 export const sedesResponses = [
   {
-    id: "SED-0001",
+    id: "18",
     codigo: 1,
     nombre: "Sede Central",
     tipo: "PRINCIPAL",
@@ -34,7 +34,7 @@ export const sedesResponses = [
     },
   },
   {
-    id: "SED-0002",
+    id: "18",
     codigo: 2,
     nombre: "Sede Norte",
     tipo: "SATELITE",
@@ -66,7 +66,7 @@ export const sedesResponses = [
     },
   },
   {
-    id: "SED-0003",
+    id: "18",
     codigo: 3,
     nombre: "Sede Sur",
     tipo: "SATELITE",

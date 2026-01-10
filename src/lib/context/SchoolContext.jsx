@@ -1,4 +1,10 @@
-import React, { createContext, useCallback, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useEffect,
+  useState,
+  useRef,
+} from "react";
 import * as schoolService from "../../services/schoolService";
 
 export const SchoolContext = createContext(null);
@@ -20,6 +26,8 @@ export function SchoolProvider({ children }) {
     "https://a.storyblok.com/f/191576/1200x800/b7ad4902a2/signature_maker_after_.webp"
   );
 
+  const journeysLoadedRef = useRef(false);
+
   const loadSedes = useCallback(async (params = {}) => {
     setLoadingSedes(true);
     setErrorSedes(null);
@@ -33,18 +41,38 @@ export function SchoolProvider({ children }) {
     }
   }, []);
 
-  const loadJourneys = useCallback(async (params = {}) => {
+  const loadJourneys = useCallback(async () => {
+    // Evitar múltiples cargas (ya se cargó o está cargando)
+    if (journeysLoadedRef.current || loadingJourneys) return;
+
+    journeysLoadedRef.current = true;
     setLoadingJourneys(true);
     setErrorJourneys(null);
     try {
-      const res = await schoolService.getJourneys(params);
-      setJourneys(Array.isArray(res) ? res : res?.data ?? []);
+      const journeysData = await schoolService.getJourneys();
+
+      // getJourneys ya devuelve el array mapeado directamente
+      if (Array.isArray(journeysData)) {
+        setJourneys(journeysData);
+        console.log(
+          `SchoolContext: ${journeysData.length} jornadas cargadas en el contexto`
+        );
+      } else {
+        console.warn(
+          "SchoolContext: respuesta de getJourneys no es un array",
+          journeysData
+        );
+        setJourneys([]);
+      }
     } catch (err) {
+      console.error("Error al cargar jornadas:", err);
       setErrorJourneys(err);
+      setJourneys([]);
+      journeysLoadedRef.current = false; // Permitir reintento en caso de error
     } finally {
       setLoadingJourneys(false);
     }
-  }, []);
+  }, [loadingJourneys]);
 
   const loadRecords = useCallback(async (params = {}) => {
     setLoadingRecords(true);
@@ -82,6 +110,10 @@ export function SchoolProvider({ children }) {
     loadSedes();
   }, [loadSedes]);
 
+  useEffect(() => {
+    loadJourneys();
+  }, [loadJourneys]);
+
   const addSchool = async (payload) => {
     setLoading(true);
     setError(null);
@@ -106,6 +138,20 @@ export function SchoolProvider({ children }) {
         s.map((x) => (x.id === id || x._id === id ? updated : x))
       );
       return updated;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const registerGrade = async (gradeData) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await schoolService.registerGrade(gradeData);
+      return result;
     } catch (err) {
       setError(err);
       throw err;
@@ -150,6 +196,7 @@ export function SchoolProvider({ children }) {
         addSchool,
         updateSchool,
         removeSchool,
+        registerGrade,
         pathSignature,
         setPathSignature,
       }}

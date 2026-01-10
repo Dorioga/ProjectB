@@ -5,25 +5,39 @@ import FileChooser from "../../components/atoms/FileChooser";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import ThemeModal from "../../components/molecules/ThemeModal";
 import JourneySelect from "../../components/atoms/JourneySelect";
+import DepartmentSelector from "../../components/molecules/DepartmentSelector";
+import CitySelector from "../../components/molecules/CitySelector";
+import { getInputClassName, getLabelClassName } from "../../utils/cssUtils";
+import useSchool from "../../lib/hooks/useSchool";
 
-const ManageSchool = ({ mode: modeProp }) => {
+const ManageSchool = ({ mode: modeProp, schoolId }) => {
   const params = useParams();
   const modeFromParams = params?.mode;
   const mode = (modeProp ?? modeFromParams ?? "register").toLowerCase();
   const isUpdate = mode === "update";
 
-  const [formData, setFormData] = useState({
-    name: "",
-    address: "",
-    phone: "",
-    email: "",
-    principalName: "",
-    signaturePrincipal: "",
-    coordinadorName: "",
-    logo: null,
-    sedes: [],
-  });
+  const { addSchool, updateSchool, loading } = useSchool();
+  const [submitError, setSubmitError] = useState(null);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
 
+  const [formData, setFormData] = useState({
+    municipality: "1",
+    name: "",
+    slogan: "",
+    address: "",
+    email: "",
+    phone: "",
+    principalName: "",
+    coordinadorName: "",
+    logo: "",
+    mainColor: "#0b3d91",
+    secondaryColor: "#f59e0b",
+    workday: "",
+    codDane: "",
+    signaturePrincipal: "",
+    sede: [],
+    department_id: "",
+  });
   const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
 
   const title = useMemo(() => {
@@ -36,23 +50,31 @@ const ManageSchool = ({ mode: modeProp }) => {
 
   const handleChange = (e) => {
     const { name, value, type, files } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "file" ? files?.[0] : value,
-    }));
+    setFormData((prev) => {
+      const newData = {
+        ...prev,
+        [name]: type === "file" ? files?.[0] : value,
+      };
+
+      // Si cambió el departamento, limpiar municipality
+      if (name === "department_id") {
+        newData.municipality = "";
+      }
+
+      return newData;
+    });
   };
 
   const addSede = () => {
     setFormData((prev) => ({
       ...prev,
-      sedes: [
-        ...(Array.isArray(prev.sedes) ? prev.sedes : []),
+      sede: [
+        ...(Array.isArray(prev.sede) ? prev.sede : []),
         {
-          name: "",
-          address: "",
-          tel: "",
+          name_sede: "",
+          adress: "",
+          phone: "",
           jornada: "",
-          journeys: "",
         },
       ],
     }));
@@ -61,12 +83,11 @@ const ManageSchool = ({ mode: modeProp }) => {
   const updateSedeField = (index, field, value) => {
     setFormData((prev) => ({
       ...prev,
-      sedes: (Array.isArray(prev.sedes) ? prev.sedes : []).map((sede, i) =>
+      sede: (Array.isArray(prev.sede) ? prev.sede : []).map((sede, i) =>
         i === index
           ? {
               ...sede,
               [field]: value,
-              ...(field === "jornada" ? { journeys: value } : {}),
             }
           : sede
       ),
@@ -76,28 +97,66 @@ const ManageSchool = ({ mode: modeProp }) => {
   const removeSede = (index) => {
     setFormData((prev) => ({
       ...prev,
-      sedes: (Array.isArray(prev.sedes) ? prev.sedes : []).filter(
+      sede: (Array.isArray(prev.sede) ? prev.sede : []).filter(
         (_, i) => i !== index
       ),
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitError(null);
+    setSubmitSuccess(false);
 
-    const dataToSend = new FormData();
-    for (const key in formData) {
-      if (key === "sedes") {
-        dataToSend.append(key, JSON.stringify(formData.sedes ?? []));
-        continue;
+    try {
+      const dataToSend = new FormData();
+      for (const key in formData) {
+        if (key === "sede") {
+          let sedeData = formData.sede ?? [];
+
+          // Si no hay sedes, crear una sede principal automáticamente
+          if (sedeData.length === 0) {
+            sedeData = [
+              {
+                name_sede: "principal",
+                adress: "",
+                phone: "",
+                jornada: formData.workday,
+              },
+            ];
+          }
+
+          dataToSend.append(key, JSON.stringify(sedeData));
+          continue;
+        }
+        // Excluir campos auxiliares que no se envían al backend
+        if (key === "department_id") {
+          continue;
+        }
+
+        dataToSend.append(key, formData[key]);
       }
 
-      dataToSend.append(key, formData[key]);
-    }
+      let result;
+      if (isUpdate && schoolId) {
+        // Modo actualización
+        result = await updateSchool(schoolId, dataToSend);
+        console.log("Institución actualizada:", result);
+      } else {
+        // Modo creación
+        result = await addSchool(dataToSend);
+        console.log("Institución creada:", result);
+      }
 
-    console.log(`Formulario para ${isUpdate ? "actualizar" : "registrar"}:`);
-    for (let [key, value] of dataToSend.entries()) {
-      console.log(`${key}:`, value);
+      setSubmitSuccess(true);
+
+      // Opcional: resetear formulario en modo create
+      if (!isUpdate) {
+        // Podrías resetear el form o redirigir
+      }
+    } catch (error) {
+      console.error("Error al enviar formulario:", error);
+      setSubmitError(error.message || "Error al procesar la solicitud");
     }
   };
 
@@ -122,6 +181,17 @@ const ManageSchool = ({ mode: modeProp }) => {
         </div>
 
         <div className="md:col-span-2">
+          <label>Slogan</label>
+          <input
+            type="text"
+            name="slogan"
+            value={formData.slogan}
+            onChange={handleChange}
+            className="w-full p-2 border rounded bg-white"
+          />
+        </div>
+
+        <div className="md:col-span-2">
           <label>Dirección</label>
           <input
             type="text"
@@ -133,24 +203,54 @@ const ManageSchool = ({ mode: modeProp }) => {
         </div>
 
         <div>
-          <label>Teléfono</label>
-          <input
-            type="tel"
-            name="phone"
-            value={formData.phone}
+          <DepartmentSelector
+            name="department_id"
+            label="Departamento"
+            value={formData.department_id}
             onChange={handleChange}
+            className="w-full p-2 border rounded bg-white"
+            autoLoad={false}
+          />
+        </div>
+
+        <div>
+          <CitySelector
+            name="municipality"
+            label="Ciudad/Municipio"
+            value={formData.municipality}
+            onChange={handleChange}
+            departmentId={formData.department_id}
             className="w-full p-2 border rounded bg-white"
           />
         </div>
 
         <div>
-          <label>Correo electrónico</label>
+          <label className={getLabelClassName("", false)}>Teléfono</label>
+          <input
+            type="tel"
+            name="phone"
+            value={formData.phone}
+            onChange={handleChange}
+            className={getInputClassName(
+              "w-full p-2 border rounded bg-white",
+              false
+            )}
+          />
+        </div>
+
+        <div>
+          <label className={getLabelClassName("", false)}>
+            Correo electrónico
+          </label>
           <input
             type="email"
             name="email"
             value={formData.email}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className={getInputClassName(
+              "w-full p-2 border rounded bg-white",
+              false
+            )}
           />
         </div>
 
@@ -194,20 +294,48 @@ const ManageSchool = ({ mode: modeProp }) => {
           />
         </div>
 
-        {isUpdate ? (
-          <div>
-            <label>Tema</label>
-            <SimpleButton
-              type="button"
-              onClick={() => setIsThemeModalOpen(true)}
-              className="mt-2"
-              msj={"Modificar tema"}
-              icon={"Pencil"}
-              text={"text-white"}
-              bg={"bg-accent"}
-            />
-          </div>
-        ) : null}
+        <div>
+          <label>Tema</label>
+          <SimpleButton
+            type="button"
+            onClick={() => setIsThemeModalOpen(true)}
+            className="mt-2"
+            msj={"Modificar tema"}
+            icon={"Pencil"}
+            text={"text-white"}
+            bg={"bg-accent"}
+          />
+        </div>
+
+        <div>
+          <label className={getLabelClassName("", isUpdate)}>Código DANE</label>
+          <input
+            type="text"
+            name="codDane"
+            value={formData.codDane}
+            onChange={handleChange}
+            className={getInputClassName(
+              "w-full p-2 border rounded bg-white",
+              isUpdate
+            )}
+            disabled={isUpdate}
+            placeholder={
+              isUpdate
+                ? "No se puede modificar en modo actualización"
+                : "Ingrese código DANE"
+            }
+          />
+        </div>
+
+        <div>
+          <JourneySelect
+            label="Jornada"
+            name="workday"
+            value={formData.workday}
+            onChange={handleChange}
+            className="w-full p-2 border rounded bg-white"
+          />
+        </div>
 
         {!isUpdate ? (
           <div className="md:col-span-2 mt-2 border-t pt-4">
@@ -226,9 +354,9 @@ const ManageSchool = ({ mode: modeProp }) => {
               </div>
             </div>
 
-            {Array.isArray(formData.sedes) && formData.sedes.length > 0 ? (
+            {Array.isArray(formData.sede) && formData.sede.length > 0 ? (
               <div className="mt-4 grid grid-cols-1 gap-3">
-                {formData.sedes.map((sede, index) => (
+                {formData.sede.map((sede, index) => (
                   <div
                     key={`${sede?.name || "sede"}-${index}`}
                     className="border rounded p-4 bg-white"
@@ -253,9 +381,9 @@ const ManageSchool = ({ mode: modeProp }) => {
                         <label>Nombre</label>
                         <input
                           type="text"
-                          value={sede?.name ?? ""}
+                          value={sede?.name_sede ?? ""}
                           onChange={(e) =>
-                            updateSedeField(index, "name", e.target.value)
+                            updateSedeField(index, "name_sede", e.target.value)
                           }
                           className="w-full p-2 border rounded bg-white"
                         />
@@ -265,9 +393,9 @@ const ManageSchool = ({ mode: modeProp }) => {
                         <label>Teléfono</label>
                         <input
                           type="text"
-                          value={sede?.tel ?? ""}
+                          value={sede?.phone ?? ""}
                           onChange={(e) =>
-                            updateSedeField(index, "tel", e.target.value)
+                            updateSedeField(index, "phone", e.target.value)
                           }
                           className="w-full p-2 border rounded bg-white"
                         />
@@ -277,9 +405,9 @@ const ManageSchool = ({ mode: modeProp }) => {
                         <label>Dirección</label>
                         <input
                           type="text"
-                          value={sede?.address ?? ""}
+                          value={sede?.adress ?? ""}
                           onChange={(e) =>
-                            updateSedeField(index, "address", e.target.value)
+                            updateSedeField(index, "adress", e.target.value)
                           }
                           className="w-full p-2 border rounded bg-white"
                         />
@@ -288,7 +416,7 @@ const ManageSchool = ({ mode: modeProp }) => {
                       <JourneySelect
                         label="Jornada"
                         name="jornada"
-                        value={sede?.jornada ?? sede?.journeys ?? ""}
+                        value={sede?.jornada ?? ""}
                         onChange={(e) =>
                           updateSedeField(index, "jornada", e.target.value)
                         }
@@ -302,12 +430,30 @@ const ManageSchool = ({ mode: modeProp }) => {
           </div>
         ) : null}
 
+        {/* Mensajes de estado */}
+        {submitError && (
+          <div className="md:col-span-2 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            <strong>Error:</strong> {submitError}
+          </div>
+        )}
+
+        {submitSuccess && (
+          <div className="md:col-span-2 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+            <strong>Éxito:</strong>{" "}
+            {isUpdate
+              ? "Institución actualizada correctamente"
+              : "Institución registrada correctamente"}
+          </div>
+        )}
+
         <div className="md:col-span-2 mt-4">
           <SimpleButton
-            msj={primaryButtonLabel}
-            icon={"Save"}
+            type="submit"
+            msj={loading ? "Procesando..." : primaryButtonLabel}
+            icon={loading ? "Loader" : "Save"}
             text={"text-white"}
-            bg={"bg-accent"}
+            bg={loading ? "bg-gray-400" : "bg-accent"}
+            disabled={loading}
           />
         </div>
       </form>
@@ -318,12 +464,21 @@ const ManageSchool = ({ mode: modeProp }) => {
         </div>
       ) : null}
 
-      {isUpdate ? (
-        <ThemeModal
-          isOpen={isThemeModalOpen}
-          onClose={() => setIsThemeModalOpen(false)}
-        />
-      ) : null}
+      <ThemeModal
+        isOpen={isThemeModalOpen}
+        onClose={() => setIsThemeModalOpen(false)}
+        color={{
+          mainColor: formData.mainColor,
+          secondaryColor: formData.secondaryColor,
+        }}
+        setColor={(colorData) => {
+          setFormData((prev) => ({
+            ...prev,
+            mainColor: colorData.mainColor,
+            secondaryColor: colorData.secondaryColor,
+          }));
+        }}
+      />
     </div>
   );
 };

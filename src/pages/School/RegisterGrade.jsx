@@ -2,15 +2,20 @@ import { useState } from "react";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import JourneySelect from "../../components/atoms/JourneySelect";
 import SedeSelect from "../../components/atoms/SedeSelect";
+import useSchool from "../../lib/hooks/useSchool";
 
 const RegisterGrade = () => {
+  const { journeys, loadingJourneys, registerGrade, loading } = useSchool();
+
   const [formData, setFormData] = useState({
-    name: "",
-    jornada: "",
-    sedeId: "",
+    name_grade: "",
+    workday: "",
+    id_sede: "",
     group: [],
   });
   const [numGroups, setNumGroups] = useState(0);
+  const [submitError, setSubmitError] = useState(null);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
 
   const resizeGroups = (previousGroups, count) => {
     const safeCount = Math.max(
@@ -18,24 +23,38 @@ const RegisterGrade = () => {
       Math.min(26, Number.isFinite(count) ? count : 0)
     );
 
-    return Array.from({ length: safeCount }, (_, index) =>
-      typeof previousGroups?.[index] === "string" ? previousGroups[index] : ""
-    );
+    return Array.from({ length: safeCount }, (_, index) => {
+      const prevGroup = previousGroups?.[index];
+      // Si ya es un objeto con name_group, mantenerlo
+      if (
+        prevGroup &&
+        typeof prevGroup === "object" &&
+        prevGroup.name_group !== undefined
+      ) {
+        return prevGroup;
+      }
+      // Si es un string (compatibilidad con datos anteriores), convertir a objeto
+      if (typeof prevGroup === "string") {
+        return { name_group: prevGroup };
+      }
+      // Por defecto, crear un objeto vacío
+      return { name_group: "" };
+    });
   };
 
   const handleNameChange = (event) => {
     const value = event.target.value;
-    setFormData((prev) => ({ ...prev, name: value }));
+    setFormData((prev) => ({ ...prev, name_grade: value }));
   };
 
   const handleJornadaChange = (event) => {
     const value = event.target.value;
-    setFormData((prev) => ({ ...prev, jornada: value }));
+    setFormData((prev) => ({ ...prev, workday: value }));
   };
 
   const handleSedeChange = (event) => {
     const value = event.target.value;
-    setFormData((prev) => ({ ...prev, sedeId: value }));
+    setFormData((prev) => ({ ...prev, id_sede: value }));
   };
 
   const handleNumGroupsChange = (event) => {
@@ -56,14 +75,70 @@ const RegisterGrade = () => {
     const value = event.target.value;
     setFormData((prev) => {
       const nextGroups = [...prev.group];
-      nextGroups[index] = value;
+      nextGroups[index] = { name_group: value };
       return { ...prev, group: nextGroups };
     });
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    console.log("Registro de grado:", { ...formData, numGroups });
+    setSubmitError(null);
+    setSubmitSuccess(false);
+
+    // Validaciones
+    if (!formData.name_grade.trim()) {
+      setSubmitError("El nombre del grado es requerido");
+      return;
+    }
+
+    if (!formData.workday) {
+      setSubmitError("Debes seleccionar una jornada");
+      return;
+    }
+
+    if (!formData.id_sede) {
+      setSubmitError("Debes seleccionar una sede");
+      return;
+    }
+
+    if (formData.group.length === 0) {
+      setSubmitError("Debes crear al menos un grupo");
+      return;
+    }
+
+    // Validar que todos los grupos tengan nombre
+    const emptyGroups = formData.group.filter((g) => !g.name_group?.trim());
+    if (emptyGroups.length > 0) {
+      setSubmitError("Todos los grupos deben tener un nombre");
+      return;
+    }
+
+    const dataToSubmit = {
+      name_grade: formData.name_grade,
+      workday: Number(formData.workday),
+      id_sede: Number(formData.id_sede),
+      group: formData.group,
+    };
+
+    console.log("Registro de grado:", dataToSubmit);
+
+    // Llamar al servicio para registrar el grado
+    try {
+      await registerGrade(dataToSubmit);
+      setSubmitSuccess(true);
+
+      // Limpiar formulario después de éxito
+      setTimeout(() => {
+        setFormData({ name_grade: "", workday: "", id_sede: "", group: [] });
+        setNumGroups(0);
+        setSubmitSuccess(false);
+      }, 2000);
+    } catch (error) {
+      console.error("Error al registrar grado:", error);
+      setSubmitError(
+        error?.message || "Error al registrar el grado. Intenta nuevamente."
+      );
+    }
   };
 
   return (
@@ -80,8 +155,8 @@ const RegisterGrade = () => {
           <label>Nombre del grado</label>
           <input
             type="text"
-            name="name"
-            value={formData.name}
+            name="name_grade"
+            value={formData.name_grade}
             onChange={handleNameChange}
             className="w-full p-2 border rounded bg-white"
             placeholder="Ej: 6°"
@@ -89,12 +164,17 @@ const RegisterGrade = () => {
         </div>
 
         <JourneySelect
-          value={formData.jornada}
+          name="workday"
+          label="Jornada"
+          value={formData.workday}
           onChange={handleJornadaChange}
           includeAmbas={false}
+          disabled={loadingJourneys}
+          placeholder="Selecciona una jornada"
+          className="w-full p-2 border rounded bg-white"
         />
 
-        <SedeSelect value={formData.sedeId} onChange={handleSedeChange} />
+        <SedeSelect value={formData.id_sede} onChange={handleSedeChange} />
 
         <div>
           <label>¿Cuántos grupos?</label>
@@ -118,12 +198,12 @@ const RegisterGrade = () => {
             </div>
           ) : (
             <div className="w-full p-4 border rounded bg-white grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {formData.group.map((groupName, index) => (
+              {formData.group.map((group, index) => (
                 <div key={index} className="flex flex-col gap-1">
                   <label className="text-sm">Grupo {index + 1}</label>
                   <input
                     type="text"
-                    value={groupName}
+                    value={group.name_group || ""}
                     onChange={handleGroupChange(index)}
                     className="w-full p-2 border rounded bg-white"
                     placeholder={`Ej: ${String.fromCharCode(65 + index)}`}
@@ -134,13 +214,26 @@ const RegisterGrade = () => {
           )}
         </div>
 
+        {submitError && (
+          <div className="md:col-span-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            <strong>Error:</strong> {submitError}
+          </div>
+        )}
+
+        {submitSuccess && (
+          <div className="md:col-span-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+            <strong>Éxito:</strong> Grado registrado correctamente
+          </div>
+        )}
+
         <div className="md:col-span-3 mt-4 flex justify-center">
           <div className="w-full md:w-1/2">
             <SimpleButton
-              msj="Registrar grado"
+              msj={loading ? "Registrando..." : "Registrar grado"}
               text={"text-white"}
               bg={"bg-accent"}
               icon={"Save"}
+              disabled={loading}
             />
           </div>
         </div>

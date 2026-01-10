@@ -104,3 +104,30 @@ export function getCurrentTheme() {
 
   return theme;
 }
+
+/**
+ * Aplica colores personalizados del backend al tema actual.
+ * @param {string} colorPrincipal - Color principal de la institución
+ * @param {string} colorSecundario - Color secundario de la institución
+ */
+export function applyCustomColors(colorPrincipal, colorSecundario) {
+  const currentTheme = loadTheme();
+  const customTheme = { ...currentTheme };
+
+  // Si colorPrincipal es null o undefined, usar el del DEFAULT_THEME
+  if (colorPrincipal) {
+    customTheme["color-primary"] = colorPrincipal;
+  } else {
+    customTheme["color-primary"] = DEFAULT_THEME["color-primary"];
+  }
+
+  // Si colorSecundario es null o undefined, usar el del DEFAULT_THEME
+  if (colorSecundario) {
+    customTheme["color-secondary"] = colorSecundario;
+  } else {
+    customTheme["color-secondary"] = DEFAULT_THEME["color-secondary"];
+  }
+
+  setTheme(customTheme);
+  return customTheme;
+}

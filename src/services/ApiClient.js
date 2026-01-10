@@ -3,63 +3,76 @@ import axios from "axios";
 const BASE =
   import.meta.env.VITE_API_URL || "https://backend-barranquilla.onrender.com";
 
-let authToken = null;
-
-/**
- * Instancia axios centralizada.
- */
-const instance = axios.create({
+const apiClient = axios.create({
   baseURL: BASE,
-  headers: {
-    Accept: "application/json",
-  },
-  withCredentials: false, // Evita CORS por credenciales; auth por Bearer token.
+  timeout: 0, // sin timeout para uploads grandes
 });
 
-/**
- * Interceptor de peticiones: añade Authorization si hay token en memoria.
- */
-instance.interceptors.request.use((config) => {
-  if (authToken) {
-    config.headers = config.headers || {};
-    config.headers.Authorization = `Bearer ${authToken}`;
+apiClient.interceptors.request.use((config) => {
+  // Asegurar que headers esté inicializado
+  config.headers = config.headers || {};
+
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.token = token;
+  }
+  // Si envías FormData, NO fijes Content-Type
+  if (config.data instanceof FormData) {
+    delete config.headers["Content-Type"];
+  } else {
+    config.headers["Content-Type"] = "application/json";
+    config.headers["Accept"] = "application/json";
   }
   return config;
 });
 
-/**
- * Interceptor de respuestas: normaliza errores.
- */
-instance.interceptors.response.use(
+// Interceptor de respuestas: normaliza errores y maneja problemas de autenticación
+apiClient.interceptors.response.use(
   (res) => res.data,
   (error) => {
     const res = error.response;
+
+    // Manejar errores de autenticación (token inválido/expirado)
+    if (res?.status === 401 || res?.data?.code === "UN001") {
+      console.warn("Token inválido o expirado:", res?.data);
+      // Limpiar token inválido del localStorage
+      try {
+        localStorage.removeItem("token");
+      } catch (e) {
+        console.warn("No se pudo limpiar el localStorage:", e);
+      }
+    }
+
     const err = new Error(
-      res?.data?.message || error.message || "Error de la API"
+      res?.data?.mensaje ||
+        res?.data?.message ||
+        error.message ||
+        "Error de la API"
     );
     err.status = res?.status;
     err.data = res?.data;
+    err.code = res?.data?.code;
     return Promise.reject(err);
   }
 );
 
-/**
- * Establecer token en memoria (y en headers por si se desea).
- */
+// Función auxiliar para compatibilidad
 export function setAuthToken(token) {
-  authToken = token;
   if (token) {
-    instance.defaults.headers.common.Authorization = `Bearer ${token}`;
+    localStorage.setItem("token", token);
   } else {
-    delete instance.defaults.headers.common.Authorization;
+    localStorage.removeItem("token");
   }
 }
 
+// Mantener compatibilidad con el formato anterior
 export const ApiClient = {
-  instance,
+  instance: apiClient,
   get: (path, params = {}, config = {}) =>
-    instance.get(path, { params, ...config }),
-  post: (path, data, config = {}) => instance.post(path, data, config),
-  put: (path, data, config = {}) => instance.put(path, data, config),
-  del: (path, config = {}) => instance.delete(path, config),
+    apiClient.get(path, { params, ...config }),
+  post: (path, data, config = {}) => apiClient.post(path, data, config),
+  put: (path, data, config = {}) => apiClient.put(path, data, config),
+  del: (path, config = {}) => apiClient.delete(path, config),
 };
+
+export default apiClient;

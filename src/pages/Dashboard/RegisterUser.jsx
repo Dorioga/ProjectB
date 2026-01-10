@@ -6,10 +6,12 @@ import RoleSelector from "../../components/molecules/RoleSelector";
 import TypeDocumentSelector from "../../components/molecules/TypeDocumentSelector";
 import useSchool from "../../lib/hooks/useSchool";
 import useData from "../../lib/hooks/useData";
+import useAuth from "../../lib/hooks/useAuth";
 
 const RegisterUser = () => {
   const { schools, loading } = useSchool();
   const { registerUser, loadingRegisterUser, errorRegisterUser } = useData();
+  const { idInstitution } = useAuth();
 
   const [formData, setFormData] = useState({
     identificationtype: "",
@@ -55,10 +57,45 @@ const RegisterUser = () => {
       password: formData.password ? sha256(formData.password) : "",
     };
 
+    // Si el rol es 2, 3 o 4, excluir institutionId del payload
+    if (["2", "3", "4"].includes(formData.role)) {
+      delete payload.institutionId;
+    }
+
     const fd = new FormData();
     for (const [key, value] of Object.entries(payload)) {
-      fd.append(key, value ?? "");
+      // Convertir a número los campos especificados
+      if (key === "identificationtype" || key === "role") {
+        const numValue = parseInt(value, 10);
+        fd.append(key, isNaN(numValue) ? "" : numValue);
+      } else {
+        fd.append(key, value ?? "");
+      }
     }
+
+    // Agregar sede e idInstitution (convertir idInstitution a número)
+    // No agregamos sede si es null, el backend debe manejarlo
+    //fd.append("sede", null); // FormData convierte null a string "null"
+
+    const numIdInstitution = parseInt(idInstitution, 10);
+    fd.append("idInstitution", isNaN(numIdInstitution) ? "" : numIdInstitution);
+
+    // Crear objeto para visualización con tipos correctos
+    const displayObj = {};
+    for (const [key, value] of fd.entries()) {
+      if (
+        key === "identificationtype" ||
+        key === "role" ||
+        key === "idInstitution"
+      ) {
+        const numValue = parseInt(value, 10);
+        displayObj[key] = isNaN(numValue) ? value : numValue;
+      } else {
+        displayObj[key] = value;
+      }
+    }
+
+    console.log("FormData (con tipos correctos):", displayObj);
 
     try {
       const res = await registerUser(fd);
@@ -205,27 +242,29 @@ const RegisterUser = () => {
           />
         </div>
 
-        <div>
-          <label>Institución</label>
-          <select
-            name="institutionId"
-            value={formData.institutionId}
-            onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
-            disabled={loadingRegisterUser}
-          >
-            <option value="">
-              {loading
-                ? "Cargando instituciones..."
-                : "Selecciona una institución"}
-            </option>
-            {institutionOptions.map((opt) => (
-              <option key={opt.id} value={opt.id}>
-                {opt.name}
+        {!["2", "3", "4"].includes(formData.role) && (
+          <div>
+            <label>Institución</label>
+            <select
+              name="institutionId"
+              value={formData.institutionId}
+              onChange={handleChange}
+              className="w-full p-2 border rounded bg-white"
+              disabled={loadingRegisterUser}
+            >
+              <option value="">
+                {loading
+                  ? "Cargando instituciones..."
+                  : "Selecciona una institución"}
               </option>
-            ))}
-          </select>
-        </div>
+              {institutionOptions.map((opt) => (
+                <option key={opt.id} value={opt.id}>
+                  {opt.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className="md:col-span-3 mt-4 flex justify-center">
           <div className="w-full md:w-1/2">

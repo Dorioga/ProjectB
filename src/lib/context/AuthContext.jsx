@@ -9,6 +9,7 @@ import * as authService from "../../services/authService";
 import { setAuthToken } from "../../services/ApiClient";
 import { useNavigate } from "react-router-dom";
 import { getMenuRol } from "../../services/dataService";
+import { applyCustomColors, resetTheme } from "../../utils/themeManager";
 
 export const AuthContext = createContext(null);
 
@@ -16,7 +17,10 @@ export const AuthContext = createContext(null);
 const loadFromStorage = (key, fallback = null) => {
   try {
     const item = localStorage.getItem(key);
-    return item ? JSON.parse(item) : fallback;
+    if (!item) return fallback;
+    // Para nameRole, devolver el valor directo sin parsear
+    if (key === "nameRole") return item;
+    return JSON.parse(item);
   } catch {
     return fallback;
   }
@@ -26,6 +30,9 @@ const saveToStorage = (key, value) => {
   try {
     if (value === null || value === undefined) {
       localStorage.removeItem(key);
+    } else if (key === "nameRole") {
+      // Para nameRole, guardar sin JSON.stringify
+      localStorage.setItem(key, value);
     } else {
       localStorage.setItem(key, JSON.stringify(value));
     }
@@ -36,15 +43,30 @@ const saveToStorage = (key, value) => {
 
 export function AuthProvider({ children }) {
   // Cargar datos iniciales desde localStorage
-  const [user, setUser] = useState(() => loadFromStorage("user"));
+  const [userId, setUserId] = useState(() => loadFromStorage("userId"));
+  const [userName, setUserName] = useState(() => loadFromStorage("userName"));
+  const [userEmail, setUserEmail] = useState(() =>
+    loadFromStorage("userEmail")
+  );
   const [nameSchool, setNameSchool] = useState(() =>
     loadFromStorage("nameSchool")
   );
-  const [id_School, setIdSchool] = useState(() => loadFromStorage("id_School"));
+  const [idInstitution, setIdInstitution] = useState(() =>
+    loadFromStorage("idInstitution")
+  );
   const [imgSchool, setImgSchool] = useState(() =>
     loadFromStorage("imgSchool")
   );
   const [nameRole, setNameRole] = useState(() => loadFromStorage("nameRole"));
+  const [rol, setRol] = useState(() => loadFromStorage("rol"));
+  const [nameSede, setNameSede] = useState(() => loadFromStorage("nameSede"));
+  const [idSede, setIdSede] = useState(() => loadFromStorage("idSede"));
+  const [colorPrincipal, setColorPrincipal] = useState(() =>
+    loadFromStorage("colorPrincipal")
+  );
+  const [colorSecundario, setColorSecundario] = useState(() =>
+    loadFromStorage("colorSecundario")
+  );
   const [menu, setMenu] = useState(() => loadFromStorage("menu"));
   const [token, setToken] = useState(
     () => localStorage.getItem("token") || null
@@ -67,17 +89,31 @@ export function AuthProvider({ children }) {
     try {
       setAuthToken(token);
       const profile = await authService.getProfile();
-      setUser(profile.user || profile);
+      const data = profile.user || profile;
+
+      // Guardar variables individuales
+      setUserId(data?.id ?? null);
+      setUserName(data?.name ?? null);
+      setUserEmail(data?.email ?? null);
+      setNameRole(data?.name_rol ?? null);
+      setRol(data?.rol ?? null);
     } catch (err) {
       // Limpiar todo en caso de error
-      setUser(null);
+      setUserId(null);
+      setUserName(null);
+      setUserEmail(null);
       setNameSchool(null);
-      setIdSchool(null);
+      setIdInstitution(null);
       setImgSchool(null);
       setNameRole(null);
+      setRol(null);
+      setNameSede(null);
+      setIdSede(null);
+      setColorPrincipal(null);
+      setColorSecundario(null);
       setMenu(null);
       setToken(null);
-      localStorage.clear();
+      sessionStorage.clear();
       setAuthToken(null);
       setError(err);
     } finally {
@@ -87,11 +123,18 @@ export function AuthProvider({ children }) {
 
   // ✅ Un solo useEffect que guarda todo en localStorage.
   useEffect(() => {
-    saveToStorage("user", user);
+    saveToStorage("userId", userId);
+    saveToStorage("userName", userName);
+    saveToStorage("userEmail", userEmail);
     saveToStorage("nameSchool", nameSchool);
-    saveToStorage("id_School", id_School);
+    saveToStorage("idInstitution", idInstitution);
     saveToStorage("imgSchool", imgSchool);
     saveToStorage("nameRole", nameRole);
+    saveToStorage("rol", rol);
+    saveToStorage("nameSede", nameSede);
+    saveToStorage("idSede", idSede);
+    saveToStorage("colorPrincipal", colorPrincipal);
+    saveToStorage("colorSecundario", colorSecundario);
     saveToStorage("menu", menu);
 
     if (token) {
@@ -101,54 +144,79 @@ export function AuthProvider({ children }) {
       localStorage.removeItem("token");
       setAuthToken(null);
     }
-  }, [user, nameSchool, id_School, imgSchool, nameRole, menu, token]);
+  }, [
+    userId,
+    userName,
+    userEmail,
+    nameSchool,
+    idInstitution,
+    imgSchool,
+    nameRole,
+    rol,
+    nameSede,
+    idSede,
+    colorPrincipal,
+    colorSecundario,
+    menu,
+    token,
+  ]);
 
   useEffect(() => {
-    if (token && !user) {
+    if (token && !userId) {
       loadProfile();
     }
-  }, [token, user, loadProfile]);
+  }, [token, userId, loadProfile]);
+
+  // Aplicar colores personalizados al cargar la página si existen en localStorage
+  useEffect(() => {
+    if (colorPrincipal || colorSecundario) {
+      applyCustomColors(colorPrincipal, colorSecundario);
+    }
+  }, [colorPrincipal, colorSecundario]);
+
   const login = async (credentials) => {
     setLoading(true);
     setError(null);
     try {
       const res = await authService.login(credentials);
-      const t = res?.token || res?.accessToken || null;
+      console.log("AuthContext - Login response:", res);
+
+      // La respuesta viene en res.data
+      const data = res?.data || res;
+      const t = data?.token || null;
+      console.log("AuthContext - Token extraído:", t);
 
       // Asegura que el token se use inmediatamente (antes de pedir menú).
       if (t) {
         setToken(t);
         setAuthToken(t);
+        console.log("AuthContext - Token guardado en localStorage");
       }
 
-      // Adaptación a la respuesta real:
-      // { token, id, name, email, rol, name_rol }
-      const u = {
-        id: res?.id ?? res?.id_person ?? null,
-        name: res?.name ?? "",
-        email: res?.email ?? "",
-        rol: res?.rol ?? null,
-        name_rol: res?.name_rol ?? "",
-        raw: res,
-      };
+      // Guardar todas las variables individuales
+      setUserId(data?.id ?? null);
+      setUserName(data?.name ?? null);
+      setUserEmail(data?.email ?? null);
+      setNameSchool(data?.nombre_institucion ?? null);
+      setIdInstitution(data?.id_institucion ?? null);
+      setImgSchool(data?.link_logo ?? null);
+      setNameRole(data?.name_rol ?? null);
+      setRol(data?.rol ?? null);
+      setNameSede(data?.name_sede ?? null);
+      setIdSede(data?.id_sede ?? null);
+      setColorPrincipal(data?.color_principal ?? null);
+      setColorSecundario(data?.color_secundario ?? null);
 
-      setUser(u);
-
-      // Actualizar estados opcionales si el backend los provee.
-      if (res?.school_name) setNameSchool(res.school_name);
-      if (res?.id_school) setIdSchool(res.id_school);
-      if (res?.img_logo) setImgSchool(res.img_logo);
-
-      // En sidebar se muestra el rol, no el nombre del usuario.
-      if (res?.name_rol) setNameRole(res.name_rol);
+      // Aplicar colores personalizados al tema si existen (solo si no son null)
+      if (data?.color_principal || data?.color_secundario) {
+        applyCustomColors(data?.color_principal, data?.color_secundario);
+      }
 
       // Cargar menú por rol al iniciar sesión.
-      if (res?.rol) {
+      if (data?.rol) {
         const fd = new FormData();
-        // En tu API de roles el campo es id_rol.
-        fd.append("id_rol", String(res.rol));
-        // Compatibilidad por si el backend espera 'rol'.
-        fd.append("rol", String(res.rol));
+        fd.append("id_rol", String(data.rol));
+        fd.append("rol", String(data.rol));
 
         try {
           const menuRes = await getMenuRol(fd);
@@ -160,7 +228,14 @@ export function AuthProvider({ children }) {
         }
       }
 
-      return { user: u, token: t };
+      return {
+        token: t,
+        id: data?.id ?? null,
+        name: data?.name ?? null,
+        email: data?.email ?? null,
+        rol: data?.rol ?? null,
+        name_rol: data?.name_rol ?? null,
+      };
     } catch (err) {
       setError(err);
       throw err;
@@ -174,15 +249,23 @@ export function AuthProvider({ children }) {
     try {
       await authService.logout().catch(() => {});
     } finally {
-      setUser(null);
+      setUserId(null);
+      setUserName(null);
+      setUserEmail(null);
       setNameSchool(null);
-      setIdSchool(null);
+      setIdInstitution(null);
       setImgSchool(null);
       setNameRole(null);
+      setRol(null);
+      setNameSede(null);
+      setIdSede(null);
+      setColorPrincipal(null);
+      setColorSecundario(null);
       setMenu(null);
       setToken(null);
       localStorage.clear();
       setAuthToken(null);
+      resetTheme(); // Restaurar tema por defecto
       setLoading(false);
       navigate("/login");
     }
@@ -190,13 +273,20 @@ export function AuthProvider({ children }) {
 
   const value = useMemo(
     () => ({
-      user,
+      userId,
+      userName,
+      userEmail,
       nameSchool,
-      id_School,
+      idInstitution,
       imgSchool,
       token,
       menu,
       nameRole,
+      rol,
+      nameSede,
+      idSede,
+      colorPrincipal,
+      colorSecundario,
       loading,
       error,
       isOpen,
@@ -206,13 +296,20 @@ export function AuthProvider({ children }) {
       reload: loadProfile,
     }),
     [
-      user,
+      userId,
+      userName,
+      userEmail,
       nameSchool,
-      id_School,
+      idInstitution,
       imgSchool,
       token,
       menu,
       nameRole,
+      rol,
+      nameSede,
+      idSede,
+      colorPrincipal,
+      colorSecundario,
       loading,
       error,
       isOpen,
