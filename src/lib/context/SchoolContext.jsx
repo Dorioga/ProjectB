@@ -161,6 +161,20 @@ export function SchoolProvider({ children }) {
     }
   };
 
+  const registerTeacher = async (formData) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await schoolService.registerTeacher(formData);
+      return result;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const removeSchool = async (id) => {
     setLoading(true);
     setError(null);
@@ -198,6 +212,7 @@ export function SchoolProvider({ children }) {
         updateSchool,
         removeSchool,
         registerGrade,
+        registerTeacher,
         pathSignature,
         setPathSignature,
       }}

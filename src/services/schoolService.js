@@ -74,6 +74,32 @@ export async function registerGrade(gradeData) {
   throw new Error("Respuesta inesperada de register_grade.");
 }
 
+/**
+ * Registra un nuevo profesor.
+ *
+ * Endpoint esperado: POST /register_teacher
+ * @param {Object} payload - Datos del profesor en formato JSON
+ * @returns {Promise<Object>} Respuesta del servidor
+ */
+export async function registerTeacher(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+
+  const res = await ApiClient.instance.post("/register_teacher", payload);
+
+  // ApiClient tiene interceptor que normalmente devuelve res.data.
+  // Pero aquí usamos instance.post directamente; res ya es data por interceptor.
+  const data = res;
+  console.log("SchoolService - registerTeacher:", data);
+
+  // Validación suave del payload: devolvemos data o data.data.
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de register_teacher.");
+}
+
 /////////////////////////////////
 export async function getSchools(params = {}) {
   return ApiClient.get("/schools", params);

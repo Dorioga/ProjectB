@@ -22,10 +22,31 @@ export async function login(credentials) {
   const data = res;
   console.log("AuthService - login:", data);
 
-  if (data && typeof data === "object" && "data" in data) return data.data;
-  if (data !== undefined && data !== null) return data;
+  // ✅ Validar si hay datos válidos
+  if (!data || typeof data !== "object") {
+    throw new Error("Credenciales inválidas o respuesta vacía del servidor.");
+  }
 
-  throw new Error("Respuesta inesperada de login.");
+  // Validar si viene con estructura data.data
+  if ("data" in data && data.data) {
+    const loginData = data.data;
+    // Verificar que tenga al menos token o datos de usuario
+    if (!loginData.token && !loginData.id && !loginData.name) {
+      throw new Error(
+        "Credenciales incorrectas. Por favor, verifica tu usuario y contraseña."
+      );
+    }
+    return loginData;
+  }
+
+  // Si viene directo sin data.data, validar también
+  if (!data.token && !data.id && !data.name) {
+    throw new Error(
+      "Credenciales incorrectas. Por favor, verifica tu usuario y contraseña."
+    );
+  }
+
+  return data;
 }
 
 export async function logout() {

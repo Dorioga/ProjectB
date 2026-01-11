@@ -68,6 +68,22 @@ export function StudentProvider({ children }) {
     }
   };
 
+  const registerStudent = async (formData) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await studentService.registerStudent(formData);
+      // Opcionalmente actualizar la lista de estudiantes
+      setStudents((s) => [result, ...s]);
+      return result;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const removeStudent = async (identification) => {
     setLoading(true);
     setError(null);
@@ -124,6 +140,7 @@ export function StudentProvider({ children }) {
         updateStudent,
         getRandomStudents,
         addStudent,
+        registerStudent,
         removeStudent,
         uploadStudentsExcel,
       }}

@@ -19,13 +19,26 @@ const SedeSelect = ({
 
   // Cargar sedes cuando se monta el componente o cambia idInstitution
   useEffect(() => {
+    console.log("SedeSelect - idInstitution:", idInstitution);
     if (idInstitution) {
-      loadInstitutionSedes(idInstitution).catch(() => {});
+      console.log(
+        "SedeSelect - Cargando sedes para institución:",
+        idInstitution
+      );
+
+      loadInstitutionSedes(idInstitution).catch((err) => {
+        console.error("SedeSelect - Error al cargar sedes:", err);
+      });
+    } else {
+      console.warn("SedeSelect - No hay idInstitution disponible");
     }
   }, [idInstitution, loadInstitutionSedes]);
 
   const sedeOptions = useMemo(() => {
     const source = Array.isArray(institutionSedes) ? institutionSedes : [];
+
+    console.log("SedeSelect - institutionSedes:", institutionSedes);
+    console.log("SedeSelect - source length:", source.length);
 
     const normalized = source
       .filter(Boolean)
@@ -40,7 +53,10 @@ const SedeSelect = ({
       })
       .filter((opt) => opt.id);
 
+    console.log("SedeSelect - normalized sedes:", normalized);
+
     if (normalized.length === 0) {
+      console.warn("SedeSelect - No hay sedes, mostrando datos de ejemplo");
       return [
         { id: "SED-PRINCIPAL", label: "Principal", isPrincipal: true },
         { id: "SED-EJ-01", label: "Sede A (ejemplo)", isPrincipal: false },

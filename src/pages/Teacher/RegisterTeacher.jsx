@@ -6,23 +6,30 @@ import TypeDocumentSelector from "../../components/molecules/TypeDocumentSelecto
 import useSchool from "../../lib/hooks/useSchool";
 import useStudent from "../../lib/hooks/useStudent";
 import { asignatureResponse } from "../../services/DataExamples/asignatureResponse";
+import { sha256 } from "js-sha256";
 
 const RegisterTeacher = () => {
-  const { sedes, reloadSedes } = useSchool();
+  const {
+    sedes,
+    reloadSedes,
+    registerTeacher,
+    loading: teacherLoading,
+  } = useSchool();
   const { students, loading: studentsLoading, reload } = useStudent();
   const [formData, setFormData] = useState({
-    sedeId: "",
-    jornada: "",
-    identification: "",
-    identificationType: "",
     first_name: "",
     second_name: "",
     first_lastname: "",
     second_lastname: "",
-    birthdate: "",
     telephone: "",
     email: "",
-    address: "",
+    identification: "",
+    identificationtype: 0,
+    sede: 0,
+    password: "",
+    workday: 0,
+    fecha_nacimiento: "",
+    direccion: "",
     asignature: [],
     grades_scholar: [],
   });
@@ -52,20 +59,20 @@ const RegisterTeacher = () => {
   }, [students]);
 
   const sedeJornada = useMemo(() => {
-    const sedeId = String(formData.sedeId ?? "").trim();
+    const sedeId = String(formData.sede ?? "").trim();
     if (!sedeId) return "";
 
     const source = Array.isArray(sedes) ? sedes : [];
     const sede = source.find((s) => String(s?.id ?? "").trim() === sedeId);
     return String(sede?.jornada ?? sede?.journeys ?? "").trim();
-  }, [formData.sedeId, sedes]);
+  }, [formData.sede, sedes]);
 
   useEffect(() => {
-    const sedeId = String(formData.sedeId ?? "").trim();
+    const sedeId = String(formData.sede ?? "").trim();
 
     // Si no hay sede, no hay restricción: limpiamos jornada
     if (!sedeId) {
-      setFormData((prev) => ({ ...prev, jornada: "" }));
+      setFormData((prev) => ({ ...prev, workday: "" }));
       return;
     }
 
@@ -75,25 +82,34 @@ const RegisterTeacher = () => {
     if (!ref) return;
 
     setFormData((prev) => {
-      const current = String(prev.jornada ?? "")
+      const current = String(prev.workday ?? "")
         .trim()
         .toLowerCase();
 
       if (ref === "ambas") {
         const isAllowed = current === "mañana" || current === "tarde";
-        return isAllowed ? prev : { ...prev, jornada: "" };
+        return isAllowed ? prev : { ...prev, workday: "" };
       }
 
       // Si la sede solo tiene una jornada, forzamos esa jornada
-      return current === ref ? prev : { ...prev, jornada: ref };
+      return current === ref ? prev : { ...prev, workday: ref };
     });
-  }, [formData.sedeId, sedeJornada]);
+  }, [formData.sede, sedeJornada]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    // Convertir a número si es sede, workday o identificationtype
+    const finalValue =
+      name === "sede" || name === "workday" || name === "identificationtype"
+        ? value
+          ? Number(value)
+          : 0
+        : value;
+
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: finalValue,
     }));
   };
 
@@ -125,12 +141,12 @@ const RegisterTeacher = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitOk(false);
     setSubmitError("");
 
-    if (!String(formData.identificationType ?? "").trim()) {
+    if (!String(formData.identificationtype ?? "").trim()) {
       setSubmitError("El tipo de documento es obligatorio.");
       return;
     }
@@ -150,31 +166,57 @@ const RegisterTeacher = () => {
       setSubmitError("El correo es obligatorio.");
       return;
     }
-    if (
-      !Array.isArray(formData.asignature) ||
-      formData.asignature.length === 0
-    ) {
-      setSubmitError("Selecciona al menos una asignatura.");
-      return;
-    }
-    if (
-      !Array.isArray(formData.grades_scholar) ||
-      formData.grades_scholar.length === 0
-    ) {
-      setSubmitError("Selecciona al menos un grado.");
-      return;
-    }
 
-    console.log("Docente a registrar:", {
-      ...formData,
-      // Alias para backend si espera snake_case
-      identification_type: formData.identificationType,
-      grades_scholar: formData.grades_scholar
-        .slice()
-        .sort((a, b) => Number(a) - Number(b)),
-      asignature: formData.asignature.slice().sort(),
-    });
-    setSubmitOk(true);
+    // Preparar payload JSON para enviar al backend
+    const payload = {
+      first_name: formData.first_name,
+      second_name: formData.second_name || "",
+      first_lastname: formData.first_lastname,
+      second_lastname: formData.second_lastname || "",
+      sede: formData.sede,
+      workday: formData.workday,
+      identification: formData.identification,
+      identification_type: formData.identificationtype,
+      fecha_nacimiento: formData.fecha_nacimiento || "",
+      telephone: formData.telephone || "",
+      email: formData.email,
+      password: formData.password ? sha256(String(formData.password)) : "",
+      direccion: formData.direccion || "",
+    };
+
+    // Mostrar en consola qué se va a enviar
+    console.log("📤 Datos que se enviarán al backend:");
+    console.table(payload);
+
+    try {
+      const result = await registerTeacher(payload);
+      console.log("Docente registrado exitosamente:", result);
+      setSubmitOk(true);
+
+      // Limpiar formulario después del registro exitoso
+      setFormData({
+        first_name: "",
+        second_name: "",
+        first_lastname: "",
+        second_lastname: "",
+        sede: 0,
+        workday: 0,
+        identification: "",
+        identificationtype: 0,
+        fecha_nacimiento: "",
+        telephone: "",
+        email: "",
+        password: "",
+        direccion: "",
+        asignature: [],
+        grades_scholar: [],
+      });
+    } catch (err) {
+      console.error("Error al registrar docente:", err);
+      setSubmitError(
+        err?.message || "Error al registrar el docente. Intenta nuevamente."
+      );
+    }
   };
 
   return (
@@ -186,17 +228,18 @@ const RegisterTeacher = () => {
       >
         <div className="md:col-span-3 font-bold">Información personal</div>
 
-        <SedeSelect value={formData.sedeId} onChange={handleChange} />
+        <SedeSelect name="sede" value={formData.sede} onChange={handleChange} />
         <JourneySelect
-          value={formData.jornada}
+          name="workday"
+          value={formData.workday}
           filterValue={sedeJornada}
           onChange={handleChange}
-          disabled={!String(formData.sedeId ?? "").trim()}
+          disabled={!String(formData.sede ?? "").trim()}
         />
 
         <TypeDocumentSelector
-          name="identificationType"
-          value={formData.identificationType}
+          name="identificationtype"
+          value={formData.identificationtype}
           onChange={handleChange}
           placeholder="Selecciona un tipo"
         />
@@ -216,8 +259,8 @@ const RegisterTeacher = () => {
           <label>Fecha de nacimiento</label>
           <input
             type="date"
-            name="birthdate"
-            value={formData.birthdate}
+            name="fecha_nacimiento"
+            value={formData.fecha_nacimiento}
             onChange={handleChange}
             className="w-full p-2 border rounded bg-white"
           />
@@ -294,11 +337,22 @@ const RegisterTeacher = () => {
         </div>
 
         <div>
+          <label>Contraseña</label>
+          <input
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            className="w-full p-2 border rounded bg-white"
+          />
+        </div>
+
+        <div>
           <label>Dirección</label>
           <input
             type="text"
-            name="address"
-            value={formData.address}
+            name="direccion"
+            value={formData.direccion}
             onChange={handleChange}
             className="w-full p-2 border rounded bg-white"
           />
@@ -361,23 +415,58 @@ const RegisterTeacher = () => {
         </div>
 
         {submitError ? (
-          <div className="md:col-span-3 text-sm text-red-600">
-            {submitError}
+          <div className="md:col-span-3 p-4 rounded-lg border-l-4 border-red-500 bg-gray-50 text-red-600">
+            <div className="flex items-start gap-3">
+              <svg
+                className="w-6 h-6 flex-shrink-0 mt-0.5"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <div className="flex-1">
+                <h4 className="font-bold text-base mb-1">Error</h4>
+                <p className="text-sm leading-relaxed">{submitError}</p>
+              </div>
+            </div>
           </div>
         ) : null}
         {submitOk ? (
-          <div className="md:col-span-3 text-sm text-green-700">
-            Docente listo para registrar.
+          <div className="md:col-span-3 p-4 rounded-lg border-l-4 border-green-500 bg-gray-50 text-green-700">
+            <div className="flex items-start gap-3">
+              <svg
+                className="w-6 h-6 flex-shrink-0 mt-0.5"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <div className="flex-1">
+                <h4 className="font-bold text-base mb-1">¡Éxito!</h4>
+                <p className="text-sm leading-relaxed">
+                  Docente registrado exitosamente.
+                </p>
+              </div>
+            </div>
           </div>
         ) : null}
 
         <div className="md:col-span-3 mt-4 flex justify-center">
           <div className="w-full md:w-1/2">
             <SimpleButton
-              msj="Registrar docente"
+              msj={teacherLoading ? "Registrando..." : "Registrar docente"}
               text={"text-white"}
               bg={"bg-accent"}
               icon={"Save"}
+              disabled={teacherLoading}
             />
           </div>
         </div>

@@ -21,6 +21,26 @@ export async function getTypeIdentification() {
 }
 
 /**
+ * Obtiene los estados de beca desde el backend.
+ *
+ * Endpoint esperado: GET /status_beca
+ */
+export async function getStatusBeca() {
+  const res = await ApiClient.instance.get("/status_beca");
+
+  // ApiClient tiene interceptor que normalmente devuelve res.data.
+  const data = res;
+  console.log("DataService - getStatusBeca:", data);
+
+  // Validación suave del payload: aceptamos array o { data: array }.
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === "object" && Array.isArray(data.data))
+    return data.data;
+
+  throw new Error("Respuesta inesperada de status_beca.");
+}
+
+/**
  * Registra un usuario enviando multipart/form-data.
  *
  * Endpoint esperado: POST /users

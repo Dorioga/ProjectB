@@ -183,7 +183,15 @@ export function AuthProvider({ children }) {
 
       // La respuesta viene en res.data
       const data = res?.data || res;
-      const t = data?.token || null;
+
+      // ✅ Validación adicional: Verificar datos mínimos requeridos
+      if (!data || !data.token) {
+        throw new Error(
+          "No se pudo iniciar sesión. Respuesta del servidor inválida."
+        );
+      }
+
+      const t = data.token;
       console.log("AuthContext - Token extraído:", t);
 
       // Asegura que el token se use inmediatamente (antes de pedir menú).

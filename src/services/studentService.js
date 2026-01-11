@@ -43,6 +43,31 @@ export async function createStudent(payload) {
   return ApiClient.post("/students", payload);
 }
 
+/**
+ * Registra un nuevo estudiante.
+ *
+ * Endpoint esperado: POST /register_student
+ * @param {FormData} formData - Datos del estudiante en formato FormData
+ * @returns {Promise<Object>} Respuesta del servidor
+ */
+export async function registerStudent(formData) {
+  if (!(formData instanceof FormData)) {
+    throw new Error("formData debe ser una instancia de FormData.");
+  }
+
+  const res = await ApiClient.instance.post("/register_student", formData);
+
+  // ApiClient tiene interceptor que normalmente devuelve res.data.
+  const data = res;
+  console.log("StudentService - registerStudent:", data);
+
+  // Validación suave del payload: devolvemos data o data.data.
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de register_student.");
+}
+
 export async function updateStudent(id, payload) {
   return ApiClient.put(`/students/${id}`, payload);
 }

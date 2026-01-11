@@ -15,6 +15,10 @@ export function DataProvider({ children }) {
     useState(false);
   const [errorTypeIdentification, setErrorTypeIdentification] = useState(null);
 
+  const [statusBeca, setStatusBeca] = useState([]);
+  const [loadingStatusBeca, setLoadingStatusBeca] = useState(false);
+  const [errorStatusBeca, setErrorStatusBeca] = useState(null);
+
   const [roles, setRoles] = useState([]);
   const [loadingRoles, setLoadingRoles] = useState(false);
   const [errorRoles, setErrorRoles] = useState(null);
@@ -47,6 +51,21 @@ export function DataProvider({ children }) {
       throw err;
     } finally {
       setLoadingTypeIdentification(false);
+    }
+  }, []);
+
+  const loadStatusBeca = useCallback(async () => {
+    setLoadingStatusBeca(true);
+    setErrorStatusBeca(null);
+    try {
+      const res = await dataService.getStatusBeca();
+      setStatusBeca(Array.isArray(res) ? res : res?.data ?? []);
+      return res;
+    } catch (err) {
+      setErrorStatusBeca(err);
+      throw err;
+    } finally {
+      setLoadingStatusBeca(false);
     }
   }, []);
 
@@ -174,6 +193,11 @@ export function DataProvider({ children }) {
       errorTypeIdentification,
       reloadTypeIdentification: loadTypeIdentification,
 
+      statusBeca,
+      loadingStatusBeca,
+      errorStatusBeca,
+      reloadStatusBeca: loadStatusBeca,
+
       roles,
       loadingRoles,
       errorRoles,
@@ -204,6 +228,11 @@ export function DataProvider({ children }) {
       loadingTypeIdentification,
       errorTypeIdentification,
       loadTypeIdentification,
+
+      statusBeca,
+      loadingStatusBeca,
+      errorStatusBeca,
+      loadStatusBeca,
 
       roles,
       loadingRoles,
