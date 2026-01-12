@@ -176,7 +176,7 @@ const RegisterTeacher = () => {
       sede: formData.sede,
       workday: formData.workday,
       identification: formData.identification,
-      identification_type: formData.identificationtype,
+      identificationtype: formData.identificationtype,
       fecha_nacimiento: formData.fecha_nacimiento || "",
       telephone: formData.telephone || "",
       email: formData.email,
