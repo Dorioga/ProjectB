@@ -1,12 +1,27 @@
 import { useEffect, useMemo, useState } from "react";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import SedeSelect from "../../components/atoms/SedeSelect";
+import JourneySelect from "../../components/atoms/JourneySelect";
+import PeriodSelector from "../../components/atoms/PeriodSelector";
+import GradeSelector from "../../components/atoms/GradeSelector";
+import AsignatureSelector from "../../components/molecules/AsignatureSelector";
 import { asignatureResponse } from "../../services/DataExamples/asignatureResponse";
 import useSchool from "../../lib/hooks/useSchool";
+import useData from "../../lib/hooks/useData";
+import useAuth from "../../lib/hooks/useAuth";
 
 const RegisterRecords = () => {
-  const { createNote, loading: loadingSchool } = useSchool();
+  const {
+    createNote,
+    loading: loadingSchool,
+    getTeacherGrades,
+    getTeacherSubjects,
+  } = useSchool();
+  const { institutionSedes } = useData();
+  const { idSede, nameSede, rol, idDocente } = useAuth();
   const [sedeSelected, setSedeSelected] = useState("");
+  const [workdaySelected, setWorkdaySelected] = useState("");
+  const [gradeSelected, setGradeSelected] = useState("");
   const [asignatureSelected, setAsignatureSelected] = useState("");
   const [numberRecords, setNumberRecords] = useState(0);
   const [auxRecords, setAuxRecords] = useState([]);
@@ -18,9 +33,66 @@ const RegisterRecords = () => {
     goal: "",
   });
 
+  // Memoizar additionalParams para evitar re-renders
+  const teacherGradesParams = useMemo(() => {
+    return idDocente ? { idTeacher: Number(idDocente) } : {};
+  }, [idDocente]);
+
+  const teacherSubjectsParams = useMemo(() => {
+    return gradeSelected && idDocente
+      ? { idGrade: Number(gradeSelected), idTeacher: Number(idDocente) }
+      : {};
+  }, [gradeSelected, idDocente]);
+
   const asignatures = useMemo(() => {
     return Array.isArray(asignatureResponse) ? asignatureResponse : [];
   }, []);
+
+  // Obtener el fk_workday de la sede seleccionada
+  const sedeWorkday = useMemo(() => {
+    if (!sedeSelected || !Array.isArray(institutionSedes)) return null;
+    const sede = institutionSedes.find(
+      (s) => String(s?.id) === String(sedeSelected)
+    );
+    return sede?.fk_workday ? String(sede.fk_workday) : null;
+  }, [sedeSelected, institutionSedes]);
+
+  // Datos de la sede del docente desde AuthContext
+  const teacherSedeData = useMemo(() => {
+    console.log("RegisterRecords - rol:", rol);
+    console.log("RegisterRecords - idSede:", idSede);
+    console.log("RegisterRecords - nameSede:", nameSede);
+
+    if ((rol === "7" || rol === 7) && idSede && nameSede) {
+      const data = [{ id: idSede, name: nameSede }];
+      console.log("RegisterRecords - teacherSedeData creado:", data);
+      return data;
+    }
+    return null;
+  }, [rol, idSede, nameSede]);
+
+  // Si el rol es 7, cargar idsede y establecerlo como seleccionado
+  useEffect(() => {
+    if ((rol === "7" || rol === 7) && idSede) {
+      console.log("RegisterRecords - Estableciendo sede seleccionada:", idSede);
+      setSedeSelected(idSede);
+    }
+  }, [rol, idSede]);
+
+  // Limpiar jornada cuando cambia la sede
+  useEffect(() => {
+    setWorkdaySelected("");
+  }, [sedeSelected]);
+
+  // Auto-seleccionar jornada basada en el fk_workday de la sede
+  useEffect(() => {
+    if (!sedeWorkday) return;
+
+    // Si fk_workday es 3 (Ambas/Completa), el usuario debe elegir manualmente
+    if (sedeWorkday === "3") return;
+
+    setWorkdaySelected(sedeWorkday);
+  }, [sedeWorkday]);
 
   useEffect(() => {
     setPorcentualTotal(isTest ? 80 : 100);
@@ -196,6 +268,8 @@ const RegisterRecords = () => {
       porcentage: String(rec.porcentual || 0),
       logro: rec.goal || "",
       fk_asignature: Number(asignatureSelected),
+      fk_docente: parseInt(idDocente, 10),
+      fk_period: Number(periodSelected),
     }));
 
     // Si hay examen final, agregarlo al array
@@ -205,6 +279,8 @@ const RegisterRecords = () => {
         porcentage: "20",
         logro: finalTest.goal || "",
         fk_asignature: Number(asignatureSelected),
+        fk_docente: parseInt(idDocente, 10),
+        fk_period: Number(periodSelected),
       });
     }
 
@@ -218,6 +294,8 @@ const RegisterRecords = () => {
 
       // Limpiar formulario después del éxito
       setSedeSelected("");
+      setWorkdaySelected("");
+      setGradeSelected("");
       setAsignatureSelected("");
       setPeriodSelected("");
       setNumberRecords(0);
@@ -239,38 +317,60 @@ const RegisterRecords = () => {
             onChange={(e) => setSedeSelected(e.target.value)}
             className="w-full p-2 border rounded bg-white"
             labelClassName="text-lg font-semibold"
+            disabled={rol === "7" || rol === 7}
+            data={teacherSedeData}
+          />
+          <GradeSelector
+            name="grade"
+            label="Grado"
+            labelClassName="text-lg font-semibold"
+            value={gradeSelected}
+            onChange={(e) => setGradeSelected(e.target.value)}
+            className="w-full p-2 border rounded bg-white"
+            sedeId={sedeSelected}
+            workdayId={workdaySelected}
+            customFetchMethod={getTeacherGrades}
+            additionalParams={teacherGradesParams}
+          />
+          <AsignatureSelector
+            name="asignature"
+            label="Asignatura"
+            labelClassName="text-lg font-semibold"
+            value={asignatureSelected}
+            onChange={(e) => setAsignatureSelected(e.target.value)}
+            className="w-full p-2 border rounded bg-white"
+            sedeId={sedeSelected}
+            workdayId={workdaySelected}
+            customFetchMethod={getTeacherSubjects}
+            additionalParams={teacherSubjectsParams}
+            onJourneyDetected={(journeyId) => {
+              console.log(
+                "RegisterRecords - Jornada detectada de asignatura:",
+                journeyId
+              );
+              setWorkdaySelected(String(journeyId));
+            }}
+          />
+          <JourneySelect
+            name="workday"
+            label="Jornada"
+            labelClassName="text-lg font-semibold"
+            value={workdaySelected}
+            onChange={(e) => setWorkdaySelected(e.target.value)}
+            className="w-full p-2 border rounded bg-white"
+            filterValue={sedeWorkday}
+            includeAmbas={false}
           />
 
-          <div>
-            <label className="text-lg font-semibold">Asignatura</label>
-            <select
-              className="w-full p-2 border rounded bg-white"
-              value={asignatureSelected}
-              onChange={(e) => setAsignatureSelected(e.target.value)}
-            >
-              <option value=""></option>
-              {asignatures.map((a) => (
-                <option key={a.codigo} value={a.codigo}>
-                  {a.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="text-lg font-semibold">Periodo</label>
-            <select
-              className="w-full p-2 border rounded bg-white"
-              value={periodSelected}
-              onChange={(e) => setPeriodSelected(e.target.value)}
-            >
-              <option value=""></option>
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-              <option value="4">4</option>
-            </select>
-          </div>
+          <PeriodSelector
+            name="period"
+            label="Período"
+            labelClassName="text-lg font-semibold"
+            value={periodSelected}
+            onChange={(e) => setPeriodSelected(e.target.value)}
+            className="w-full p-2 border rounded bg-white"
+            autoLoad={true}
+          />
 
           <div>
             <label className="text-lg font-semibold">

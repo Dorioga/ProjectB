@@ -1,11 +1,33 @@
 import { ApiClient } from "./ApiClient";
 
-export async function createSchool(formData) {
-  if (!(formData instanceof FormData)) {
-    throw new Error("formData debe ser una instancia de FormData.");
+/**
+ * Obtiene información de la institución.
+ *
+ * Endpoint esperado: GET /institution
+ * @returns {Promise<Object>} Información de la institución
+ */
+export async function getInstitution() {
+  try {
+    const res = await ApiClient.get("/institution");
+    const data = res?.data ?? res;
+    console.log("SchoolService - getInstitution:", data);
+
+    if (data && typeof data === "object" && "data" in data) return data.data;
+    if (data !== undefined && data !== null) return data;
+
+    throw new Error("Respuesta inesperada de /institution.");
+  } catch (error) {
+    console.error("Error en getInstitution:", error);
+    throw error;
+  }
+}
+
+export async function createSchool(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
   }
 
-  const res = await ApiClient.instance.post("/institutions", formData);
+  const res = await ApiClient.instance.post("/institutions", payload);
 
   // ApiClient tiene interceptor que normalmente devuelve res.data.
   // Pero aquí usamos instance.post directamente; res ya es data por interceptor.
@@ -44,6 +66,31 @@ export async function getJourneys() {
     return journeys;
   } catch (error) {
     console.error("Error en getJourneys:", error);
+    throw error;
+  }
+}
+
+/**
+ * Obtiene los períodos académicos desde el backend.
+ *
+ * Endpoint esperado: GET /periods
+ * @returns {Promise<Array>} Array de períodos académicos
+ */
+export async function getPeriods() {
+  try {
+    const res = await ApiClient.get("/periods");
+    const data = Array.isArray(res) ? res : res?.data ?? [];
+
+    console.log("SchoolService - getPeriods:", data);
+
+    // Validación suave del payload: aceptamos array o { data: array }.
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === "object" && Array.isArray(data.data))
+      return data.data;
+
+    throw new Error("Respuesta inesperada de periods.");
+  } catch (error) {
+    console.error("Error en getPeriods:", error);
     throw error;
   }
 }
@@ -233,4 +280,54 @@ export async function createNote(payload) {
   if (data !== undefined && data !== null) return data;
 
   throw new Error("Respuesta inesperada de createNote.");
+}
+
+/**
+ * Obtiene las asignaturas de un profesor.
+ *
+ * Endpoint esperado: POST /teacher/subjects
+ * @param {Object} payload - Datos para filtrar asignaturas del profesor
+ * @returns {Promise<Object>} Respuesta del servidor con las asignaturas del profesor
+ */
+export async function getTeacherSubjects(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+
+  const res = await ApiClient.instance.post("/teacher/subjects", payload);
+
+  const data = res;
+  console.log("SchoolService - getTeacherSubjects:", data);
+
+  // Validación suave del payload: devolvemos data o data.data.
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de teacher/subjects.");
+}
+
+/**
+ * Obtiene los grados de un profesor por sede y jornada.
+ *
+ * Endpoint esperado: POST /teacherS/grades
+ * @param {Object} payload - Datos para filtrar grados del profesor (ej: {idSede: 1, idWorkDay: 1, idDocente: 123})
+ * @returns {Promise<Object>} Respuesta del servidor con los grados del profesor
+ */
+export async function getTeacherGrades(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+
+  console.log("SchoolService - getTeacherGrades payload:", payload);
+
+  const res = await ApiClient.instance.post("/teacherS/grades", payload);
+
+  const data = res;
+  console.log("SchoolService - getTeacherGrades:", data);
+
+  // Validación suave del payload: devolvemos data o data.data.
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de teacherS/grades.");
 }

@@ -1,12 +1,12 @@
 import { ApiClient } from "./ApiClient";
 import { studentsResponse as studentsMock } from "./DataExamples/studentsResponse";
 
-export async function registerStudent(formData) {
-  if (!(formData instanceof FormData)) {
-    throw new Error("formData debe ser una instancia de FormData.");
+export async function registerStudent(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
   }
 
-  const res = await ApiClient.instance.post("/students", formData);
+  const res = await ApiClient.instance.post("/students", payload);
 
   // ApiClient tiene interceptor que normalmente devuelve res.data.
   const data = res;

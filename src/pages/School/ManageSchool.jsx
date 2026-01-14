@@ -103,46 +103,46 @@ const ManageSchool = ({ mode: modeProp, schoolId }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitError(null);
-    setSubmitSuccess(false);
 
     try {
-      const dataToSend = new FormData();
-      for (const key in formData) {
-        if (key === "sede") {
-          let sedeData = formData.sede ?? [];
+      const payload = { ...formData };
 
-          // Si no hay sedes, crear una sede principal automáticamente
-          if (sedeData.length === 0) {
-            sedeData = [
-              {
-                name_sede: "principal",
-                adress: "",
-                phone: "",
-                jornada: formData.workday,
-              },
-            ];
-          }
+      // Procesar sedes
+      let sedeData = payload.sede ?? [];
 
-          dataToSend.append(key, JSON.stringify(sedeData));
-          continue;
-        }
-        // Excluir campos auxiliares que no se envían al backend
-        if (key === "department_id") {
-          continue;
-        }
-
-        dataToSend.append(key, formData[key]);
+      // Si no hay sedes, crear una sede principal automáticamente
+      if (sedeData.length === 0) {
+        sedeData = [
+          {
+            name_sede: "principal",
+            adress: "",
+            phone: "",
+            jornada: parseInt(payload.workday),
+          },
+        ];
+      } else {
+        // Convertir jornada a número para cada sede existente
+        sedeData = sedeData.map((sede) => ({
+          ...sede,
+          jornada: parseInt(sede.jornada),
+        }));
       }
+
+      payload.sede = sedeData;
+
+      // Excluir campos auxiliares que no se envían al backend
+      delete payload.department_id;
+
+      console.log("Datos a enviar:", payload);
 
       let result;
       if (isUpdate && schoolId) {
         // Modo actualización
-        result = await updateSchool(schoolId, dataToSend);
+        result = await updateSchool(schoolId, payload);
         console.log("Institución actualizada:", result);
       } else {
         // Modo creación
-        result = await addSchool(dataToSend);
+        result = await addSchool(payload);
         console.log("Institución creada:", result);
       }
 
@@ -204,7 +204,6 @@ const ManageSchool = ({ mode: modeProp, schoolId }) => {
             value={formData.department_id}
             onChange={handleChange}
             className="w-full p-2 border rounded bg-white"
-            autoLoad={false}
           />
         </div>
 

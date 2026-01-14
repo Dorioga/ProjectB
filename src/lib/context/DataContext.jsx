@@ -87,6 +87,7 @@ export function DataProvider({ children }) {
   const loadDepartments = useCallback(async () => {
     setLoadingDepartments(true);
     setErrorDepartments(null);
+    console.log("DataContext - loadDepartments called");
     try {
       const res = await dataService.getDepartments();
       setDepartments(Array.isArray(res) ? res : res?.data ?? []);

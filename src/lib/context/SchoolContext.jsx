@@ -23,11 +23,15 @@ export function SchoolProvider({ children }) {
   const [records, setRecords] = useState([]);
   const [loadingRecords, setLoadingRecords] = useState(false);
   const [errorRecords, setErrorRecords] = useState(null);
+  const [periods, setPeriods] = useState([]);
+  const [loadingPeriods, setLoadingPeriods] = useState(false);
+  const [errorPeriods, setErrorPeriods] = useState(null);
   const [pathSignature, setPathSignature] = useState(
     "https://a.storyblok.com/f/191576/1200x800/b7ad4902a2/signature_maker_after_.webp"
   );
 
   const journeysLoadedRef = useRef(false);
+  const periodsLoadedRef = useRef(false);
 
   const loadSedes = useCallback(async (params = {}) => {
     setLoadingSedes(true);
@@ -74,6 +78,33 @@ export function SchoolProvider({ children }) {
       setLoadingJourneys(false);
     }
   }, [loadingJourneys]);
+
+  const loadPeriods = useCallback(async () => {
+    // Evitar múltiples cargas (ya se cargó o está cargando)
+    if (periodsLoadedRef.current || loadingPeriods) return;
+
+    periodsLoadedRef.current = true;
+    setLoadingPeriods(true);
+    setErrorPeriods(null);
+    try {
+      const periodsData = await schoolService.getPeriods();
+      const periodsArray = Array.isArray(periodsData)
+        ? periodsData
+        : periodsData?.data ?? [];
+
+      setPeriods(periodsArray);
+      console.log(
+        `SchoolContext: ${periodsArray.length} períodos cargados en el contexto`
+      );
+    } catch (err) {
+      console.error("Error al cargar períodos:", err);
+      setErrorPeriods(err);
+      setPeriods([]);
+      periodsLoadedRef.current = false; // Permitir reintento en caso de error
+    } finally {
+      setLoadingPeriods(false);
+    }
+  }, [loadingPeriods]);
 
   const loadRecords = useCallback(async (params = {}) => {
     setLoadingRecords(true);
@@ -286,6 +317,48 @@ export function SchoolProvider({ children }) {
     }
   };
 
+  const getTeacherSubjects = async (payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await schoolService.getTeacherSubjects(payload);
+      return result;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getInstitution = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await schoolService.getInstitution();
+      return result;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getTeacherGrades = async (payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await schoolService.getTeacherGrades(payload);
+      return result;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <SchoolContext.Provider
       value={{
@@ -301,10 +374,14 @@ export function SchoolProvider({ children }) {
         records,
         loadingRecords,
         errorRecords,
+        periods,
+        loadingPeriods,
+        errorPeriods,
         reload: loadSchools,
         reloadSedes: loadSedes,
         reloadJourneys: loadJourneys,
         reloadRecords: loadRecords,
+        loadPeriods,
         addSchool,
         updateSchool,
         removeSchool,
@@ -315,6 +392,9 @@ export function SchoolProvider({ children }) {
         getSedeAsignature,
         getGradeAsignature,
         createNote,
+        getTeacherSubjects,
+        getTeacherGrades,
+        getInstitution,
         pathSignature,
         setPathSignature,
       }}

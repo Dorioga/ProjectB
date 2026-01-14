@@ -148,7 +148,7 @@ const RegisterGrade = () => {
             placeholder="Ej: 6°"
           />
         </div>
-
+        <SedeSelect value={formData.id_sede} onChange={handleSedeChange} />
         <JourneySelect
           name="workday"
           label="Jornada"
@@ -159,8 +159,6 @@ const RegisterGrade = () => {
           placeholder="Selecciona una jornada"
           className="w-full p-2 border rounded bg-white"
         />
-
-        <SedeSelect value={formData.id_sede} onChange={handleSedeChange} />
 
         <div>
           <label>¿Cuántos grupos?</label>

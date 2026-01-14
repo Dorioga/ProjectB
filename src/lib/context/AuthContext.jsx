@@ -68,6 +68,12 @@ export function AuthProvider({ children }) {
     loadFromStorage("colorSecundario")
   );
   const [menu, setMenu] = useState(() => loadFromStorage("menu"));
+  const [idDocente, setIdDocente] = useState(() =>
+    loadFromStorage("idDocente")
+  );
+  const [idEstudiante, setIdEstudiante] = useState(() =>
+    loadFromStorage("idEstudiante")
+  );
   const [token, setToken] = useState(
     () => localStorage.getItem("token") || null
   );
@@ -112,6 +118,8 @@ export function AuthProvider({ children }) {
       setColorPrincipal(null);
       setColorSecundario(null);
       setMenu(null);
+      setIdDocente(null);
+      setIdEstudiante(null);
       setToken(null);
       sessionStorage.clear();
       setAuthToken(null);
@@ -136,6 +144,8 @@ export function AuthProvider({ children }) {
     saveToStorage("colorPrincipal", colorPrincipal);
     saveToStorage("colorSecundario", colorSecundario);
     saveToStorage("menu", menu);
+    saveToStorage("idDocente", idDocente);
+    saveToStorage("idEstudiante", idEstudiante);
 
     if (token) {
       localStorage.setItem("token", token);
@@ -158,6 +168,8 @@ export function AuthProvider({ children }) {
     colorPrincipal,
     colorSecundario,
     menu,
+    idDocente,
+    idEstudiante,
     token,
   ]);
 
@@ -214,6 +226,8 @@ export function AuthProvider({ children }) {
       setIdSede(data?.id_sede ?? null);
       setColorPrincipal(data?.color_principal ?? null);
       setColorSecundario(data?.color_secundario ?? null);
+      setIdDocente(data?.id_docente ?? null);
+      setIdEstudiante(data?.id_estudiante ?? null);
 
       // Aplicar colores personalizados al tema si existen (solo si no son null)
       if (data?.color_principal || data?.color_secundario) {
@@ -270,6 +284,8 @@ export function AuthProvider({ children }) {
       setColorPrincipal(null);
       setColorSecundario(null);
       setMenu(null);
+      setIdDocente(null);
+      setIdEstudiante(null);
       setToken(null);
       localStorage.clear();
       setAuthToken(null);
@@ -295,6 +311,8 @@ export function AuthProvider({ children }) {
       idSede,
       colorPrincipal,
       colorSecundario,
+      idDocente,
+      idEstudiante,
       loading,
       error,
       isOpen,
@@ -318,6 +336,8 @@ export function AuthProvider({ children }) {
       idSede,
       colorPrincipal,
       colorSecundario,
+      idDocente,
+      idEstudiante,
       loading,
       error,
       isOpen,

@@ -12,6 +12,7 @@ const SedeSelect = ({
   className = "w-full p-2 border rounded bg-white",
   disabled = false,
   autoSelectPrincipal = false,
+  data = null, // Permite pasar data manualmente (ej. para docentes)
 }) => {
   const { institutionSedes, loadingInstitutionSedes, loadInstitutionSedes } =
     useData();
@@ -19,6 +20,9 @@ const SedeSelect = ({
 
   // Cargar sedes cuando se monta el componente o cambia idInstitution
   useEffect(() => {
+    // Si hay data manual, no cargar desde el contexto
+    if (data) return;
+
     console.log("SedeSelect - idInstitution:", idInstitution);
     if (idInstitution) {
       console.log(
@@ -32,30 +36,39 @@ const SedeSelect = ({
     } else {
       console.warn("SedeSelect - No hay idInstitution disponible");
     }
-  }, [idInstitution, loadInstitutionSedes]);
+  }, [idInstitution, loadInstitutionSedes, data]);
 
   const sedeOptions = useMemo(() => {
-    const source = Array.isArray(institutionSedes) ? institutionSedes : [];
+    // Si hay data manual (ej. para docentes), usar esa
+    const source = data
+      ? Array.isArray(data)
+        ? data
+        : []
+      : Array.isArray(institutionSedes)
+      ? institutionSedes
+      : [];
 
     console.log("SedeSelect - institutionSedes:", institutionSedes);
+    console.log("SedeSelect - data (manual):", data);
     console.log("SedeSelect - source length:", source.length);
 
     const normalized = source
       .filter(Boolean)
       .map((sede) => {
         const id = String(sede?.id ?? "").trim();
-        const nombre = String(sede?.nombre ?? "").trim();
+        const nombre = String(sede?.name ?? sede?.nombre ?? "").trim();
 
         const labelBase = nombre || id || "Sede";
         const optionLabel = labelBase;
 
         return { id, label: optionLabel, isPrincipal: false, isActive: true };
       })
-      .filter((opt) => opt.id);
+      .filter((opt) => opt.id && opt.label);
 
     console.log("SedeSelect - normalized sedes:", normalized);
 
-    if (normalized.length === 0) {
+    // Solo mostrar datos de ejemplo si no hay data manual Y no hay sedes del contexto
+    if (normalized.length === 0 && !data) {
       console.warn("SedeSelect - No hay sedes, mostrando datos de ejemplo");
       return [
         { id: "SED-PRINCIPAL", label: "Principal", isPrincipal: true },
@@ -69,7 +82,7 @@ const SedeSelect = ({
       if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
       return a.label.localeCompare(b.label, "es", { sensitivity: "base" });
     });
-  }, [institutionSedes]);
+  }, [institutionSedes, data]);
 
   useEffect(() => {
     if (!autoSelectPrincipal) return;

@@ -41,15 +41,15 @@ export async function getStatusBeca() {
 }
 
 /**
- * Registra un usuario enviando multipart/form-data.
+ * Registra un usuario enviando datos JSON.
  *
  * Endpoint esperado: POST /users
  */
-export async function registerUser(formData) {
-  if (!(formData instanceof FormData)) {
-    throw new Error("formData debe ser una instancia de FormData.");
+export async function registerUser(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
   }
-  const res = await ApiClient.instance.post("/students", formData);
+  const res = await ApiClient.instance.post("/users", payload);
 
   // ApiClient tiene interceptor que normalmente devuelve res.data.
   // Pero aquí usamos instance.post directamente; res ya es data por interceptor.

@@ -1,10 +1,12 @@
 import React, { useState } from "react";
+import { sha256 } from "js-sha256";
 import FileChooser from "../../components/atoms/FileChooser";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import ProgressPage from "../../components/atoms/progressPage";
 import SedeSelect from "../../components/atoms/SedeSelect";
 import JourneySelect from "../../components/atoms/JourneySelect";
 import BecaSelector from "../../components/atoms/BecaSelector";
+import GradeSelector from "../../components/atoms/GradeSelector";
 import TypeDocumentSelector from "../../components/molecules/TypeDocumentSelector";
 import useStudent from "../../lib/hooks/useStudent";
 import Loader from "../../components/atoms/Loader";
@@ -23,6 +25,7 @@ const RegisterStudent = () => {
     sede: "",
     password: "",
     workday: "",
+    fk_grade: "",
     fecha_nacimiento: "",
     direccion: "",
     gender: "",
@@ -46,36 +49,40 @@ const RegisterStudent = () => {
     e.preventDefault();
 
     try {
-      const dataToSend = new FormData();
+      // Construir el payload como objeto JSON
+      const payload = {
+        first_name: formData.first_name || "",
+        second_name: formData.second_name || "",
+        first_lastname: formData.first_lastname || "",
+        second_lastname: formData.second_lastname || "",
+        telephone: formData.telephone || "",
+        email: formData.email || "",
+        identification: formData.identification || "",
+        identificationtype: formData.identificationtype
+          ? Number(formData.identificationtype)
+          : "",
+        sede: formData.sede ? Number(formData.sede) : "",
+        password: formData.password ? sha256(formData.password) : "",
+        workday: formData.workday ? Number(formData.workday) : "",
+        fk_grade: formData.fk_grade ? Number(formData.fk_grade) : "",
+        fecha_nacimiento: formData.fecha_nacimiento || "",
+        direccion: formData.direccion || "",
+        gender: formData.gender || "",
+        photo_link: formData.photo_link || "",
+        nui: formData.nui || "",
+        per_id: formData.per_id || "",
+        fk_beca: formData.fk_beca ? Number(formData.fk_beca) : "",
+        link_identificacion: formData.link_identificacion || "",
+        link_habeas: formData.link_habeas || "",
+      };
 
-      // Agrega todos los campos del estado al FormData
-      // Convierte null a string vacío antes de agregar
-      for (const key in formData) {
-        const value = formData[key];
-        // Si el valor es null, enviamos string vacío
-        // Si es un archivo (File object), lo enviamos tal cual
-        if (value === null) {
-          dataToSend.append(key, "");
-        } else if (value instanceof File) {
-          dataToSend.append(key, value);
-        } else {
-          dataToSend.append(key, value);
-        }
-      }
-
-      // Mostrar el contenido del FormData antes de enviar
-      console.log("=== FormData a enviar ===");
-      for (let [key, value] of dataToSend.entries()) {
-        if (value instanceof File) {
-          console.log(`${key}: [File] ${value.name} (${value.size} bytes)`);
-        } else {
-          console.log(`${key}: ${value}`);
-        }
-      }
-      console.log("=========================");
+      // Mostrar el payload antes de enviar
+      console.log("=== Payload a enviar ===");
+      console.log(JSON.stringify(payload, null, 2));
+      console.log("========================");
 
       // Enviar los datos al backend
-      const result = await registerStudent(dataToSend);
+      const result = await registerStudent(payload);
 
       console.log("¡Estudiante registrado exitosamente!", result);
 
@@ -92,6 +99,7 @@ const RegisterStudent = () => {
         sede: "",
         password: "",
         workday: "",
+        fk_grade: "",
         fecha_nacimiento: "",
         direccion: "",
         gender: "",
@@ -264,6 +272,15 @@ const RegisterStudent = () => {
           onChange={handleChange}
           placeholder="Selecciona una jornada"
           includeAmbas={false}
+        />
+        <GradeSelector
+          name="fk_grade"
+          label="Grado"
+          value={formData.fk_grade}
+          onChange={handleChange}
+          sedeId={formData.sede}
+          workdayId={formData.workday}
+          placeholder="Selecciona un grado"
         />
         <BecaSelector
           name="fk_beca"

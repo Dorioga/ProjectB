@@ -4,6 +4,7 @@ import Loader from "../../components/atoms/Loader";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import RoleSelector from "../../components/molecules/RoleSelector";
 import TypeDocumentSelector from "../../components/molecules/TypeDocumentSelector";
+import InstitutionSelector from "../../components/molecules/InstitutionSelector";
 import useSchool from "../../lib/hooks/useSchool";
 import useData from "../../lib/hooks/useData";
 import useAuth from "../../lib/hooks/useAuth";
@@ -11,7 +12,7 @@ import useAuth from "../../lib/hooks/useAuth";
 const RegisterUser = () => {
   const { schools, loading, reload } = useSchool();
   const { registerUser, loadingRegisterUser, errorRegisterUser } = useData();
-  const { idInstitution } = useAuth();
+  const { idInstitution, rol } = useAuth();
 
   const [formData, setFormData] = useState({
     identificationtype: "",
@@ -24,13 +25,14 @@ const RegisterUser = () => {
     second_lastname: "",
     password: "",
     role: "",
-    institutionId: "",
+    idInstitution: "",
   });
 
   // Cargar las escuelas cuando se monta el componente
   useEffect(() => {
     reload();
-  }, [reload]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const institutionOptions = useMemo(() => {
     const source = Array.isArray(schools) ? schools : [];
@@ -60,50 +62,23 @@ const RegisterUser = () => {
     const payload = {
       ...formData,
       password: formData.password ? sha256(formData.password) : "",
+      // Convertir a número los campos especificados
+      identificationtype: parseInt(formData.identificationtype, 10) || 0,
+      role: parseInt(formData.role, 10) || 0,
     };
 
-    // Si el rol es 2, 3 o 4, excluir institutionId del payload
-    if (["2", "3", "4"].includes(formData.role)) {
-      delete payload.institutionId;
+    // Si el rol es 2, 3 o 4, excluir idInstitution del payload
+    if (["2", "3", "4"].includes(rol)) {
+      payload.idInstitution = parseInt(idInstitution, 10);
+    } else {
+      // Convertir idInstitution a número
+      payload.idInstitution = parseInt(formData.idInstitution, 10);
     }
 
-    const fd = new FormData();
-    for (const [key, value] of Object.entries(payload)) {
-      // Convertir a número los campos especificados
-      if (key === "identificationtype" || key === "role") {
-        const numValue = parseInt(value, 10);
-        fd.append(key, isNaN(numValue) ? "" : numValue);
-      } else {
-        fd.append(key, value ?? "");
-      }
-    }
-
-    // Agregar sede e idInstitution (convertir idInstitution a número)
-    // No agregamos sede si es null, el backend debe manejarlo
-    //fd.append("sede", null); // FormData convierte null a string "null"
-
-    const numIdInstitution = parseInt(idInstitution, 10);
-    fd.append("idInstitution", isNaN(numIdInstitution) ? "" : numIdInstitution);
-
-    // Crear objeto para visualización con tipos correctos
-    const displayObj = {};
-    for (const [key, value] of fd.entries()) {
-      if (
-        key === "identificationtype" ||
-        key === "role" ||
-        key === "idInstitution"
-      ) {
-        const numValue = parseInt(value, 10);
-        displayObj[key] = isNaN(numValue) ? value : numValue;
-      } else {
-        displayObj[key] = value;
-      }
-    }
-
-    console.log("FormData (con tipos correctos):", displayObj);
+    console.log("Payload a enviar:", payload);
 
     try {
-      const res = await registerUser(fd);
+      const res = await registerUser(payload);
       console.log("Usuario registrado:", res);
     } catch (err) {
       console.error("Error registrando usuario:", err);
@@ -247,28 +222,16 @@ const RegisterUser = () => {
           />
         </div>
 
-        {!["2", "3", "4"].includes(formData.role) && (
-          <div>
-            <label>Institución</label>
-            <select
-              name="institutionId"
-              value={formData.institutionId}
-              onChange={handleChange}
-              className="w-full p-2 border rounded bg-white"
-              disabled={loadingRegisterUser}
-            >
-              <option value="">
-                {loading
-                  ? "Cargando instituciones..."
-                  : "Selecciona una institución"}
-              </option>
-              {institutionOptions.map((opt) => (
-                <option key={opt.id} value={opt.id}>
-                  {opt.name}
-                </option>
-              ))}
-            </select>
-          </div>
+        {![".2", "3", "4"].includes(rol) && (
+          <InstitutionSelector
+            name="idInstitution"
+            label="Institución"
+            value={formData.idInstitution}
+            onChange={handleChange}
+            placeholder="Selecciona una institución"
+            className="w-full p-2 border rounded bg-white"
+            disabled={loadingRegisterUser}
+          />
         )}
 
         <div className="md:col-span-3 mt-4 flex justify-center">
