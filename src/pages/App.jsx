@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import GeneralRoutes from "../routes/generalRoutes";
 import { initTheme } from "../utils/themeManager";
+import { Toast } from "../components/atoms/Toast";
 
 function App() {
   useEffect(() => {
@@ -8,7 +9,12 @@ function App() {
     initTheme();
   }, []);
 
-  return <GeneralRoutes />;
+  return (
+    <>
+      <Toast />
+      <GeneralRoutes />
+    </>
+  );
 }
 
 export default App;

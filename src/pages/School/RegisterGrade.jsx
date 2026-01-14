@@ -14,8 +14,6 @@ const RegisterGrade = () => {
     group: [],
   });
   const [numGroups, setNumGroups] = useState(0);
-  const [submitError, setSubmitError] = useState(null);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
 
   const resizeGroups = (previousGroups, count) => {
     const safeCount = Math.max(
@@ -82,34 +80,27 @@ const RegisterGrade = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setSubmitError(null);
-    setSubmitSuccess(false);
 
     // Validaciones
     if (!formData.name_grade.trim()) {
-      setSubmitError("El nombre del grado es requerido");
       return;
     }
 
     if (!formData.workday) {
-      setSubmitError("Debes seleccionar una jornada");
       return;
     }
 
     if (!formData.id_sede) {
-      setSubmitError("Debes seleccionar una sede");
       return;
     }
 
     if (formData.group.length === 0) {
-      setSubmitError("Debes crear al menos un grupo");
       return;
     }
 
     // Validar que todos los grupos tengan nombre
     const emptyGroups = formData.group.filter((g) => !g.name_group?.trim());
     if (emptyGroups.length > 0) {
-      setSubmitError("Todos los grupos deben tener un nombre");
       return;
     }
 
@@ -125,19 +116,14 @@ const RegisterGrade = () => {
     // Llamar al servicio para registrar el grado
     try {
       await registerGrade(dataToSubmit);
-      setSubmitSuccess(true);
 
       // Limpiar formulario después de éxito
       setTimeout(() => {
         setFormData({ name_grade: "", workday: "", id_sede: "", group: [] });
         setNumGroups(0);
-        setSubmitSuccess(false);
-      }, 2000);
+      }, 1000);
     } catch (error) {
       console.error("Error al registrar grado:", error);
-      setSubmitError(
-        error?.message || "Error al registrar el grado. Intenta nuevamente."
-      );
     }
   };
 
@@ -213,18 +199,6 @@ const RegisterGrade = () => {
             </div>
           )}
         </div>
-
-        {submitError && (
-          <div className="md:col-span-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-            <strong>Error:</strong> {submitError}
-          </div>
-        )}
-
-        {submitSuccess && (
-          <div className="md:col-span-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-            <strong>Éxito:</strong> Grado registrado correctamente
-          </div>
-        )}
 
         <div className="md:col-span-3 mt-4 flex justify-center">
           <div className="w-full md:w-1/2">

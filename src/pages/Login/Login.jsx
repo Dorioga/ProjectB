@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Loader from "../../components/atoms/Loader";
 import useAuth from "../../lib/hooks/useAuth";
@@ -11,6 +11,11 @@ const Login = () => {
   });
   const { login, loading, error } = useAuth();
   const navigate = useNavigate();
+
+  // Limpiar localStorage al entrar a la página de login
+  useEffect(() => {
+    localStorage.clear();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

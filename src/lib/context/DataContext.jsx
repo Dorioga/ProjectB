@@ -153,13 +153,16 @@ export function DataProvider({ children }) {
 
       const res = await dataService.getInstitutionSede(formData);
       const sedesData = Array.isArray(res) ? res : res?.data ?? [];
-
+      console.log("DataContext - loadInstitutionSedes raw:", sedesData);
       // Normalizar formato: id_sede -> id, nombre_sede -> nombre
       const normalizedSedes = sedesData.map((sede) => ({
         id: sede.id_sede || sede.id,
         nombre: sede.nombre_sede || sede.nombre,
+        name_workday: sede.nombre_jornada,
         fk_institucion: sede.fk_institucion,
+        fk_workday: sede.id_jornada,
       }));
+      console.log("DataContext - loadInstitutionSedes:", normalizedSedes);
 
       setInstitutionSedes(normalizedSedes);
       return normalizedSedes;

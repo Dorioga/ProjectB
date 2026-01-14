@@ -8,6 +8,23 @@ const apiClient = axios.create({
   timeout: 0, // sin timeout para uploads grandes
 });
 
+// Sistema de eventos para notificaciones
+const eventBus = {
+  listeners: [],
+  on(callback) {
+    this.listeners.push(callback);
+    return () => {
+      this.listeners = this.listeners.filter((cb) => cb !== callback);
+    };
+  },
+  emit(message, type = "error") {
+    this.listeners.forEach((callback) => callback(message, type));
+  },
+};
+
+// Exportar para que el NotificationContext se suscriba
+export { eventBus };
+
 apiClient.interceptors.request.use((config) => {
   // Asegurar que headers esté inicializado
   config.headers = config.headers || {};
@@ -28,7 +45,32 @@ apiClient.interceptors.request.use((config) => {
 
 // Interceptor de respuestas: normaliza errores y maneja problemas de autenticación
 apiClient.interceptors.response.use(
-  (res) => res.data,
+  (res) => {
+    const data = res.data;
+
+    // ✅ Validar que el código de respuesta sea "OK"
+    if (data && typeof data === "object" && "code" in data) {
+      if (data.code !== "OK") {
+        // Si el código no es OK, rechazar la promesa
+        const errorMessage =
+          data.mensaje ||
+          data.message ||
+          data.msg ||
+          `Error: Código de respuesta ${data.code}`;
+
+        // Emitir evento para notificación global
+        eventBus.emit(errorMessage, "error");
+
+        const error = new Error(errorMessage);
+        error.status = res.status;
+        error.data = data;
+        error.code = data.code;
+        return Promise.reject(error);
+      }
+    }
+
+    return data;
+  },
   (error) => {
     const res = error.response;
 
@@ -43,12 +85,17 @@ apiClient.interceptors.response.use(
       }
     }
 
-    const err = new Error(
+    const errorMessage =
       res?.data?.mensaje ||
-        res?.data?.message ||
-        error.message ||
-        "Error de la API"
-    );
+      res?.data?.message ||
+      res?.data?.msg ||
+      error.message ||
+      "Error de la API";
+
+    // Emitir evento para notificación global
+    eventBus.emit(errorMessage, "error");
+
+    const err = new Error(errorMessage);
     err.status = res?.status;
     err.data = res?.data;
     err.code = res?.data?.code;

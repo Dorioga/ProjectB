@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useEffect, useState } from "react";
 import * as studentService from "../../services/studentService";
+import { eventBus } from "../../services/ApiClient";
 
 export const StudentContext = createContext(null);
 
@@ -75,6 +76,10 @@ export function StudentProvider({ children }) {
       const result = await studentService.registerStudent(formData);
       // Opcionalmente actualizar la lista de estudiantes
       setStudents((s) => [result, ...s]);
+
+      // Emitir notificación de éxito
+      eventBus.emit("¡Estudiante registrado exitosamente!", "success");
+
       return result;
     } catch (err) {
       setError(err);

@@ -1,14 +1,11 @@
 import { ApiClient } from "./ApiClient";
-import { sedesResponses } from "./DataExamples/sedesResponse";
-import { journeysResponse } from "./DataExamples/journeysResponse";
-import { recordResponse } from "./DataExamples/recordResponse";
 
 export async function createSchool(formData) {
   if (!(formData instanceof FormData)) {
     throw new Error("formData debe ser una instancia de FormData.");
   }
 
-  const res = await ApiClient.instance.post("/register_institution", formData);
+  const res = await ApiClient.instance.post("/institutions", formData);
 
   // ApiClient tiene interceptor que normalmente devuelve res.data.
   // Pero aquí usamos instance.post directamente; res ya es data por interceptor.
@@ -27,7 +24,7 @@ export async function createSchool(formData) {
  */
 export async function getJourneys() {
   try {
-    const res = await ApiClient.get("/workday");
+    const res = await ApiClient.get("/workdays");
     const data = Array.isArray(res) ? res : res?.data ?? [];
 
     if (!Array.isArray(data)) {
@@ -60,7 +57,7 @@ export async function registerGrade(gradeData) {
     throw new Error("gradeData debe ser un objeto.");
   }
 
-  const res = await ApiClient.instance.post("/register_grade", gradeData);
+  const res = await ApiClient.instance.post("/grades", gradeData);
 
   // ApiClient tiene interceptor que normalmente devuelve res.data.
   // Pero aquí usamos instance.post directamente; res ya es data por interceptor.
@@ -86,7 +83,7 @@ export async function registerTeacher(payload) {
     throw new Error("payload debe ser un objeto.");
   }
 
-  const res = await ApiClient.instance.post("/register_teacher", payload);
+  const res = await ApiClient.instance.post("/teachers", payload);
 
   // ApiClient tiene interceptor que normalmente devuelve res.data.
   // Pero aquí usamos instance.post directamente; res ya es data por interceptor.
@@ -100,33 +97,140 @@ export async function registerTeacher(payload) {
   throw new Error("Respuesta inesperada de register_teacher.");
 }
 
-/////////////////////////////////
-export async function getSchools(params = {}) {
-  return ApiClient.get("/schools", params);
-}
-
-export async function getSchool(id) {
-  return ApiClient.get(`/schools/${id}`);
-}
-
-export async function updateSchool(id, payload) {
-  return ApiClient.put(`/schools/${id}`, payload);
-}
-
-export async function deleteSchool(id) {
-  return ApiClient.del(`/schools/${id}`);
-}
-
-// Mock / DataExample: sedes
-export async function getSedes(params = {}) {
-  const schoolId = params?.schoolId;
-  if (schoolId) {
-    return sedesResponses.filter((sede) => sede.schoolId === schoolId);
+/**
+ * Obtiene los grados por sede.
+ *
+ * Endpoint esperado: POST /grade_sede
+ * @param {Object} payload - Datos para filtrar los grados (ej: {id_sede: 1})
+ * @returns {Promise<Object>} Respuesta del servidor con los grados
+ */
+export async function getGradeSede(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
   }
-  return sedesResponses;
+  console.log("SchoolService - getGradeSede payload:", payload);
+
+  const res = await ApiClient.instance.post("/grade/:sedeId", payload);
+
+  // ApiClient tiene interceptor que normalmente devuelve res.data.
+  const data = res;
+  console.log("SchoolService - getGradeSede:", data);
+
+  // Validación suave del payload: devolvemos data o data.data.
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de grade_sede.");
 }
 
-// Mock / DataExample: records (notas)
-export async function loadRecords(params = {}) {
-  return recordResponse;
+/**
+ * Registra una nueva asignatura.
+ *
+ * Endpoint esperado: POST /register_asignature
+ * @param {Object} payload - Datos de la asignatura (ej: {name: "Matemáticas", grade_id: 1})
+ * @returns {Promise<Object>} Respuesta del servidor
+ */
+export async function registerAsignature(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+
+  const res = await ApiClient.instance.post("/asignatures", payload);
+
+  const data = res;
+  console.log("SchoolService - registerAsignature:", data);
+
+  // Validación suave del payload: devolvemos data o data.data.
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de register_asignature.");
+}
+
+/**
+ * Obtiene las asignaturas por sede.
+ *
+ * Endpoint esperado: POST /sedeasignature
+ * @param {Object} payload - Datos para filtrar asignaturas (ej: {idSede: 32, idWorkDay: 1})
+ * @returns {Promise<Object>} Respuesta del servidor con las asignaturas
+ */
+export async function getSedeAsignature(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+
+  const res = await ApiClient.instance.post("/sedes/:id/subjects", payload);
+
+  const data = res;
+  console.log("SchoolService - getSedeAsignature respuesta completa:", data);
+
+  // Validación suave del payload: devolvemos data o data.data.
+  if (data && typeof data === "object" && "data" in data) {
+    console.log(
+      "SchoolService - getSedeAsignature retornando data.data:",
+      data.data
+    );
+    return data.data;
+  }
+  if (data !== undefined && data !== null) {
+    console.log("SchoolService - getSedeAsignature retornando data:", data);
+    return data;
+  }
+
+  throw new Error("Respuesta inesperada de sedeasignature.");
+}
+
+/**
+ * Obtiene las asignaturas por grado.
+ *
+ * Endpoint esperado: POST /grade_asignature
+ * @param {Object} payload - Datos para filtrar asignaturas (ej: {id_grado: 17})
+ * @returns {Promise<Object>} Respuesta del servidor con las asignaturas del grado
+ */
+export async function getGradeAsignature(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+  console.log("SchoolService - getGradeAsignature payload:", payload);
+
+  const res = await ApiClient.instance.post("/gradeS/:asignatureId", payload);
+
+  const data = res;
+  console.log("SchoolService - getGradeAsignature:", data);
+
+  // Validar que la respuesta tenga code: "OK"
+  if (data && data.code === "OK") {
+    // Devolver los datos si existen
+    if (data.data !== undefined) {
+      return data.data;
+    }
+    return data;
+  }
+
+  // Si no tiene code OK, lanzar error
+  throw new Error(data?.message || "Respuesta inesperada de grade_asignature.");
+}
+
+/**
+ * Crea una nueva nota.
+ *
+ * Endpoint esperado: POST /notes
+ * @param {Object} payload - Datos de la nota
+ * @returns {Promise<Object>} Respuesta del servidor
+ */
+export async function createNote(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+
+  const res = await ApiClient.instance.post("/notes", payload);
+
+  const data = res;
+  console.log("SchoolService - createNote:", data);
+
+  // Validación suave del payload: devolvemos data o data.data.
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de createNote.");
 }

@@ -10,8 +10,7 @@ import useStudent from "../../lib/hooks/useStudent";
 import Loader from "../../components/atoms/Loader";
 
 const RegisterStudent = () => {
-  const { registerStudent, loading, error } = useStudent();
-  const [successMessage, setSuccessMessage] = useState("");
+  const { registerStudent, loading } = useStudent();
   const [formData, setFormData] = useState({
     first_name: "",
     second_name: "",
@@ -45,7 +44,6 @@ const RegisterStudent = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSuccessMessage(""); // Limpiar mensaje previo
 
     try {
       const dataToSend = new FormData();
@@ -80,7 +78,6 @@ const RegisterStudent = () => {
       const result = await registerStudent(dataToSend);
 
       console.log("¡Estudiante registrado exitosamente!", result);
-      setSuccessMessage("¡Estudiante registrado exitosamente!");
 
       // Limpiar el formulario después del registro exitoso
       setFormData({
@@ -105,9 +102,6 @@ const RegisterStudent = () => {
         link_identificacion: null,
         link_habeas: null,
       });
-
-      // Limpiar mensaje de éxito después de 5 segundos
-      setTimeout(() => setSuccessMessage(""), 5000);
     } catch (err) {
       console.error("Error al registrar estudiante:", err);
     }
@@ -307,19 +301,6 @@ const RegisterStudent = () => {
 
         <div className="md:col-span-3 mt-4 flex flex-col items-center gap-4">
           {loading && <Loader message="Registrando estudiante..." />}
-
-          {successMessage && (
-            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded w-full max-w-md text-center">
-              {successMessage}
-            </div>
-          )}
-
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded w-full max-w-md text-center">
-              Error:{" "}
-              {error.message || "Ocurrió un error al registrar el estudiante"}
-            </div>
-          )}
 
           {!loading && (
             <SimpleButton

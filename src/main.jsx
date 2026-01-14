@@ -7,19 +7,22 @@ import { SchoolProvider } from "./lib/context/SchoolContext.jsx";
 import { AuthProvider } from "./lib/context/AuthContext.jsx";
 import { StudentProvider } from "./lib/context/StudentContext.jsx";
 import { DataProvider } from "./lib/context/DataContext.jsx";
+import { NotificationProvider } from "./lib/context/NotificationContext.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
-      <AuthProvider>
-        <DataProvider>
-          <SchoolProvider>
-            <StudentProvider>
-              <App />
-            </StudentProvider>
-          </SchoolProvider>
-        </DataProvider>
-      </AuthProvider>
+      <NotificationProvider>
+        <AuthProvider>
+          <DataProvider>
+            <SchoolProvider>
+              <StudentProvider>
+                <App />
+              </StudentProvider>
+            </SchoolProvider>
+          </DataProvider>
+        </AuthProvider>
+      </NotificationProvider>
     </BrowserRouter>
   </StrictMode>
 );

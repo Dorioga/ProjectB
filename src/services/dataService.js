@@ -6,7 +6,7 @@ import { ApiClient } from "./ApiClient";
  * Endpoint esperado: GET /type_identification
  */
 export async function getTypeIdentification() {
-  const res = await ApiClient.instance.get("/type_identification");
+  const res = await ApiClient.instance.get("/identification-types");
 
   // ApiClient tiene interceptor que normalmente devuelve res.data.
   // Pero aquí usamos instance.get directamente; res ya es data por interceptor.
@@ -26,7 +26,7 @@ export async function getTypeIdentification() {
  * Endpoint esperado: GET /status_beca
  */
 export async function getStatusBeca() {
-  const res = await ApiClient.instance.get("/status_beca");
+  const res = await ApiClient.instance.get("/scholarships/status");
 
   // ApiClient tiene interceptor que normalmente devuelve res.data.
   const data = res;
@@ -49,7 +49,7 @@ export async function registerUser(formData) {
   if (!(formData instanceof FormData)) {
     throw new Error("formData debe ser una instancia de FormData.");
   }
-  const res = await ApiClient.instance.post("/register_user", formData);
+  const res = await ApiClient.instance.post("/students", formData);
 
   // ApiClient tiene interceptor que normalmente devuelve res.data.
   // Pero aquí usamos instance.post directamente; res ya es data por interceptor.
@@ -69,7 +69,7 @@ export async function registerUser(formData) {
  * Endpoint esperado: GET /rol
  */
 export async function getRol() {
-  const res = await ApiClient.instance.get("/rol");
+  const res = await ApiClient.instance.get("/roles");
 
   // ApiClient tiene interceptor que normalmente devuelve res.data.
   // Pero aquí usamos instance.get directamente; res ya es data por interceptor.
@@ -94,7 +94,7 @@ export async function getMenuRol(formData) {
     throw new Error("formData debe ser una instancia de FormData.");
   }
 
-  const res = await ApiClient.instance.post("/menu_rol", formData, {
+  const res = await ApiClient.instance.post("/menus/:roleId", formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
@@ -118,7 +118,7 @@ export async function getMenuRol(formData) {
  * Endpoint esperado: GET /departments
  */
 export async function getDepartments() {
-  const res = await ApiClient.instance.get("/departament");
+  const res = await ApiClient.instance.get("/departaments");
 
   // ApiClient tiene interceptor que normalmente devuelve res.data.
   // Pero aquí usamos instance.get directamente; res ya es data por interceptor.
@@ -147,7 +147,10 @@ export async function getCities(departmentId) {
     idDepartament: parseInt(departmentId),
   };
 
-  const res = await ApiClient.instance.post("/municipality", payload);
+  const res = await ApiClient.instance.post(
+    "/municipalities/:departamentId",
+    payload
+  );
 
   // ApiClient tiene interceptor que normalmente devuelve res.data.
   // Pero aquí usamos instance.get directamente; res ya es data por interceptor.
@@ -172,11 +175,7 @@ export async function getInstitutionSede(formData) {
     throw new Error("formData debe ser una instancia de FormData.");
   }
 
-  const res = await ApiClient.instance.post("/institution_sede", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+  const res = await ApiClient.instance.post("/institutionS/:sedeId", formData);
 
   const data = res;
   console.log("DataService - getInstitutionSede:", data);

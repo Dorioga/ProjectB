@@ -17,8 +17,6 @@ const ManageSchool = ({ mode: modeProp, schoolId }) => {
   const isUpdate = mode === "update";
 
   const { addSchool, updateSchool, loading } = useSchool();
-  const [submitError, setSubmitError] = useState(null);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
 
   const [formData, setFormData] = useState({
     municipality: "1",
@@ -148,15 +146,12 @@ const ManageSchool = ({ mode: modeProp, schoolId }) => {
         console.log("Institución creada:", result);
       }
 
-      setSubmitSuccess(true);
-
       // Opcional: resetear formulario en modo create
       if (!isUpdate) {
         // Podrías resetear el form o redirigir
       }
     } catch (error) {
       console.error("Error al enviar formulario:", error);
-      setSubmitError(error.message || "Error al procesar la solicitud");
     }
   };
 
@@ -429,22 +424,6 @@ const ManageSchool = ({ mode: modeProp, schoolId }) => {
             ) : null}
           </div>
         ) : null}
-
-        {/* Mensajes de estado */}
-        {submitError && (
-          <div className="md:col-span-2 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-            <strong>Error:</strong> {submitError}
-          </div>
-        )}
-
-        {submitSuccess && (
-          <div className="md:col-span-2 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-            <strong>Éxito:</strong>{" "}
-            {isUpdate
-              ? "Institución actualizada correctamente"
-              : "Institución registrada correctamente"}
-          </div>
-        )}
 
         <div className="md:col-span-2 mt-4">
           <SimpleButton

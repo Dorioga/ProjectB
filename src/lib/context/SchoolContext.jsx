@@ -6,6 +6,7 @@ import React, {
   useRef,
 } from "react";
 import * as schoolService from "../../services/schoolService";
+import { eventBus } from "../../services/ApiClient";
 
 export const SchoolContext = createContext(null);
 
@@ -121,6 +122,10 @@ export function SchoolProvider({ children }) {
     try {
       const created = await schoolService.createSchool(payload);
       setSchools((s) => [created, ...s]);
+
+      // Emitir notificación de éxito
+      eventBus.emit("¡Institución registrada exitosamente!", "success");
+
       return created;
     } catch (err) {
       setError(err);
@@ -138,6 +143,10 @@ export function SchoolProvider({ children }) {
       setSchools((s) =>
         s.map((x) => (x.id === id || x._id === id ? updated : x))
       );
+
+      // Emitir notificación de éxito
+      eventBus.emit("¡Institución actualizada exitosamente!", "success");
+
       return updated;
     } catch (err) {
       setError(err);
@@ -152,6 +161,10 @@ export function SchoolProvider({ children }) {
     setError(null);
     try {
       const result = await schoolService.registerGrade(gradeData);
+
+      // Emitir notificación de éxito
+      eventBus.emit("¡Grado registrado exitosamente!", "success");
+
       return result;
     } catch (err) {
       setError(err);
@@ -166,6 +179,10 @@ export function SchoolProvider({ children }) {
     setError(null);
     try {
       const result = await schoolService.registerTeacher(formData);
+
+      // Emitir notificación de éxito
+      eventBus.emit("¡Profesor registrado exitosamente!", "success");
+
       return result;
     } catch (err) {
       setError(err);
@@ -181,6 +198,86 @@ export function SchoolProvider({ children }) {
     try {
       await schoolService.deleteSchool(id);
       setSchools((s) => s.filter((x) => x.id !== id && x._id !== id));
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getGradeSede = async (payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await schoolService.getGradeSede(payload);
+      return result;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const registerAsignature = async (payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await schoolService.registerAsignature(payload);
+
+      // Emitir notificación de éxito
+      eventBus.emit("¡Asignatura registrada exitosamente!", "success");
+
+      return result;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getSedeAsignature = async (payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      console.log("SchoolContext - getSedeAsignature payload:", payload);
+      const result = await schoolService.getSedeAsignature(payload);
+
+      return result;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getGradeAsignature = async (payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await schoolService.getGradeAsignature(payload);
+      return result;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createNote = async (payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await schoolService.createNote(payload);
+
+      // Emitir notificación de éxito
+      eventBus.emit("¡Nota registrada exitosamente!", "success");
+
+      return result;
     } catch (err) {
       setError(err);
       throw err;
@@ -213,6 +310,11 @@ export function SchoolProvider({ children }) {
         removeSchool,
         registerGrade,
         registerTeacher,
+        getGradeSede,
+        registerAsignature,
+        getSedeAsignature,
+        getGradeAsignature,
+        createNote,
         pathSignature,
         setPathSignature,
       }}

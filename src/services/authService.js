@@ -15,8 +15,8 @@ export async function login(credentials) {
     infokey: credentials.infokey ? sha256(String(credentials.infokey)) : "",
   };
 
-  const res = await ApiClient.instance.post("/login", payload);
-
+  const res = await ApiClient.instance.post("/auth/login", payload);
+  console.log("AuthService - login response:", res);
   // ApiClient tiene interceptor que normalmente devuelve res.data.
   // Pero aquí usamos instance.post directamente; res ya es data por interceptor.
   const data = res;

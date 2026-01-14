@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import SedeSelect from "../../components/atoms/SedeSelect";
 import { asignatureResponse } from "../../services/DataExamples/asignatureResponse";
+import useSchool from "../../lib/hooks/useSchool";
 
 const RegisterRecords = () => {
+  const { createNote, loading: loadingSchool } = useSchool();
   const [sedeSelected, setSedeSelected] = useState("");
   const [asignatureSelected, setAsignatureSelected] = useState("");
   const [numberRecords, setNumberRecords] = useState(0);
@@ -185,19 +187,46 @@ const RegisterRecords = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    console.log("Registro de notas:", {
-      sedeSelected,
-      asignatureSelected,
-      periodSelected,
-      numberRecords: Number(numberRecords),
-      isTest,
-      porcentualTotal,
-      records: auxRecords,
-      finalTest: isTest ? { ...finalTest, porcentual: 20 } : null,
-    });
+    // Construir el array de notas en el formato requerido
+    const notes = auxRecords.map((rec) => ({
+      name_note: rec.name || "",
+      porcentage: String(rec.porcentual || 0),
+      logro: rec.goal || "",
+      fk_asignature: Number(asignatureSelected),
+    }));
+
+    // Si hay examen final, agregarlo al array
+    if (isTest) {
+      notes.push({
+        name_note: "Examen final",
+        porcentage: "20",
+        logro: finalTest.goal || "",
+        fk_asignature: Number(asignatureSelected),
+      });
+    }
+
+    const payload = { notes };
+
+    console.log("Registro de notas - Payload:", payload);
+
+    try {
+      const result = await createNote(payload);
+      console.log("Notas registradas exitosamente:", result);
+
+      // Limpiar formulario después del éxito
+      setSedeSelected("");
+      setAsignatureSelected("");
+      setPeriodSelected("");
+      setNumberRecords(0);
+      setAuxRecords([]);
+      setIsTest(false);
+      setFinalTest({ record: 0, goal: "" });
+    } catch (error) {
+      console.error("Error al registrar notas:", error);
+    }
   };
 
   return (
@@ -391,6 +420,7 @@ const RegisterRecords = () => {
               text={"text-white"}
               bg={"bg-accent"}
               icon={"Save"}
+              disabled={loadingSchool}
             />
           </div>
         </div>
