@@ -270,6 +270,7 @@ const RegisterRecords = () => {
       fk_asignature: Number(asignatureSelected),
       fk_docente: parseInt(idDocente, 10),
       fk_period: Number(periodSelected),
+      fk_grade: Number(gradeSelected),
     }));
 
     // Si hay examen final, agregarlo al array
@@ -281,6 +282,7 @@ const RegisterRecords = () => {
         fk_asignature: Number(asignatureSelected),
         fk_docente: parseInt(idDocente, 10),
         fk_period: Number(periodSelected),
+        fk_grade: Number(gradeSelected),
       });
     }
 

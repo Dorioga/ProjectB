@@ -18,6 +18,8 @@ import RegisterTeacher from "../pages/Teacher/RegisterTeacher";
 import RegisterAssistance from "../pages/Teacher/RegisterAssistance";
 import RegisterGrade from "../pages/School/RegisterGrade";
 import RegisterStudentRecords from "../pages/School/RegisterStudentRecords";
+import ManageTeacher from "../pages/Teacher/ManageTeacher";
+import ManageStudent from "../pages/Student/ManageStudent";
 const GeneralRoutes = () => {
   return (
     <div id="body" className="w-full h-screen flex flex-col ">
@@ -54,6 +56,8 @@ const GeneralRoutes = () => {
               path="registerStudentRecords"
               element={<RegisterStudentRecords />}
             />
+            <Route path="manageTeacher" element={<ManageTeacher />} />
+            <Route path="manageStudent" element={<ManageStudent />} />
           </Route>
         </Routes>
       </div>

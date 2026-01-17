@@ -331,3 +331,133 @@ export async function getTeacherGrades(payload) {
 
   throw new Error("Respuesta inesperada de teacherS/grades.");
 }
+
+/**
+ * Obtiene los grados de un estudiante.
+ *
+ * Endpoint esperado: POST /student/grades
+ * @param {Object} payload - Datos para filtrar grados del estudiante (ej: {idStudent: 123})
+ * @returns {Promise<Object>} Respuesta del servidor con los grados del estudiante
+ */
+export async function getStudentGrades(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+
+  console.log("SchoolService - getStudentGrades payload:", payload);
+
+  const res = await ApiClient.instance.post("/student/grades", payload);
+
+  const data = res;
+  console.log("SchoolService - getStudentGrades:", data);
+
+  // Validación suave del payload: devolvemos data o data.data.
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de student/grades.");
+}
+
+/**
+ * Obtiene las notas de un estudiante.
+ *
+ * Endpoint esperado: POST /studentS/notes
+ * @param {Object} payload - Datos para filtrar notas del estudiante
+ * @returns {Promise<Object>} Respuesta del servidor con las notas del estudiante
+ */
+export async function getStudentNotes(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+
+  console.log("SchoolService - getStudentNotes payload:", payload);
+
+  const res = await ApiClient.instance.post("/studentS/notes", payload);
+
+  const data = res;
+  console.log("SchoolService - getStudentNotes:", data);
+
+  // Validación suave del payload: devolvemos data o data.data.
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de studentS/notes.");
+}
+
+/**
+ * Guarda las notas de asignación de estudiantes.
+ *
+ * Endpoint esperado: POST /assignment/notes
+ * @param {Object} payload - Datos con formato { note_student: [{ fk_student, fk_note, value_note, goal_student }] }
+ * @returns {Promise<Object>} Respuesta del servidor
+ */
+export async function saveAssignmentNotes(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+
+  console.log("SchoolService - saveAssignmentNotes payload:", payload);
+
+  const res = await ApiClient.instance.post("/assignment/notes", payload);
+
+  const data = res;
+  console.log("SchoolService - saveAssignmentNotes:", data);
+
+  // Validación suave del payload: devolvemos data o data.data.
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de assignment/notes.");
+}
+
+/**
+ * Obtiene todos los estudiantes de la institución.
+ *
+ * Endpoint esperado: POST /institution/students
+ * @param {Object} payload - Datos para filtrar estudiantes
+ * @returns {Promise<Object>} Respuesta del servidor con los estudiantes
+ */
+export async function allstudent(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+
+  console.log("SchoolService - allstudent payload:", payload);
+
+  const res = await ApiClient.instance.post("/institution/students", payload);
+
+  const data = res;
+  console.log("SchoolService - allstudent:", data);
+
+  // Validación suave del payload: devolvemos data o data.data.
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de /institution/students.");
+}
+
+/**
+ * Obtiene todos los profesores de la institución.
+ *
+ * Endpoint esperado: POST /institution/teachers
+ * @param {Object} payload - Datos para filtrar profesores
+ * @returns {Promise<Object>} Respuesta del servidor con los profesores
+ */
+export async function allteacher(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+
+  console.log("SchoolService - allteacher payload:", payload);
+
+  const res = await ApiClient.instance.post("/institution/teachers", payload);
+
+  const data = res;
+  console.log("SchoolService - allteacher:", data);
+
+  // Validación suave del payload: devolvemos data o data.data.
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de /institution/teachers.");
+}

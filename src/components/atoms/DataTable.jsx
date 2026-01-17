@@ -19,6 +19,38 @@ const DataTable = ({ data, columns, fileName = "export", mode = null }) => {
   const tableRef = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
   const [downloadTypeMode, setDownloadTypeMode] = useState("all");
+
+  // Función de filtro personalizada que busca todos los términos en toda la fila
+  const globalFilterFn = (row, columnId, filterValue) => {
+    if (!filterValue) return true;
+
+    // Dividir el texto de búsqueda en términos individuales
+    const searchTerms = filterValue
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((term) => term.length > 0);
+
+    // Concatenar todos los valores de la fila en un solo string
+    const rowText = columns
+      .map((column) => {
+        // Ignorar columnas de acciones
+        if (column.id === "actions") return "";
+
+        let value;
+        if (column.accessorFn) {
+          value = column.accessorFn(row.original);
+        } else if (column.accessorKey) {
+          value = row.original[column.accessorKey];
+        }
+
+        return value != null ? String(value).toLowerCase() : "";
+      })
+      .join(" ");
+
+    // Verificar que todos los términos estén presentes en la fila
+    return searchTerms.every((term) => rowText.includes(term));
+  };
+
   const table = useReactTable({
     data,
     columns,
@@ -33,6 +65,7 @@ const DataTable = ({ data, columns, fileName = "export", mode = null }) => {
     },
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
+    globalFilterFn: globalFilterFn,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -171,7 +204,7 @@ const DataTable = ({ data, columns, fileName = "export", mode = null }) => {
                   >
                     {flexRender(
                       header.column.columnDef.header,
-                      header.getContext()
+                      header.getContext(),
                     )}
                     {{
                       asc: " 🔼",
@@ -210,7 +243,7 @@ const DataTable = ({ data, columns, fileName = "export", mode = null }) => {
                     <div className=" p-0 block">
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </div>
                   </td>

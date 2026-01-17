@@ -1,8 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 
-import JourneySelect from "../../components/atoms/JourneySelect";
 import SimpleButton from "../../components/atoms/SimpleButton";
+import SedeSelect from "../../components/atoms/SedeSelect";
+import JourneySelect from "../../components/atoms/JourneySelect";
+import PeriodSelector from "../../components/atoms/PeriodSelector";
+import GradeSelector from "../../components/atoms/GradeSelector";
+import AsignatureSelector from "../../components/molecules/AsignatureSelector";
 import useSchool from "../../lib/hooks/useSchool";
+import useData from "../../lib/hooks/useData";
+import useAuth from "../../lib/hooks/useAuth";
 import { asignatureResponse } from "../../services/DataExamples/asignatureResponse";
 import { studentsResponse } from "../../services/DataExamples/studentsResponse";
 
@@ -11,95 +17,198 @@ const normalize = (value) =>
     .trim()
     .toLowerCase();
 
-const uniqueSorted = (values) => {
-  const normalized = values.map((v) => String(v ?? "").trim()).filter(Boolean);
-  return Array.from(new Set(normalized)).sort((a, b) =>
-    a.localeCompare(b, "es", { sensitivity: "base", numeric: true })
-  );
-};
-
 const RegisterStudentRecords = () => {
-  const { records, loadingRecords, errorRecords, reloadRecords } = useSchool();
+  const {
+    records,
+    loadingRecords,
+    errorRecords,
+    reloadRecords,
+    getTeacherGrades,
+    getTeacherSubjects,
+    getStudentGrades,
+    getStudentNotes,
+    saveAssignmentNotes,
+  } = useSchool();
+  const { institutionSedes } = useData();
+  const { idSede, nameSede, rol, idDocente } = useAuth();
+  const [sedeSelected, setSedeSelected] = useState("");
+  const [workdaySelected, setWorkdaySelected] = useState("");
+  const [gradeSelected, setGradeSelected] = useState("");
+  const [asignatureSelected, setAsignatureSelected] = useState("");
+  const [periodSelected, setPeriodSelected] = useState("");
   const [journey, setJourney] = useState("");
   const [asignatureCode, setAsignatureCode] = useState("");
-  const [grade, setGrade] = useState("");
-  const [group, setGroup] = useState("");
   const [recordValuesByStudent, setRecordValuesByStudent] = useState({});
+  const [notesFromService, setNotesFromService] = useState([]);
+  const [studentsFromService, setStudentsFromService] = useState([]);
+  const [loadingData, setLoadingData] = useState(false);
+  const [commentsById, setCommentsById] = useState({});
 
-  const canShowStudents = Boolean(journey && asignatureCode && grade && group);
+  // Memoizar additionalParams para evitar re-renders
+  const teacherGradesParams = useMemo(() => {
+    return idDocente ? { idTeacher: Number(idDocente) } : {};
+  }, [idDocente]);
+
+  const teacherSubjectsParams = useMemo(() => {
+    return gradeSelected && idDocente
+      ? { idGrade: Number(gradeSelected), idTeacher: Number(idDocente) }
+      : {};
+  }, [gradeSelected, idDocente]);
+
+  // Obtener el fk_workday de la sede seleccionada
+  const sedeWorkday = useMemo(() => {
+    if (!sedeSelected || !Array.isArray(institutionSedes)) return null;
+    const sede = institutionSedes.find(
+      (s) => String(s?.id) === String(sedeSelected)
+    );
+    return sede?.fk_workday ? String(sede.fk_workday) : null;
+  }, [sedeSelected, institutionSedes]);
+
+  // Datos de la sede del docente desde AuthContext
+  const teacherSedeData = useMemo(() => {
+    if ((rol === "7" || rol === 7) && idSede && nameSede) {
+      return [{ id: idSede, name: nameSede }];
+    }
+    return null;
+  }, [rol, idSede, nameSede]);
+
+  const canShowStudents = Boolean(
+    sedeSelected &&
+      gradeSelected &&
+      asignatureSelected &&
+      workdaySelected &&
+      periodSelected &&
+      journey &&
+      asignatureCode
+  );
+
+  // Si el rol es 7, cargar idsede y establecerlo como seleccionado
+  useEffect(() => {
+    if ((rol === "7" || rol === 7) && idSede) {
+      setSedeSelected(idSede);
+    }
+  }, [rol, idSede]);
+
+  // Limpiar jornada cuando cambia la sede
+  useEffect(() => {
+    setWorkdaySelected("");
+  }, [sedeSelected]);
+
+  // Auto-seleccionar jornada basada en el fk_workday de la sede
+  useEffect(() => {
+    if (!sedeWorkday) return;
+
+    // Si fk_workday es 3 (Ambas/Completa), el usuario debe elegir manualmente
+    if (sedeWorkday === "3") return;
+
+    setWorkdaySelected(sedeWorkday);
+  }, [sedeWorkday]);
+
+  // Sincronizar journey con workdaySelected
+  useEffect(() => {
+    setJourney(workdaySelected);
+  }, [workdaySelected]);
+
+  // Sincronizar asignatureCode con asignatureSelected
+  useEffect(() => {
+    setAsignatureCode(asignatureSelected);
+  }, [asignatureSelected]);
 
   useEffect(() => {
     reloadRecords();
   }, [reloadRecords]);
 
-  const asignatureOptions = useMemo(() => {
-    const source = Array.isArray(asignatureResponse) ? asignatureResponse : [];
-    return source
-      .filter(Boolean)
-      .map((a) => ({
-        value: String(a.codigo ?? "").trim(),
-        label: String(a.nombre ?? a.codigo ?? "").trim(),
-      }))
-      .filter((opt) => opt.value);
-  }, []);
-
-  const gradeOptions = useMemo(() => {
-    const base = Array.isArray(studentsResponse) ? studentsResponse : [];
-    const filtered = journey
-      ? base.filter((s) => normalize(s?.journey) === normalize(journey))
-      : base;
-    return uniqueSorted(filtered.map((s) => s?.grade_scholar));
-  }, [journey]);
-
-  const groupOptions = useMemo(() => {
-    const base = Array.isArray(studentsResponse) ? studentsResponse : [];
-    const filtered = base.filter((s) => {
-      if (journey && normalize(s?.journey) !== normalize(journey)) return false;
-      if (grade && String(s?.grade_scholar ?? "").trim() !== String(grade)) {
-        return false;
-      }
-      return true;
-    });
-    return uniqueSorted(filtered.map((s) => s?.group_grade));
-  }, [grade, journey]);
-
-  useEffect(() => {
-    setGrade("");
-    setGroup("");
-  }, [journey]);
-
-  useEffect(() => {
-    setGroup("");
-  }, [grade]);
-
   useEffect(() => {
     setRecordValuesByStudent({});
-  }, [asignatureCode, grade, group, journey]);
+  }, [asignatureCode, journey]);
+
+  // Llamar a los servicios cuando se tengan los 4 campos requeridos
+  useEffect(() => {
+    const fetchData = async () => {
+      // Validar que todos los campos requeridos estén presentes
+      if (
+        !idDocente ||
+        !asignatureSelected ||
+        !gradeSelected ||
+        !periodSelected
+      ) {
+        setNotesFromService([]);
+        setStudentsFromService([]);
+        return;
+      }
+
+      setLoadingData(true);
+      try {
+        // Llamar a ambos servicios en paralelo
+        const [notesResponse, studentsResponse] = await Promise.all([
+          getStudentNotes({
+            fk_docente: Number(idDocente),
+            fk_asignatura: Number(asignatureSelected),
+            fk_grade: Number(gradeSelected),
+            fk_period: Number(periodSelected),
+          }),
+          getStudentGrades({
+            idGrade: Number(gradeSelected),
+          }),
+        ]);
+
+        console.log("Notas recibidas:", notesResponse);
+        console.log("Estudiantes recibidos:", studentsResponse);
+
+        // Guardar las notas
+        const notesArray = Array.isArray(notesResponse)
+          ? notesResponse
+          : notesResponse?.data ?? [];
+        setNotesFromService(notesArray);
+
+        // Guardar los estudiantes
+        const studentsArray = Array.isArray(studentsResponse)
+          ? studentsResponse
+          : studentsResponse?.data ?? [];
+        setStudentsFromService(studentsArray);
+
+        // Limpiar valores y comentarios cuando cambian los parámetros
+        setRecordValuesByStudent({});
+        setCommentsById({});
+      } catch (error) {
+        console.error("Error al cargar datos:", error);
+        setNotesFromService([]);
+        setStudentsFromService([]);
+      } finally {
+        setLoadingData(false);
+      }
+    };
+
+    fetchData();
+  }, [
+    idDocente,
+    asignatureSelected,
+    gradeSelected,
+    periodSelected,
+    getStudentNotes,
+    getStudentGrades,
+  ]);
 
   const filteredStudents = useMemo(() => {
-    const base = Array.isArray(studentsResponse) ? studentsResponse : [];
-    return base.filter((s) => {
-      if (journey && normalize(s?.journey) !== normalize(journey)) return false;
-      if (grade && String(s?.grade_scholar ?? "").trim() !== String(grade)) {
-        return false;
-      }
-      if (group && String(s?.group_grade ?? "").trim() !== String(group)) {
-        return false;
-      }
-      return true;
-    });
-  }, [grade, group, journey]);
+    return Array.isArray(studentsFromService) ? studentsFromService : [];
+  }, [studentsFromService]);
 
   const recordsList = useMemo(() => {
-    return Array.isArray(records) ? records : [];
-  }, [records]);
+    return Array.isArray(notesFromService) ? notesFromService : [];
+  }, [notesFromService]);
 
   const getStudentKey = (student) => {
-    const id = student?.id_student ?? student?.identification;
+    const id =
+      student?.id_estudiante ?? student?.id_student ?? student?.identification;
     return String(id ?? "").trim();
   };
 
   const getStudentName = (student) => {
+    // Primero intentar con el campo "nombre" del servicio
+    if (student?.nombre) {
+      return String(student.nombre).trim();
+    }
+    // Fallback al formato anterior
     const firstName = String(student?.first_name ?? "").trim();
     const secondName = String(student?.second_name ?? "").trim();
     const firstLastname = String(student?.first_lastname ?? "").trim();
@@ -115,15 +224,15 @@ const RegisterStudentRecords = () => {
     const list = Array.isArray(recordsList) ? recordsList : [];
     const values = studentValues ?? {};
     const totalPorcentual = list.reduce((acc, r) => {
-      const p = Number(r?.porcentual);
+      const p = Number(r?.porcentaje ?? r?.porcentual);
       return acc + (Number.isFinite(p) ? p : 0);
     }, 0);
 
     const weightedSum = list.reduce((acc, r) => {
-      const name = String(r?.name ?? "").trim();
+      const name = String(r?.nombre_nota ?? r?.name ?? "").trim();
       if (!name) return acc;
 
-      const p = Number(r?.porcentual);
+      const p = Number(r?.porcentaje ?? r?.porcentual);
       const porcentual = Number.isFinite(p) ? p : 0;
       const rawValue = values?.[name];
       const n = Number(rawValue);
@@ -137,7 +246,7 @@ const RegisterStudentRecords = () => {
       isComplete:
         list.length > 0 &&
         list.every((r) => {
-          const name = String(r?.name ?? "").trim();
+          const name = String(r?.nombre_nota ?? r?.name ?? "").trim();
           if (!name) return false;
           const v = values?.[name];
           return String(v ?? "").trim() !== "";
@@ -171,32 +280,62 @@ const RegisterStudentRecords = () => {
     });
   };
 
-  const handleSubmitAll = (e) => {
+  const handleCommentChange = (studentKey, value) => {
+    setCommentsById((prev) => ({
+      ...prev,
+      [studentKey]: value,
+    }));
+  };
+
+  const handleSubmitAll = async (e) => {
     e.preventDefault();
 
-    const payload = filteredStudents.map((student) => {
+    // Construir el array note_student según el formato requerido
+    const noteStudentArray = [];
+    filteredStudents.forEach((student) => {
       const studentKey = getStudentKey(student);
       const values = recordValuesByStudent?.[studentKey] ?? {};
-      return {
-        student: {
-          id_student: student?.id_student,
-          identification: student?.identification,
-          fullName: getStudentName(student),
-          journey: student?.journey,
-          grade_scholar: student?.grade_scholar,
-          group_grade: student?.group_grade,
-        },
-        asignatureCode,
-        records: recordsList.map((r) => ({
-          name: r?.name,
-          porcentual: r?.porcentual,
-          goal: r?.goal,
-          value: values?.[r?.name] ?? "",
-        })),
-      };
+      const comment = commentsById?.[studentKey] ?? "";
+      const studentId = student?.id_estudiante;
+
+      // Agregar una entrada por cada nota del estudiante
+      recordsList.forEach((record) => {
+        const recordName = String(
+          record?.nombre_nota ?? record?.name ?? ""
+        ).trim();
+        const noteValue = values?.[recordName];
+
+        // Solo agregar si hay un valor ingresado
+        if (noteValue && String(noteValue).trim() !== "") {
+          noteStudentArray.push({
+            fk_student: Number(studentId),
+            fk_note: Number(record?.id_nota),
+            value_note: Number(noteValue),
+            goal_student: comment || "",
+          });
+        }
+      });
     });
 
-    console.log("Registro de notas (grupo):", payload);
+    const payload = {
+      note_student: noteStudentArray,
+    };
+
+    console.log("Registro de notas (payload):", payload);
+
+    try {
+      setLoadingData(true);
+      await saveAssignmentNotes(payload);
+      console.log("Notas guardadas exitosamente");
+
+      // Opcional: Limpiar los valores después de guardar
+      // setRecordValuesByStudent({});
+      // setCommentsById({});
+    } catch (error) {
+      console.error("Error al guardar notas:", error);
+    } finally {
+      setLoadingData(false);
+    }
   };
 
   const completedCount = useMemo(() => {
@@ -213,79 +352,92 @@ const RegisterStudentRecords = () => {
       <h2 className="font-bold text-2xl">Registrar Notas Estudiantes</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <SedeSelect
+          value={sedeSelected}
+          onChange={(e) => setSedeSelected(e.target.value)}
+          className="w-full p-2 border rounded bg-white"
+          labelClassName="text-lg font-semibold"
+          disabled={rol === "7" || rol === 7}
+          data={teacherSedeData}
+        />
+        <GradeSelector
+          name="grade"
+          label="Grado"
+          labelClassName="text-lg font-semibold"
+          value={gradeSelected}
+          onChange={(e) => setGradeSelected(e.target.value)}
+          className="w-full p-2 border rounded bg-white"
+          sedeId={sedeSelected}
+          workdayId={workdaySelected}
+          customFetchMethod={getTeacherGrades}
+          additionalParams={teacherGradesParams}
+        />
+        <AsignatureSelector
+          name="asignature"
+          label="Asignatura"
+          labelClassName="text-lg font-semibold"
+          value={asignatureSelected}
+          onChange={(e) => setAsignatureSelected(e.target.value)}
+          className="w-full p-2 border rounded bg-white"
+          sedeId={sedeSelected}
+          workdayId={workdaySelected}
+          customFetchMethod={getTeacherSubjects}
+          additionalParams={teacherSubjectsParams}
+          onJourneyDetected={(journeyId) => {
+            setWorkdaySelected(String(journeyId));
+          }}
+        />
         <JourneySelect
-          value={journey}
-          onChange={(e) => setJourney(e.target.value)}
-          placeholder="Selecciona una jornada"
+          name="workday"
+          label="Jornada"
+          labelClassName="text-lg font-semibold"
+          value={workdaySelected}
+          onChange={(e) => setWorkdaySelected(e.target.value)}
+          className="w-full p-2 border rounded bg-white"
+          filterValue={sedeWorkday}
           includeAmbas={false}
         />
 
-        <div>
-          <label>Asignatura</label>
-          <select
-            value={asignatureCode}
-            onChange={(e) => setAsignatureCode(e.target.value)}
-            className="w-full p-2 border rounded bg-white"
-          >
-            <option value="">Selecciona una asignatura</option>
-            {asignatureOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label>Curso</label>
-          <select
-            value={grade}
-            onChange={(e) => setGrade(e.target.value)}
-            className="w-full p-2 border rounded bg-white"
-            disabled={!journey}
-          >
-            <option value="">
-              {journey ? "Selecciona un curso" : "Selecciona jornada primero"}
-            </option>
-            {gradeOptions.map((g) => (
-              <option key={g} value={g}>
-                {g}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label>Grupo</label>
-          <select
-            value={group}
-            onChange={(e) => setGroup(e.target.value)}
-            className="w-full p-2 border rounded bg-white"
-            disabled={!journey || !grade}
-          >
-            <option value="">
-              {journey && grade
-                ? "Selecciona un grupo"
-                : "Selecciona jornada y curso"}
-            </option>
-            {groupOptions.map((g) => (
-              <option key={g} value={g}>
-                {g}
-              </option>
-            ))}
-          </select>
-        </div>
+        <PeriodSelector
+          name="period"
+          label="Período"
+          labelClassName="text-lg font-semibold"
+          value={periodSelected}
+          onChange={(e) => setPeriodSelected(e.target.value)}
+          className="w-full p-2 border rounded bg-white"
+          autoLoad={true}
+        />
       </div>
 
-      {!asignatureCode ? (
+      {!sedeSelected ? (
+        <div className="text-sm opacity-80">
+          Selecciona una sede para comenzar.
+        </div>
+      ) : !gradeSelected ? (
+        <div className="text-sm opacity-80">
+          Selecciona un grado para continuar.
+        </div>
+      ) : !asignatureSelected ? (
+        <div className="text-sm opacity-80">
+          Selecciona una asignatura para continuar.
+        </div>
+      ) : !workdaySelected ? (
+        <div className="text-sm opacity-80">
+          Selecciona una jornada para continuar.
+        </div>
+      ) : !periodSelected ? (
+        <div className="text-sm opacity-80">
+          Selecciona un período para continuar.
+        </div>
+      ) : !asignatureCode ? (
         <div className="text-sm opacity-80">
           Selecciona una asignatura para registrar notas.
         </div>
       ) : null}
 
-      {loadingRecords ? (
+      {loadingRecords || loadingData ? (
         <div className="text-sm opacity-80">
-          Cargando estructura de notas...
+          Cargando estructura de notas y estudiantes...
         </div>
       ) : errorRecords ? (
         <div className="text-sm text-red-600">
@@ -298,8 +450,7 @@ const RegisterStudentRecords = () => {
       <div className="flex flex-col gap-4">
         {!canShowStudents ? (
           <div className="text-sm opacity-80">
-            Completa los filtros (jornada, asignatura, curso y grupo) para ver
-            los estudiantes.
+            Completa los filtros para ver los estudiantes.
           </div>
         ) : filteredStudents.length === 0 ? (
           <div className="text-sm opacity-80">
@@ -321,42 +472,22 @@ const RegisterStudentRecords = () => {
               </div>
             </div>
 
-            {recordsList.some((r) => String(r?.goal ?? "").trim()) ? (
-              <div className="px-4 pb-4 text-center">
-                <div className="font-semibold">Logros</div>
-                <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
-                  {recordsList
-                    .filter((r) => String(r?.goal ?? "").trim())
-                    .map((r) => {
-                      const recordName = String(r?.name ?? "").trim();
-                      const goal = String(r?.goal ?? "").trim();
-                      return (
-                        <div
-                          key={recordName || goal}
-                          className="opacity-90 text-center"
-                        >
-                          <span className="font-medium">
-                            {recordName || "Nota"}:
-                          </span>{" "}
-                          <span>{goal}</span>
-                        </div>
-                      );
-                    })}
-                </div>
-              </div>
-            ) : null}
-
             <div className="overflow-x-auto">
               <table className="w-full min-w-[920px]">
                 <thead className="bg-primary text-white font-semibold">
                   <tr>
                     <th className="p-3 text-left">Estudiante</th>
                     {recordsList.map((r) => {
-                      const recordName = String(r?.name ?? "").trim();
+                      const recordName = String(
+                        r?.nombre_nota ?? r?.name ?? ""
+                      ).trim();
                       if (!recordName) return null;
-                      const porcentual = Number(r?.porcentual);
+                      const porcentual = Number(r?.porcentaje ?? r?.porcentual);
                       return (
-                        <th key={recordName} className="p-3 text-center">
+                        <th
+                          key={r?.id_nota ?? recordName}
+                          className="p-3 text-center"
+                        >
                           <div>{recordName}</div>
                           {Number.isFinite(porcentual) ? (
                             <div className="text-xs opacity-90">
@@ -367,6 +498,7 @@ const RegisterStudentRecords = () => {
                       );
                     })}
                     <th className="p-3 text-center">Final</th>
+                    <th className="p-3 text-center">Comentarios del docente</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -376,6 +508,7 @@ const RegisterStudentRecords = () => {
                     const studentValues =
                       recordValuesByStudent?.[studentKey] ?? {};
                     const finalInfo = computeFinalRecord(studentValues);
+                    const comment = commentsById?.[studentKey] ?? "";
 
                     return (
                       <tr
@@ -387,19 +520,23 @@ const RegisterStudentRecords = () => {
                             {fullName || "Estudiante"}
                           </div>
                           <div className="text-xs opacity-80">
-                            Doc: {student?.identification || "-"} · Curso:{" "}
-                            {student?.grade_scholar || "-"} · Grupo:{" "}
-                            {student?.group_grade || "-"}
+                            ID: {student?.id_estudiante || "-"} · Grado:{" "}
+                            {student?.grado || student?.grade_scholar || "-"}
                           </div>
                         </td>
 
                         {recordsList.map((r) => {
-                          const recordName = String(r?.name ?? "").trim();
+                          const recordName = String(
+                            r?.nombre_nota ?? r?.name ?? ""
+                          ).trim();
                           if (!recordName) return null;
                           const value = studentValues?.[recordName] ?? "";
 
                           return (
-                            <td key={recordName} className="p-2 align-top">
+                            <td
+                              key={r?.id_nota ?? recordName}
+                              className="p-2 align-top"
+                            >
                               <input
                                 type="number"
                                 min={1}
@@ -415,7 +552,7 @@ const RegisterStudentRecords = () => {
                                 }
                                 className="w-full p-2 border rounded bg-white text-center"
                                 placeholder="1.00"
-                                disabled={!asignatureCode || loadingRecords}
+                                disabled={loadingData}
                               />
                             </td>
                           );
@@ -433,6 +570,19 @@ const RegisterStudentRecords = () => {
                             ) : null}
                           </div>
                         </td>
+
+                        <td className="p-2 align-top">
+                          <textarea
+                            value={comment}
+                            onChange={(e) =>
+                              handleCommentChange(studentKey, e.target.value)
+                            }
+                            className="w-full min-w-[200px] p-2 border rounded bg-white resize-y"
+                            placeholder="Escribe un comentario..."
+                            rows={2}
+                            disabled={loadingData}
+                          />
+                        </td>
                       </tr>
                     );
                   })}
@@ -449,8 +599,14 @@ const RegisterStudentRecords = () => {
                   bg="bg-accent"
                   icon="Save"
                   disabled={
+                    !sedeSelected ||
+                    !gradeSelected ||
+                    !asignatureSelected ||
+                    !workdaySelected ||
+                    !periodSelected ||
                     !asignatureCode ||
                     loadingRecords ||
+                    loadingData ||
                     recordsList.length === 0 ||
                     filteredStudents.length === 0
                   }

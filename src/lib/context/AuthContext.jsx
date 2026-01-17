@@ -46,36 +46,36 @@ export function AuthProvider({ children }) {
   const [userId, setUserId] = useState(() => loadFromStorage("userId"));
   const [userName, setUserName] = useState(() => loadFromStorage("userName"));
   const [userEmail, setUserEmail] = useState(() =>
-    loadFromStorage("userEmail")
+    loadFromStorage("userEmail"),
   );
   const [nameSchool, setNameSchool] = useState(() =>
-    loadFromStorage("nameSchool")
+    loadFromStorage("nameSchool"),
   );
   const [idInstitution, setIdInstitution] = useState(() =>
-    loadFromStorage("idInstitution")
+    loadFromStorage("idInstitution"),
   );
   const [imgSchool, setImgSchool] = useState(() =>
-    loadFromStorage("imgSchool")
+    loadFromStorage("imgSchool"),
   );
   const [nameRole, setNameRole] = useState(() => loadFromStorage("nameRole"));
   const [rol, setRol] = useState(() => loadFromStorage("rol"));
   const [nameSede, setNameSede] = useState(() => loadFromStorage("nameSede"));
   const [idSede, setIdSede] = useState(() => loadFromStorage("idSede"));
   const [colorPrincipal, setColorPrincipal] = useState(() =>
-    loadFromStorage("colorPrincipal")
+    loadFromStorage("colorPrincipal"),
   );
   const [colorSecundario, setColorSecundario] = useState(() =>
-    loadFromStorage("colorSecundario")
+    loadFromStorage("colorSecundario"),
   );
   const [menu, setMenu] = useState(() => loadFromStorage("menu"));
   const [idDocente, setIdDocente] = useState(() =>
-    loadFromStorage("idDocente")
+    loadFromStorage("idDocente"),
   );
   const [idEstudiante, setIdEstudiante] = useState(() =>
-    loadFromStorage("idEstudiante")
+    loadFromStorage("idEstudiante"),
   );
   const [token, setToken] = useState(
-    () => localStorage.getItem("token") || null
+    () => localStorage.getItem("token") || null,
   );
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -199,7 +199,7 @@ export function AuthProvider({ children }) {
       // ✅ Validación adicional: Verificar datos mínimos requeridos
       if (!data || !data.token) {
         throw new Error(
-          "No se pudo iniciar sesión. Respuesta del servidor inválida."
+          "No se pudo iniciar sesión. Respuesta del servidor inválida.",
         );
       }
 
@@ -344,7 +344,7 @@ export function AuthProvider({ children }) {
       login,
       logout,
       loadProfile,
-    ]
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

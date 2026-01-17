@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import JourneySelect from "../../components/atoms/JourneySelect";
 import SedeSelect from "../../components/atoms/SedeSelect";
 import useSchool from "../../lib/hooks/useSchool";
+import useData from "../../lib/hooks/useData";
 
 const RegisterGrade = () => {
   const { journeys, loadingJourneys, registerGrade, loading } = useSchool();
+  const { institutionSedes } = useData();
 
   const [formData, setFormData] = useState({
     name_grade: "",
@@ -15,10 +17,41 @@ const RegisterGrade = () => {
   });
   const [numGroups, setNumGroups] = useState(0);
 
+  // Obtener fk_workday de la sede seleccionada para filtrar jornadas
+  const sedeWorkday = useMemo(() => {
+    if (!formData.id_sede || !Array.isArray(institutionSedes)) return null;
+    const sede = institutionSedes.find(
+      (s) => String(s?.id) === String(formData.id_sede),
+    );
+    return sede?.fk_workday ? String(sede.fk_workday) : null;
+  }, [formData.id_sede, institutionSedes]);
+
+  // Limpiar jornada y grupos cuando cambie la sede
+  useEffect(() => {
+    setFormData((prev) => ({
+      ...prev,
+      workday: "",
+    }));
+  }, [formData.id_sede]);
+
+  // Auto-seleccionar jornada si fk_workday no es 3
+  useEffect(() => {
+    if (!sedeWorkday) return;
+
+    // Si fk_workday es 3 (ambas), el usuario puede elegir, no auto-seleccionar
+    if (sedeWorkday === "3") return;
+
+    // Si es 1 o 2, auto-seleccionar esa jornada
+    setFormData((prev) => ({
+      ...prev,
+      workday: sedeWorkday,
+    }));
+  }, [sedeWorkday]);
+
   const resizeGroups = (previousGroups, count) => {
     const safeCount = Math.max(
       0,
-      Math.min(26, Number.isFinite(count) ? count : 0)
+      Math.min(26, Number.isFinite(count) ? count : 0),
     );
 
     return Array.from({ length: safeCount }, (_, index) => {
@@ -153,6 +186,7 @@ const RegisterGrade = () => {
           name="workday"
           label="Jornada"
           value={formData.workday}
+          filterValue={sedeWorkday}
           onChange={handleJornadaChange}
           includeAmbas={false}
           disabled={loadingJourneys}

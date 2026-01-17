@@ -359,6 +359,82 @@ export function SchoolProvider({ children }) {
     }
   };
 
+  const getStudentGrades = async (payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await schoolService.getStudentGrades(payload);
+      return result;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStudentNotes = async (payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await schoolService.getStudentNotes(payload);
+      return result;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveAssignmentNotes = async (payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await schoolService.saveAssignmentNotes(payload);
+
+      // Emitir notificación de éxito
+      eventBus.emit("¡Notas guardadas exitosamente!", "success");
+
+      return result;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAllStudents = async (payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const students = await schoolService.allstudent(payload);
+      return students;
+    } catch (error) {
+      console.error("Error al obtener todos los estudiantes:", error);
+      setError(error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAllTeachers = async (payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const teachers = await schoolService.allteacher(payload);
+      return teachers;
+    } catch (error) {
+      console.error("Error al obtener todos los profesores:", error);
+      setError(error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <SchoolContext.Provider
       value={{
@@ -395,8 +471,13 @@ export function SchoolProvider({ children }) {
         getTeacherSubjects,
         getTeacherGrades,
         getInstitution,
+        getStudentGrades,
+        getStudentNotes,
+        saveAssignmentNotes,
         pathSignature,
         setPathSignature,
+        fetchAllStudents,
+        fetchAllTeachers,
       }}
     >
       {children}

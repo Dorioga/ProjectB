@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { sha256 } from "js-sha256";
 import FileChooser from "../../components/atoms/FileChooser";
 import SimpleButton from "../../components/atoms/SimpleButton";
@@ -9,10 +9,12 @@ import BecaSelector from "../../components/atoms/BecaSelector";
 import GradeSelector from "../../components/atoms/GradeSelector";
 import TypeDocumentSelector from "../../components/molecules/TypeDocumentSelector";
 import useStudent from "../../lib/hooks/useStudent";
+import useData from "../../lib/hooks/useData";
 import Loader from "../../components/atoms/Loader";
 
 const RegisterStudent = () => {
   const { registerStudent, loading } = useStudent();
+  const { institutionSedes } = useData();
   const [formData, setFormData] = useState({
     first_name: "",
     second_name: "",
@@ -36,6 +38,38 @@ const RegisterStudent = () => {
     link_identificacion: null,
     link_habeas: null,
   });
+
+  // Obtener fk_workday de la sede seleccionada para filtrar jornadas
+  const sedeWorkday = useMemo(() => {
+    if (!formData.sede || !Array.isArray(institutionSedes)) return null;
+    const sede = institutionSedes.find(
+      (s) => String(s?.id) === String(formData.sede),
+    );
+    return sede?.fk_workday ? String(sede.fk_workday) : null;
+  }, [formData.sede, institutionSedes]);
+
+  // Limpiar jornada y grado cuando cambie la sede
+  useEffect(() => {
+    setFormData((prev) => ({
+      ...prev,
+      workday: "",
+      fk_grade: "",
+    }));
+  }, [formData.sede]);
+
+  // Auto-seleccionar jornada si fk_workday no es 3
+  useEffect(() => {
+    if (!sedeWorkday) return;
+
+    // Si fk_workday es 3 (ambas), el usuario puede elegir, no auto-seleccionar
+    if (sedeWorkday === "3") return;
+
+    // Si es 1 o 2, auto-seleccionar esa jornada
+    setFormData((prev) => ({
+      ...prev,
+      workday: sedeWorkday,
+    }));
+  }, [sedeWorkday]);
 
   const handleChange = (e) => {
     const { name, value, type, files } = e.target;
@@ -269,6 +303,7 @@ const RegisterStudent = () => {
           name="workday"
           label="Jornada"
           value={formData.workday}
+          filterValue={sedeWorkday}
           onChange={handleChange}
           placeholder="Selecciona una jornada"
           includeAmbas={false}

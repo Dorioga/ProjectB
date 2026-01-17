@@ -102,6 +102,32 @@ const Sidebar = () => {
               </li>
             ) : null}
           </button>
+
+          {/* Manage Teacher */}
+          <Link
+            to="/dashboard/manageTeacher"
+            className="flex flex-row px-4 py-2 items-center gap-2 hover:bg-secondary rounded"
+          >
+            <LucideIcons.Users className="text-white text-2xl" />
+            {isOpen ? (
+              <li className="px-2 hover:bg-secondary rounded text-xl text-white">
+                Gestionar Profesores
+              </li>
+            ) : null}
+          </Link>
+
+          {/* Manage Student */}
+          <Link
+            to="/dashboard/manageStudent"
+            className="flex flex-row px-4 py-2 items-center gap-2 hover:bg-secondary rounded"
+          >
+            <LucideIcons.GraduationCap className="text-white text-2xl" />
+            {isOpen ? (
+              <li className="px-2 hover:bg-secondary rounded text-xl text-white">
+                Gestionar Estudiantes
+              </li>
+            ) : null}
+          </Link>
         </ul>
       </div>
       <div className="flex flex-col items-center row-span-3 justify-center ">
