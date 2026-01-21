@@ -20,6 +20,7 @@ const UploadStudentExcel = () => {
 
     setSubmitting(true);
     setStatus(null);
+    console.log("Uploading file:", file);
     try {
       await uploadStudentsExcel(file);
       setStatus({

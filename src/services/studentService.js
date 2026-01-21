@@ -19,6 +19,59 @@ export async function registerStudent(payload) {
   throw new Error("Respuesta inesperada de register_student.");
 }
 
+/**
+ * Sube un archivo Excel para carga masiva de estudiantes.
+ *
+ * Espera que el backend reciba un multipart/form-data con un campo de archivo.
+ * Ajusta `endpoint` y `fieldName` según tu API.
+ */
+/**
+ * Sube un archivo Excel para carga masiva de estudiantes.
+ *
+ * Endpoint: POST /upload/students/file
+ * @param {File} file - Archivo Excel a subir
+ * @param {Object} options - Opciones adicionales
+ * @returns {Promise<Object>} Respuesta del servidor
+ */
+export async function uploadStudentsExcel(file, options = {}) {
+  const { fieldName = "file", params, data, onUploadProgress } = options;
+
+  if (!file) {
+    throw new Error("Debes enviar un archivo Excel.");
+  }
+
+  const formData = new FormData();
+  const fileName = file?.name || "students.xlsx";
+  formData.append("archivo", file, fileName);
+
+  if (data && typeof data === "object") {
+    for (const [key, value] of Object.entries(data)) {
+      if (value === undefined || value === null) continue;
+      formData.append(key, String(value));
+    }
+  }
+
+  const res = await ApiClient.instance.post("/upload/students/file", formData, {
+    params,
+    onUploadProgress,
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+
+  const responseData = res;
+  console.log("StudentService - uploadStudentsExcel:", responseData);
+
+  // Validación suave del payload: devolvemos data o data.data.
+  if (
+    responseData &&
+    typeof responseData === "object" &&
+    "data" in responseData
+  )
+    return responseData.data;
+  if (responseData !== undefined && responseData !== null) return responseData;
+
+  throw new Error("Respuesta inesperada de upload/students/file.");
+}
+
 //////////////////////////////////////////////////
 /**
  * studentService: adáptalo a tus endpoints reales.
@@ -81,43 +134,6 @@ export async function deleteStudent(id) {
 /* Opcional: subir foto (FormData). */
 export async function uploadStudentPhoto(id, formData) {
   return ApiClient.post(`/students/${id}/photo`, formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-}
-
-/**
- * Sube un archivo Excel para carga masiva de estudiantes.
- *
- * Espera que el backend reciba un multipart/form-data con un campo de archivo.
- * Ajusta `endpoint` y `fieldName` según tu API.
- */
-export async function uploadStudentsExcel(file, options = {}) {
-  const {
-    endpoint = "/students/import",
-    fieldName = "file",
-    params,
-    data,
-    onUploadProgress,
-  } = options;
-
-  if (!file) {
-    throw new Error("Debes enviar un archivo Excel.");
-  }
-
-  const formData = new FormData();
-  const fileName = file?.name || "students.xlsx";
-  formData.append(fieldName, file, fileName);
-
-  if (data && typeof data === "object") {
-    for (const [key, value] of Object.entries(data)) {
-      if (value === undefined || value === null) continue;
-      formData.append(key, String(value));
-    }
-  }
-
-  return ApiClient.post(endpoint, formData, {
-    params,
-    onUploadProgress,
     headers: { "Content-Type": "multipart/form-data" },
   });
 }

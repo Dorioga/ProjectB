@@ -68,6 +68,13 @@ const ManageTeacher = () => {
         },
       },
       {
+        accessorKey: "grupo",
+        header: "Grupo",
+        meta: {
+          hideOnLG: true,
+        },
+      },
+      {
         accessorKey: "nombre_jornada",
         header: "Jornada",
         meta: {
