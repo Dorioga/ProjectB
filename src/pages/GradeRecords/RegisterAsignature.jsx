@@ -35,7 +35,7 @@ const RegisterAsignature = () => {
   const sedeWorkday = useMemo(() => {
     if (!formData.sedeId || !Array.isArray(institutionSedes)) return null;
     const sede = institutionSedes.find(
-      (s) => String(s?.id) === String(formData.sedeId)
+      (s) => String(s?.id) === String(formData.sedeId),
     );
     return sede?.fk_workday ? String(sede.fk_workday) : null;
   }, [formData.sedeId, institutionSedes]);
@@ -87,8 +87,8 @@ const RegisterAsignature = () => {
         const grades = Array.isArray(response)
           ? response
           : Array.isArray(response?.data)
-          ? response.data
-          : [];
+            ? response.data
+            : [];
 
         // Guardar los objetos completos de grado
         const processedGrades = grades
@@ -116,7 +116,7 @@ const RegisterAsignature = () => {
     if (!Array.isArray(availableGrades) || availableGrades.length === 0)
       return false;
     const selected = new Set(
-      Array.isArray(formData.grades_scholar) ? formData.grades_scholar : []
+      Array.isArray(formData.grades_scholar) ? formData.grades_scholar : [],
     );
     return availableGrades.every((grade) => selected.has(grade));
   }, [availableGrades, formData.grades_scholar]);
@@ -196,7 +196,6 @@ const RegisterAsignature = () => {
     try {
       // Preparar el payload según lo que espera el backend
       const payload = {
-        fk_workday: parseInt(formData.jornada, 10),
         fk_sede: parseInt(formData.sedeId, 10),
         fk_grade: formData.grades_scholar
           .slice()
@@ -223,7 +222,7 @@ const RegisterAsignature = () => {
     } catch (err) {
       console.error("Error al registrar asignatura:", err);
       notify.error(
-        err?.message || "Error al registrar la asignatura. Intenta de nuevo."
+        err?.message || "Error al registrar la asignatura. Intenta de nuevo.",
       );
     } finally {
       setIsSubmitting(false);

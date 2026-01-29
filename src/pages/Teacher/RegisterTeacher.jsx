@@ -40,7 +40,7 @@ const RegisterTeacher = () => {
   const [tempAsignatureName, setTempAsignatureName] = useState("");
   const [tempGrades, setTempGrades] = useState([]);
   const [availableAsignatureGrades, setAvailableAsignatureGrades] = useState(
-    []
+    [],
   );
   const [loadingAsignatureGrades, setLoadingAsignatureGrades] = useState(false);
 
@@ -53,6 +53,7 @@ const RegisterTeacher = () => {
   useEffect(() => {
     reloadSedes();
   }, [reloadSedes]);
+
   const [submitOk, setSubmitOk] = useState(false);
 
   const sedeJornada = useMemo(() => {
@@ -84,6 +85,7 @@ const RegisterTeacher = () => {
         const payload = {
           idAsignature: Number(tempAsignature),
           idSede: Number(formData.sede),
+          idWorkDay: Number(formData.workday),
         };
         console.log("Payload para grados de asignatura:", payload);
         const response = await getGradeAsignature(payload);
@@ -256,7 +258,7 @@ const RegisterTeacher = () => {
     } catch (err) {
       console.error("Error al registrar docente:", err);
       toast.error(
-        err?.message || "Error al registrar el docente. Intenta nuevamente."
+        err?.message || "Error al registrar el docente. Intenta nuevamente.",
       );
     }
   };
