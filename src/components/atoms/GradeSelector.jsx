@@ -8,7 +8,7 @@ const GradeSelector = ({
   value = "",
   onChange,
   placeholder = "Selecciona un grado",
-  className = "w-full p-2 border rounded bg-white",
+  className = "w-full p-2 border rounded bg-surface",
   disabled = false,
   sedeId = null,
   workdayId = null,
@@ -65,10 +65,10 @@ const GradeSelector = ({
         const gradesData = Array.isArray(result)
           ? result
           : result?.data
-          ? Array.isArray(result.data)
-            ? result.data
-            : []
-          : [];
+            ? Array.isArray(result.data)
+              ? result.data
+              : []
+            : [];
 
         console.log("GradeSelector - Grados cargados:", gradesData);
         setGrades(gradesData);
@@ -112,12 +112,12 @@ const GradeSelector = ({
   const placeholderMessage = isLoading
     ? "Cargando grados..."
     : customFetchMethod
-    ? placeholder
-    : !sedeId
-    ? "Selecciona una sede primero"
-    : !workdayId
-    ? "Selecciona una jornada primero"
-    : placeholder;
+      ? placeholder
+      : !sedeId
+        ? "Selecciona una sede primero"
+        : !workdayId
+          ? "Selecciona una jornada primero"
+          : placeholder;
 
   return (
     <div>

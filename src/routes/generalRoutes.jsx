@@ -20,6 +20,7 @@ import RegisterGrade from "../pages/School/RegisterGrade";
 import RegisterStudentRecords from "../pages/School/RegisterStudentRecords";
 import ManageTeacher from "../pages/Teacher/ManageTeacher";
 import ManageStudent from "../pages/Student/ManageStudent";
+import ManageSchools from "../pages/School/ManageSchools";
 const GeneralRoutes = () => {
   return (
     <div id="body" className="w-full h-screen flex flex-col ">
@@ -27,6 +28,8 @@ const GeneralRoutes = () => {
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
+          {/* Ruta directa para compatibilidad con enlaces absolutos */}
+          <Route path="/dashboard/manageSchools" element={<ManageSchools />} />
           <Route path="dashboard" element={<DashboardTemplate />}>
             <Route path="home" element={<DashHome />} />
             <Route path="registerUser" element={<RegisterUser />} />
@@ -36,7 +39,7 @@ const GeneralRoutes = () => {
             <Route path="registerStudent" element={<RegisterStudent />} />
             <Route path="registerParents" element={<RegisterParents />} />
             <Route path="uploadStudentExcel" element={<UploadStudentExcel />} />
-            <Route
+            {/* <Route
               path="registerSchool"
               element={<Navigate to="../manageSchool/register" replace />}
             />
@@ -44,7 +47,7 @@ const GeneralRoutes = () => {
               path="updateSchool"
               element={<Navigate to="../manageSchool/update" replace />}
             />
-            <Route path="manageSchool/:mode" element={<ManageSchool />} />
+            <Route path="manageSchool/:mode" element={<ManageSchool />} /> */}
             <Route path="reports" element={<Reports />} />
             <Route path="auditory" element={<Auditory />} />
             <Route path="registerAsignature" element={<RegisterAsignature />} />
@@ -58,6 +61,7 @@ const GeneralRoutes = () => {
             />
             <Route path="manageTeacher" element={<ManageTeacher />} />
             <Route path="manageStudent" element={<ManageStudent />} />
+            <Route path="manageSchool" element={<ManageSchools />} />
           </Route>
         </Routes>
       </div>

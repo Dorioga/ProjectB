@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PreviewIMG from "../atoms/PreviewIMG";
 import SimpleButton from "../atoms/SimpleButton";
 import FileChooser from "../atoms/FileChooser";
@@ -7,10 +7,21 @@ import ExcuseModal from "./ExcuseModal";
 import HabeasDataModal from "./HabeasDataFormatModal.jsx";
 import PDFViewerModal from "./PDFViewerModal.jsx";
 
-const ProfileStudent = ({ data, state = false, onSave }) => {
+const ProfileStudent = ({
+  data,
+  state = false,
+  onSave,
+  initialEditing = false,
+}) => {
   console.log("Data en ProfileStudent:", data);
   ///Preguntar el State
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(Boolean(initialEditing));
+
+  // Si la prop initialEditing cambia (abrir en modo edición), sincronizar el estado local
+  useEffect(() => {
+    setIsEditing(Boolean(initialEditing));
+  }, [initialEditing]);
+
   const [isOpenCamera, setIsOpenCamera] = useState(false);
   const [isOpenExcuse, setIsOpenExcuse] = useState(false);
   const [isOpenHabeasDataFormat, setIsOpenHabeasDataFormat] = useState(false);
@@ -71,7 +82,15 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
     }
 
     if (onSave) {
-      onSave(data.identification, updatedData);
+      const studentId = data.id_student ?? data.identification;
+      const personId = data.per_id ?? data.id_person ?? null;
+      if (!personId) {
+        console.warn(
+          "ProfileStudent: personId (per_id) no encontrado en student data",
+          data,
+        );
+      }
+      onSave(studentId, personId, updatedData);
     }
 
     console.log("Cambios guardados:", updatedData);
@@ -122,14 +141,14 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
               msj={"Habeas Data"}
               bg={"bg-primary"}
               icon={"Download"}
-              text={"text-white"}
+              text={"text-surface"}
             />
             <SimpleButton
               onClick={toggleEditing}
               msj={isEditing ? "Guardar" : "Editar"}
               bg={isEditing ? "bg-accent" : "bg-secondary"}
               icon={isEditing ? "Save" : "Pencil"}
-              text={"text-white"}
+              text={"text-surface"}
             />
           </div>
         </div>
@@ -233,7 +252,7 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
                     msj="Tomar foto"
                     bg="bg-accent"
                     icon="Camera"
-                    text="text-white"
+                    text="text-surface"
                   />
                 </div>
               ) : null}
@@ -259,7 +278,7 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
                       msj="Tomar Foto"
                       bg="bg-accent"
                       icon="Camera"
-                      text="text-white"
+                      text="text-surface"
                     />
                   </div>
                 )}
@@ -277,7 +296,7 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
                   onChange={(e) =>
                     handleStateChange("state_beca", e.target.value)
                   }
-                  className="border p-2 rounded bg-white text-center"
+                  className="border p-2 rounded bg-surface text-center"
                 >
                   <option value="Activo">Activo</option>
                   <option value="Retirado">Retirado</option>
@@ -307,7 +326,7 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
                   onChange={(e) =>
                     handleStateChange("state_process", e.target.value)
                   }
-                  className="border p-2 rounded bg-white text-center"
+                  className="border p-2 rounded bg-surface text-center"
                 >
                   <option value="Conforme">Completo</option>
                   <option value="Retirado">Retirado</option>
@@ -320,10 +339,10 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
                     editedData.state_process === "Conforme"
                       ? "bg-green-100 text-green-800"
                       : editedData.state_process === "Retirado"
-                      ? "bg-gray-100 text-gray-800"
-                      : editedData.state_process === "Reasignado"
-                      ? "bg-indigo-100 text-indigo-800"
-                      : "bg-red-100 text-red-800"
+                        ? "bg-gray-100 text-gray-800"
+                        : editedData.state_process === "Reasignado"
+                          ? "bg-indigo-100 text-indigo-800"
+                          : "bg-red-100 text-red-800"
                   }`}
                 >
                   {editedData.state_process}
@@ -337,7 +356,7 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
                   msj={isEditing ? "Cargar excusa" : "Ver excusa"}
                   bg="bg-accent"
                   icon="Save"
-                  text="text-white"
+                  text="text-surface"
                 />
               )}
             </div>
@@ -358,7 +377,7 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
                   : "bg-yellow-100 text-yellow-800 border-yellow-200 "
               }`}
             >
-              {data.auDoc_habeas.includes("https://")
+              {String(data?.auDoc_habeas || "").includes("https://")
                 ? "Cargado"
                 : "No cargado"}
             </span>
@@ -379,7 +398,7 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
                   }
                 />
               </div>
-            ) : data.auDoc_habeas.includes("https://") ? (
+            ) : String(data?.auDoc_habeas || "").includes("https://") ? (
               <SimpleButton
                 onClick={() => {
                   setIsOpenDocument(true);
@@ -391,7 +410,7 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
                 msj="Ver documento"
                 bg="bg-accent"
                 icon="View"
-                text="text-white"
+                text="text-surface"
               />
             ) : (
               <FileChooser
@@ -409,17 +428,17 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
             <label className="text-lg font-medium">Ficha de matrícula:</label>
             <span
               className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
-                data.auDoc_matricula.includes("https://")
+                String(data?.auDoc_matricula || "").includes("https://")
                   ? "bg-green-100 text-green-800 border-green-200 "
                   : "bg-yellow-100 text-yellow-800 border-yellow-200 "
               }`}
             >
-              {data.auDoc_matricula.includes("https://")
+              {String(data?.auDoc_matricula || "").includes("https://")
                 ? "Cargado"
                 : "No cargado"}
             </span>
 
-            {data.auDoc_matricula.includes("https://") && (
+            {String(data?.auDoc_matricula || "").includes("https://") && (
               <SimpleButton
                 onClick={() => {
                   setIsOpenDocument(true);
@@ -431,7 +450,7 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
                 msj="Ver Documento"
                 bg="bg-accent"
                 icon="View"
-                text="text-white"
+                text="text-surface"
               />
             )}
           </div>
@@ -445,12 +464,12 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
             </label>
             <span
               className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
-                data.auDoc_idAcudiente.includes("https://")
+                String(data?.auDoc_idAcudiente || "").includes("https://")
                   ? "bg-green-100 text-green-800 border-green-200 "
                   : "bg-yellow-100 text-yellow-800 border-yellow-200 "
               }`}
             >
-              {data.auDoc_idAcudiente.includes("https://")
+              {String(data?.auDoc_idAcudiente || "").includes("https://")
                 ? "Cargado"
                 : "No cargado"}
             </span>
@@ -472,7 +491,7 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
                   }
                 />
               </div>
-            ) : data.auDoc_idAcudiente.includes("https://") ? (
+            ) : String(data?.auDoc_idAcudiente || "").includes("https://") ? (
               <SimpleButton
                 onClick={() => {
                   setIsOpenDocument(true);
@@ -484,7 +503,7 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
                 msj="Ver Documento"
                 bg="bg-accent"
                 icon="View"
-                text="text-white"
+                text="text-surface"
               />
             ) : (
               <FileChooser
@@ -508,12 +527,12 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
             </label>
             <span
               className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
-                data.auDoc_idEstudiante.includes("https://")
+                String(data?.auDoc_idEstudiante || "").includes("https://")
                   ? "bg-green-100 text-green-800 border-green-200 "
                   : "bg-yellow-100 text-yellow-800 border-yellow-200 "
               }`}
             >
-              {data.auDoc_idEstudiante.includes("https://")
+              {String(data?.auDoc_idEstudiante || "").includes("https://")
                 ? "Cargado"
                 : "No cargado"}
             </span>
@@ -533,7 +552,7 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
                   }
                 />
               </div>
-            ) : data.auDoc_idEstudiante.includes("https://") ? (
+            ) : String(data?.auDoc_idEstudiante || "").includes("https://") ? (
               <SimpleButton
                 onClick={() => {
                   setIsOpenDocument(true);
@@ -545,7 +564,7 @@ const ProfileStudent = ({ data, state = false, onSave }) => {
                 msj="Ver Documento"
                 bg="bg-accent"
                 icon="View"
-                text="text-white"
+                text="text-surface"
               />
             ) : (
               <FileChooser

@@ -8,7 +8,7 @@ const DepartmentSelector = ({
   value = "",
   onChange,
   placeholder = "Seleccionar un departamento",
-  className = "w-full p-2 border rounded bg-white",
+  className = "w-full p-2 border rounded bg-surface",
   disabled = false,
   // Permite pasar data manualmente; si no, se toma del DataContext.
   data,

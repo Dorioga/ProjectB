@@ -15,7 +15,7 @@ export function StudentProvider({ children }) {
     setError(null);
     try {
       const res = await studentService.getStudents();
-      setStudents(Array.isArray(res) ? res : res?.data ?? []);
+      setStudents(Array.isArray(res) ? res : (res?.data ?? []));
     } catch (err) {
       setError(err);
     } finally {
@@ -44,14 +44,39 @@ export function StudentProvider({ children }) {
     }
   }, []);
 
-  const updateStudent = (identification, updatedData) => {
-    setStudents((prevStudents) =>
-      prevStudents.map((student) =>
-        student.identification === identification
-          ? { ...student, ...updatedData }
-          : student
-      )
-    );
+  const updateStudent = async (studentId, personId, updatedData) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await studentService.updateStudent(
+        studentId,
+        personId,
+        updatedData,
+      );
+
+      setStudents((prevStudents) =>
+        prevStudents.map((student) => {
+          const matchesId =
+            student.id_student === studentId ||
+            String(student.identification) === String(studentId) ||
+            String(student.per_id) === String(personId);
+          if (matchesId) {
+            return { ...student, ...updatedData, ...(result || {}) };
+          }
+          return student;
+        }),
+      );
+
+      // Emitir notificación de éxito
+      eventBus.emit("¡Estudiante actualizado exitosamente!", "success");
+
+      return result;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const addStudent = async (payload) => {

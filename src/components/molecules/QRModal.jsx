@@ -31,7 +31,7 @@ const QRModal = ({ isOpen, onClose, onScan, title = "Escanear código QR" }) => 
             type="button"
             onClick={handleSimulatedScan}
             disabled={!manualCode.trim()}
-            className="px-4 py-2 bg-secondary text-white rounded disabled:opacity-50 hover:bg-secondary/90"
+            className="px-4 py-2 bg-secondary text-surface rounded disabled:opacity-50 hover:bg-secondary/90"
           >
             Usar código
           </button>

@@ -63,7 +63,7 @@ const UploadStudentExcel = () => {
             onClick={handleUpload}
             disabled={busy}
             bg={"bg-secondary"}
-            text={"text-white"}
+            text={"text-surface"}
             hover={"hover:bg-secondary/80"}
           />
         </div>

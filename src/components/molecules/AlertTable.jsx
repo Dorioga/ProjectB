@@ -36,7 +36,7 @@ const AlertTable = ({ alerts }) => {
         ),
       },
     ],
-    []
+    [],
   );
   const [isOpen, setIsOpen] = useState(false);
   const handleToggleOpen = () => {
@@ -44,12 +44,12 @@ const AlertTable = ({ alerts }) => {
   };
   return (
     <div className="alert-table flex flex-col gap-4 ">
-      <div className="w-full flex justify-between items-center bg-error text-white p-3 rounded-t-lg">
+      <div className="w-full flex justify-between items-center bg-error text-surface p-3 rounded-t-lg">
         <h2 className="text-2xl font-bold">Alertas ({alerts.length})</h2>
         <div>
           <SimpleButton
             onClick={handleToggleOpen}
-            bg="bg-white"
+            bg="bg-surface"
             icon={isOpen ? "Minimize2" : "Maximize2"}
             text="text-error"
           />

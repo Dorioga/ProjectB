@@ -8,8 +8,9 @@ import useSchool from "../../lib/hooks/useSchool";
 import useStudent from "../../lib/hooks/useStudent";
 import { sha256 } from "js-sha256";
 import useData from "../../lib/hooks/useData";
+import { useNotify } from "../../lib/hooks/useNotify";
 
-const RegisterTeacher = () => {
+const RegisterTeacher = ({ onSuccess }) => {
   const {
     sedes,
     reloadSedes,
@@ -55,6 +56,7 @@ const RegisterTeacher = () => {
   }, [reloadSedes]);
 
   const [submitOk, setSubmitOk] = useState(false);
+  const notify = useNotify();
 
   const sedeJornada = useMemo(() => {
     const sedeId = String(formData.sede ?? "").trim();
@@ -182,27 +184,27 @@ const RegisterTeacher = () => {
     setSubmitOk(false);
 
     if (!formData.identificationtype || formData.identificationtype === 0) {
-      toast.error("El tipo de documento es obligatorio.");
+      notify.error("El tipo de documento es obligatorio.");
       return;
     }
     if (!String(formData.identification ?? "").trim()) {
-      toast.error("El número de identificación es obligatorio.");
+      notify.error("El número de identificación es obligatorio.");
       return;
     }
     if (!String(formData.first_name ?? "").trim()) {
-      toast.error("El primer nombre es obligatorio.");
+      notify.error("El primer nombre es obligatorio.");
       return;
     }
     if (!String(formData.first_lastname ?? "").trim()) {
-      toast.error("El primer apellido es obligatorio.");
+      notify.error("El primer apellido es obligatorio.");
       return;
     }
     if (!String(formData.email ?? "").trim()) {
-      toast.error("El correo es obligatorio.");
+      notify.error("El correo es obligatorio.");
       return;
     }
     if (!formData.asignature || formData.asignature.length === 0) {
-      toast.error("Debe agregar al menos una asignatura con sus grados.");
+      notify.error("Debe agregar al menos una asignatura con sus grados.");
       return;
     }
 
@@ -255,6 +257,15 @@ const RegisterTeacher = () => {
         direccion: "",
         asignature: [],
       });
+
+      // Notificar al componente padre que el registro fue exitoso (si fue pasado)
+      if (typeof onSuccess === "function") {
+        try {
+          onSuccess(result);
+        } catch (err) {
+          console.warn("onSuccess callback failed:", err);
+        }
+      }
     } catch (err) {
       console.error("Error al registrar docente:", err);
       toast.error(
@@ -295,7 +306,7 @@ const RegisterTeacher = () => {
             name="identification"
             value={formData.identification}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           />
         </div>
 
@@ -306,7 +317,7 @@ const RegisterTeacher = () => {
             name="fecha_nacimiento"
             value={formData.fecha_nacimiento}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           />
         </div>
 
@@ -317,7 +328,7 @@ const RegisterTeacher = () => {
             name="first_name"
             value={formData.first_name}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           />
         </div>
 
@@ -328,7 +339,7 @@ const RegisterTeacher = () => {
             name="second_name"
             value={formData.second_name}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           />
         </div>
 
@@ -339,7 +350,7 @@ const RegisterTeacher = () => {
             name="first_lastname"
             value={formData.first_lastname}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           />
         </div>
 
@@ -350,7 +361,7 @@ const RegisterTeacher = () => {
             name="second_lastname"
             value={formData.second_lastname}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           />
         </div>
 
@@ -365,7 +376,7 @@ const RegisterTeacher = () => {
             name="telephone"
             value={formData.telephone}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           />
         </div>
 
@@ -376,7 +387,7 @@ const RegisterTeacher = () => {
             name="email"
             value={formData.email}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           />
         </div>
 
@@ -387,7 +398,7 @@ const RegisterTeacher = () => {
             name="password"
             value={formData.password}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           />
         </div>
 
@@ -398,7 +409,7 @@ const RegisterTeacher = () => {
             name="direccion"
             value={formData.direccion}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           />
         </div>
 
@@ -451,7 +462,7 @@ const RegisterTeacher = () => {
                     return (
                       <label
                         key={gradeId}
-                        className="flex items-center gap-2 bg-white rounded-sm p-2 border border-gray-300"
+                        className="flex items-center gap-2 bg-surface rounded-sm p-2 border border-gray-300"
                       >
                         <input
                           type="checkbox"
@@ -472,7 +483,7 @@ const RegisterTeacher = () => {
               type="button"
               onClick={addAsignatureWithGrades}
               disabled={!tempAsignature || tempGrades.length === 0}
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+              className="bg-blue-500 text-surface px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
               Agregar Asignatura
             </button>
@@ -487,7 +498,7 @@ const RegisterTeacher = () => {
               {formData.asignature.map((asig, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between bg-white p-3 border rounded"
+                  className="flex items-center justify-between bg-surface p-3 border rounded"
                 >
                   <div>
                     <span className="font-medium">
@@ -515,7 +526,7 @@ const RegisterTeacher = () => {
           <div className="md:col-span-3 p-4 rounded-lg border-l-4 border-green-500 bg-gray-50 text-green-700">
             <div className="flex items-start gap-3">
               <svg
-                className="w-6 h-6 flex-shrink-0 mt-0.5"
+                className="w-6 h-6 shrink-0 mt-0.5"
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
@@ -539,7 +550,7 @@ const RegisterTeacher = () => {
           <div className="w-full md:w-1/2">
             <SimpleButton
               msj={teacherLoading ? "Registrando..." : "Registrar docente"}
-              text={"text-white"}
+              text={"text-surface"}
               bg={"bg-accent"}
               icon={"Save"}
               disabled={teacherLoading}

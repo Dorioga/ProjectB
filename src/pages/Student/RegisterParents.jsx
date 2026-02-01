@@ -15,7 +15,7 @@ const RegisterParents = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -31,7 +31,7 @@ const RegisterParents = () => {
     dataToSend.append("tipo_documento_acudiente", formData.identificationType);
     dataToSend.append(
       "numero_identificacion_acudiente",
-      formData.identification
+      formData.identification,
     );
     dataToSend.append("nombre_acudiente", formData.fullName);
     dataToSend.append("telefono_acudiente", formData.phone);
@@ -67,7 +67,7 @@ const RegisterParents = () => {
             name="identification"
             value={formData.identification}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           />
         </div>
         <div className="md:col-span-2">
@@ -77,7 +77,7 @@ const RegisterParents = () => {
             name="fullName"
             value={formData.fullName}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           />
         </div>
         <div>
@@ -87,7 +87,7 @@ const RegisterParents = () => {
             name="phone"
             value={formData.phone}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           />
         </div>
         <div>
@@ -101,7 +101,7 @@ const RegisterParents = () => {
         <div className="md:col-span-2 mt-4">
           <SimpleButton
             msj="Registrar acudiente"
-            text={"text-white"}
+            text={"text-surface"}
             bg={"bg-accent"}
             icon={"Save"}
           />

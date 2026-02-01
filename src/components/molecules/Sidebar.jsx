@@ -53,10 +53,10 @@ const Sidebar = () => {
               }
               size={"logo"}
             />
-            <div className="text-white font-bold text-lg">
+            <div className="text-surface font-bold text-lg">
               {nameSchool || "NEXUS"}
             </div>
-            <div className="text-white text-sm">{nameSede || "Software"}</div>
+            <div className="text-surface text-sm">{nameSede || "Software"}</div>
           </div>
         )}
       </div>
@@ -72,9 +72,9 @@ const Sidebar = () => {
                   to={item.link}
                   className="flex flex-row px-4 py-2 items-center gap-2 hover:bg-secondary rounded"
                 >
-                  <IconComponent className="text-white text-2xl" />
+                  <IconComponent className="text-surface text-2xl" />
                   {isOpen ? (
-                    <li className=" px-2 hover:bg-secondary rounded text-xl text-white">
+                    <li className=" px-2 hover:bg-secondary rounded text-xl text-surface">
                       {item.option}
                     </li>
                   ) : null}
@@ -95,9 +95,9 @@ const Sidebar = () => {
               }
             }}
           >
-            <LucideIcons.FileText className="text-white text-2xl" />
+            <LucideIcons.FileText className="text-surface text-2xl" />
             {isOpen ? (
-              <li className="px-2 hover:bg-secondary rounded text-xl text-white">
+              <li className="px-2 hover:bg-secondary rounded text-xl text-surface">
                 Boletín (PDF)
               </li>
             ) : null}
@@ -108,9 +108,9 @@ const Sidebar = () => {
             to="/dashboard/manageTeacher"
             className="flex flex-row px-4 py-2 items-center gap-2 hover:bg-secondary rounded"
           >
-            <LucideIcons.Users className="text-white text-2xl" />
+            <LucideIcons.Users className="text-surface text-2xl" />
             {isOpen ? (
-              <li className="px-2 hover:bg-secondary rounded text-xl text-white">
+              <li className="px-2 hover:bg-secondary rounded text-xl text-surface">
                 Gestionar Profesores
               </li>
             ) : null}
@@ -121,10 +121,23 @@ const Sidebar = () => {
             to="/dashboard/manageStudent"
             className="flex flex-row px-4 py-2 items-center gap-2 hover:bg-secondary rounded"
           >
-            <LucideIcons.GraduationCap className="text-white text-2xl" />
+            <LucideIcons.GraduationCap className="text-surface text-2xl" />
             {isOpen ? (
-              <li className="px-2 hover:bg-secondary rounded text-xl text-white">
+              <li className="px-2 hover:bg-secondary rounded text-xl text-surface">
                 Gestionar Estudiantes
+              </li>
+            ) : null}
+          </Link>
+
+          {/* Manage School */}
+          <Link
+            to="/dashboard/manageSchool"
+            className="flex flex-row px-4 py-2 items-center gap-2 hover:bg-secondary rounded"
+          >
+            <LucideIcons.Home className="text-surface text-2xl" />
+            {isOpen ? (
+              <li className="px-2 hover:bg-secondary rounded text-xl text-surface">
+                Gestionar Instituciones
               </li>
             ) : null}
           </Link>
@@ -132,11 +145,11 @@ const Sidebar = () => {
       </div>
       <div className="flex flex-col items-center row-span-3 justify-center ">
         <div className="flex flex-row items-center gap-2 ">
-          <User className="text-white text-2xl" />
+          <User className="text-surface text-2xl" />
           {isOpen ? (
             <div className="flex flex-col">
               {displayName ? (
-                <h2 className="text-white font-bold text-xl text-center">
+                <h2 className="text-surface font-bold text-xl text-center">
                   {(() => {
                     const words = displayName.split(" ");
                     if (words.length >= 4) {
@@ -151,12 +164,12 @@ const Sidebar = () => {
                   })()}
                 </h2>
               ) : null}
-              <div className="text-white text-sm text-center">{nameRole}</div>
+              <div className="text-surface text-sm text-center">{nameRole}</div>
             </div>
           ) : null}
         </div>
         <button
-          className="flex flex-row items-center gap-2 px-4 py-2 rounded-md  hover:bg-error hover:text-white text-error transition-colors duration-200 font-semibold cursor-pointer"
+          className="flex flex-row items-center gap-2 px-4 py-2 rounded-md  hover:bg-error hover:text-surface text-error transition-colors duration-200 font-semibold cursor-pointer"
           onClick={logout}
         >
           <LogOut className="text-xl" />
@@ -164,7 +177,7 @@ const Sidebar = () => {
         </button>
         <div className="flex flex-row items-center gap-2 ">
           {isOpen ? (
-            <h2 className="text-white font-bold text-xl">NEXUS</h2>
+            <h2 className="text-surface font-bold text-xl">NEXUS</h2>
           ) : null}
         </div>
       </div>

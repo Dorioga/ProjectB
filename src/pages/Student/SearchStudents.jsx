@@ -157,7 +157,7 @@ const SearchStudents = () => {
               onClick={() => handleViewProfile(row.original)} // Llama a la función con los datos de la fila
               noRounded={true}
               bg="bg-primary"
-              text="text-white"
+              text="text-surface"
               msj="Ver perfil"
               icon="User"
             />
@@ -166,11 +166,15 @@ const SearchStudents = () => {
         ),
       },
     ],
-    []
+    [],
   );
-  const handleSave = (identification, updatedData) => {
-    updateStudent(identification, updatedData);
-    //setIsModalOpen(false);
+  const handleSave = async (studentId, personId, updatedData) => {
+    try {
+      await updateStudent(studentId, personId, updatedData);
+      //setIsModalOpen(false);
+    } catch (err) {
+      console.error("Error al actualizar estudiante:", err);
+    }
   };
 
   return (
@@ -182,7 +186,7 @@ const SearchStudents = () => {
           <SimpleButton
             msj="Cargar archivos"
             bg="bg-primary"
-            text="text-white"
+            text="text-surface"
             icon="Upload"
             onClick={() => loadFiveRandom()}
           />

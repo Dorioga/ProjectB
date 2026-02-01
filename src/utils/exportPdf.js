@@ -1,5 +1,6 @@
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
+import { getCurrentTheme } from "./themeManager";
 
 /**
  * Espera a que las webfonts se carguen (si el navegador lo soporta).
@@ -20,17 +21,19 @@ async function waitForFonts() {
 export async function exportElementToPNG(
   element,
   filename = "export.png",
-  options = {}
+  options = {},
 ) {
   if (!element) throw new Error("Elemento inválido para exportar a PNG.");
   const {
     scale = 2,
-    backgroundColor = "#ffffff",
+    backgroundColor = undefined,
     useCORS = true,
     logging = false,
   } = options;
 
   await waitForFonts();
+  backgroundColor =
+    backgroundColor ?? getCurrentTheme()["color-surface"] ?? "#ffffff";
 
   const canvas = await html2canvas(element, {
     scale,
@@ -54,7 +57,7 @@ export async function exportElementToPNG(
 export async function exportCardToPDF(frontEl, backEl, opts = {}) {
   if (!frontEl || !backEl)
     throw new Error(
-      "Faltan los elementos frontal y/o reverso para exportar a PDF."
+      "Faltan los elementos frontal y/o reverso para exportar a PDF.",
     );
 
   const {
@@ -62,13 +65,15 @@ export async function exportCardToPDF(frontEl, backEl, opts = {}) {
     mmWidth = 88, // ancho típico de tarjeta (mm)
     mmHeight = 54, // alto típico de tarjeta (mm)
     scale = 2,
-    backgroundColor = "#ffffff",
+    backgroundColor = undefined,
     useCORS = true,
     fileName = "Carné.pdf",
     logging = false,
   } = opts;
 
   await waitForFonts();
+  backgroundColor =
+    backgroundColor ?? getCurrentTheme()["color-surface"] ?? "#ffffff";
 
   const [frontCanvas, backCanvas] = await Promise.all([
     html2canvas(frontEl, { scale, backgroundColor, useCORS, logging }),

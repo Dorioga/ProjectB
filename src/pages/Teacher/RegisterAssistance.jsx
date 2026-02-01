@@ -13,7 +13,7 @@ const normalize = (value) =>
 const uniqueSorted = (values) => {
   const normalized = values.map((v) => String(v ?? "").trim()).filter(Boolean);
   return Array.from(new Set(normalized)).sort((a, b) =>
-    a.localeCompare(b, "es", { sensitivity: "base", numeric: true })
+    a.localeCompare(b, "es", { sensitivity: "base", numeric: true }),
   );
 };
 
@@ -161,7 +161,7 @@ const RegisterAssistance = () => {
           <select
             value={asignatureCode}
             onChange={(e) => setAsignatureCode(e.target.value)}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           >
             <option value="">Selecciona una asignatura</option>
             {asignatureOptions.map((opt) => (
@@ -177,7 +177,7 @@ const RegisterAssistance = () => {
           <select
             value={grade}
             onChange={(e) => setGrade(e.target.value)}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
             disabled={!journey}
           >
             <option value="">
@@ -196,7 +196,7 @@ const RegisterAssistance = () => {
           <select
             value={group}
             onChange={(e) => setGroup(e.target.value)}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
             disabled={!journey || !grade}
           >
             <option value="">
@@ -224,7 +224,10 @@ const RegisterAssistance = () => {
             No hay estudiantes para los filtros seleccionados.
           </div>
         ) : (
-          <form onSubmit={handleSubmitAll} className="bg-white border rounded">
+          <form
+            onSubmit={handleSubmitAll}
+            className="bg-surface border rounded"
+          >
             <div className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
               <div className="text-sm opacity-80">
                 Estudiantes:{" "}
@@ -235,7 +238,7 @@ const RegisterAssistance = () => {
                 <SimpleButton
                   type="submit"
                   msj="Guardar asistencia"
-                  text="text-white"
+                  text="text-surface"
                   bg="bg-accent"
                   icon="Save"
                   disabled={selectedCount === 0}
@@ -245,7 +248,7 @@ const RegisterAssistance = () => {
 
             <div className="overflow-x-auto">
               <div className="min-w-[720px]">
-                <div className="grid grid-cols-10 bg-primary text-white font-semibold">
+                <div className="grid grid-cols-10 bg-primary text-surface font-semibold">
                   <div className="col-span-6 p-3">Estudiante</div>
                   <div className="col-span-2 p-3 text-center">Presente</div>
                   <div className="col-span-2 p-3 text-center">Ausente</div>
@@ -279,7 +282,7 @@ const RegisterAssistance = () => {
                           checked={attendance === "PRESENTE"}
                           onChange={handleToggleAttendance(
                             studentKey,
-                            "PRESENTE"
+                            "PRESENTE",
                           )}
                         />
                       </div>
@@ -291,7 +294,7 @@ const RegisterAssistance = () => {
                           checked={attendance === "AUSENTE"}
                           onChange={handleToggleAttendance(
                             studentKey,
-                            "AUSENTE"
+                            "AUSENTE",
                           )}
                         />
                       </div>

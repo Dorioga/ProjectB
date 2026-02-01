@@ -78,7 +78,7 @@ const Reports = () => {
             id="report-select"
             value={selectedReport}
             onChange={handleReportChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           >
             {reportOptions.map((option) => (
               <option key={option.value} value={option.value}>

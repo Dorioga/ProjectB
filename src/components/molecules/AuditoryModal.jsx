@@ -176,8 +176,8 @@ const AuditoryModal = ({ isOpen, onClose, mode, data }) => {
           {mode === "create"
             ? "Complete el formulario para crear una nueva auditoría."
             : isBlocked
-            ? "Auditoría cerrada - Solo lectura"
-            : "Detalles de la auditoría"}
+              ? "Auditoría cerrada - Solo lectura"
+              : "Detalles de la auditoría"}
         </h2>
 
         {mode === "view" && (
@@ -187,7 +187,7 @@ const AuditoryModal = ({ isOpen, onClose, mode, data }) => {
               msj="Descargar informe"
               bg="bg-green-500"
               hover="hover:bg-green-600"
-              text="text-white"
+              text="text-surface"
               icon="Download"
             />
             <SimpleButton
@@ -195,7 +195,7 @@ const AuditoryModal = ({ isOpen, onClose, mode, data }) => {
               msj={isEditing ? "Cancelar Edición" : "Editar"}
               bg="bg-secondary"
               hover="hover:bg-yellow-700"
-              text="text-white"
+              text="text-surface"
               icon="Edit"
             />
           </div>
@@ -486,7 +486,7 @@ const AuditoryModal = ({ isOpen, onClose, mode, data }) => {
                     onClick={handleAddObservation}
                     msj="Agregar observación"
                     bg="bg-blue-500"
-                    text="text-white"
+                    text="text-surface"
                     icon="Plus"
                     type="button"
                   />
@@ -511,14 +511,14 @@ const AuditoryModal = ({ isOpen, onClose, mode, data }) => {
                 onClick={onClose}
                 msj={mode === "view" ? "Cerrar" : "Cancelar"}
                 bg="bg-gray-500"
-                text="text-white"
+                text="text-surface"
                 type="button"
               />
               {(mode === "create" || isEditing) && (
                 <SimpleButton
                   msj="Guardar"
                   bg="bg-blue-500"
-                  text="text-white"
+                  text="text-surface"
                   type="submit"
                 />
               )}
@@ -529,7 +529,7 @@ const AuditoryModal = ({ isOpen, onClose, mode, data }) => {
               onClick={onClose}
               msj="Cerrar"
               bg="bg-gray-500"
-              text="text-white"
+              text="text-surface"
               type="button"
             />
           )}

@@ -14,7 +14,7 @@ const ExcuseModal = ({
   file = excusePDF,
 }) => {
   const [selectedFile, setSelectedFile] = useState(
-    mode === "view" ? file : null
+    mode === "view" ? file : null,
   );
 
   const handleFileSelect = (file) => {
@@ -174,21 +174,21 @@ const ExcuseModal = ({
                 msj="Cerrar"
                 bg="bg-secondary"
                 icon="X"
-                text="text-white"
+                text="text-surface"
               />
               <SimpleButton
                 onClick={handleOpenInNewTab}
                 msj="Abrir"
                 bg="bg-primary"
                 icon="ExternalLink"
-                text="text-white"
+                text="text-surface"
               />
               <SimpleButton
                 onClick={handleDownload}
                 msj="Descargar"
                 bg="bg-accent"
                 icon="Download"
-                text="text-white"
+                text="text-surface"
               />
             </div>
           </div>
@@ -218,14 +218,14 @@ const ExcuseModal = ({
                 msj="Cancelar"
                 bg="bg-secondary"
                 icon="X"
-                text="text-white"
+                text="text-surface"
               />
               <SimpleButton
                 onClick={handleSubmit}
                 msj="Enviar"
                 bg="bg-accent"
                 icon="Send"
-                text="text-white"
+                text="text-surface"
                 disabled={!selectedFile}
               />
             </div>

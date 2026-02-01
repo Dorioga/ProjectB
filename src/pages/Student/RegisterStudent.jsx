@@ -10,11 +10,13 @@ import GradeSelector from "../../components/atoms/GradeSelector";
 import TypeDocumentSelector from "../../components/molecules/TypeDocumentSelector";
 import useStudent from "../../lib/hooks/useStudent";
 import useData from "../../lib/hooks/useData";
+import { useNotify } from "../../lib/hooks/useNotify";
 import Loader from "../../components/atoms/Loader";
 
-const RegisterStudent = () => {
+const RegisterStudent = ({ onSuccess }) => {
   const { registerStudent, loading } = useStudent();
   const { institutionSedes } = useData();
+  const notify = useNotify();
   const [formData, setFormData] = useState({
     first_name: "",
     second_name: "",
@@ -120,6 +122,13 @@ const RegisterStudent = () => {
 
       console.log("¡Estudiante registrado exitosamente!", result);
 
+      // Mostrar notificación de éxito
+      try {
+        notify.success("Estudiante registrado exitosamente.");
+      } catch (e) {
+        console.warn(e);
+      }
+
       // Limpiar el formulario después del registro exitoso
       setFormData({
         first_name: "",
@@ -144,8 +153,20 @@ const RegisterStudent = () => {
         link_identificacion: null,
         link_habeas: null,
       });
+
+      // Notificar al componente padre (si fue pasado)
+      if (typeof onSuccess === "function") {
+        try {
+          onSuccess(result);
+        } catch (err) {
+          console.warn("onSuccess callback failed:", err);
+        }
+      }
     } catch (err) {
       console.error("Error al registrar estudiante:", err);
+      notify.error(
+        err?.message || "Error al registrar el estudiante. Intenta nuevamente.",
+      );
     }
   };
 
@@ -172,7 +193,7 @@ const RegisterStudent = () => {
             name="identification"
             value={formData.identification}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           />
         </div>
         <div>
@@ -182,7 +203,7 @@ const RegisterStudent = () => {
             name="nui"
             value={formData.nui}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           />
         </div>
         <div>
@@ -192,7 +213,7 @@ const RegisterStudent = () => {
             name="first_name"
             value={formData.first_name}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           />
         </div>
         <div>
@@ -202,7 +223,7 @@ const RegisterStudent = () => {
             name="second_name"
             value={formData.second_name}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           />
         </div>
         <div>
@@ -212,7 +233,7 @@ const RegisterStudent = () => {
             name="first_lastname"
             value={formData.first_lastname}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           />
         </div>
         <div>
@@ -222,7 +243,7 @@ const RegisterStudent = () => {
             name="second_lastname"
             value={formData.second_lastname}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           />
         </div>
         <div>
@@ -231,7 +252,7 @@ const RegisterStudent = () => {
             name="gender"
             value={formData.gender}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           >
             <option value=""></option>
             <option value="Masculino">Masculino</option>
@@ -245,7 +266,7 @@ const RegisterStudent = () => {
             name="fecha_nacimiento"
             value={formData.fecha_nacimiento}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           />
         </div>
         <div>
@@ -255,7 +276,7 @@ const RegisterStudent = () => {
             name="telephone"
             value={formData.telephone}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           />
         </div>
         <div>
@@ -265,7 +286,7 @@ const RegisterStudent = () => {
             name="email"
             value={formData.email}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           />
         </div>
         <div>
@@ -275,7 +296,7 @@ const RegisterStudent = () => {
             name="direccion"
             value={formData.direccion}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           />
         </div>
         <div>
@@ -285,7 +306,7 @@ const RegisterStudent = () => {
             name="password"
             value={formData.password}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           />
         </div>
 
@@ -331,7 +352,7 @@ const RegisterStudent = () => {
             name="per_id"
             value={formData.per_id}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           />
         </div>
 
@@ -357,7 +378,7 @@ const RegisterStudent = () => {
           {!loading && (
             <SimpleButton
               msj="Registrar estudiante"
-              text={"text-white"}
+              text={"text-surface"}
               bg={"bg-accent"}
               icon={"Save"}
             />

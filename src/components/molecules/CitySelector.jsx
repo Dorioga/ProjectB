@@ -8,7 +8,7 @@ const CitySelector = ({
   value = "",
   onChange,
   placeholder = "Seleccionar un municipio",
-  className = "w-full p-2 border rounded bg-white",
+  className = "w-full p-2 border rounded bg-surface",
   disabled = false,
   // ID del departamento seleccionado para cargar municipios
   departmentId = "",
@@ -104,8 +104,8 @@ const CitySelector = ({
           {!departmentId
             ? "Seleccionar un departamento primero"
             : loadingCities
-            ? "Cargando municipios..."
-            : placeholder}
+              ? "Cargando municipios..."
+              : placeholder}
         </option>
         {items.map((opt) => (
           <option key={opt.id} value={opt.id}>

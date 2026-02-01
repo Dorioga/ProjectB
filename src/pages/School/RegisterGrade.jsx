@@ -177,7 +177,7 @@ const RegisterGrade = () => {
             name="name_grade"
             value={formData.name_grade}
             onChange={handleNameChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
             placeholder="Ej: 6°"
           />
         </div>
@@ -191,7 +191,7 @@ const RegisterGrade = () => {
           includeAmbas={false}
           disabled={loadingJourneys}
           placeholder="Selecciona una jornada"
-          className="w-full p-2 border rounded bg-white"
+          className="w-full p-2 border rounded bg-surface"
         />
 
         <div>
@@ -203,7 +203,7 @@ const RegisterGrade = () => {
             name="numGroups"
             value={numGroups}
             onChange={handleNumGroupsChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
             placeholder="Ej: 2"
           />
         </div>
@@ -211,11 +211,11 @@ const RegisterGrade = () => {
         <div className="md:col-span-4">
           <label>Grupos a crear</label>
           {formData.group.length === 0 ? (
-            <div className="w-full p-2 border rounded bg-white text-sm">
+            <div className="w-full p-2 border rounded bg-surface text-sm">
               Selecciona cuántos grupos deseas crear.
             </div>
           ) : (
-            <div className="w-full p-4 border rounded bg-white grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            <div className="w-full p-4 border rounded bg-surface grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {formData.group.map((group, index) => (
                 <div key={index} className="flex flex-col gap-1">
                   <label className="text-sm">Grupo {index + 1}</label>
@@ -223,7 +223,7 @@ const RegisterGrade = () => {
                     type="text"
                     value={group.name_group || ""}
                     onChange={handleGroupChange(index)}
-                    className="w-full p-2 border rounded bg-white"
+                    className="w-full p-2 border rounded bg-surface"
                     placeholder={`Ej: ${String.fromCharCode(65 + index)}`}
                   />
                 </div>
@@ -236,7 +236,7 @@ const RegisterGrade = () => {
           <div className="w-full md:w-1/2">
             <SimpleButton
               msj={loading ? "Registrando..." : "Registrar grado"}
-              text={"text-white"}
+              text={"text-surface"}
               bg={"bg-accent"}
               icon={"Save"}
               disabled={loading}

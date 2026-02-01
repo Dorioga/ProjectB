@@ -1,7 +1,13 @@
 import Modal from "../atoms/Modal";
 import ProfileStudent from "./ProfileStudent";
 
-const StudentModal = ({ isOpen, onClose, student, onSave }) => {
+const StudentModal = ({
+  isOpen,
+  onClose,
+  student,
+  onSave,
+  initialEditing = false,
+}) => {
   // Determina el título del modal
   const modalTitle = student
     ? "Perfil del estudiante"
@@ -13,9 +19,13 @@ const StudentModal = ({ isOpen, onClose, student, onSave }) => {
       onClose={onClose}
       title={modalTitle}
       showCloseButton={false}
-      size="4xl" // Ocultamos el botón por defecto para usar los nuestros
+      size="4xl"
     >
-      <ProfileStudent data={student} onSave={onSave} />
+      <ProfileStudent
+        data={student}
+        onSave={onSave}
+        initialEditing={initialEditing}
+      />
     </Modal>
   );
 };

@@ -123,8 +123,25 @@ export async function createStudent(payload) {
  * @returns {Promise<Object>} Respuesta del servidor
  */
 
-export async function updateStudent(id, payload) {
-  return ApiClient.put(`/students/${id}`, payload);
+export async function updateStudent(studentId, personId, payload) {
+  if (!studentId) throw new Error("studentId es requerido para updateStudent");
+  if (!personId) throw new Error("personId es requerido para updateStudent");
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+
+  const res = await ApiClient.instance.patch(
+    `/student/${studentId}/person/${personId}`,
+    payload,
+  );
+
+  const data = res;
+  console.log("StudentService - updateStudent:", data);
+
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de update_student.");
 }
 
 export async function deleteStudent(id) {

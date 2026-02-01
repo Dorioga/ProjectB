@@ -37,7 +37,7 @@ const Login = () => {
       <div className="bg-surface hidden lg:flex lg:items-center lg:justify-center">
         <div className="w-96 h-96   bg-amber-400 flex flex-col items-center justify-center rounded-full">
           <School size={150} color="white" />
-          <h1 className="text-white font-bold text-5xl mt-4">Nexus</h1>
+          <h1 className="text-surface font-bold text-5xl mt-4">Nexus</h1>
         </div>
       </div>
       <div className="w-full bg-primary flex items-center justify-center p-4 ">
@@ -78,7 +78,7 @@ const Login = () => {
               onClick={handleSubmit}
               disabled={loading}
               bg={"bg-secondary"}
-              text={"text-white"}
+              text={"text-surface"}
               hover={"hover:bg-secondary/80"}
             />
             {loading && <Loader />}

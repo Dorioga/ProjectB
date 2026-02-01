@@ -10,7 +10,7 @@ const JourneySelect = ({
   filterValue,
   onChange,
   placeholder = "Selecciona una jornada",
-  className = "w-full p-2 border rounded bg-white",
+  className = "w-full p-2 border rounded bg-surface",
   includeAmbas = true,
   useServiceJourneys = true,
   disabled = false,
@@ -42,14 +42,14 @@ const JourneySelect = ({
       // Si filterValue es "ambas" (id=3), mostrar solo Mañana (id=1) y Tarde (id=2)
       if (normalizedFilterValue === "ambas" || normalizedFilterValue === "3") {
         filtered = filtered.filter(
-          (opt) => opt.value === "1" || opt.value === "2"
+          (opt) => opt.value === "1" || opt.value === "2",
         );
       } else {
         // Buscar coincidencia exacta por value o label
         const match = filtered.find(
           (opt) =>
             String(opt.value).toLowerCase() === normalizedFilterValue ||
-            String(opt.label).toLowerCase() === normalizedFilterValue
+            String(opt.label).toLowerCase() === normalizedFilterValue,
         );
         filtered = match ? [match] : [];
       }
@@ -59,7 +59,7 @@ const JourneySelect = ({
     if (!includeAmbas) {
       filtered = filtered.filter(
         (opt) =>
-          opt.value !== "3" && String(opt.label).toLowerCase() !== "ambas"
+          opt.value !== "3" && String(opt.label).toLowerCase() !== "ambas",
       );
     }
 
@@ -71,7 +71,7 @@ const JourneySelect = ({
     if (!value) return "";
 
     const isValidOption = options.some(
-      (opt) => String(opt.value) === String(value)
+      (opt) => String(opt.value) === String(value),
     );
 
     // Si el valor no existe en opciones y hay opciones disponibles, limpiar
@@ -92,10 +92,10 @@ const JourneySelect = ({
           {loadingJourneys
             ? "Cargando jornadas..."
             : errorJourneys
-            ? "Error al cargar jornadas"
-            : options.length === 0
-            ? "No hay jornadas disponibles"
-            : placeholder}
+              ? "Error al cargar jornadas"
+              : options.length === 0
+                ? "No hay jornadas disponibles"
+                : placeholder}
         </option>
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>

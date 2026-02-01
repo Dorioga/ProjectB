@@ -1,10 +1,10 @@
 import { useNotification } from "../../lib/context/NotificationContext";
 
 const toastStyles = {
-  error: "bg-red-600 text-white",
-  success: "bg-green-600 text-white",
-  warning: "bg-amber-600 text-white",
-  info: "bg-blue-600 text-white",
+  error: "bg-red-600 text-surface",
+  success: "bg-green-600 text-surface",
+  warning: "bg-amber-600 text-surface",
+  info: "bg-blue-600 text-surface",
 };
 
 export const Toast = () => {
@@ -33,7 +33,7 @@ export const Toast = () => {
             </p>
           </div>
           <button
-            className="bg-transparent border-none text-lg cursor-pointer text-white/90 p-0 w-6 h-6 flex items-center justify-center rounded flex-shrink-0 transition-all hover:bg-white/20"
+            className="bg-transparent border-none text-lg cursor-pointer text-surface/90 p-0 w-6 h-6 flex items-center justify-center rounded flex-shrink-0 transition-all hover:bg-surface/20"
             onClick={() => removeNotification(notification.id)}
             aria-label="Cerrar notificación"
           >

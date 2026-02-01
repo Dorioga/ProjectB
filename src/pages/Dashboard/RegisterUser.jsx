@@ -41,7 +41,7 @@ const RegisterUser = () => {
       .map((s) => {
         const id = String(s?.id ?? s?._id ?? "").trim();
         const name = String(
-          s?.name ?? s?.nombre ?? s?.school_name ?? id
+          s?.name ?? s?.nombre ?? s?.school_name ?? id,
         ).trim();
         return { id, name };
       })
@@ -121,7 +121,7 @@ const RegisterUser = () => {
             name="identification"
             value={formData.identification}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
             disabled={loadingRegisterUser}
           />
         </div>
@@ -133,7 +133,7 @@ const RegisterUser = () => {
             name="telephone"
             value={formData.telephone}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
             disabled={loadingRegisterUser}
           />
         </div>
@@ -145,7 +145,7 @@ const RegisterUser = () => {
             name="email"
             value={formData.email}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
             disabled={loadingRegisterUser}
           />
         </div>
@@ -157,7 +157,7 @@ const RegisterUser = () => {
             name="first_name"
             value={formData.first_name}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
             disabled={loadingRegisterUser}
           />
         </div>
@@ -169,7 +169,7 @@ const RegisterUser = () => {
             name="second_name"
             value={formData.second_name}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
             disabled={loadingRegisterUser}
           />
         </div>
@@ -181,7 +181,7 @@ const RegisterUser = () => {
             name="first_lastname"
             value={formData.first_lastname}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
             disabled={loadingRegisterUser}
           />
         </div>
@@ -193,7 +193,7 @@ const RegisterUser = () => {
             name="second_lastname"
             value={formData.second_lastname}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
             disabled={loadingRegisterUser}
           />
         </div>
@@ -207,7 +207,7 @@ const RegisterUser = () => {
             name="password"
             value={formData.password}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
             disabled={loadingRegisterUser}
           />
         </div>
@@ -229,7 +229,7 @@ const RegisterUser = () => {
             value={formData.idInstitution}
             onChange={handleChange}
             placeholder="Selecciona una institución"
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
             disabled={loadingRegisterUser}
           />
         )}
@@ -238,7 +238,7 @@ const RegisterUser = () => {
           <div className="w-full md:w-1/2">
             <SimpleButton
               msj={loadingRegisterUser ? "Registrando..." : "Registrar usuario"}
-              text={"text-white"}
+              text={"text-surface"}
               bg={"bg-accent"}
               icon={"Save"}
               disabled={loadingRegisterUser}

@@ -36,7 +36,7 @@ const CameraModal = ({ isOpen, onClose, onImageCapture }) => {
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="Tomar foto con cámara">
-      <div className="grid grid-cols-2 gap-4 bg-white text-center">
+      <div className="grid grid-cols-2 gap-4 bg-surface text-center">
         <h1 className="text-3xl font-bold col-span-2">Foto del estudiante</h1>
         <div className="grid grid-cols-1 xl:grid-cols-2 col-span-2 gap-2 place-items-center">
           <div className="grid grid-cols-1 place-items-center gap-4">
@@ -70,7 +70,7 @@ const CameraModal = ({ isOpen, onClose, onImageCapture }) => {
           msj="Tomar foto"
           bg="bg-accent"
           icon="Aperture"
-          text="text-white"
+          text="text-surface"
         />
         <SimpleButton
           onClick={savePhoto}
@@ -78,7 +78,7 @@ const CameraModal = ({ isOpen, onClose, onImageCapture }) => {
           msj="Guardar foto"
           icon="Save"
           bg={image ? "bg-primary" : "bg-gray-400"}
-          text="text-white"
+          text="text-surface"
         />
       </div>
     </Modal>

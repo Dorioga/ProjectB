@@ -9,7 +9,7 @@ const RoleSelector = ({
   value = "",
   onChange,
   placeholder = "Selecciona un rol",
-  className = "w-full p-2 border rounded bg-white",
+  className = "w-full p-2 border rounded bg-surface",
   disabled = false,
   // Permite pasar data manualmente; si no, se toma del DataContext.
   data,
@@ -41,10 +41,10 @@ const RoleSelector = ({
       .filter(Boolean)
       .map((x) => {
         const id = String(
-          x?.id_rol ?? x?.id ?? x?.value ?? x?.code ?? ""
+          x?.id_rol ?? x?.id ?? x?.value ?? x?.code ?? "",
         ).trim();
         const name = String(
-          x?.nombre_rol ?? x?.name ?? x?.label ?? x?.rol ?? x?.role ?? ""
+          x?.nombre_rol ?? x?.name ?? x?.label ?? x?.rol ?? x?.role ?? "",
         ).trim();
         return { id, name };
       })
@@ -61,7 +61,7 @@ const RoleSelector = ({
     } else if (rolNumber === "2" || rolNumber === "3" || rolNumber === "4") {
       // Si es rol 2, 3 o 4, solo mostrar roles 2, 3 y 4
       return allItems.filter(
-        (item) => item.id === "2" || item.id === "3" || item.id === "4"
+        (item) => item.id === "2" || item.id === "3" || item.id === "4",
       );
     }
 

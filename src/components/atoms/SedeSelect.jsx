@@ -9,7 +9,7 @@ const SedeSelect = ({
   value = "",
   onChange,
   placeholder = "Selecciona una sede",
-  className = "w-full p-2 border rounded bg-white",
+  className = "w-full p-2 border rounded bg-surface",
   disabled = false,
   autoSelectPrincipal = false,
   data = null, // Permite pasar data manualmente (ej. para docentes)
@@ -27,7 +27,7 @@ const SedeSelect = ({
     if (idInstitution) {
       console.log(
         "SedeSelect - Cargando sedes para institución:",
-        idInstitution
+        idInstitution,
       );
 
       loadInstitutionSedes(idInstitution).catch((err) => {
@@ -45,8 +45,8 @@ const SedeSelect = ({
         ? data
         : []
       : Array.isArray(institutionSedes)
-      ? institutionSedes
-      : [];
+        ? institutionSedes
+        : [];
 
     console.log("SedeSelect - institutionSedes:", institutionSedes);
     console.log("SedeSelect - data (manual):", data);

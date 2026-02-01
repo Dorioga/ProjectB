@@ -28,9 +28,13 @@ const AllStudent = () => {
     setIsModalOpen(true);
   };
 
-  const handleSave = (identification, updatedData) => {
-    updateStudent(identification, updatedData);
-    //setIsModalOpen(false);
+  const handleSave = async (studentId, personId, updatedData) => {
+    try {
+      await updateStudent(studentId, personId, updatedData);
+      //setIsModalOpen(false);
+    } catch (err) {
+      console.error("Error al actualizar estudiante:", err);
+    }
   };
 
   // 5. Define las columnas para la tabla, incluyendo la de "Acciones"
@@ -125,10 +129,10 @@ const AllStudent = () => {
               getValue() === "Conforme"
                 ? "bg-green-100 text-green-800"
                 : getValue() === "Retirado"
-                ? "bg-gray-100 text-gray-800"
-                : getValue() === "Reasignado"
-                ? "bg-indigo-100 text-indigo-800"
-                : "bg-red-100 text-red-800"
+                  ? "bg-gray-100 text-gray-800"
+                  : getValue() === "Reasignado"
+                    ? "bg-indigo-100 text-indigo-800"
+                    : "bg-red-100 text-red-800"
             }`}
           >
             {getValue()}
@@ -148,20 +152,20 @@ const AllStudent = () => {
               msj="Ver Perfil"
               icon="User"
               bg="bg-primary"
-              text="text-white"
+              text="text-surface"
               noRounded={true}
             />
           </div>
         ),
       },
     ],
-    []
+    [],
   );
   // Carga los estudiantes al montar el componente
   return (
     <div className="border p-6 rounded bg-bg h-full gap-4 flex flex-col">
       {alerts.length > 0 && <AlertTable alerts={alerts} />}
-      <div className="w-full flex justify-between items-center bg-primary text-white p-3 rounded-t-lg">
+      <div className="w-full flex justify-between items-center bg-primary text-surface p-3 rounded-t-lg">
         <h2 className="text-2xl font-bold">Datos de estudiantes</h2>
       </div>
       <DataTable

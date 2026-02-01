@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import useStudent from "../../lib/hooks/useStudent";
+import { getCurrentTheme } from "../../utils/themeManager";
 
 const DashHome = () => {
   const { students, reload } = useStudent();
@@ -64,7 +65,7 @@ const DashHome = () => {
     });
 
     return Object.values(gradeCount).sort(
-      (a, b) => parseInt(a.grade) - parseInt(b.grade)
+      (a, b) => parseInt(a.grade) - parseInt(b.grade),
     );
   }, [filteredStudents]);
 
@@ -128,10 +129,15 @@ const DashHome = () => {
                 <Bar
                   dataKey="MAÑANA"
                   stackId="a"
-                  fill="#fbbf24"
+                  fill={getCurrentTheme()["color-secondary"] || "#ff9300"}
                   name="Mañana"
                 />
-                <Bar dataKey="TARDE" stackId="a" fill="#3b82f6" name="Tarde" />
+                <Bar
+                  dataKey="TARDE"
+                  stackId="a"
+                  fill={getCurrentTheme()["color-primary"] || "#0141a3"}
+                  name="Tarde"
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -142,7 +148,7 @@ const DashHome = () => {
           <h3 className="font-semibold mb-4">Resumen por grado</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-primary text-white">
+              <thead className="bg-primary text-surface">
                 <tr>
                   <th className="p-2 text-left">Grado</th>
                   {selectedJourney === "todas" && (
@@ -175,13 +181,13 @@ const DashHome = () => {
                         <td className="p-2 text-center">
                           {studentData.reduce(
                             (sum, item) => sum + item.MAÑANA,
-                            0
+                            0,
                           )}
                         </td>
                         <td className="p-2 text-center">
                           {studentData.reduce(
                             (sum, item) => sum + item.TARDE,
-                            0
+                            0,
                           )}
                         </td>
                       </>

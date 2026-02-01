@@ -9,7 +9,7 @@ const HabeasDataModal = ({ isOpen, onClose, idEstudiante, mode = "view" }) => {
 
   const { getStudent } = useStudent();
   const [idStudentSelected, setIdStudentSelected] = useState(
-    idEstudiante || ""
+    idEstudiante || "",
   );
   const [studentSelected, setStudentSelected] = useState(null);
   const [isOpenRegisterParents, setIsOpenRegisterParents] = useState(false);
@@ -22,7 +22,7 @@ const HabeasDataModal = ({ isOpen, onClose, idEstudiante, mode = "view" }) => {
 
   // considera prop inicial y valor del input, evita cadenas vacías o espacios
   const hasId = Boolean(
-    (idEstudiante || idStudentSelected || "").toString().trim()
+    (idEstudiante || idStudentSelected || "").toString().trim(),
   );
 
   const handleStudentChange = async (id = null) => {
@@ -74,12 +74,12 @@ const HabeasDataModal = ({ isOpen, onClose, idEstudiante, mode = "view" }) => {
                     placeholder="Identificación"
                     value={idStudentSelected}
                     onChange={(e) => setIdStudentSelected(e.target.value)}
-                    className="w-full p-2 border rounded bg-white col-span-2"
+                    className="w-full p-2 border rounded bg-surface col-span-2"
                   />
                   <SimpleButton
                     msj="Buscar"
                     bg="bg-blue-600"
-                    text="text-white"
+                    text="text-surface"
                     icon="Search"
                     onClick={() => handleStudentChange()}
                   />
@@ -96,7 +96,7 @@ const HabeasDataModal = ({ isOpen, onClose, idEstudiante, mode = "view" }) => {
             {showAcudienteQuestion &&
               studentSelected &&
               Boolean(
-                (idEstudiante || idStudentSelected || "").toString().trim()
+                (idEstudiante || idStudentSelected || "").toString().trim(),
               ) && (
                 <div className="gap-2 mt-4 flex flex-row items-center">
                   <h3>¿Es usted el acudiente actual del estudiante?</h3>
@@ -104,14 +104,14 @@ const HabeasDataModal = ({ isOpen, onClose, idEstudiante, mode = "view" }) => {
                     <SimpleButton
                       msj="Sí"
                       bg="bg-accent"
-                      text="text-white"
+                      text="text-surface"
                       icon="Check"
                       onClick={() => setConfirmedAcudiente(true)}
                     />
                     <SimpleButton
                       msj="No"
                       bg="bg-error"
-                      text="text-white"
+                      text="text-surface"
                       icon="X"
                       onClick={() => setIsOpenRegisterParents(true)}
                     />
@@ -162,7 +162,7 @@ const HabeasDataModal = ({ isOpen, onClose, idEstudiante, mode = "view" }) => {
                       <SimpleButton
                         msj="Descargar"
                         bg="bg-green-600"
-                        text="text-white"
+                        text="text-surface"
                         icon="DownloadCloud"
                       />
                     </div>

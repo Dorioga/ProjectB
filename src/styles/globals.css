@@ -2,15 +2,15 @@
 
 /* Valores por defecto - serán sobrescritos por JS */
 :root {
-  --color-primary: #0b3d91;
-  --color-secondary: #f59e0b;
+  --color-primary: #0141a3;
+  --color-secondary: #ff9300;
   --color-accent: #10b981;
   --color-bg: #f4f6f8;
   --color-surface: #ffffff;
   --color-text: #111827;
   --color-muted: #6b7280;
   --color-error: #dc2626;
-  --color-warning: #d97706;
+  --color-warning: #ffb300;
   --color-info: #0ea5e9;
 }
 
@@ -86,4 +86,16 @@
     transform: translateX(0);
     opacity: 1;
   }
+}
+
+/* Compatibilidad: mapear clases legacy de 'white' al color de superficie del tema */
+.bg-white {
+  background-color: var(--color-surface) !important;
+}
+.text-white {
+  color: var(--color-surface) !important;
+}
+/* Manejar variantes con sufijo de opacidad (ej. bg-white/60) */
+[class*="bg-white/"] {
+  background-color: var(--color-surface) !important;
 }

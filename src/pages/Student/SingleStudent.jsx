@@ -53,7 +53,7 @@ const SingleStudent = () => {
                 Documento de identidad
               </label>
               <input
-                className="bg-white rounded-sm p-2 border border-gray-300 col-span-3 focus:outline-none focus:ring-2 focus:ring-secondary"
+                className="bg-surface rounded-sm p-2 border border-gray-300 col-span-3 focus:outline-none focus:ring-2 focus:ring-secondary"
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
@@ -68,7 +68,7 @@ const SingleStudent = () => {
                 msj={loading ? "Buscando…" : "Buscar"}
                 onClick={handleSearch}
                 bg={"bg-secondary"}
-                text={"text-white"}
+                text={"text-surface"}
                 hover={"hover:bg-secondary/80"}
                 icon={"Search"}
                 disabled={loading}
@@ -79,7 +79,7 @@ const SingleStudent = () => {
                 msj={"Escanear código QR"}
                 onClick={() => setQrOpen(true)}
                 bg={"bg-secondary"}
-                text={"text-white"}
+                text={"text-surface"}
                 hover={"hover:bg-secondary/80"}
                 icon={"QrCode"}
               />
@@ -96,7 +96,7 @@ const SingleStudent = () => {
                   msj={"Generar carné"}
                   onClick={() => setCarnetOpen(true)}
                   bg={"bg-secondary"}
-                  text={"text-white"}
+                  text={"text-surface"}
                   hover={"hover:bg-secondary/80"}
                   icon={"IdCard"}
                 />

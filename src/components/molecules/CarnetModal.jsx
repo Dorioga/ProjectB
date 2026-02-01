@@ -29,7 +29,7 @@ const CarnetModal = ({ isOpen, onClose, data }) => {
   const handleDownloadPNG = async (side) => {
     await exportElementToPNG(
       side === "front" ? frontRef.current : backRef.current,
-      `Carnet-${data?.identification || "estudiante"}-${side}.png`
+      `Carnet-${data?.identification || "estudiante"}-${side}.png`,
     );
   };
   return (
@@ -44,7 +44,7 @@ const CarnetModal = ({ isOpen, onClose, data }) => {
             >
               <div className="col-span-5 grid grid-cols-3 py-2 px-4 bg-primary border rounded">
                 <PreviewIMG path={"/logo-school.svg"} size={"logo"} />
-                <h2 className=" col-span-2 text-lg font-bold text-center text-white">
+                <h2 className=" col-span-2 text-lg font-bold text-center text-surface">
                   {data.name_school}
                 </h2>
               </div>
@@ -115,25 +115,25 @@ const CarnetModal = ({ isOpen, onClose, data }) => {
       <div className="grid grid-cols-4 gap-4 mt-4">
         <button
           onClick={() => handleDownloadPDF(true)}
-          className="px-4 py-2 bg-primary text-white rounded"
+          className="px-4 py-2 bg-primary text-surface rounded"
         >
           PDF (2 páginas)
         </button>
         <button
           onClick={() => handleDownloadPDF(false)}
-          className="px-4 py-2 bg-primary/80 text-white rounded"
+          className="px-4 py-2 bg-primary/80 text-surface rounded"
         >
           PDF (1 página)
         </button>
         <button
           onClick={() => handleDownloadPNG("front")}
-          className="px-4 py-2 bg-secondary text-white rounded"
+          className="px-4 py-2 bg-secondary text-surface rounded"
         >
           PNG (frente)
         </button>
         <button
           onClick={() => handleDownloadPNG("back")}
-          className="px-4 py-2 bg-secondary text-white rounded"
+          className="px-4 py-2 bg-secondary text-surface rounded"
         >
           PNG (atrás)
         </button>

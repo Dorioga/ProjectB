@@ -47,7 +47,7 @@ export async function createSchool(payload) {
 export async function getJourneys() {
   try {
     const res = await ApiClient.get("/workdays");
-    const data = Array.isArray(res) ? res : res?.data ?? [];
+    const data = Array.isArray(res) ? res : (res?.data ?? []);
 
     if (!Array.isArray(data)) {
       console.warn("getJourneys: respuesta no es un array", res);
@@ -79,7 +79,7 @@ export async function getJourneys() {
 export async function getPeriods() {
   try {
     const res = await ApiClient.get("/periods");
-    const data = Array.isArray(res) ? res : res?.data ?? [];
+    const data = Array.isArray(res) ? res : (res?.data ?? []);
 
     console.log("SchoolService - getPeriods:", data);
 
@@ -142,6 +142,30 @@ export async function registerTeacher(payload) {
   if (data !== undefined && data !== null) return data;
 
   throw new Error("Respuesta inesperada de register_teacher.");
+}
+
+/**
+ * Actualiza la información de un docente existente.
+ *
+ * Endpoint esperado: PUT /teachers/:id
+ * @param {string|number} id - Identificador del docente
+ * @param {Object} payload - Datos a actualizar
+ * @returns {Promise<Object>} Respuesta del servidor
+ */
+export async function updateTeacher(id, payload) {
+  if (!id) throw new Error("id es requerido para updateTeacher");
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+
+  const res = await ApiClient.instance.put(`/teachers/${id}`, payload);
+  const data = res;
+  console.log("SchoolService - updateTeacher:", data);
+
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de update_teacher.");
 }
 
 /**
@@ -215,7 +239,7 @@ export async function getSedeAsignature(payload) {
   if (data && typeof data === "object" && "data" in data) {
     console.log(
       "SchoolService - getSedeAsignature retornando data.data:",
-      data.data
+      data.data,
     );
     return data.data;
   }

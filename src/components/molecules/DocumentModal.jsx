@@ -17,7 +17,7 @@ const DocumentModal = ({ isOpen, onClose, type = "all", title }) => {
     // Descargar directamente el archivo ZIP desde public
     downloadFileFromPublic(
       "/CENTRO DE CAPACITACION ESPECIAL CENCAES.zip",
-      "CENTRO DE CAPACITACION ESPECIAL CENCAES.zip"
+      "CENTRO DE CAPACITACION ESPECIAL CENCAES.zip",
     );
   };
 
@@ -57,7 +57,7 @@ const DocumentModal = ({ isOpen, onClose, type = "all", title }) => {
         <SimpleButton
           msj="Descargar documentos"
           bg="bg-blue-600"
-          text="text-white"
+          text="text-surface"
           icon="DownloadCloud"
           onClick={handleDownload}
         />

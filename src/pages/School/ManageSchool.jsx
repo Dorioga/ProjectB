@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import ProgressPage from "../../components/atoms/progressPage";
 import FileChooser from "../../components/atoms/FileChooser";
@@ -10,7 +10,12 @@ import CitySelector from "../../components/molecules/CitySelector";
 import { getInputClassName, getLabelClassName } from "../../utils/cssUtils";
 import useSchool from "../../lib/hooks/useSchool";
 
-const ManageSchool = ({ mode: modeProp, schoolId }) => {
+const ManageSchool = ({
+  mode: modeProp,
+  schoolId,
+  initialData = null,
+  onSuccess = null,
+}) => {
   const params = useParams();
   const modeFromParams = params?.mode;
   const mode = (modeProp ?? modeFromParams ?? "register").toLowerCase();
@@ -28,14 +33,46 @@ const ManageSchool = ({ mode: modeProp, schoolId }) => {
     principalName: "",
     coordinadorName: "",
     logo: "",
-    mainColor: "#0b3d91",
-    secondaryColor: "#f59e0b",
+    mainColor: "#0141a3",
+    secondaryColor: "#ff9300",
     workday: "",
     codDane: "",
     signaturePrincipal: "",
     sede: [],
     department_id: "",
   });
+
+  // Si se pasa initialData, sincronizar el form
+  useEffect(() => {
+    if (!initialData) return;
+    // Mapear campos de la institución recibida a nuestro formData
+    const map = {
+      municipality: initialData.municipality ?? initialData.municipio ?? "1",
+      name:
+        (initialData.name ??
+          initialData.nombre_institution ??
+          initialData.nombre) ||
+        "",
+      slogan: initialData.slogan ?? "",
+      address: initialData.address ?? initialData.direccion ?? "",
+      email: initialData.email ?? initialData.correo ?? "",
+      phone: initialData.phone ?? initialData.telefono ?? "",
+      principalName:
+        initialData.principalName ?? initialData.directorName ?? "",
+      coordinadorName: initialData.coordinadorName ?? "",
+      logo: initialData.logo ?? initialData.img_logo ?? "",
+      mainColor: initialData.mainColor ?? initialData.color_main ?? "#0141a3",
+      secondaryColor:
+        initialData.secondaryColor ?? initialData.color_secondary ?? "#ff9300",
+      workday: initialData.workday ? String(initialData.workday) : "",
+      codDane: initialData.codDane ?? initialData.codigo_dane ?? "",
+      signaturePrincipal: initialData.signaturePrincipal ?? "",
+      sede: Array.isArray(initialData.sede) ? initialData.sede : [],
+      department_id: initialData.department_id ?? "",
+    };
+
+    setFormData((prev) => ({ ...prev, ...map }));
+  }, [initialData]);
   const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
 
   const title = useMemo(() => {
@@ -87,7 +124,7 @@ const ManageSchool = ({ mode: modeProp, schoolId }) => {
               ...sede,
               [field]: value,
             }
-          : sede
+          : sede,
       ),
     }));
   };
@@ -96,7 +133,7 @@ const ManageSchool = ({ mode: modeProp, schoolId }) => {
     setFormData((prev) => ({
       ...prev,
       sede: (Array.isArray(prev.sede) ? prev.sede : []).filter(
-        (_, i) => i !== index
+        (_, i) => i !== index,
       ),
     }));
   };
@@ -146,6 +183,15 @@ const ManageSchool = ({ mode: modeProp, schoolId }) => {
         console.log("Institución creada:", result);
       }
 
+      // Llamar al callback onSuccess si fue provisto (para cerrar modal y refrescar listados)
+      if (typeof onSuccess === "function") {
+        try {
+          onSuccess(result);
+        } catch (e) {
+          console.warn("ManageSchool: onSuccess callback falló:", e);
+        }
+      }
+
       // Opcional: resetear formulario en modo create
       if (!isUpdate) {
         // Podrías resetear el form o redirigir
@@ -170,7 +216,7 @@ const ManageSchool = ({ mode: modeProp, schoolId }) => {
             name="name"
             value={formData.name}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
             required
           />
         </div>
@@ -182,7 +228,7 @@ const ManageSchool = ({ mode: modeProp, schoolId }) => {
             name="slogan"
             value={formData.slogan}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           />
         </div>
 
@@ -193,7 +239,7 @@ const ManageSchool = ({ mode: modeProp, schoolId }) => {
             name="address"
             value={formData.address}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           />
         </div>
 
@@ -203,7 +249,7 @@ const ManageSchool = ({ mode: modeProp, schoolId }) => {
             label="Departamento"
             value={formData.department_id}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           />
         </div>
 
@@ -214,7 +260,7 @@ const ManageSchool = ({ mode: modeProp, schoolId }) => {
             value={formData.municipality}
             onChange={handleChange}
             departmentId={formData.department_id}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           />
         </div>
 
@@ -226,8 +272,8 @@ const ManageSchool = ({ mode: modeProp, schoolId }) => {
             value={formData.phone}
             onChange={handleChange}
             className={getInputClassName(
-              "w-full p-2 border rounded bg-white",
-              false
+              "w-full p-2 border rounded bg-surface",
+              false,
             )}
           />
         </div>
@@ -242,8 +288,8 @@ const ManageSchool = ({ mode: modeProp, schoolId }) => {
             value={formData.email}
             onChange={handleChange}
             className={getInputClassName(
-              "w-full p-2 border rounded bg-white",
-              false
+              "w-full p-2 border rounded bg-surface",
+              false,
             )}
           />
         </div>
@@ -255,7 +301,7 @@ const ManageSchool = ({ mode: modeProp, schoolId }) => {
             name="principalName"
             value={formData.principalName}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           />
         </div>
 
@@ -275,7 +321,7 @@ const ManageSchool = ({ mode: modeProp, schoolId }) => {
             name="coordinadorName"
             value={formData.coordinadorName}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           />
         </div>
 
@@ -296,7 +342,7 @@ const ManageSchool = ({ mode: modeProp, schoolId }) => {
             className="mt-2"
             msj={"Modificar tema"}
             icon={"Pencil"}
-            text={"text-white"}
+            text={"text-surface"}
             bg={"bg-accent"}
           />
         </div>
@@ -309,8 +355,8 @@ const ManageSchool = ({ mode: modeProp, schoolId }) => {
             value={formData.codDane}
             onChange={handleChange}
             className={getInputClassName(
-              "w-full p-2 border rounded bg-white",
-              isUpdate
+              "w-full p-2 border rounded bg-surface",
+              isUpdate,
             )}
             disabled={isUpdate}
             placeholder={
@@ -327,7 +373,7 @@ const ManageSchool = ({ mode: modeProp, schoolId }) => {
             name="workday"
             value={formData.workday}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
           />
         </div>
 
@@ -342,7 +388,7 @@ const ManageSchool = ({ mode: modeProp, schoolId }) => {
                   onClick={addSede}
                   msj={"Agregar sede"}
                   icon={"Plus"}
-                  text={"text-white"}
+                  text={"text-surface"}
                   bg={"bg-accent"}
                 />
               </div>
@@ -353,7 +399,7 @@ const ManageSchool = ({ mode: modeProp, schoolId }) => {
                 {formData.sede.map((sede, index) => (
                   <div
                     key={`${sede?.name || "sede"}-${index}`}
-                    className="border rounded p-4 bg-white"
+                    className="border rounded p-4 bg-surface"
                   >
                     <div className="flex items-center justify-between mb-3">
                       <p className="font-semibold">Sede #{index + 1}</p>
@@ -363,7 +409,7 @@ const ManageSchool = ({ mode: modeProp, schoolId }) => {
                           onClick={() => removeSede(index)}
                           msj={"Borrar"}
                           icon={"Trash2"}
-                          text={"text-white"}
+                          text={"text-surface"}
                           bg={"bg-red-600"}
                           className="w-auto px-3"
                         />
@@ -379,7 +425,7 @@ const ManageSchool = ({ mode: modeProp, schoolId }) => {
                           onChange={(e) =>
                             updateSedeField(index, "name_sede", e.target.value)
                           }
-                          className="w-full p-2 border rounded bg-white"
+                          className="w-full p-2 border rounded bg-surface"
                         />
                       </div>
 
@@ -391,7 +437,7 @@ const ManageSchool = ({ mode: modeProp, schoolId }) => {
                           onChange={(e) =>
                             updateSedeField(index, "phone", e.target.value)
                           }
-                          className="w-full p-2 border rounded bg-white"
+                          className="w-full p-2 border rounded bg-surface"
                         />
                       </div>
 
@@ -403,7 +449,7 @@ const ManageSchool = ({ mode: modeProp, schoolId }) => {
                           onChange={(e) =>
                             updateSedeField(index, "adress", e.target.value)
                           }
-                          className="w-full p-2 border rounded bg-white"
+                          className="w-full p-2 border rounded bg-surface"
                         />
                       </div>
 
@@ -414,7 +460,7 @@ const ManageSchool = ({ mode: modeProp, schoolId }) => {
                         onChange={(e) =>
                           updateSedeField(index, "jornada", e.target.value)
                         }
-                        className="w-full p-2 border rounded bg-white"
+                        className="w-full p-2 border rounded bg-surface"
                       />
                     </div>
                   </div>
@@ -429,7 +475,7 @@ const ManageSchool = ({ mode: modeProp, schoolId }) => {
             type="submit"
             msj={loading ? "Procesando..." : primaryButtonLabel}
             icon={loading ? "Loader" : "Save"}
-            text={"text-white"}
+            text={"text-surface"}
             bg={loading ? "bg-gray-400" : "bg-accent"}
             disabled={loading}
           />

@@ -15,8 +15,8 @@ const ThemeModal = ({
   setColor: setColorProp,
 }) => {
   const [internalColor, setInternalColor] = useState({
-    mainColor: "#0b3d91",
-    secondaryColor: "#f59e0b",
+    mainColor: "#0141a3",
+    secondaryColor: "#ff9300",
   });
 
   const isControlled = colorProp && typeof setColorProp === "function";
@@ -30,9 +30,9 @@ const ThemeModal = ({
       const currentTheme = getCurrentTheme();
       setColor({
         mainColor:
-          color?.mainColor || currentTheme["color-primary"] || "#0b3d91",
+          color?.mainColor || currentTheme["color-primary"] || "#0141a3",
         secondaryColor:
-          color?.secondaryColor || currentTheme["color-secondary"] || "#f59e0b",
+          color?.secondaryColor || currentTheme["color-secondary"] || "#ff9300",
       });
     }
     // Nota: intencionalmente NO dependemos de `color` para evitar
@@ -93,7 +93,7 @@ const ThemeModal = ({
       </div>
 
       <h3 className="font-bold text-xl">Vista previa</h3>
-      <div className="w-full grid grid-cols-7 border rounded-lg bg-white h-80">
+      <div className="w-full grid grid-cols-7 border rounded-lg bg-surface h-80">
         <div
           className="col-span-2"
           style={{ backgroundColor: color.mainColor }}
@@ -107,7 +107,10 @@ const ThemeModal = ({
           >
             <div
               className="w-1/3 h-10 rounded-lg flex items-center justify-center"
-              style={{ backgroundColor: color.secondaryColor, color: "#fff" }}
+              style={{
+                backgroundColor: color.secondaryColor,
+                color: getCurrentTheme()["color-surface"] || "#ffffff",
+              }}
             >
               Botón de prueba
             </div>
@@ -120,14 +123,14 @@ const ThemeModal = ({
           msj="Restaurar por defecto"
           onClick={handleReset}
           bg="bg-gray-500"
-          text="text-white"
+          text="text-surface"
           icon="RotateCcw"
         />
         <SimpleButton
           msj="Guardar cambios"
           onClick={handleThemeChange}
           bg="bg-accent"
-          text="text-white"
+          text="text-surface"
           icon="Save"
         />
       </div>

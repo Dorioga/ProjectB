@@ -24,12 +24,52 @@ const RegisterAsignature = () => {
   });
 
   const inputClassName =
-    "bg-white rounded-sm p-2 border border-gray-300 w-full focus:outline-none focus:ring-2 focus:ring-secondary";
+    "bg-surface rounded-sm p-2 border border-gray-300 w-full focus:outline-none focus:ring-2 focus:ring-secondary";
   const labelClassName = "text-lg font-semibold";
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [availableGrades, setAvailableGrades] = useState([]);
   const [loadingGrades, setLoadingGrades] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState({});
+
+  // Inicializar grupos expandidos cuando cambien los grados disponibles
+  useEffect(() => {
+    const groupNames = [
+      ...new Set(availableGrades.map((g) => g.nombre || "Sin nombre")),
+    ];
+    setExpandedGroups((prev) => {
+      const next = { ...prev };
+      groupNames.forEach((name) => {
+        if (!(name in next)) next[name] = true; // expandir por defecto
+      });
+      return next;
+    });
+  }, [availableGrades]);
+
+  const toggleGroup = (name) => {
+    setExpandedGroups((prev) => ({ ...prev, [name]: !prev[name] }));
+  };
+
+  const isGroupAllSelected = (grades) => {
+    const selected = Array.isArray(formData.grades_scholar)
+      ? formData.grades_scholar
+      : [];
+    return grades.every((g) => selected.includes(g.id));
+  };
+
+  const toggleSelectAllGroup = (grades) => {
+    setFormData((prev) => {
+      const current = new Set(prev.grades_scholar || []);
+      const ids = grades.map((g) => g.id);
+      const allSelected = ids.every((id) => current.has(id));
+      if (allSelected) {
+        ids.forEach((id) => current.delete(id));
+      } else {
+        ids.forEach((id) => current.add(id));
+      }
+      return { ...prev, grades_scholar: Array.from(current) };
+    });
+  };
 
   // Obtener fk_workday de la sede seleccionada para filtrar jornadas
   const sedeWorkday = useMemo(() => {
@@ -112,15 +152,6 @@ const RegisterAsignature = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.jornada, formData.sedeId]);
 
-  const allGradesSelected = useMemo(() => {
-    if (!Array.isArray(availableGrades) || availableGrades.length === 0)
-      return false;
-    const selected = new Set(
-      Array.isArray(formData.grades_scholar) ? formData.grades_scholar : [],
-    );
-    return availableGrades.every((grade) => selected.has(grade));
-  }, [availableGrades, formData.grades_scholar]);
-
   const toggleGrade = (gradeId) => {
     setFormData((prev) => {
       const current = Array.isArray(prev.grades_scholar)
@@ -132,27 +163,6 @@ const RegisterAsignature = () => {
         grades_scholar: exists
           ? current.filter((g) => g !== gradeId)
           : [...current, gradeId],
-      };
-    });
-  };
-
-  const toggleAllGrades = () => {
-    setFormData((prev) => {
-      const current = Array.isArray(prev.grades_scholar)
-        ? prev.grades_scholar
-        : [];
-
-      if (!Array.isArray(availableGrades) || availableGrades.length === 0) {
-        return prev;
-      }
-
-      const selected = new Set(current);
-      const allGradeIds = availableGrades.map((g) => g.id);
-      const everySelected = allGradeIds.every((id) => selected.has(id));
-
-      return {
-        ...prev,
-        grades_scholar: everySelected ? [] : allGradeIds,
       };
     });
   };
@@ -296,36 +306,126 @@ const RegisterAsignature = () => {
             </div>
           ) : (
             <>
-              <label className="flex items-center gap-2 bg-white rounded-sm p-2 border border-gray-300 mt-2">
-                <input
-                  type="checkbox"
-                  checked={allGradesSelected}
-                  onChange={toggleAllGrades}
-                />
-                <span>Seleccionar todos</span>
-              </label>
+              {/* Agrupar grados por nombre de asignatura con controles y conteos */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-2">
+                {(() => {
+                  const grouped = availableGrades.reduce((acc, g) => {
+                    const key = g.nombre || "Sin nombre";
+                    if (!acc[key]) acc[key] = [];
+                    acc[key].push(g);
+                    return acc;
+                  }, {});
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mt-2">
-                {availableGrades.map((grade) => {
-                  const checked = Array.isArray(formData.grades_scholar)
-                    ? formData.grades_scholar.includes(grade.id)
-                    : false;
-                  return (
-                    <label
-                      key={grade.id}
-                      className="flex items-center gap-2 bg-white rounded-sm p-2 border border-gray-300"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => toggleGrade(grade.id)}
-                      />
-                      <span>
-                        {grade.nombre} - {grade.grupo}
-                      </span>
-                    </label>
+                  const entries = Object.entries(grouped).sort((a, b) =>
+                    a[0].localeCompare(b[0]),
                   );
-                })}
+
+                  return entries.map(([name, grades]) => {
+                    // Orden numérico ascendente cuando sea posible, fallback a comparación de cadenas
+                    grades.sort((x, y) => {
+                      const a = String(x.grupo ?? "").trim();
+                      const b = String(y.grupo ?? "").trim();
+
+                      const na = parseFloat(a.replace(/[^0-9.\-]+/g, ""));
+                      const nb = parseFloat(b.replace(/[^0-9.\-]+/g, ""));
+
+                      if (!Number.isNaN(na) && !Number.isNaN(nb)) {
+                        return na - nb;
+                      }
+
+                      // Si no son numéricos, comparar por texto
+                      return a.localeCompare(b);
+                    });
+                    const expanded = Boolean(expandedGroups[name]);
+                    const allSelected = isGroupAllSelected(grades);
+                    const selectedCount = grades.filter((g) =>
+                      Array.isArray(formData.grades_scholar)
+                        ? formData.grades_scholar.includes(g.id)
+                        : false,
+                    ).length;
+
+                    return (
+                      <div key={name} className="p-2 rounded">
+                        <div className="flex items-center justify-between p-2 bg-primary rounded-lg">
+                          <div className="flex items-center gap-3 rounded">
+                            <div className="font-semibold bg-surface px-2 py-1 rounded">
+                              Grado {name}
+                            </div>
+                            <div className="text-sm opacity-70">
+                              (
+                              <span className="text-surface font-semibold">
+                                {grades.length}
+                              </span>
+                              {selectedCount > 0 && (
+                                <>
+                                  {" "}
+                                  <span className="text-surface font-semibold">
+                                    • {selectedCount} seleccionados
+                                  </span>
+                                </>
+                              )}
+                              )
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <SimpleButton
+                              type="button"
+                              onClick={() => toggleSelectAllGroup(grades)}
+                              icon={allSelected ? "Square" : "CheckSquare"}
+                              msjtooltip={
+                                allSelected
+                                  ? "Deseleccionar"
+                                  : "Seleccionar todo"
+                              }
+                              noRounded={false}
+                              bg={"bg-primary"}
+                              text={"text-surface"}
+                              className="w-auto px-2 py-0.5 text-xs"
+                            />
+                            <SimpleButton
+                              type="button"
+                              onClick={() => toggleGroup(name)}
+                              icon={expanded ? "EyeOff" : "Eye"}
+                              msjtooltip={expanded ? "Ocultar" : "Mostrar"}
+                              noRounded={false}
+                              bg={"bg-primary"}
+                              text={"text-surface"}
+                              className="w-auto px-2 py-0.5 text-xs"
+                            />
+                          </div>
+                        </div>
+
+                        {expanded && (
+                          <div className="grid grid-cols-2 gap-2 py-2">
+                            {grades.map((grade) => {
+                              const checked = Array.isArray(
+                                formData.grades_scholar,
+                              )
+                                ? formData.grades_scholar.includes(grade.id)
+                                : false;
+                              return (
+                                <label
+                                  key={grade.id}
+                                  className="flex items-center gap-2 bg-surface rounded-sm p-2 border border-gray-300"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={() => toggleGrade(grade.id)}
+                                  />
+                                  <span className="text-primary font-medium">
+                                    {grade.grupo}
+                                  </span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             </>
           )}
@@ -335,7 +435,7 @@ const RegisterAsignature = () => {
           <div className="w-full md:w-1/2">
             <SimpleButton
               msj="Registrar asignatura"
-              text={"text-white"}
+              text={"text-surface"}
               bg={"bg-accent"}
               icon={"Save"}
               disabled={isSubmitting || schoolLoading}

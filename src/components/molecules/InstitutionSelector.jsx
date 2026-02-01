@@ -8,7 +8,7 @@ const InstitutionSelector = ({
   value = "",
   onChange,
   placeholder = "Seleccionar tipo de institución",
-  className = "w-full p-2 border rounded bg-white",
+  className = "w-full p-2 border rounded bg-surface",
   disabled = false,
   autoLoad = true,
 }) => {

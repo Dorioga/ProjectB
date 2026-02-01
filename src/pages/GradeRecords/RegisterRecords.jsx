@@ -52,7 +52,7 @@ const RegisterRecords = () => {
   const sedeWorkday = useMemo(() => {
     if (!sedeSelected || !Array.isArray(institutionSedes)) return null;
     const sede = institutionSedes.find(
-      (s) => String(s?.id) === String(sedeSelected)
+      (s) => String(s?.id) === String(sedeSelected),
     );
     return sede?.fk_workday ? String(sede.fk_workday) : null;
   }, [sedeSelected, institutionSedes]);
@@ -317,7 +317,7 @@ const RegisterRecords = () => {
           <SedeSelect
             value={sedeSelected}
             onChange={(e) => setSedeSelected(e.target.value)}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
             labelClassName="text-lg font-semibold"
             disabled={rol === "7" || rol === 7}
             data={teacherSedeData}
@@ -328,7 +328,7 @@ const RegisterRecords = () => {
             labelClassName="text-lg font-semibold"
             value={gradeSelected}
             onChange={(e) => setGradeSelected(e.target.value)}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
             sedeId={sedeSelected}
             workdayId={workdaySelected}
             customFetchMethod={getTeacherGrades}
@@ -340,7 +340,7 @@ const RegisterRecords = () => {
             labelClassName="text-lg font-semibold"
             value={asignatureSelected}
             onChange={(e) => setAsignatureSelected(e.target.value)}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
             sedeId={sedeSelected}
             workdayId={workdaySelected}
             customFetchMethod={getTeacherSubjects}
@@ -348,7 +348,7 @@ const RegisterRecords = () => {
             onJourneyDetected={(journeyId) => {
               console.log(
                 "RegisterRecords - Jornada detectada de asignatura:",
-                journeyId
+                journeyId,
               );
               setWorkdaySelected(String(journeyId));
             }}
@@ -359,7 +359,7 @@ const RegisterRecords = () => {
             labelClassName="text-lg font-semibold"
             value={workdaySelected}
             onChange={(e) => setWorkdaySelected(e.target.value)}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
             filterValue={sedeWorkday}
             includeAmbas={false}
           />
@@ -370,7 +370,7 @@ const RegisterRecords = () => {
             labelClassName="text-lg font-semibold"
             value={periodSelected}
             onChange={(e) => setPeriodSelected(e.target.value)}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-2 border rounded bg-surface"
             autoLoad={true}
           />
 
@@ -381,7 +381,7 @@ const RegisterRecords = () => {
             <input
               type="number"
               min={1}
-              className="w-full p-2 border rounded bg-white"
+              className="w-full p-2 border rounded bg-surface"
               value={numberRecords || ""}
               onChange={(e) => setNumberRecords(Number(e.target.value))}
               disabled={!canSetNumberRecords}
@@ -415,13 +415,13 @@ const RegisterRecords = () => {
             {auxRecords.map((rec, idx) => (
               <div
                 key={idx}
-                className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-white border border-gray-300 rounded-sm p-3"
+                className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-surface border border-gray-300 rounded-sm p-3"
               >
                 <div>
                   <label className="text-sm font-semibold">Nombre</label>
                   <input
                     type="text"
-                    className="w-full p-2 border rounded bg-white"
+                    className="w-full p-2 border rounded bg-surface"
                     value={rec?.name ?? ""}
                     onChange={(e) =>
                       handleRecordChange(idx, "name", e.target.value)
@@ -439,7 +439,7 @@ const RegisterRecords = () => {
                       type="number"
                       step="0.01"
                       min={0}
-                      className="w-full p-2 border rounded bg-white"
+                      className="w-full p-2 border rounded bg-surface"
                       value={rec?.porcentual ?? 0}
                       onChange={(e) =>
                         handlePorcentualChange(idx, e.target.value)
@@ -460,7 +460,7 @@ const RegisterRecords = () => {
                   <label className="text-sm font-semibold">Logros</label>
                   <input
                     type="text"
-                    className="w-full p-2 border rounded bg-white"
+                    className="w-full p-2 border rounded bg-surface"
                     value={rec?.goal ?? ""}
                     onChange={(e) =>
                       handleRecordChange(idx, "goal", e.target.value)
@@ -472,12 +472,12 @@ const RegisterRecords = () => {
             ))}
 
             {isTest ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-white border border-gray-300 rounded-sm p-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-surface border border-gray-300 rounded-sm p-3">
                 <div>
                   <label className="text-sm font-semibold">Nombre</label>
                   <input
                     type="text"
-                    className="w-full p-2 border rounded bg-white"
+                    className="w-full p-2 border rounded bg-surface"
                     value="Examen final"
                     readOnly
                   />
@@ -489,7 +489,7 @@ const RegisterRecords = () => {
                   </label>
                   <input
                     type="text"
-                    className="w-full p-2 border rounded bg-white"
+                    className="w-full p-2 border rounded bg-surface"
                     value="20"
                     readOnly
                   />
@@ -499,7 +499,7 @@ const RegisterRecords = () => {
                   <label className="text-sm font-semibold">Logros</label>
                   <input
                     type="text"
-                    className="w-full p-2 border rounded bg-white"
+                    className="w-full p-2 border rounded bg-surface"
                     value={finalTest.goal}
                     onChange={(e) =>
                       setFinalTest((prev) => ({
@@ -519,7 +519,7 @@ const RegisterRecords = () => {
           <div className="w-full md:w-1/2">
             <SimpleButton
               msj="Registrar notas"
-              text={"text-white"}
+              text={"text-surface"}
               bg={"bg-accent"}
               icon={"Save"}
               disabled={loadingSchool}

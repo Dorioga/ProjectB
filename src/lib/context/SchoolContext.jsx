@@ -27,7 +27,7 @@ export function SchoolProvider({ children }) {
   const [loadingPeriods, setLoadingPeriods] = useState(false);
   const [errorPeriods, setErrorPeriods] = useState(null);
   const [pathSignature, setPathSignature] = useState(
-    "https://a.storyblok.com/f/191576/1200x800/b7ad4902a2/signature_maker_after_.webp"
+    "https://a.storyblok.com/f/191576/1200x800/b7ad4902a2/signature_maker_after_.webp",
   );
 
   const journeysLoadedRef = useRef(false);
@@ -38,7 +38,7 @@ export function SchoolProvider({ children }) {
     setErrorSedes(null);
     try {
       const res = await schoolService.getSedes(params);
-      setSedes(Array.isArray(res) ? res : res?.data ?? []);
+      setSedes(Array.isArray(res) ? res : (res?.data ?? []));
     } catch (err) {
       setErrorSedes(err);
     } finally {
@@ -60,12 +60,12 @@ export function SchoolProvider({ children }) {
       if (Array.isArray(journeysData)) {
         setJourneys(journeysData);
         console.log(
-          `SchoolContext: ${journeysData.length} jornadas cargadas en el contexto`
+          `SchoolContext: ${journeysData.length} jornadas cargadas en el contexto`,
         );
       } else {
         console.warn(
           "SchoolContext: respuesta de getJourneys no es un array",
-          journeysData
+          journeysData,
         );
         setJourneys([]);
       }
@@ -90,11 +90,11 @@ export function SchoolProvider({ children }) {
       const periodsData = await schoolService.getPeriods();
       const periodsArray = Array.isArray(periodsData)
         ? periodsData
-        : periodsData?.data ?? [];
+        : (periodsData?.data ?? []);
 
       setPeriods(periodsArray);
       console.log(
-        `SchoolContext: ${periodsArray.length} períodos cargados en el contexto`
+        `SchoolContext: ${periodsArray.length} períodos cargados en el contexto`,
       );
     } catch (err) {
       console.error("Error al cargar períodos:", err);
@@ -111,7 +111,7 @@ export function SchoolProvider({ children }) {
     setErrorRecords(null);
     try {
       const res = await schoolService.loadRecords(params);
-      setRecords(Array.isArray(res) ? res : res?.data ?? []);
+      setRecords(Array.isArray(res) ? res : (res?.data ?? []));
     } catch (err) {
       setErrorRecords(err);
     } finally {
@@ -125,7 +125,7 @@ export function SchoolProvider({ children }) {
     try {
       const res = await schoolService.getSchools();
       // Ajusta según la forma en que tu API devuelve los datos
-      setSchools(Array.isArray(res) ? res : res?.data ?? []);
+      setSchools(Array.isArray(res) ? res : (res?.data ?? []));
     } catch (err) {
       setError(err);
       // No volver a lanzar aquí para no interrumpir el montaje
@@ -172,7 +172,7 @@ export function SchoolProvider({ children }) {
     try {
       const updated = await schoolService.updateSchool(id, payload);
       setSchools((s) =>
-        s.map((x) => (x.id === id || x._id === id ? updated : x))
+        s.map((x) => (x.id === id || x._id === id ? updated : x)),
       );
 
       // Emitir notificación de éxito
@@ -215,6 +215,24 @@ export function SchoolProvider({ children }) {
       eventBus.emit("¡Profesor registrado exitosamente!", "success");
 
       return result;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateTeacher = async (id, payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const updated = await schoolService.updateTeacher(id, payload);
+
+      // Emitir notificación de éxito
+      eventBus.emit("¡Profesor actualizado exitosamente!", "success");
+
+      return updated;
     } catch (err) {
       setError(err);
       throw err;
@@ -331,7 +349,7 @@ export function SchoolProvider({ children }) {
     }
   };
 
-  const getInstitution = async () => {
+  const getInstitution = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -343,7 +361,7 @@ export function SchoolProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const getTeacherGrades = async (payload) => {
     setLoading(true);
@@ -405,7 +423,7 @@ export function SchoolProvider({ children }) {
     }
   };
 
-  const fetchAllStudents = async (payload) => {
+  const fetchAllStudents = useCallback(async (payload) => {
     setLoading(true);
     setError(null);
     try {
@@ -418,9 +436,9 @@ export function SchoolProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchAllTeachers = async (payload) => {
+  const fetchAllTeachers = useCallback(async (payload) => {
     setLoading(true);
     setError(null);
     try {
@@ -433,7 +451,7 @@ export function SchoolProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   return (
     <SchoolContext.Provider

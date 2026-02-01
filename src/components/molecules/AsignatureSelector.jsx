@@ -8,7 +8,7 @@ const AsignatureSelector = ({
   value = "",
   onChange,
   placeholder = "Selecciona una asignatura",
-  className = "w-full p-2 border rounded bg-white",
+  className = "w-full p-2 border rounded bg-surface",
   disabled = false,
   sedeId = null,
   workdayId = null,
@@ -31,7 +31,7 @@ const AsignatureSelector = ({
     "AsignatureSelector RENDER - workdayId:",
     workdayId,
     "additionalParamsStr:",
-    additionalParamsStr
+    additionalParamsStr,
   );
 
   // Cargar asignaturas cuando cambie la sede o jornada
@@ -70,7 +70,7 @@ const AsignatureSelector = ({
           "AsignatureSelector - Cargando asignaturas con payload:",
           payload,
           "usingCustomMethod:",
-          !!customFetchMethod
+          !!customFetchMethod,
         );
         const response = await fetchMethod(payload);
         console.log("AsignatureSelector - Respuesta:", response);
@@ -79,8 +79,8 @@ const AsignatureSelector = ({
         const data = Array.isArray(response)
           ? response
           : Array.isArray(response?.data)
-          ? response.data
-          : [];
+            ? response.data
+            : [];
 
         console.log("AsignatureSelector - Asignaturas procesadas:", data);
         setAsignaturas(data);
@@ -127,19 +127,19 @@ const AsignatureSelector = ({
     ? isLoading
       ? "Cargando asignaturas..."
       : error
-      ? "Error al cargar asignaturas"
-      : items.length === 0
-      ? "No hay asignaturas disponibles"
-      : placeholder
+        ? "Error al cargar asignaturas"
+        : items.length === 0
+          ? "No hay asignaturas disponibles"
+          : placeholder
     : !sedeId || !workdayId
-    ? "Selecciona primero una sede y jornada"
-    : isLoading
-    ? "Cargando asignaturas..."
-    : error
-    ? "Error al cargar asignaturas"
-    : items.length === 0
-    ? "No hay asignaturas disponibles"
-    : placeholder;
+      ? "Selecciona primero una sede y jornada"
+      : isLoading
+        ? "Cargando asignaturas..."
+        : error
+          ? "Error al cargar asignaturas"
+          : items.length === 0
+            ? "No hay asignaturas disponibles"
+            : placeholder;
 
   // Manejar el cambio de asignatura
   const handleChange = (e) => {
@@ -155,7 +155,7 @@ const AsignatureSelector = ({
       // Buscar la asignatura seleccionada en los datos originales
       const selectedAsignature = asignaturas.find(
         (asig) =>
-          String(asig?.id_asignatura || asig?.id || "") === String(selectedId)
+          String(asig?.id_asignatura || asig?.id || "") === String(selectedId),
       );
 
       if (selectedAsignature?.id_jornada) {
@@ -163,7 +163,7 @@ const AsignatureSelector = ({
           "AsignatureSelector - Jornada detectada al seleccionar:",
           selectedAsignature.id_jornada,
           "nombre:",
-          selectedAsignature.nombre_jornada
+          selectedAsignature.nombre_jornada,
         );
         onJourneyDetected(selectedAsignature.id_jornada);
       }

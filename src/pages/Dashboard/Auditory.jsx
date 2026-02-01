@@ -96,14 +96,14 @@ const Auditory = () => {
               msj="Ver"
               icon="Eye"
               bg="bg-blue-500"
-              text="text-white"
+              text="text-surface"
               noRounded={true}
             />
           </div>
         ),
       },
     ],
-    []
+    [],
   );
 
   return (
@@ -115,7 +115,7 @@ const Auditory = () => {
           msj="Crear"
           icon="Plus"
           bg="bg-blue-500"
-          text="text-white"
+          text="text-surface"
         />
       </div>
       <DataTable data={data} columns={columns} fileName="Reporte_Auditorias" />

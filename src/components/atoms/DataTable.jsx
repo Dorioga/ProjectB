@@ -1,5 +1,5 @@
 // filepath: src/components/molecules/DataTable.jsx
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -13,7 +13,14 @@ import { FileUp } from "lucide-react";
 import SimpleButton from "./SimpleButton";
 import DocumentModal from "../molecules/DocumentModal";
 
-const DataTable = ({ data, columns, fileName = "export", mode = null }) => {
+const DataTable = ({
+  data,
+  columns,
+  fileName = "export",
+  mode = null,
+  refreshKey = 0,
+  showDownloadButtons = true,
+}) => {
   const [sorting, setSorting] = useState([]);
   const [globalFilter, setGlobalFilter] = useState("");
   const tableRef = useRef(null);
@@ -72,6 +79,16 @@ const DataTable = ({ data, columns, fileName = "export", mode = null }) => {
     getSortedRowModel: getSortedRowModel(),
   });
 
+  // Asegurar que react-table use la última data cuando cambie la prop o se requiera un refresh
+  useEffect(() => {
+    try {
+      table.setOptions((prev) => ({ ...prev, data }));
+    } catch (err) {
+      console.warn("DataTable: error en setOptions ->", err);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, refreshKey]);
+
   const handleExport = () => {
     // Obtener todas las filas filtradas
     const filteredRows = table.getFilteredRowModel().rows;
@@ -128,13 +145,12 @@ const DataTable = ({ data, columns, fileName = "export", mode = null }) => {
           value={globalFilter ?? ""}
           onChange={(e) => setGlobalFilter(e.target.value)}
           placeholder="Buscar en la tabla..."
-          className="border p-2 rounded col-span-2 bg-white"
+          className="border p-2 rounded col-span-2 bg-surface"
         />
 
         <div className="grid grid-cols-2  col-span-4  gap-4">
-          {mode !== null && (
+          {mode !== null && showDownloadButtons && (
             <>
-              {" "}
               <SimpleButton
                 onClick={() => {
                   setIsOpen(true);
@@ -142,7 +158,7 @@ const DataTable = ({ data, columns, fileName = "export", mode = null }) => {
                 }}
                 bg="bg-green-600"
                 icon="Download"
-                text="text-white"
+                text="text-surface"
                 msj="Descargar archivos (Habeas Data)"
               />
               <SimpleButton
@@ -152,7 +168,7 @@ const DataTable = ({ data, columns, fileName = "export", mode = null }) => {
                 }}
                 bg="bg-green-600"
                 icon="Download"
-                text="text-white"
+                text="text-surface"
                 msj="Descargar archivos de auditoria"
               />
             </>
@@ -168,7 +184,7 @@ const DataTable = ({ data, columns, fileName = "export", mode = null }) => {
             onClick={handleExport}
             bg="bg-green-600"
             icon="FileUp"
-            text="text-white"
+            text="text-surface"
             msj="Exportar a Excel"
           />
         </div>
@@ -176,7 +192,7 @@ const DataTable = ({ data, columns, fileName = "export", mode = null }) => {
 
       <div className="overflow-x-auto rounded-lg border">
         <table ref={tableRef} className="w-full">
-          <thead className="bg-primary text-white">
+          <thead className="bg-primary text-surface">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
@@ -217,7 +233,7 @@ const DataTable = ({ data, columns, fileName = "export", mode = null }) => {
           </thead>
           <tbody>
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="border-b bg-white hover:bg-gray-50">
+              <tr key={row.id} className="border-b bg-surface hover:bg-gray-50">
                 {row.getVisibleCells().map((cell) => (
                   <td
                     key={cell.id}

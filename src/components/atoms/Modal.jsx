@@ -50,17 +50,17 @@ const Modal = ({
     >
       <div
         ref={containerRef}
-        className={`bg-white rounded shadow-lg w-full max-h-[90vh] flex flex-col ${
+        className={`bg-surface rounded shadow-lg w-full max-h-[90vh] flex flex-col ${
           sizeClasses[size] || sizeClasses.lg
         }`}
         onMouseDown={(e) => e.stopPropagation()}
       >
         {title && (
-          <div className="w-full text-xl flex flex-row justify-between items-center font-semibold bg-primary text-white p-6 rounded-t shrink-0">
+          <div className="w-full text-xl flex flex-row justify-between items-center font-semibold bg-primary text-surface p-6 rounded-t shrink-0">
             {title}
             <div className="bg-error rounded-full">
               <CircleX
-                className="cursor-pointer text-white h-10 w-10"
+                className="cursor-pointer text-surface h-10 w-10"
                 onClick={onClose}
                 role="button"
                 aria-label="Cerrar"

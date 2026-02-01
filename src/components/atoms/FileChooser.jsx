@@ -30,7 +30,7 @@ const FileChooser = ({
 
   const removeFile = (indexToRemove) => {
     const newFiles = selectedFiles.filter(
-      (_, index) => index !== indexToRemove
+      (_, index) => index !== indexToRemove,
     );
     setSelectedFiles(newFiles);
     if (onChange) {
@@ -67,7 +67,7 @@ const FileChooser = ({
           ${
             disabled
               ? "bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed"
-              : "bg-white text-primary border-primary hover:bg-primary hover:text-white cursor-pointer"
+              : "bg-surface text-primary border-primary hover:bg-primary hover:text-surface cursor-pointer"
           }
         `}
       >

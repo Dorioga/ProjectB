@@ -59,7 +59,7 @@ const RegisterStudentRecords = () => {
   const sedeWorkday = useMemo(() => {
     if (!sedeSelected || !Array.isArray(institutionSedes)) return null;
     const sede = institutionSedes.find(
-      (s) => String(s?.id) === String(sedeSelected)
+      (s) => String(s?.id) === String(sedeSelected),
     );
     return sede?.fk_workday ? String(sede.fk_workday) : null;
   }, [sedeSelected, institutionSedes]);
@@ -74,12 +74,12 @@ const RegisterStudentRecords = () => {
 
   const canShowStudents = Boolean(
     sedeSelected &&
-      gradeSelected &&
-      asignatureSelected &&
-      workdaySelected &&
-      periodSelected &&
-      journey &&
-      asignatureCode
+    gradeSelected &&
+    asignatureSelected &&
+    workdaySelected &&
+    periodSelected &&
+    journey &&
+    asignatureCode,
   );
 
   // Si el rol es 7, cargar idsede y establecerlo como seleccionado
@@ -158,13 +158,13 @@ const RegisterStudentRecords = () => {
         // Guardar las notas
         const notesArray = Array.isArray(notesResponse)
           ? notesResponse
-          : notesResponse?.data ?? [];
+          : (notesResponse?.data ?? []);
         setNotesFromService(notesArray);
 
         // Guardar los estudiantes
         const studentsArray = Array.isArray(studentsResponse)
           ? studentsResponse
-          : studentsResponse?.data ?? [];
+          : (studentsResponse?.data ?? []);
         setStudentsFromService(studentsArray);
 
         // Limpiar valores y comentarios cuando cambian los parámetros
@@ -301,7 +301,7 @@ const RegisterStudentRecords = () => {
       // Agregar una entrada por cada nota del estudiante
       recordsList.forEach((record) => {
         const recordName = String(
-          record?.nombre_nota ?? record?.name ?? ""
+          record?.nombre_nota ?? record?.name ?? "",
         ).trim();
         const noteValue = values?.[recordName];
 
@@ -355,7 +355,7 @@ const RegisterStudentRecords = () => {
         <SedeSelect
           value={sedeSelected}
           onChange={(e) => setSedeSelected(e.target.value)}
-          className="w-full p-2 border rounded bg-white"
+          className="w-full p-2 border rounded bg-surface"
           labelClassName="text-lg font-semibold"
           disabled={rol === "7" || rol === 7}
           data={teacherSedeData}
@@ -366,7 +366,7 @@ const RegisterStudentRecords = () => {
           labelClassName="text-lg font-semibold"
           value={gradeSelected}
           onChange={(e) => setGradeSelected(e.target.value)}
-          className="w-full p-2 border rounded bg-white"
+          className="w-full p-2 border rounded bg-surface"
           sedeId={sedeSelected}
           workdayId={workdaySelected}
           customFetchMethod={getTeacherGrades}
@@ -378,7 +378,7 @@ const RegisterStudentRecords = () => {
           labelClassName="text-lg font-semibold"
           value={asignatureSelected}
           onChange={(e) => setAsignatureSelected(e.target.value)}
-          className="w-full p-2 border rounded bg-white"
+          className="w-full p-2 border rounded bg-surface"
           sedeId={sedeSelected}
           workdayId={workdaySelected}
           customFetchMethod={getTeacherSubjects}
@@ -393,7 +393,7 @@ const RegisterStudentRecords = () => {
           labelClassName="text-lg font-semibold"
           value={workdaySelected}
           onChange={(e) => setWorkdaySelected(e.target.value)}
-          className="w-full p-2 border rounded bg-white"
+          className="w-full p-2 border rounded bg-surface"
           filterValue={sedeWorkday}
           includeAmbas={false}
         />
@@ -404,7 +404,7 @@ const RegisterStudentRecords = () => {
           labelClassName="text-lg font-semibold"
           value={periodSelected}
           onChange={(e) => setPeriodSelected(e.target.value)}
-          className="w-full p-2 border rounded bg-white"
+          className="w-full p-2 border rounded bg-surface"
           autoLoad={true}
         />
       </div>
@@ -457,7 +457,10 @@ const RegisterStudentRecords = () => {
             No hay estudiantes para los filtros seleccionados.
           </div>
         ) : (
-          <form onSubmit={handleSubmitAll} className="bg-white border rounded">
+          <form
+            onSubmit={handleSubmitAll}
+            className="bg-surface border rounded"
+          >
             <div className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
               <div className="text-sm opacity-80">
                 Estudiantes:{" "}
@@ -474,12 +477,12 @@ const RegisterStudentRecords = () => {
 
             <div className="overflow-x-auto">
               <table className="w-full min-w-[920px]">
-                <thead className="bg-primary text-white font-semibold">
+                <thead className="bg-primary text-surface font-semibold">
                   <tr>
                     <th className="p-3 text-left">Estudiante</th>
                     {recordsList.map((r) => {
                       const recordName = String(
-                        r?.nombre_nota ?? r?.name ?? ""
+                        r?.nombre_nota ?? r?.name ?? "",
                       ).trim();
                       if (!recordName) return null;
                       const porcentual = Number(r?.porcentaje ?? r?.porcentual);
@@ -513,7 +516,7 @@ const RegisterStudentRecords = () => {
                     return (
                       <tr
                         key={studentKey}
-                        className="border-t bg-white hover:bg-gray-50"
+                        className="border-t bg-surface hover:bg-gray-50"
                       >
                         <td className="p-3 align-top">
                           <div className="font-medium">
@@ -527,7 +530,7 @@ const RegisterStudentRecords = () => {
 
                         {recordsList.map((r) => {
                           const recordName = String(
-                            r?.nombre_nota ?? r?.name ?? ""
+                            r?.nombre_nota ?? r?.name ?? "",
                           ).trim();
                           if (!recordName) return null;
                           const value = studentValues?.[recordName] ?? "";
@@ -547,10 +550,10 @@ const RegisterStudentRecords = () => {
                                   handleRecordValueChange(
                                     studentKey,
                                     recordName,
-                                    sanitizeGradeInput(e.target.value)
+                                    sanitizeGradeInput(e.target.value),
                                   )
                                 }
-                                className="w-full p-2 border rounded bg-white text-center"
+                                className="w-full p-2 border rounded bg-surface text-center"
                                 placeholder="1.00"
                                 disabled={loadingData}
                               />
@@ -577,7 +580,7 @@ const RegisterStudentRecords = () => {
                             onChange={(e) =>
                               handleCommentChange(studentKey, e.target.value)
                             }
-                            className="w-full min-w-[200px] p-2 border rounded bg-white resize-y"
+                            className="w-full min-w-[200px] p-2 border rounded bg-surface resize-y"
                             placeholder="Escribe un comentario..."
                             rows={2}
                             disabled={loadingData}
@@ -595,7 +598,7 @@ const RegisterStudentRecords = () => {
                 <SimpleButton
                   type="submit"
                   msj="Guardar notas"
-                  text="text-white"
+                  text="text-surface"
                   bg="bg-accent"
                   icon="Save"
                   disabled={

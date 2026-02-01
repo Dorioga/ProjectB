@@ -41,7 +41,7 @@ const PDFViewerModal = ({
             msj="Descargar documento"
             icon="Download"
             bg="bg-accent"
-            text="text-white"
+            text="text-surface"
           ></SimpleButton>
         </div>
       </div>
