@@ -32,12 +32,11 @@ export async function exportElementToPNG(
   } = options;
 
   await waitForFonts();
-  backgroundColor =
-    backgroundColor ?? getCurrentTheme()["color-surface"] ?? "#ffffff";
+  const bg = backgroundColor ?? getCurrentTheme()["color-surface"] ?? "#ffffff";
 
   const canvas = await html2canvas(element, {
     scale,
-    backgroundColor,
+    backgroundColor: bg,
     useCORS,
     logging,
   });
@@ -72,12 +71,11 @@ export async function exportCardToPDF(frontEl, backEl, opts = {}) {
   } = opts;
 
   await waitForFonts();
-  backgroundColor =
-    backgroundColor ?? getCurrentTheme()["color-surface"] ?? "#ffffff";
+  const bg = backgroundColor ?? getCurrentTheme()["color-surface"] ?? "#ffffff";
 
   const [frontCanvas, backCanvas] = await Promise.all([
-    html2canvas(frontEl, { scale, backgroundColor, useCORS, logging }),
-    html2canvas(backEl, { scale, backgroundColor, useCORS, logging }),
+    html2canvas(frontEl, { scale, backgroundColor: bg, useCORS, logging }),
+    html2canvas(backEl, { scale, backgroundColor: bg, useCORS, logging }),
   ]);
 
   const frontImg = frontCanvas.toDataURL("image/png");
