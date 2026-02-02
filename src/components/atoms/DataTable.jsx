@@ -190,7 +190,7 @@ const DataTable = ({
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border">
+      <div className=" rounded-lg border">
         <table ref={tableRef} className="w-full">
           <thead className="bg-primary text-surface">
             {table.getHeaderGroups().map((headerGroup) => (
