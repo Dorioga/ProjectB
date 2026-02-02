@@ -134,19 +134,6 @@ export function SchoolProvider({ children }) {
     }
   }, []);
 
-  // Eliminados los useEffect automáticos para cargar solo cuando se necesite
-  // useEffect(() => {
-  //   loadSchools();
-  // }, [loadSchools]);
-
-  // useEffect(() => {
-  //   loadSedes();
-  // }, [loadSedes]);
-
-  // useEffect(() => {
-  //   loadJourneys();
-  // }, [loadJourneys]);
-
   const addSchool = async (payload) => {
     setLoading(true);
     setError(null);
@@ -241,6 +228,37 @@ export function SchoolProvider({ children }) {
     }
   };
 
+  const updateSede = async (institutionId, sedeId, payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const updated = await schoolService.updateSede(
+        institutionId,
+        sedeId,
+        payload,
+      );
+
+      // Actualizar cache local de sedes si existe
+      setSedes((s) =>
+        (s || []).map((x) =>
+          x.id === sedeId || x.id_sede === sedeId
+            ? { ...x, ...(typeof updated === "object" ? updated : {}) }
+            : x,
+        ),
+      );
+
+      // Emitir notificación de éxito
+      eventBus.emit("¡Sede actualizada exitosamente!", "success");
+
+      return updated;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const removeSchool = async (id) => {
     setLoading(true);
     setError(null);
@@ -303,6 +321,157 @@ export function SchoolProvider({ children }) {
     }
   };
 
+  const getDataSede = async (payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      console.log("SchoolContext - getDataSede payload:", payload);
+      const result = await schoolService.getDataSede(payload);
+      return result;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getDataSchool = async (payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      console.log("SchoolContext - getDataSchool payload:", payload);
+      const result = await schoolService.getDataSchool(payload);
+      return result;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getDataTeacher = async (payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      console.log("SchoolContext - getDataTeacher payload:", payload);
+      const result = await schoolService.getDataTeacher(payload);
+
+      // Normalizar respuesta y construir objeto procesado:
+      // {
+      //   id_docente,
+      //   basic: { first_name, second_name, first_lastname, second_lastname, telephone, identification, email, fecha_nacimiento, direccion, nombre_sede },
+      //   subjects: [{ id_asignatura, asignatura, grades: [{ nombre_grado, grupo }] }],
+      //   estado
+      // }
+
+      const raw = Array.isArray(result) ? result : (result?.data ?? result);
+      const rows = Array.isArray(raw) ? raw : [];
+      const processed = {
+        id_docente: null,
+        basic: {},
+        subjects: [],
+        estado: "",
+      };
+
+      if (rows.length > 0) {
+        const base = rows[0];
+        processed.id_docente = base.id_docente ?? null;
+        processed.basic = {
+          first_name: base.primero_nombre || "",
+          second_name: base.segundo_nombre || "",
+          first_lastname: base.primer_apellido || "",
+          second_lastname: base.segundo_apellido || "",
+          telephone: base.telefono || "",
+          identification: base.numero_identificacion || "",
+          email: base.correo || "",
+          fecha_nacimiento: base.fecha_nacimiento || "",
+          direccion: base.direccion || "",
+          nombre_sede: base.nombre_sede || "",
+        };
+
+        // Agrupar asignaturas por id_asignatura y también por grupo (para mostrar grupos primero)
+        const map = new Map();
+        const groupMap = new Map();
+
+        rows.forEach((r) => {
+          const ids = String(r.ids_asignaturas ?? "")
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
+          const names = String(r.asignaturas ?? "")
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
+
+          for (let i = 0; i < ids.length; i++) {
+            const idAsig = parseInt(ids[i], 10);
+            const nameAsig = names[i] || ids[i];
+            const grupo = r.grupo;
+            const nombre_grado = r.nombre_grado;
+
+            // por asignatura (mantener subjects con groups)
+            const key = `${idAsig}`;
+            if (!map.has(key)) {
+              map.set(key, {
+                id_asignatura: idAsig,
+                asignatura: nameAsig,
+                groupsMap: new Map(),
+              });
+            }
+            const subj = map.get(key);
+            if (!subj.groupsMap.has(grupo))
+              subj.groupsMap.set(grupo, new Set());
+            subj.groupsMap.get(grupo).add(nombre_grado);
+
+            // por grupo (nuevo formato para mostrar grupos primero)
+            if (!groupMap.has(grupo)) groupMap.set(grupo, new Map());
+            const assignmentsForGroup = groupMap.get(grupo);
+            const assignKey = `${idAsig}-${nombre_grado}`;
+            if (!assignmentsForGroup.has(assignKey)) {
+              assignmentsForGroup.set(assignKey, {
+                id_asignatura: idAsig,
+                asignatura: nameAsig,
+                nombre_grado,
+                grupo,
+              });
+            }
+          }
+        });
+
+        // Convertir map a subjects con groups
+        processed.subjects = Array.from(map.values()).map((s) => {
+          const groups = Array.from(s.groupsMap.entries()).map(
+            ([grupo, set]) => ({
+              grupo,
+              grados: Array.from(set),
+            }),
+          );
+          delete s.groupsMap;
+          return { ...s, groups };
+        });
+
+        // Convertir groupMap a array { grupo, assignments: [...] }
+        processed.groups = Array.from(groupMap.entries()).map(
+          ([grupo, assignmentsMap]) => ({
+            grupo,
+            assignments: Array.from(assignmentsMap.values()),
+          }),
+        );
+
+        processed.estado = rows[0].estado ?? "";
+      }
+
+      return processed;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getGradeAsignature = async (payload) => {
     setLoading(true);
     setError(null);
@@ -335,19 +504,22 @@ export function SchoolProvider({ children }) {
     }
   };
 
-  const getTeacherSubjects = async (payload) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await schoolService.getTeacherSubjects(payload);
-      return result;
-    } catch (err) {
-      setError(err);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
+  const getTeacherSubjects = useCallback(
+    async (payload) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await schoolService.getTeacherSubjects(payload);
+        return result;
+      } catch (err) {
+        setError(err);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [setLoading, setError],
+  );
 
   const getInstitution = useCallback(async () => {
     setLoading(true);
@@ -363,47 +535,56 @@ export function SchoolProvider({ children }) {
     }
   }, []);
 
-  const getTeacherGrades = async (payload) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await schoolService.getTeacherGrades(payload);
-      return result;
-    } catch (err) {
-      setError(err);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
+  const getTeacherGrades = useCallback(
+    async (payload) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await schoolService.getTeacherGrades(payload);
+        return result;
+      } catch (err) {
+        setError(err);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [setLoading, setError],
+  );
 
-  const getStudentGrades = async (payload) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await schoolService.getStudentGrades(payload);
-      return result;
-    } catch (err) {
-      setError(err);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
+  const getStudentGrades = useCallback(
+    async (payload) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await schoolService.getStudentGrades(payload);
+        return result;
+      } catch (err) {
+        setError(err);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [setLoading, setError],
+  );
 
-  const getStudentNotes = async (payload) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await schoolService.getStudentNotes(payload);
-      return result;
-    } catch (err) {
-      setError(err);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
+  const getStudentNotes = useCallback(
+    async (payload) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await schoolService.getStudentNotes(payload);
+        return result;
+      } catch (err) {
+        setError(err);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [setLoading, setError],
+  );
 
   const saveAssignmentNotes = async (payload) => {
     setLoading(true);
@@ -484,6 +665,10 @@ export function SchoolProvider({ children }) {
         getGradeSede,
         registerAsignature,
         getSedeAsignature,
+        getDataSede,
+        getDataSchool,
+        getDataTeacher,
+        updateSede,
         getGradeAsignature,
         createNote,
         getTeacherSubjects,

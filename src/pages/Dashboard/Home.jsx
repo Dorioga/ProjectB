@@ -135,7 +135,7 @@ const DashHome = () => {
                 <Bar
                   dataKey="TARDE"
                   stackId="a"
-                  fill={getCurrentTheme()["color-primary"] || "#0141a3"}
+                  fill={getCurrentTheme()["color-primary"] || "#131a27"}
                   name="Tarde"
                 />
               </BarChart>

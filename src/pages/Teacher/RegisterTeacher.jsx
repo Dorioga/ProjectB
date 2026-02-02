@@ -3,7 +3,7 @@ import SimpleButton from "../../components/atoms/SimpleButton";
 import JourneySelect from "../../components/atoms/JourneySelect";
 import SedeSelect from "../../components/atoms/SedeSelect";
 import TypeDocumentSelector from "../../components/molecules/TypeDocumentSelector";
-import AsignatureSelector from "../../components/molecules/AsignatureSelector";
+import AsignatureGrades from "../../components/molecules/AsignatureGrades";
 import useSchool from "../../lib/hooks/useSchool";
 import useStudent from "../../lib/hooks/useStudent";
 import { sha256 } from "js-sha256";
@@ -15,7 +15,6 @@ const RegisterTeacher = ({ onSuccess }) => {
     sedes,
     reloadSedes,
     registerTeacher,
-    getGradeAsignature,
     loading: teacherLoading,
   } = useSchool();
   const { institutionSedes } = useData();
@@ -37,13 +36,20 @@ const RegisterTeacher = ({ onSuccess }) => {
     asignature: [],
   });
 
-  const [tempAsignature, setTempAsignature] = useState("");
-  const [tempAsignatureName, setTempAsignatureName] = useState("");
-  const [tempGrades, setTempGrades] = useState([]);
-  const [availableAsignatureGrades, setAvailableAsignatureGrades] = useState(
-    [],
-  );
-  const [loadingAsignatureGrades, setLoadingAsignatureGrades] = useState(false);
+  // El componente AsignatureGrades gestiona su estado interno y la carga de grados.
+  const handleAddAsignature = (asign) => {
+    setFormData((prev) => ({
+      ...prev,
+      asignature: [...prev.asignature, asign],
+    }));
+  };
+
+  const handleRemoveAsignature = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      asignature: prev.asignature.filter((_, i) => i !== index),
+    }));
+  };
 
   // Cargar estudiantes cuando se monta el componente
   useEffect(() => {
@@ -74,39 +80,6 @@ const RegisterTeacher = ({ onSuccess }) => {
     }));
   }, [formData.sede]);
 
-  // Cargar grados cuando se seleccione una asignatura
-  useEffect(() => {
-    if (!tempAsignature || !formData.sede) {
-      setAvailableAsignatureGrades([]);
-      return;
-    }
-
-    const loadGrades = async () => {
-      setLoadingAsignatureGrades(true);
-      try {
-        const payload = {
-          idAsignature: Number(tempAsignature),
-          idSede: Number(formData.sede),
-          idWorkDay: Number(formData.workday),
-        };
-        console.log("Payload para grados de asignatura:", payload);
-        const response = await getGradeAsignature(payload);
-
-        // Extraer los grados de la respuesta
-        const grades = Array.isArray(response) ? response : [];
-        setAvailableAsignatureGrades(grades);
-      } catch (error) {
-        console.error("Error al cargar grados de asignatura:", error);
-        setAvailableAsignatureGrades([]);
-      } finally {
-        setLoadingAsignatureGrades(false);
-      }
-    };
-
-    loadGrades();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tempAsignature, formData.sede]);
-
   // Auto-seleccionar jornada si fk_workday no es 3
   useEffect(() => {
     if (!sedeJornada) return;
@@ -135,47 +108,6 @@ const RegisterTeacher = ({ onSuccess }) => {
     setFormData((prev) => ({
       ...prev,
       [name]: finalValue,
-    }));
-  };
-
-  const toggleAsignatureGrade = (gradeId) => {
-    setTempGrades((prev) => {
-      const current = Array.isArray(prev) ? prev : [];
-      const exists = current.includes(gradeId);
-      return exists
-        ? current.filter((g) => g !== gradeId)
-        : [...current, gradeId];
-    });
-  };
-
-  const addAsignatureWithGrades = () => {
-    if (!tempAsignature || tempGrades.length === 0) {
-      return;
-    }
-
-    setFormData((prev) => ({
-      ...prev,
-      asignature: [
-        ...prev.asignature,
-        {
-          idAsignature: tempAsignature,
-          nameAsignature: tempAsignatureName,
-          grades: tempGrades,
-        },
-      ],
-    }));
-
-    // Limpiar formulario temporal
-    setTempAsignature("");
-    setTempAsignatureName("");
-    setTempGrades([]);
-    setAvailableAsignatureGrades([]);
-  };
-
-  const removeAsignature = (index) => {
-    setFormData((prev) => ({
-      ...prev,
-      asignature: prev.asignature.filter((_, i) => i !== index),
     }));
   };
 
@@ -413,114 +345,13 @@ const RegisterTeacher = ({ onSuccess }) => {
           />
         </div>
 
-        <div className="md:col-span-3 font-bold mt-4">Asignaturas y Grados</div>
-
-        {/* Formulario para agregar asignatura */}
-        <div className="md:col-span-3 border p-4 rounded bg-gray-50">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <AsignatureSelector
-              name="tempAsignature"
-              label="Seleccionar Asignatura"
-              value={tempAsignature}
-              onChange={(e) => {
-                const selectedId = e.target.value;
-                const selectedName =
-                  e.target.options[e.target.selectedIndex]?.text || "";
-                setTempAsignature(selectedId);
-                setTempAsignatureName(selectedName);
-              }}
-              sedeId={formData.sede}
-              workdayId={formData.workday}
-              labelClassName="font-semibold"
-            />
-          </div>
-
-          {/* Checkboxes de grados */}
-          {tempAsignature && (
-            <div className="mt-4">
-              <label className="font-semibold">
-                Grados donde dictará esta asignatura:
-              </label>
-              {!formData.sede || !formData.workday ? (
-                <div className="text-sm text-gray-600 mt-2">
-                  Selecciona primero una sede y jornada.
-                </div>
-              ) : loadingAsignatureGrades ? (
-                <div className="text-sm text-gray-600 mt-2">
-                  Cargando grados...
-                </div>
-              ) : availableAsignatureGrades.length === 0 ? (
-                <div className="text-sm text-gray-600 mt-2">
-                  No hay grados disponibles para esta asignatura.
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mt-2">
-                  {availableAsignatureGrades.map((grade) => {
-                    const gradeId = String(grade?.id_grado ?? "");
-                    const gradeName = String(grade?.grado ?? "");
-                    const checked = tempGrades.includes(gradeId);
-                    return (
-                      <label
-                        key={gradeId}
-                        className="flex items-center gap-2 bg-surface rounded-sm p-2 border border-gray-300"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => toggleAsignatureGrade(gradeId)}
-                        />
-                        <span>{gradeName}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className="mt-4">
-            <button
-              type="button"
-              onClick={addAsignatureWithGrades}
-              disabled={!tempAsignature || tempGrades.length === 0}
-              className="bg-blue-500 text-surface px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
-            >
-              Agregar Asignatura
-            </button>
-          </div>
-        </div>
-
-        {/* Lista de asignaturas agregadas */}
-        {formData.asignature.length > 0 && (
-          <div className="md:col-span-3 mt-2">
-            <label className="font-semibold">Asignaturas agregadas:</label>
-            <div className="space-y-2 mt-2">
-              {formData.asignature.map((asig, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between bg-surface p-3 border rounded"
-                >
-                  <div>
-                    <span className="font-medium">
-                      Asignatura: {asig.nameAsignature || asig.idAsignature}
-                    </span>
-                    <span className="text-sm text-gray-600 ml-2">
-                      ({asig.grades.length} grado
-                      {asig.grades.length !== 1 ? "s" : ""})
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => removeAsignature(index)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    Eliminar
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        <AsignatureGrades
+          sede={formData.sede}
+          workday={formData.workday}
+          asignatures={formData.asignature}
+          onAdd={handleAddAsignature}
+          onRemove={handleRemoveAsignature}
+        />
 
         {submitOk ? (
           <div className="md:col-span-3 p-4 rounded-lg border-l-4 border-green-500 bg-gray-50 text-green-700">

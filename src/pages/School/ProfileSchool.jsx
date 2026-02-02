@@ -10,11 +10,12 @@ import CitySelector from "../../components/molecules/CitySelector";
 import { getInputClassName, getLabelClassName } from "../../utils/cssUtils";
 import useSchool from "../../lib/hooks/useSchool";
 
-const ManageSchool = ({
+const ProfileSchool = ({
   mode: modeProp,
   schoolId,
   initialData = null,
   onSuccess = null,
+  initialEditing = undefined,
 }) => {
   const params = useParams();
   const modeFromParams = params?.mode;
@@ -33,7 +34,7 @@ const ManageSchool = ({
     principalName: "",
     coordinadorName: "",
     logo: "",
-    mainColor: "#0141a3",
+    mainColor: "#131a27",
     secondaryColor: "#ff9300",
     workday: "",
     codDane: "",
@@ -48,25 +49,19 @@ const ManageSchool = ({
     // Mapear campos de la institución recibida a nuestro formData
     const map = {
       municipality: initialData.municipality ?? initialData.municipio ?? "1",
-      name:
-        (initialData.name ??
-          initialData.nombre_institution ??
-          initialData.nombre) ||
-        "",
-      slogan: initialData.slogan ?? "",
+      name: initialData.nombre_institucion || "",
+      slogan: initialData.eslogan ?? "",
       address: initialData.address ?? initialData.direccion ?? "",
       email: initialData.email ?? initialData.correo ?? "",
       phone: initialData.phone ?? initialData.telefono ?? "",
-      principalName:
-        initialData.principalName ?? initialData.directorName ?? "",
-      coordinadorName: initialData.coordinadorName ?? "",
-      logo: initialData.logo ?? initialData.img_logo ?? "",
-      mainColor: initialData.mainColor ?? initialData.color_main ?? "#0141a3",
-      secondaryColor:
-        initialData.secondaryColor ?? initialData.color_secondary ?? "#ff9300",
-      workday: initialData.workday ? String(initialData.workday) : "",
-      codDane: initialData.codDane ?? initialData.codigo_dane ?? "",
-      signaturePrincipal: initialData.signaturePrincipal ?? "",
+      principalName: initialData.director ?? "",
+      coordinadorName: initialData.coordinador ?? "",
+      logo: initialData.link_logo ?? "",
+      mainColor: initialData.color_principal ?? "#131a27",
+      secondaryColor: initialData.color_secundario ?? "#ff9300",
+      workday: initialData.fk_jornada ? String(initialData.fk_jornada) : "",
+      codDane: initialData.cod_dane ?? "",
+      signaturePrincipal: initialData.link_firma ?? "",
       sede: Array.isArray(initialData.sede) ? initialData.sede : [],
       department_id: initialData.department_id ?? "",
     };
@@ -74,6 +69,26 @@ const ManageSchool = ({
     setFormData((prev) => ({ ...prev, ...map }));
   }, [initialData]);
   const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
+
+  // Modo de edición (por defecto: editable en modo registro, vista en modo update)
+  const [isEditing, setIsEditing] = useState(
+    typeof initialEditing === "boolean" ? initialEditing : !isUpdate,
+  );
+
+  useEffect(() => {
+    if (typeof initialEditing === "boolean") {
+      setIsEditing(initialEditing);
+    } else {
+      setIsEditing(!isUpdate);
+    }
+  }, [initialEditing, isUpdate]);
+
+  const toggleEditing = async () => {
+    if (isEditing) {
+      await handleSubmit();
+    }
+    setIsEditing((v) => !v);
+  };
 
   const title = useMemo(() => {
     return isUpdate ? "Actualizar institución" : "Registrar nueva institución";
@@ -139,7 +154,7 @@ const ManageSchool = ({
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
 
     try {
       const payload = { ...formData };
@@ -207,7 +222,17 @@ const ManageSchool = ({
         onSubmit={handleSubmit}
         className="grid grid-cols-1 md:grid-cols-2 gap-4"
       >
-        <h2 className="text-xl font-semibold mb-2 md:col-span-2">{title}</h2>
+        <div className="md:col-span-2 flex justify-between items-center mb-2">
+          <h2 className="text-xl font-semibold">{title}</h2>
+          <SimpleButton
+            type="button"
+            onClick={toggleEditing}
+            msj={isEditing ? "Guardar" : "Editar"}
+            icon={isEditing ? "Save" : "Pencil"}
+            bg={isEditing ? "bg-accent" : "bg-secondary"}
+            text={"text-surface"}
+          />
+        </div>
 
         <div className="md:col-span-2">
           <label>Nombre de la institución</label>
@@ -216,6 +241,7 @@ const ManageSchool = ({
             name="name"
             value={formData.name}
             onChange={handleChange}
+            disabled={!isEditing}
             className="w-full p-2 border rounded bg-surface"
             required
           />
@@ -228,6 +254,7 @@ const ManageSchool = ({
             name="slogan"
             value={formData.slogan}
             onChange={handleChange}
+            disabled={!isEditing}
             className="w-full p-2 border rounded bg-surface"
           />
         </div>
@@ -239,6 +266,7 @@ const ManageSchool = ({
             name="address"
             value={formData.address}
             onChange={handleChange}
+            disabled={!isEditing}
             className="w-full p-2 border rounded bg-surface"
           />
         </div>
@@ -250,6 +278,7 @@ const ManageSchool = ({
             value={formData.department_id}
             onChange={handleChange}
             className="w-full p-2 border rounded bg-surface"
+            disabled={!isEditing}
           />
         </div>
 
@@ -261,6 +290,7 @@ const ManageSchool = ({
             onChange={handleChange}
             departmentId={formData.department_id}
             className="w-full p-2 border rounded bg-surface"
+            disabled={!isEditing}
           />
         </div>
 
@@ -271,6 +301,7 @@ const ManageSchool = ({
             name="phone"
             value={formData.phone}
             onChange={handleChange}
+            disabled={!isEditing}
             className={getInputClassName(
               "w-full p-2 border rounded bg-surface",
               false,
@@ -287,6 +318,7 @@ const ManageSchool = ({
             name="email"
             value={formData.email}
             onChange={handleChange}
+            disabled={!isEditing}
             className={getInputClassName(
               "w-full p-2 border rounded bg-surface",
               false,
@@ -301,17 +333,22 @@ const ManageSchool = ({
             name="principalName"
             value={formData.principalName}
             onChange={handleChange}
+            disabled={!isEditing}
             className="w-full p-2 border rounded bg-surface"
           />
         </div>
 
         <div>
           <label>Firma del director</label>
-          <FileChooser
-            name="signaturePrincipal"
-            onChange={handleChange}
-            className="w-full p-2 border rounded"
-          />
+          {isEditing ? (
+            <FileChooser
+              name="signaturePrincipal"
+              onChange={handleChange}
+              className="w-full p-2 border rounded"
+            />
+          ) : (
+            <p className="p-2">{formData.signaturePrincipal ? "Archivo cargado" : "No cargado"}</p>
+          )}
         </div>
 
         <div className="md:col-span-2">
@@ -321,17 +358,22 @@ const ManageSchool = ({
             name="coordinadorName"
             value={formData.coordinadorName}
             onChange={handleChange}
+            disabled={!isEditing}
             className="w-full p-2 border rounded bg-surface"
           />
         </div>
 
         <div>
           <label>Logo de la institución</label>
-          <FileChooser
-            name="logo"
-            onChange={handleChange}
-            className="w-full p-2 border rounded"
-          />
+          {isEditing ? (
+            <FileChooser
+              name="logo"
+              onChange={handleChange}
+              className="w-full p-2 border rounded"
+            />
+          ) : (
+            <p className="p-2">{formData.logo ? "Archivo cargado" : "No cargado"}</p>
+          )}
         </div>
 
         <div>
@@ -344,6 +386,7 @@ const ManageSchool = ({
             icon={"Pencil"}
             text={"text-surface"}
             bg={"bg-accent"}
+            disabled={!isEditing}
           />
         </div>
 
@@ -354,11 +397,11 @@ const ManageSchool = ({
             name="codDane"
             value={formData.codDane}
             onChange={handleChange}
+            disabled={!isEditing || isUpdate}
             className={getInputClassName(
               "w-full p-2 border rounded bg-surface",
               isUpdate,
             )}
-            disabled={isUpdate}
             placeholder={
               isUpdate
                 ? "No se puede modificar en modo actualización"
@@ -374,6 +417,7 @@ const ManageSchool = ({
             value={formData.workday}
             onChange={handleChange}
             className="w-full p-2 border rounded bg-surface"
+            disabled={!isEditing}
           />
         </div>
 
@@ -381,18 +425,20 @@ const ManageSchool = ({
           <div className="md:col-span-2 mt-2 border-t pt-4">
             <h3 className="text-lg font-semibold mb-2">Sedes</h3>
 
-            <div className="flex justify-center ">
-              <div className="w-2/5">
-                <SimpleButton
-                  type="button"
-                  onClick={addSede}
-                  msj={"Agregar sede"}
-                  icon={"Plus"}
-                  text={"text-surface"}
-                  bg={"bg-accent"}
-                />
+            {isEditing && (
+              <div className="flex justify-center ">
+                <div className="w-2/5">
+                  <SimpleButton
+                    type="button"
+                    onClick={addSede}
+                    msj={"Agregar sede"}
+                    icon={"Plus"}
+                    text={"text-surface"}
+                    bg={"bg-accent"}
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             {Array.isArray(formData.sede) && formData.sede.length > 0 ? (
               <div className="mt-4 grid grid-cols-1 gap-3">
@@ -404,65 +450,91 @@ const ManageSchool = ({
                     <div className="flex items-center justify-between mb-3">
                       <p className="font-semibold">Sede #{index + 1}</p>
                       <div>
-                        <SimpleButton
-                          type="button"
-                          onClick={() => removeSede(index)}
-                          msj={"Borrar"}
-                          icon={"Trash2"}
-                          text={"text-surface"}
-                          bg={"bg-red-600"}
-                          className="w-auto px-3"
-                        />
+                        {isEditing && (
+                          <SimpleButton
+                            type="button"
+                            onClick={() => removeSede(index)}
+                            msj={"Borrar"}
+                            icon={"Trash2"}
+                            text={"text-surface"}
+                            bg={"bg-red-600"}
+                            className="w-auto px-3"
+                          />
+                        )}
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label>Nombre</label>
-                        <input
-                          type="text"
-                          value={sede?.name_sede ?? ""}
+                    {isEditing ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label>Nombre</label>
+                          <input
+                            type="text"
+                            value={sede?.name_sede ?? ""}
+                            onChange={(e) =>
+                              updateSedeField(index, "name_sede", e.target.value)
+                            }
+                            className="w-full p-2 border rounded bg-surface"
+                          />
+                        </div>
+
+                        <div>
+                          <label>Teléfono</label>
+                          <input
+                            type="text"
+                            value={sede?.phone ?? ""}
+                            onChange={(e) =>
+                              updateSedeField(index, "phone", e.target.value)
+                            }
+                            className="w-full p-2 border rounded bg-surface"
+                          />
+                        </div>
+
+                        <div className="md:col-span-2">
+                          <label>Dirección</label>
+                          <input
+                            type="text"
+                            value={sede?.adress ?? ""}
+                            onChange={(e) =>
+                              updateSedeField(index, "adress", e.target.value)
+                            }
+                            className="w-full p-2 border rounded bg-surface"
+                          />
+                        </div>
+
+                        <JourneySelect
+                          label="Jornada"
+                          name="jornada"
+                          value={sede?.jornada ?? ""}
                           onChange={(e) =>
-                            updateSedeField(index, "name_sede", e.target.value)
+                            updateSedeField(index, "jornada", e.target.value)
                           }
                           className="w-full p-2 border rounded bg-surface"
                         />
                       </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label>Nombre</label>
+                          <p className="p-2">{sede?.name_sede ?? "-"}</p>
+                        </div>
 
-                      <div>
-                        <label>Teléfono</label>
-                        <input
-                          type="text"
-                          value={sede?.phone ?? ""}
-                          onChange={(e) =>
-                            updateSedeField(index, "phone", e.target.value)
-                          }
-                          className="w-full p-2 border rounded bg-surface"
-                        />
+                        <div>
+                          <label>Teléfono</label>
+                          <p className="p-2">{sede?.phone ?? "-"}</p>
+                        </div>
+
+                        <div className="md:col-span-2">
+                          <label>Dirección</label>
+                          <p className="p-2">{sede?.adress ?? "-"}</p>
+                        </div>
+
+                        <div>
+                          <label>Jornada</label>
+                          <p className="p-2">{sede?.jornada ?? "-"}</p>
+                        </div>
                       </div>
-
-                      <div className="md:col-span-2">
-                        <label>Dirección</label>
-                        <input
-                          type="text"
-                          value={sede?.adress ?? ""}
-                          onChange={(e) =>
-                            updateSedeField(index, "adress", e.target.value)
-                          }
-                          className="w-full p-2 border rounded bg-surface"
-                        />
-                      </div>
-
-                      <JourneySelect
-                        label="Jornada"
-                        name="jornada"
-                        value={sede?.jornada ?? ""}
-                        onChange={(e) =>
-                          updateSedeField(index, "jornada", e.target.value)
-                        }
-                        className="w-full p-2 border rounded bg-surface"
-                      />
-                    </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -470,16 +542,18 @@ const ManageSchool = ({
           </div>
         ) : null}
 
-        <div className="md:col-span-2 mt-4">
-          <SimpleButton
-            type="submit"
-            msj={loading ? "Procesando..." : primaryButtonLabel}
-            icon={loading ? "Loader" : "Save"}
-            text={"text-surface"}
-            bg={loading ? "bg-gray-400" : "bg-accent"}
-            disabled={loading}
-          />
-        </div>
+        {isEditing && (
+          <div className="md:col-span-2 mt-4">
+            <SimpleButton
+              type="submit"
+              msj={loading ? "Procesando..." : primaryButtonLabel}
+              icon={loading ? "Loader" : "Save"}
+              text={"text-surface"}
+              bg={loading ? "bg-gray-400" : "bg-accent"}
+              disabled={loading}
+            />
+          </div>
+        )}
       </form>
 
       {!isUpdate ? (
@@ -507,4 +581,4 @@ const ManageSchool = ({
   );
 };
 
-export default ManageSchool;
+export default ProfileSchool;

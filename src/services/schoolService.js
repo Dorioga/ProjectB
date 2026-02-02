@@ -21,7 +21,6 @@ export async function getInstitution() {
     throw error;
   }
 }
-
 export async function createSchool(payload) {
   if (!payload || typeof payload !== "object") {
     throw new Error("payload debe ser un objeto.");
@@ -69,7 +68,6 @@ export async function getJourneys() {
     throw error;
   }
 }
-
 /**
  * Obtiene los períodos académicos desde el backend.
  *
@@ -117,7 +115,6 @@ export async function registerGrade(gradeData) {
 
   throw new Error("Respuesta inesperada de register_grade.");
 }
-
 /**
  * Registra un nuevo profesor.
  *
@@ -143,7 +140,6 @@ export async function registerTeacher(payload) {
 
   throw new Error("Respuesta inesperada de register_teacher.");
 }
-
 /**
  * Actualiza la información de un docente existente.
  *
@@ -167,7 +163,37 @@ export async function updateTeacher(id, payload) {
 
   throw new Error("Respuesta inesperada de update_teacher.");
 }
+/**
+ * Actualiza datos de una sede para una institución.
+ *
+ * Endpoint esperado: PATCH /institution/:institutionId/sede/:sedeId
+ * @param {string|number} institutionId - Identificador de la institución
+ * @param {string|number} sedeId - Identificador de la sede
+ * @param {Object} payload - Datos a actualizar
+ * @returns {Promise<Object>} Respuesta del servidor con la sede actualizada
+ */
+export async function updateSede(institutionId, sedeId, payload) {
+  if (!institutionId)
+    throw new Error("institutionId es requerido para updateSede");
+  if (!sedeId) throw new Error("sedeId es requerido para updateSede");
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
 
+  const res = await ApiClient.instance.patch(
+    `/institution/${institutionId}/sede/${sedeId}`,
+    payload,
+  );
+
+  const data = res;
+  console.log("SchoolService - updateSede:", data);
+
+  // Validación suave del payload: devolvemos data o data.data.
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de updateSede.");
+}
 /**
  * Obtiene los grados por sede.
  *
@@ -193,7 +219,6 @@ export async function getGradeSede(payload) {
 
   throw new Error("Respuesta inesperada de grade_sede.");
 }
-
 /**
  * Registra una nueva asignatura.
  *
@@ -217,7 +242,6 @@ export async function registerAsignature(payload) {
 
   throw new Error("Respuesta inesperada de register_asignature.");
 }
-
 /**
  * Obtiene las asignaturas por sede.
  *
@@ -250,7 +274,78 @@ export async function getSedeAsignature(payload) {
 
   throw new Error("Respuesta inesperada de sedeasignature.");
 }
+/**
+ * Obtiene datos de la sede.
+ *
+ * Endpoint esperado: POST /sede/data
+ * @param {Object} payload - Datos para filtrar la información de la sede
+ * @returns {Promise<Object>} Respuesta del servidor con los datos de la sede
+ */
+export async function getDataSede(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+  console.log("SchoolService - getDataSede payload:", payload);
 
+  const res = await ApiClient.instance.post("/sede/data", payload);
+
+  const data = res;
+  console.log("SchoolService - getDataSede:", data);
+
+  // Validación suave del payload: devolvemos data o data.data.
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de /sede/data.");
+}
+/**
+ * Obtiene datos de la institución (información de la sede/institución).
+ *
+ * Endpoint esperado: POST /institution/data
+ * @param {Object} payload - Datos para filtrar la información de la institución
+ * @returns {Promise<Object>} Respuesta del servidor con los datos solicitados
+ */
+export async function getDataSchool(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+  console.log("SchoolService - getDataSchool payload:", payload);
+
+  const res = await ApiClient.instance.post("/institution/data", payload);
+
+  const data = res;
+  console.log("SchoolService - getDataSchool:", data);
+
+  // Validación suave del payload: devolvemos data o data.data.
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de /institution/data.");
+}
+/**
+ * Obtiene datos del docente.
+ *
+ * Endpoint esperado: POST /teacher/data
+ * @param {Object} payload - Datos para filtrar la información del docente
+ * @returns {Promise<Object>} Respuesta del servidor con los datos solicitados
+ */
+export async function getDataTeacher(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+  console.log("SchoolService - getDataTeacher payload:", payload);
+
+  const res = await ApiClient.instance.post("/teacher/data", payload);
+
+  const data = res;
+  console.log("SchoolService - getDataTeacher:", data);
+
+  // Validación suave del payload: devolvemos data o data.data.
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de /teacher/data.");
+}
 /**
  * Obtiene las asignaturas por grado.
  *
@@ -281,7 +376,6 @@ export async function getGradeAsignature(payload) {
   // Si no tiene code OK, lanzar error
   throw new Error(data?.message || "Respuesta inesperada de grade_asignature.");
 }
-
 /**
  * Crea una nueva nota.
  *
@@ -305,7 +399,6 @@ export async function createNote(payload) {
 
   throw new Error("Respuesta inesperada de createNote.");
 }
-
 /**
  * Obtiene las asignaturas de un profesor.
  *
@@ -329,7 +422,6 @@ export async function getTeacherSubjects(payload) {
 
   throw new Error("Respuesta inesperada de teacher/subjects.");
 }
-
 /**
  * Obtiene los grados de un profesor por sede y jornada.
  *
@@ -355,7 +447,6 @@ export async function getTeacherGrades(payload) {
 
   throw new Error("Respuesta inesperada de teacherS/grades.");
 }
-
 /**
  * Obtiene los grados de un estudiante.
  *
@@ -381,7 +472,6 @@ export async function getStudentGrades(payload) {
 
   throw new Error("Respuesta inesperada de student/grades.");
 }
-
 /**
  * Obtiene las notas de un estudiante.
  *
@@ -407,7 +497,6 @@ export async function getStudentNotes(payload) {
 
   throw new Error("Respuesta inesperada de studentS/notes.");
 }
-
 /**
  * Guarda las notas de asignación de estudiantes.
  *
@@ -433,7 +522,6 @@ export async function saveAssignmentNotes(payload) {
 
   throw new Error("Respuesta inesperada de assignment/notes.");
 }
-
 /**
  * Obtiene todos los estudiantes de la institución.
  *
@@ -459,7 +547,6 @@ export async function allstudent(payload) {
 
   throw new Error("Respuesta inesperada de /institution/students.");
 }
-
 /**
  * Obtiene todos los profesores de la institución.
  *

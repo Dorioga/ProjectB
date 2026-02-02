@@ -38,16 +38,7 @@
       link: "/dashboard/uploadStudentExcel",
       icon: "FileSpreadsheet",
     },
-    {
-      option: "Registrar institución",
-      link: "/dashboard/manageSchool/register",
-      icon: "School",
-    },
-    {
-      option: "Actualizar institución",
-      link: "/dashboard/manageSchool/update",
-      icon: "Pencil",
-    },
+
     {
       option: "Buscar estudiantes",
       link: "/dashboard/searchStudents",

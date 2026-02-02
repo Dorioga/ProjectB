@@ -12,7 +12,8 @@ import { useNotify } from "../../lib/hooks/useNotify";
 
 const ManageTeacher = () => {
   const { idInstitution } = useAuth();
-  const { fetchAllTeachers, loading, updateTeacher } = useSchool();
+  const { fetchAllTeachers, loading, updateTeacher, getDataTeacher } =
+    useSchool();
   const alerts = alertsResponse;
 
   const [teachers, setTeachers] = useState([]);
@@ -54,6 +55,7 @@ const ManageTeacher = () => {
       }
 
       const payload = { institucion: idInstitution };
+      console.log("Cargando profesores con payload:", payload);
       const response = await fetchAllTeachers(payload);
 
       // Guardar la respuesta cruda también para depuración
@@ -88,19 +90,193 @@ const ManageTeacher = () => {
   }, [idInstitution, fetchAllTeachers]);
 
   // Función para abrir el modal con los datos del profesor
-  const handleViewProfile = useCallback((teacher) => {
-    setSelectedTeacher(teacher);
-    setSelectedTeacherForModal(teacher);
-    setInitialEditing(false);
-    setIsModalOpen(true);
-  }, []);
+  const handleViewProfile = useCallback(
+    (teacher) => {
+      // fetch details and open modal (read-only)
+      (async () => {
+        try {
+          setIsFetching(true);
+          const payload = {
+            id_docente: Number(teacher?.id_docente),
+            fk_sede: Number(
+              teacher?.id_sede ?? teacher?.idSede ?? teacher?.id_sede,
+            ),
+          };
 
-  const handleEditTeacher = useCallback((teacher) => {
-    setSelectedTeacher(teacher);
-    setSelectedTeacherForModal(teacher);
-    setInitialEditing(true);
-    setIsModalOpen(true);
-  }, []);
+          const res = await getDataTeacher(payload);
+
+          let processed;
+          // Si getDataTeacher ya devolvió la estructura procesada, úsala tal cual
+          if (res && typeof res === "object" && (res.basic || res.subjects)) {
+            processed = res;
+          } else {
+            // res puede venir como array o { code, data }
+            const rawData = Array.isArray(res) ? res : (res?.data ?? res);
+            const rows = Array.isArray(rawData) ? rawData : [];
+
+            processed = {};
+            if (rows.length > 0) {
+              const base = rows[0];
+              processed.id_docente = base.id_docente ?? teacher.id_docente;
+              processed.basic = {
+                first_name: base.primero_nombre || "",
+                second_name: base.segundo_nombre || "",
+                first_lastname: base.primer_apellido || "",
+                second_lastname: base.segundo_apellido || "",
+                telephone: base.telefono || "",
+                identification: base.numero_identificacion || "",
+                email: base.correo || "",
+                fecha_nacimiento: base.fecha_nacimiento || "",
+                direccion: base.direccion || "",
+                nombre_sede: base.nombre_sede || "",
+              };
+
+              // construir arreglo de asignaturas a partir de cada fila
+              const subjects = [];
+              rows.forEach((r) => {
+                const ids = String(r.ids_asignaturas ?? "")
+                  .split(",")
+                  .map((s) => s.trim())
+                  .filter(Boolean);
+                const names = String(r.asignaturas ?? "")
+                  .split(",")
+                  .map((s) => s.trim())
+                  .filter(Boolean);
+                for (let i = 0; i < ids.length; i++) {
+                  const idAsig = parseInt(ids[i], 10);
+                  const nameAsig = names[i] || ids[i];
+                  subjects.push({
+                    id_asignatura: idAsig,
+                    asignatura: nameAsig,
+                    nombre_grado: r.nombre_grado,
+                    grupo: r.grupo,
+                  });
+                }
+              });
+
+              // deduplicar por id_asignatura + nombre_grado + grupo
+              const seen = new Set();
+              processed.subjects = subjects.filter((s) => {
+                const key = `${s.id_asignatura}-${s.nombre_grado}-${s.grupo}`;
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+              });
+
+              processed.estado = rows[0].estado ?? "";
+            } else {
+              processed.basic = {};
+              processed.subjects = [];
+              processed.estado = teacher?.estado ?? "";
+            }
+          }
+
+          setSelectedTeacher(teacher);
+          setSelectedTeacherForModal(processed);
+          setInitialEditing(false);
+          setIsModalOpen(true);
+        } catch (err) {
+          console.error("Error fetching teacher details:", err);
+          notify.error(err?.message || "Error al obtener datos del docente");
+        } finally {
+          setIsFetching(false);
+        }
+      })();
+    },
+    [getDataTeacher, notify],
+  );
+
+  const handleEditTeacher = useCallback(
+    (teacher) => {
+      // fetch details and open modal in edit mode
+      (async () => {
+        try {
+          setIsFetching(true);
+          const payload = {
+            id_docente: Number(teacher?.id_docente),
+            fk_sede: Number(
+              teacher?.id_sede ?? teacher?.idSede ?? teacher?.id_sede,
+            ),
+          };
+
+          const res = await getDataTeacher(payload);
+
+          let processed;
+          if (res && typeof res === "object" && (res.basic || res.subjects)) {
+            processed = res;
+          } else {
+            const rawData = Array.isArray(res) ? res : (res?.data ?? res);
+            const rows = Array.isArray(rawData) ? rawData : [];
+
+            processed = {};
+            if (rows.length > 0) {
+              const base = rows[0];
+              processed.id_docente = base.id_docente ?? teacher.id_docente;
+              processed.basic = {
+                first_name: base.primero_nombre || "",
+                second_name: base.segundo_nombre || "",
+                first_lastname: base.primer_apellido || "",
+                second_lastname: base.segundo_apellido || "",
+                telephone: base.telefono || "",
+                identification: base.numero_identificacion || "",
+                email: base.correo || "",
+                fecha_nacimiento: base.fecha_nacimiento || "",
+                direccion: base.direccion || "",
+                nombre_sede: base.nombre_sede || "",
+              };
+
+              const subjects = [];
+              rows.forEach((r) => {
+                const ids = String(r.ids_asignaturas ?? "")
+                  .split(",")
+                  .map((s) => s.trim())
+                  .filter(Boolean);
+                const names = String(r.asignaturas ?? "")
+                  .split(",")
+                  .map((s) => s.trim())
+                  .filter(Boolean);
+                for (let i = 0; i < ids.length; i++) {
+                  const idAsig = parseInt(ids[i], 10);
+                  const nameAsig = names[i] || ids[i];
+                  subjects.push({
+                    id_asignatura: idAsig,
+                    asignatura: nameAsig,
+                    nombre_grado: r.nombre_grado,
+                    grupo: r.grupo,
+                  });
+                }
+              });
+
+              const seen = new Set();
+              processed.subjects = subjects.filter((s) => {
+                const key = `${s.id_asignatura}-${s.nombre_grado}-${s.grupo}`;
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+              });
+
+              processed.estado = rows[0].estado ?? "";
+            } else {
+              processed.basic = {};
+              processed.subjects = [];
+              processed.estado = teacher?.estado ?? "";
+            }
+          }
+
+          setSelectedTeacher(teacher);
+          setSelectedTeacherForModal(processed);
+          setInitialEditing(true);
+          setIsModalOpen(true);
+        } catch (err) {
+          console.error("Error fetching teacher details:", err);
+          notify.error(err?.message || "Error al obtener datos del docente");
+        } finally {
+          setIsFetching(false);
+        }
+      })();
+    },
+    [getDataTeacher, notify],
+  );
 
   // Define las columnas para la tabla
   const columns = useMemo(
@@ -113,7 +289,7 @@ const ManageTeacher = () => {
         },
       },
       {
-        accessorKey: "nombre",
+        accessorKey: "nombre_docente",
         header: "Nombre Completo",
       },
       {
@@ -124,33 +300,70 @@ const ManageTeacher = () => {
         },
       },
       {
-        accessorKey: "nombre_grado",
-        header: "Grado",
+        accessorKey: "estado",
+        header: "Estado",
+        meta: {
+          hideOnLG: true,
+        },
+      },
+
+      {
+        accessorKey: "grados",
+        header: "Grados Asignados",
         meta: {
           hideOnLG: true,
         },
       },
       {
-        accessorKey: "grupo",
-        header: "Grupo",
+        accessorKey: "grupos",
+        header: "Grupos Asignados",
         meta: {
           hideOnLG: true,
+        },
+        cell: ({ row }) => {
+          const val = row.original.grupos ?? row.original.grupo ?? "";
+          const parts = String(val || "")
+            .split(",")
+            .map((p) => p.trim())
+            .filter(Boolean);
+          if (parts.length === 0) return null;
+          return (
+            <div className="flex flex-col items-start gap-0">
+              {parts.map((p, i) => (
+                <div key={i} className="text-left text-sm">
+                  - {p}
+                </div>
+              ))}
+            </div>
+          );
         },
       },
       {
-        accessorKey: "nombre_jornada",
-        header: "Jornada",
+        accessorKey: "asignaturas",
+        header: "Asignaturas",
         meta: {
           hideOnLG: true,
         },
-      },
-      {
-        accessorKey: "nombre_asignatura",
-        header: "Asignatura",
-        meta: {
-          hideOnLG: true,
+        cell: ({ row }) => {
+          const val =
+            row.original.asignaturas ?? row.original.nombre_asignatura ?? "";
+          const parts = String(val || "")
+            .split(",")
+            .map((p) => p.trim())
+            .filter(Boolean);
+          if (parts.length === 0) return null;
+          return (
+            <div className="flex flex-col items-start gap-0">
+              {parts.map((p, i) => (
+                <div key={i} className="text-left text-sm">
+                  - {p}
+                </div>
+              ))}
+            </div>
+          );
         },
       },
+
       {
         id: "actions",
         header: "Acciones",

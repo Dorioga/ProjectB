@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 
 import SimpleButton from "../../components/atoms/SimpleButton";
 import SedeSelect from "../../components/atoms/SedeSelect";
@@ -9,6 +9,7 @@ import AsignatureSelector from "../../components/molecules/AsignatureSelector";
 import useSchool from "../../lib/hooks/useSchool";
 import useData from "../../lib/hooks/useData";
 import useAuth from "../../lib/hooks/useAuth";
+import { useNotify } from "../../lib/hooks/useNotify";
 import { asignatureResponse } from "../../services/DataExamples/asignatureResponse";
 import { studentsResponse } from "../../services/DataExamples/studentsResponse";
 
@@ -31,6 +32,7 @@ const RegisterStudentRecords = () => {
   } = useSchool();
   const { institutionSedes } = useData();
   const { idSede, nameSede, rol, idDocente } = useAuth();
+  const notify = useNotify();
   const [sedeSelected, setSedeSelected] = useState("");
   const [workdaySelected, setWorkdaySelected] = useState("");
   const [gradeSelected, setGradeSelected] = useState("");
@@ -114,9 +116,29 @@ const RegisterStudentRecords = () => {
     setAsignatureCode(asignatureSelected);
   }, [asignatureSelected]);
 
+  const reloadOnceRef = useRef(false);
+
   useEffect(() => {
-    reloadRecords();
-  }, [reloadRecords]);
+    if (reloadOnceRef.current) return;
+    reloadOnceRef.current = true;
+
+    try {
+      const res = reloadRecords();
+      if (res && typeof res.then === "function") {
+        res
+          .then(() => notify.success("Estructura de notas recargada"))
+          .catch((err) => {
+            console.error("reloadRecords error:", err);
+            notify.error("No fue posible recargar la estructura de notas");
+          });
+      } else {
+        notify.success("Estructura de notas recargada");
+      }
+    } catch (err) {
+      console.error("reloadRecords threw:", err);
+      notify.error("No fue posible recargar la estructura de notas");
+    }
+  }, [reloadRecords, notify]);
 
   useEffect(() => {
     setRecordValuesByStudent({});

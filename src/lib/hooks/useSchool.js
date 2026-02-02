@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { SchoolContext } from "../context/SchoolContext";
+import { SchoolContext } from "../context/SchoolContext.jsx";
 
 export default function useSchool() {
   const ctx = useContext(SchoolContext);

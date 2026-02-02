@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Loader from "../../components/atoms/Loader";
 import useAuth from "../../lib/hooks/useAuth";
 import SimpleButton from "../../components/atoms/SimpleButton";
+import logoColor from "../../assets/img/LogoColor.png";
 import { School } from "lucide-react";
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -33,21 +34,17 @@ const Login = () => {
     }
   };
   return (
-    <div className="w-full grid grid-cols-1 lg:grid-cols-2 h-full">
-      <div className="bg-surface hidden lg:flex lg:items-center lg:justify-center">
-        <div className="w-96 h-96   bg-amber-400 flex flex-col items-center justify-center rounded-full">
-          <School size={150} color="white" />
-          <h1 className="text-surface font-bold text-5xl mt-4">Nexus</h1>
-        </div>
-      </div>
-      <div className="w-full bg-primary flex items-center justify-center p-4 ">
-        <div className="flex flex-col gap-4 w-3/4">
+    <div className="w-full grid grid-cols-1 lg:grid-cols-2 h-full bg-primary">
+      <div className=" hidden lg:flex lg:items-center lg:justify-center"></div>
+      <div className="w-full  flex items-center justify-center p-4 ">
+        <div className="flex flex-col gap-4 w-3/4 bg-surface bg-opacity-50 p-6 rounded-xl shadow-lg">
           <div className="text-center">
-            <h2 className="text-surface font-bold text-4xl">Bienvenido</h2>
-            <h3 className="text-surface font-bold text-3xl">Inicie sesión</h3>
+            <img src={logoColor} alt="Logo" className="mx-auto w-50 h-auto " />
+            <h2 className="text-primary font-bold text-4xl">Bienvenido</h2>
+            <h3 className="text-primary font-bold text-3xl">Inicie sesión</h3>
           </div>
           <div className="flex flex-col  justify-between gap-1">
-            <label htmlFor="email" className="text-surface text-xl font-bold">
+            <label htmlFor="email" className="text-primary   text-xl font-bold">
               Usuario
             </label>
             <input
@@ -60,7 +57,7 @@ const Login = () => {
             />
           </div>
           <div className="flex flex-col justify-between gap-1">
-            <label htmlFor="infokey" className="text-surface text-xl font-bold">
+            <label htmlFor="infokey" className="text-primary text-xl font-bold">
               Contraseña
             </label>
             <input
@@ -86,7 +83,7 @@ const Login = () => {
               <div className="mt-3 p-4 rounded-lg border-l-4 border-error bg-gray-50 text-error shadow-md">
                 <div className="flex items-start gap-3">
                   <svg
-                    className="w-6 h-6 flex-shrink-0 mt-0.5"
+                    className="w-6 h-6 shrink-0 mt-0.5"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >

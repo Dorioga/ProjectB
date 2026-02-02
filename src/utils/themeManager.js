@@ -7,7 +7,7 @@ const STORAGE_KEY = "app-theme";
 
 // Tema por defecto (sincronizado con DataExamples/theme.js)
 export const DEFAULT_THEME = {
-  "color-primary": "#0141a3",
+  "color-primary": "#131a27",
   "color-secondary": "#ff9300",
   "color-accent": "#10b981",
   "color-bg": "#f4f6f8",

@@ -2,12 +2,12 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import DataTable from "../../components/atoms/DataTable";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import Modal from "../../components/atoms/Modal";
-import ManageSchool from "./ManageSchool";
+import ProfileSchool from "./ProfileSchool";
 import useSchool from "../../lib/hooks/useSchool";
 import { alertsResponse } from "../../services/DataExamples/alertsResponse";
 
 const ManageSchools = () => {
-  const { getInstitution } = useSchool();
+  const { getInstitution, getDataSchool } = useSchool();
   const [institutions, setInstitutions] = useState([]);
   const [tableData, setTableData] = useState([]);
   const [isFetching, setIsFetching] = useState(false);
@@ -15,6 +15,11 @@ const ManageSchools = () => {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedInstitution, setSelectedInstitution] = useState(null);
+  const [selectedInstitutionData, setSelectedInstitutionData] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState(null);
+  // Indica si abrimos el modal en modo edición (true) o solo en vista (false)
+  const [openAsEdit, setOpenAsEdit] = useState(false);
 
   const fetchInstitutions = useCallback(async () => {
     setIsFetching(true);
@@ -36,14 +41,40 @@ const ManageSchools = () => {
     fetchInstitutions();
   }, [fetchInstitutions]);
 
-  const handleView = (institution) => {
+  const handleView = async (institution) => {
+    // Abrir modal en modo vista
+    setOpenAsEdit(false);
     setSelectedInstitution(institution);
+    setSelectedInstitutionData(null);
+    setProfileError(null);
     setIsEditOpen(true);
+    setProfileLoading(true);
+    try {
+      const id = institution?.id_institution || institution?.id;
+      const payload = { idInstitution: id };
+      const res = await getDataSchool(payload);
+
+      // Respuesta: { code, data: [ { ... } ], status }
+      const d =
+        res && res.data && Array.isArray(res.data)
+          ? res.data[0]
+          : Array.isArray(res)
+            ? res[0]
+            : res;
+      setSelectedInstitutionData(d ?? institution);
+    } catch (err) {
+      console.error("Error loading institution data:", err);
+      setProfileError(err?.message || String(err));
+      setSelectedInstitutionData(institution);
+    } finally {
+      setProfileLoading(false);
+    }
   };
 
-  const handleEdit = (institution) => {
-    setSelectedInstitution(institution);
-    setIsEditOpen(true);
+  const handleEdit = async (institution) => {
+    // Abrir modal y forzar que se abra en modo edición
+    setOpenAsEdit(true);
+    await handleView(institution);
   };
 
   const columns = useMemo(
@@ -134,7 +165,7 @@ const ManageSchools = () => {
           title="Agregar institución"
           size="4xl"
         >
-          <ManageSchool
+          <ProfileSchool
             mode="register"
             onSuccess={() => {
               setIsAddOpen(false);
@@ -149,17 +180,41 @@ const ManageSchools = () => {
           title="Editar institución"
           size="4xl"
         >
-          <ManageSchool
-            mode="update"
-            initialData={selectedInstitution}
-            schoolId={
-              selectedInstitution?.id_institution || selectedInstitution?.id
-            }
-            onSuccess={() => {
-              setIsEditOpen(false);
-              fetchInstitutions();
-            }}
-          />
+          <div className="relative">
+            {profileLoading && (
+              <div className="absolute inset-0 bg-surface/70 z-20 flex items-center justify-center">
+                <div className="text-center py-8 bg-transparent">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2" />
+                  <div className="text-sm font-medium text-primary">
+                    Cargando datos...
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {profileError && (
+              <div className="mb-3 text-sm text-red-600">
+                Error cargando institución: {profileError}
+              </div>
+            )}
+
+            <ProfileSchool
+              mode="update"
+              initialData={selectedInstitutionData ?? selectedInstitution}
+              initialEditing={openAsEdit}
+              schoolId={
+                selectedInstitutionData?.id_institution ||
+                selectedInstitutionData?.id ||
+                selectedInstitution?.id_institution ||
+                selectedInstitution?.id
+              }
+              onSuccess={() => {
+                setIsEditOpen(false);
+                setOpenAsEdit(false);
+                fetchInstitutions();
+              }}
+            />
+          </div>
         </Modal>
 
         <div className="mt-3">

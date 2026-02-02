@@ -15,7 +15,7 @@ const ThemeModal = ({
   setColor: setColorProp,
 }) => {
   const [internalColor, setInternalColor] = useState({
-    mainColor: "#0141a3",
+    mainColor: "#131a27",
     secondaryColor: "#ff9300",
   });
 
@@ -30,7 +30,7 @@ const ThemeModal = ({
       const currentTheme = getCurrentTheme();
       setColor({
         mainColor:
-          color?.mainColor || currentTheme["color-primary"] || "#0141a3",
+          color?.mainColor || currentTheme["color-primary"] || "#131a27",
         secondaryColor:
           color?.secondaryColor || currentTheme["color-secondary"] || "#ff9300",
       });
