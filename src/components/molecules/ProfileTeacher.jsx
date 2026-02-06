@@ -1,5 +1,15 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import SimpleButton from "../atoms/SimpleButton";
+import { formatDateToDisplay, parseDateToISO } from "../../utils/formatUtils";
+import SedeSelect from "../atoms/SedeSelect";
+import JourneySelect from "../atoms/JourneySelect";
+import useSchool from "../../lib/hooks/useSchool";
+import useData from "../../lib/hooks/useData";
+import AsignatureGrades from "./AsignatureGrades";
+import {
+  mapJourneyToOptionValue,
+  buildGroupsWithAssignments,
+} from "../../utils/teacherUtils";
 
 const ProfileTeacher = ({
   data = {},
@@ -7,19 +17,195 @@ const ProfileTeacher = ({
   initialEditing = false,
   onClose,
 }) => {
+  console.log("ProfileTeacher data:", data);
   const [isEditing, setIsEditing] = useState(Boolean(initialEditing));
   const [form, setForm] = useState({
+    id_docente: data.id_docente ?? data.id ?? null,
+    per_id: data.per_id ?? data.id_persona ?? null,
     first_name: data.first_name || "",
     second_name: data.second_name || "",
     first_lastname: data.first_lastname || "",
     second_lastname: data.second_lastname || "",
     telephone: data.telefono || data.telephone || "",
     email: data.correo || data.email || "",
+    identification: data.identification || data.numero_identificacion || "",
+    fecha_nacimiento: data.fecha_nacimiento || data.birthday || "",
+    direccion: data.direccion || data.address || "",
+    nombre_sede: data.nombre_sede || data.name_sede || "",
+    id_sede: data.id_sede || data.idSede || "",
+    fk_journey: data.fk_journey || data.fk_jornada || "",
+    fk_jornada: data.fk_jornada || data.fk_journey || "",
+    nombre_jornada: data.nombre_jornada || data.nombre_jornada || "",
   });
 
   const [estado, setEstado] = useState(data.estado || "");
-
+  const [newAsignatures, setNewAsignatures] = useState([]);
+  const [showAsignatureGrades, setShowAsignatureGrades] = useState(false);
+  const [newSede, setNewSede] = useState([]);
+  const [showSedeAsignatures, setShowSedeAsignatures] = useState({});
+  const [selectedSubjects, setSelectedSubjects] = useState([]);
+  const [selectedTableRows, setSelectedTableRows] = useState([]);
   const originalRef = useRef({ form: null, estado: null });
+
+  // ahora `id_sede` y `fk_journey` forman parte del `form` (se sincronizan más abajo)
+
+  const { journeys } = useSchool();
+  const { institutionSedes } = useData();
+
+  // Obtener el fk_workday de una sede por su id
+  const getSedeWorkday = (sedeId) => {
+    if (!sedeId || !Array.isArray(institutionSedes)) return null;
+    const found = institutionSedes.find(
+      (s) => String(s?.id) === String(sedeId),
+    );
+    return found?.fk_workday ? String(found.fk_workday) : null;
+  };
+
+  // Construir grupos derivados a partir de `data` (subjects/groups)
+  const computedGroups = useMemo(
+    () => buildGroupsWithAssignments(data || {}),
+    [data],
+  );
+
+  // Construir filas para la tabla: {grado, grupo, asignatura, id_asignatura}
+  const assignmentRows = useMemo(() => {
+    const rows = [];
+
+    if (!Array.isArray(computedGroups) || computedGroups.length === 0)
+      return [];
+
+    computedGroups.forEach((grp) => {
+      const groupGrados =
+        Array.isArray(grp.grados) && grp.grados.length > 0 ? grp.grados : [""];
+
+      (Array.isArray(grp.assignments) ? grp.assignments : []).forEach((a) => {
+        const rawNombreGrado = String(a.nombre_grado || "").trim();
+        const nameGrades = rawNombreGrado
+          ? rawNombreGrado
+              .split(",")
+              .map((g) => g.trim())
+              .filter(Boolean)
+          : [];
+
+        if (nameGrades.length > 0) {
+          nameGrades.forEach((g) => {
+            rows.push({
+              grado: g,
+              grupo: grp.grupo || "",
+              asignatura: a.asignatura || "",
+              id_asignatura: a.id_asignatura ?? a.id ?? null,
+            });
+          });
+        } else if (groupGrados.length > 0 && groupGrados[0] !== "") {
+          groupGrados.forEach((g) => {
+            rows.push({
+              grado: g,
+              grupo: grp.grupo || "",
+              asignatura: a.asignatura || "",
+              id_asignatura: a.id_asignatura ?? a.id ?? null,
+            });
+          });
+        } else {
+          rows.push({
+            grado: "",
+            grupo: grp.grupo || "",
+            asignatura: a.asignatura || "",
+            id_asignatura: a.id_asignatura ?? a.id ?? null,
+          });
+        }
+      });
+    });
+
+    // Deduplicar por grado::grupo::asignatura
+    const seen = new Set();
+    const deduped = [];
+    for (const r of rows) {
+      const key = `${r.grado}::${r.grupo}::${r.asignatura}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        deduped.push(r);
+      }
+    }
+
+    // Ordenar por grado (numérico cuando sea posible), luego grupo y asignatura
+    deduped.sort((a, b) => {
+      const na = Number(a.grado);
+      const nb = Number(b.grado);
+      if (!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb;
+      const gcmp = String(a.grado).localeCompare(String(b.grado), "es", {
+        sensitivity: "base",
+      });
+      if (gcmp !== 0) return gcmp;
+      const grpCmp = String(a.grupo).localeCompare(String(b.grupo), "es", {
+        sensitivity: "base",
+      });
+      if (grpCmp !== 0) return grpCmp;
+      return String(a.asignatura).localeCompare(String(b.asignatura), "es", {
+        sensitivity: "base",
+      });
+    });
+
+    return deduped;
+  }, [computedGroups]);
+
+  // Extraer asignaturas únicas del docente
+  const uniqueSubjects = useMemo(() => {
+    const subjectsMap = new Map();
+    assignmentRows.forEach((row) => {
+      if (row.asignatura && !subjectsMap.has(row.asignatura)) {
+        subjectsMap.set(row.asignatura, {
+          name: row.asignatura,
+          id: row.id_asignatura,
+        });
+      }
+    });
+    return Array.from(subjectsMap.values());
+  }, [assignmentRows]);
+
+  // Seleccionar todas las asignaturas por defecto
+  useEffect(() => {
+    if (uniqueSubjects.length > 0) {
+      setSelectedSubjects(uniqueSubjects.map((s) => s.name));
+    }
+  }, [uniqueSubjects]);
+
+  // Seleccionar todas las filas de la tabla por defecto
+  useEffect(() => {
+    if (assignmentRows.length > 0) {
+      setSelectedTableRows(assignmentRows.map((_, idx) => idx));
+    }
+  }, [assignmentRows]);
+
+  // Manejar cambio de checkbox de asignaturas
+  const handleSubjectCheckboxChange = (subjectName) => {
+    setSelectedSubjects((prev) => {
+      if (prev.includes(subjectName)) {
+        return prev.filter((s) => s !== subjectName);
+      } else {
+        return [...prev, subjectName];
+      }
+    });
+  };
+
+  // Manejar checkbox de fila de tabla
+  const handleTableRowCheckbox = (index) => {
+    setSelectedTableRows((prev) => {
+      if (prev.includes(index)) {
+        return prev.filter((i) => i !== index);
+      } else {
+        return [...prev, index];
+      }
+    });
+  };
+
+  // Seleccionar/deseleccionar todas las filas de la tabla
+  const handleSelectAllTableRows = () => {
+    if (selectedTableRows.length === assignmentRows.length) {
+      setSelectedTableRows([]);
+    } else {
+      setSelectedTableRows(assignmentRows.map((_, idx) => idx));
+    }
+  };
 
   useEffect(() => {
     setIsEditing(Boolean(initialEditing));
@@ -27,12 +213,24 @@ const ProfileTeacher = ({
 
   useEffect(() => {
     const initialForm = {
+      id_docente: data.id_docente ?? data.id ?? null,
+      per_id: data.per_id ?? data.id_persona ?? null,
       first_name: data.first_name || "",
       second_name: data.second_name || "",
       first_lastname: data.first_lastname || "",
       second_lastname: data.second_lastname || "",
       telephone: data.telefono || data.telephone || "",
       email: data.correo || data.email || "",
+      identification: data.identification || data.numero_identificacion || "",
+      fecha_nacimiento: formatDateToDisplay(
+        data.fecha_nacimiento || data.birthday || "",
+      ),
+      direccion: data.direccion || data.address || "",
+      nombre_sede: data.nombre_sede || data.name_sede || "",
+      id_sede: data.id_sede || data.idSede || "",
+      fk_journey: data.fk_journey || data.fk_jornada || "",
+      nombre_jornada:
+        data.nombre_jornada || data.nombre_jornada_estudiante || "",
     };
     setForm(initialForm);
     setEstado(data.estado || "");
@@ -51,7 +249,79 @@ const ProfileTeacher = ({
     if (ok) setEstado(newVal);
   };
 
-  const handleStartEdit = () => setIsEditing(true);
+  // Gestión de nuevas asignaturas (modo edición)
+  const handleAddAsignature = (asign) => {
+    setNewAsignatures((prev) => [...prev, asign]);
+  };
+
+  const handleRemoveAsignature = (index) => {
+    setNewAsignatures((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Gestión de nuevas sedes
+  const addNewSede = () => {
+    setNewSede((prev) => [
+      ...prev,
+      { id_sede: "", fk_journey: "", asignatures: [] },
+    ]);
+  };
+
+  const updateNewSedeField = (index, field, value) => {
+    setNewSede((prev) =>
+      prev.map((s, i) => {
+        if (i !== index) return s;
+        const updated = { ...s, [field]: value };
+        // Al cambiar la sede, limpiar jornada y auto-seleccionar si fk_workday no es 3
+        if (field === "id_sede") {
+          const wday = getSedeWorkday(value);
+          if (wday && wday !== "3") {
+            updated.fk_journey = wday;
+          } else {
+            updated.fk_journey = "";
+          }
+        }
+        return updated;
+      }),
+    );
+  };
+
+  const removeNewSede = (index) => {
+    setNewSede((prev) => prev.filter((_, i) => i !== index));
+    setShowSedeAsignatures((prev) => {
+      const copy = { ...prev };
+      delete copy[index];
+      return copy;
+    });
+  };
+
+  const handleAddSedeAsignature = (sedeIndex, asign) => {
+    setNewSede((prev) =>
+      prev.map((s, i) =>
+        i === sedeIndex
+          ? { ...s, asignatures: [...(s.asignatures || []), asign] }
+          : s,
+      ),
+    );
+  };
+
+  const handleRemoveSedeAsignature = (sedeIndex, asignIndex) => {
+    setNewSede((prev) =>
+      prev.map((s, i) =>
+        i === sedeIndex
+          ? {
+              ...s,
+              asignatures: (s.asignatures || []).filter(
+                (_, ai) => ai !== asignIndex,
+              ),
+            }
+          : s,
+      ),
+    );
+  };
+
+  const toggleSedeAsignatures = (index) => {
+    setShowSedeAsignatures((prev) => ({ ...prev, [index]: !prev[index] }));
+  };
 
   const handleCancel = () => {
     // reset to original
@@ -64,9 +334,21 @@ const ProfileTeacher = ({
         second_lastname: data.second_lastname || "",
         telephone: data.telefono || data.telephone || "",
         email: data.correo || data.email || "",
+        nombre_sede: data.nombre_sede || data.name_sede || "",
+        id_sede: data.id_sede || data.idSede || "",
+        fk_journey: data.fk_journey || data.fk_jornada || "",
+        fecha_nacimiento: formatDateToDisplay(
+          data.fecha_nacimiento || data.birthday || "",
+        ),
+        direccion: data.direccion || data.address || "",
+        identification: data.identification || data.numero_identificacion || "",
       },
     );
     setEstado(orig.estado || data.estado || "");
+    setNewAsignatures([]);
+    setNewSede([]);
+    setShowAsignatureGrades(false);
+    setShowSedeAsignatures({});
     setIsEditing(false);
     if (typeof onClose === "function") onClose();
   };
@@ -76,11 +358,17 @@ const ProfileTeacher = ({
     const formChanged =
       JSON.stringify(orig.form || {}) !== JSON.stringify(form || {});
     const estadoChanged = (orig.estado || "") !== (estado || "");
-    return formChanged || estadoChanged;
-  }, [form, estado]);
+    const asignChanged = newAsignatures.length > 0;
+    const sedeChanged = newSede.length > 0;
+    return formChanged || estadoChanged || asignChanged || sedeChanged;
+  }, [form, estado, newAsignatures, newSede]);
 
   const handleSave = async () => {
-    if (!isDirty) return;
+    if (!isDirty) {
+      // Si no hay cambios, salir del modo edición
+      setIsEditing(false);
+      return;
+    }
 
     const payload = {
       first_name: form.first_name,
@@ -89,40 +377,97 @@ const ProfileTeacher = ({
       second_lastname: form.second_lastname,
       telefono: form.telephone,
       correo: form.email,
+      identificacion: form.identification,
+      fecha_nacimiento: parseDateToISO(form.fecha_nacimiento),
+      direccion: form.direccion,
+      nombre_sede: form.nombre_sede,
       estado,
     };
 
-    if (typeof onSave === "function") {
-      await onSave(data.id_docente ?? data.id ?? null, payload);
+    // Añadir sede/jornada seleccionadas si están definidas (se almacenan en el form)
+    if (form.id_sede) {
+      payload.id_sede = form.id_sede;
+      payload.fk_sede = form.id_sede;
+    }
+    if (form.fk_journey) {
+      payload.fk_journey = form.fk_journey;
     }
 
-    // actualizar snapshot
-    originalRef.current = { form: { ...form }, estado };
-    setIsEditing(false);
+    if (newAsignatures.length > 0) {
+      payload.newAsignatures = newAsignatures.map((asig) => ({
+        idAsignature: parseInt(asig.idAsignature, 10),
+        grades: Array.isArray(asig.grades)
+          ? asig.grades.map((g) => ({ idgrade: parseInt(g, 10) }))
+          : [],
+      }));
+    }
+
+    if (newSede.length > 0) {
+      payload.newSede = newSede.map((s) => ({
+        id_sede: s.id_sede,
+        fk_journey: s.fk_journey,
+        asignatures: (s.asignatures || []).map((asig) => ({
+          idAsignature: parseInt(asig.idAsignature, 10),
+          grades: Array.isArray(asig.grades)
+            ? asig.grades.map((g) => ({ idgrade: parseInt(g, 10) }))
+            : [],
+        })),
+      }));
+    }
+
+    if (typeof onSave === "function") {
+      try {
+        await onSave(
+          form.id_docente ?? data.id_docente ?? data.id ?? null,
+          payload,
+        );
+        // actualizar snapshot
+        originalRef.current = { form: { ...form }, estado };
+        setNewAsignatures([]);
+        setNewSede([]);
+        setShowSedeAsignatures({});
+        setIsEditing(false);
+      } catch (err) {
+        console.error("Error al guardar docente:", err);
+        // Mantener en modo edición para que el usuario lo corrija
+      }
+    } else {
+      // Si no hay callback, igual actualizar snapshot y salir
+      originalRef.current = { form: { ...form }, estado };
+      setIsEditing(false);
+    }
   };
 
   return (
-    <div
-      className={`w-full flex flex-col gap-4 ${isEditing ? "ring-2 ring-primary/30 rounded-md p-2" : ""}`}
-    >
+    <div className={"w-full flex flex-col gap-4  px-4"}>
       <div className="grid grid-cols-5 items-center gap-4">
         <div className="col-span-4 flex items-center gap-3">
           <h3 className="font-bold text-xl">Información basica del docente</h3>
+          {form.id_docente ? (
+            <span className="text-sm text-gray-500 ml-2">
+              ID: {form.id_docente}
+            </span>
+          ) : null}
           <span
             className={`text-xs font-medium px-2 py-1 rounded ${isEditing ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}`}
           >
             {isEditing ? "Modo edición" : "Solo lectura"}
           </span>
         </div>
-        {!isEditing && (
-          <SimpleButton
-            onClick={handleStartEdit}
-            msj={"Editar"}
-            icon={"Pencil"}
-            bg={"bg-secondary"}
-            text="text-surface"
-          />
-        )}
+        <SimpleButton
+          onClick={async () => {
+            if (isEditing) {
+              // Save and exit edit mode
+              await handleSave();
+            } else {
+              setIsEditing(true);
+            }
+          }}
+          msj={isEditing ? "Guardar" : "Editar"}
+          icon={isEditing ? "Save" : "Pencil"}
+          bg={isEditing ? "bg-accent" : "bg-secondary"}
+          text="text-surface"
+        />
       </div>
 
       {/* 1) Información básica */}
@@ -192,79 +537,242 @@ const ProfileTeacher = ({
             disabled={!isEditing}
           />
         </div>
+
+        <div>
+          <label className="font-semibold">Identificación</label>
+          <input
+            name="identification"
+            value={form.identification}
+            onChange={handleChange}
+            className={`w-full p-2 border rounded ${isEditing ? "bg-white border-gray-300" : "bg-gray-50 border-transparent text-gray-600 cursor-not-allowed"}`}
+            disabled={!isEditing}
+          />
+        </div>
+
+        <div>
+          <label className="font-semibold">Fecha de nacimiento</label>
+          <input
+            name="fecha_nacimiento"
+            value={form.fecha_nacimiento}
+            onChange={handleChange}
+            placeholder="DD/MM/YYYY"
+            className={`w-full p-2 border rounded ${isEditing ? "bg-white border-gray-300" : "bg-gray-50 border-transparent text-gray-600 cursor-not-allowed"}`}
+            disabled={!isEditing}
+          />
+        </div>
+
+        <div>
+          <label className="font-semibold">Dirección</label>
+          <input
+            name="direccion"
+            value={form.direccion}
+            onChange={handleChange}
+            className={`w-full p-2 border rounded ${isEditing ? "bg-white border-gray-300" : "bg-gray-50 border-transparent text-gray-600 cursor-not-allowed"}`}
+            disabled={!isEditing}
+          />
+        </div>
+      </div>
+      <div className="">
+        <div className="grid grid-cols-2">
+          <div className="grid grid-cols-1">
+            <label className="font-semibold">Sede Actual</label>
+            <p>{form.nombre_sede}</p>
+          </div>
+          {isEditing ? (
+            <SedeSelect
+              name="id_sede"
+              value={form.id_sede || ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                const label =
+                  (e.target.options &&
+                    e.target.options[e.target.selectedIndex] &&
+                    e.target.options[e.target.selectedIndex].text) ||
+                  form.nombre_sede ||
+                  "";
+                const wday = getSedeWorkday(val);
+                setForm((prev) => ({
+                  ...prev,
+                  id_sede: val,
+                  nombre_sede: label,
+                  fk_journey: wday && wday !== "3" ? wday : "",
+                  nombre_jornada: "",
+                }));
+              }}
+              placeholder="Selecciona una sede"
+              label="Nueva Sede"
+            />
+          ) : null}
+        </div>
+
+        <div className="grid grid-cols-2">
+          <div className="grid grid-cols-1">
+            <label className="font-semibold">Jornada Actual</label>
+            <p>{form.nombre_jornada || form.fk_journey || ""}</p>
+          </div>
+          {isEditing ? (
+            <JourneySelect
+              name="fk_journey"
+              value={form.fk_journey || ""}
+              filterValue={getSedeWorkday(form.id_sede) || ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                const found = Array.isArray(journeys)
+                  ? journeys.find((opt) => String(opt.value) === String(val))
+                  : null;
+                setForm((prev) => ({
+                  ...prev,
+                  fk_journey: val,
+                  nombre_jornada: found
+                    ? String(found.label)
+                    : prev.nombre_jornada || "",
+                }));
+              }}
+              disabled={!form.id_sede}
+              label="Nueva Jornada"
+            />
+          ) : null}
+        </div>
       </div>
 
-      {/* 2) Asignaturas/Groups */}
-      <div className="p-4 border rounded bg-surface">
-        <h4 className="font-semibold mb-2">Asignaturas por Grupo</h4>
-        {Array.isArray(data?.groups) && data.groups.length > 0 ? (
-          <div className="grid grid-cols-3 gap-3">
-            {data.groups.map((grp) => (
-              <div key={grp.grupo} className="p-2 bg-white border rounded">
-                <div className="font-medium">Grupo: {grp.grupo}</div>
-                <div className="mt-2 grid gap-2">
-                  {grp.assignments.map((a) => (
-                    <div
-                      key={`${a.id_asignatura}-${a.nombre_grado}`}
-                      className="p-2 border rounded flex justify-between items-center"
-                    >
-                      <div>
-                        <div className="font-medium">{a.asignatura}</div>
-                        <div className="text-sm text-gray-600">
-                          Grado: {a.nombre_grado}
-                        </div>
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        ID: {a.id_asignatura}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : Array.isArray(data?.subjects) && data.subjects.length > 0 ? (
-          <div className="grid grid-cols-3 gap-2">
-            {data.subjects.map((s) => (
-              <div
-                key={s.id_asignatura}
-                className="p-2 bg-white border rounded"
-              >
-                <div className="font-medium">{s.asignatura}</div>
-                <div className="text-sm text-gray-600 mt-1">
-                  {Array.isArray(s.groups) && s.groups.length > 0 ? (
-                    s.groups.map((grp, gi) => (
-                      <div key={gi} className="mb-1">
-                        <div className="font-medium text-xs">
-                          Grupo: {grp.grupo}
-                        </div>
-                        <div className="text-xs ml-2">
-                          {(Array.isArray(grp.grados) ? grp.grados : []).join(
-                            ", ",
-                          )}
-                        </div>
-                      </div>
-                    ))
-                  ) : Array.isArray(s.grades) && s.grades.length > 0 ? (
-                    s.grades.map((g, gi) => (
-                      <div key={gi}>
-                        Grado: {g.nombre_grado} — Grupo: {g.grupo}
-                      </div>
-                    ))
-                  ) : (
-                    <div>No hay información de grados</div>
+      {/* 2a) Asignaturas del docente con checkbox */}
+      {isEditing && (
+        <div className="border rounded bg-surface p-4">
+          <h3 className="font-bold mb-3">Asignaturas del Docente</h3>
+          {uniqueSubjects.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {uniqueSubjects.map((subject) => (
+                <label
+                  key={subject.id || subject.name}
+                  className="flex items-center space-x-2 p-2 border rounded hover:bg-gray-50 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedSubjects.includes(subject.name)}
+                    onChange={() => handleSubjectCheckboxChange(subject.name)}
+                    className="w-4 h-4 text-accent border-gray-300 rounded focus:ring-accent"
+                  />
+                  <span className="text-sm">
+                    {subject.name}
+                    {subject.id && (
+                      <span className="text-xs text-gray-500 ml-1">
+                        ({subject.id})
+                      </span>
+                    )}
+                  </span>
+                </label>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500">
+              No hay asignaturas registradas para este docente.
+            </p>
+          )}
+          {selectedSubjects.length > 0 && (
+            <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded">
+              <p className="text-sm font-semibold text-blue-800">
+                Asignaturas seleccionadas: {selectedSubjects.length}
+              </p>
+              <p className="text-xs text-blue-600 mt-1">
+                {selectedSubjects.join(", ")}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 2b) Asignaturas/Groups */}
+      <div className=" rounded bg-surface">
+        <h3 className="p-2 font-bold">Asignaturas/Grupos</h3>
+        {assignmentRows.length > 0 ? (
+          <div className="overflow-x-auto border">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-primary ">
+                <tr className="text-xs text-surface text-center">
+                  {isEditing && (
+                    <th className="px-3 py-2 w-12">
+                      <input
+                        type="checkbox"
+                        checked={
+                          selectedTableRows.length === assignmentRows.length &&
+                          assignmentRows.length > 0
+                        }
+                        onChange={handleSelectAllTableRows}
+                        className="w-4 h-4 cursor-pointer"
+                      />
+                    </th>
                   )}
-                </div>
-              </div>
-            ))}
+                  <th className="px-3 py-2">Asignatura</th>
+                  <th className="px-3 py-2">Grado</th>
+                  <th className="px-3 py-2">Grupo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {assignmentRows.map((row, idx) => (
+                  <tr
+                    key={`assign-row-${idx}`}
+                    className={`border-t text-center ${isEditing && selectedTableRows.includes(idx) ? "bg-blue-50" : ""}`}
+                  >
+                    {isEditing && (
+                      <td className="px-3 py-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedTableRows.includes(idx)}
+                          onChange={() => handleTableRowCheckbox(idx)}
+                          className="w-4 h-4 cursor-pointer"
+                        />
+                      </td>
+                    )}
+                    <td className="px-3 py-2">
+                      <div className="font-medium">{row.asignatura}</div>
+                      {row.id_asignatura ? (
+                        <div className="text-xs text-gray-500">
+                          ({row.id_asignatura})
+                        </div>
+                      ) : null}
+                    </td>
+                    <td className="px-3 py-2">{row.grado || "—"}</td>
+                    <td className="px-3 py-2">{row.grupo || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         ) : (
           <div className="text-sm text-gray-600">
             No hay asignaturas registradas.
           </div>
         )}
-      </div>
 
+        {/* Botón toggle y componente AsignatureGrades en modo edición */}
+        {isEditing && (
+          <div className="mt-3">
+            <SimpleButton
+              onClick={() => setShowAsignatureGrades((prev) => !prev)}
+              msj={
+                showAsignatureGrades
+                  ? "Ocultar asignaturas"
+                  : "Agregar asignaturas"
+              }
+              icon={showAsignatureGrades ? "ChevronUp" : "ChevronDown"}
+              bg="bg-accent"
+              text="text-surface"
+            />
+
+            {showAsignatureGrades && (
+              <div className="mt-3">
+                <AsignatureGrades
+                  sede={form.id_sede}
+                  workday={form.fk_journey}
+                  asignatures={newAsignatures}
+                  onAdd={handleAddAsignature}
+                  onRemove={handleRemoveAsignature}
+                />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
       {/* 3) Estado */}
       <div className="p-4 border rounded bg-surface">
         <h4 className="font-semibold mb-2">Estado del docente</h4>
@@ -279,7 +787,106 @@ const ProfileTeacher = ({
         </select>
       </div>
 
-      {/* 4) Botones */}
+      {/* 4) Agregar nuevas sedes con asignaturas */}
+      {isEditing && (
+        <div className="border rounded bg-surface p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="font-semibold">Asignar docente a nueva sede</h4>
+            <div className="w-48">
+              <SimpleButton
+                onClick={addNewSede}
+                msj="Agregar sede"
+                icon="Plus"
+                bg="bg-accent"
+                text="text-surface"
+              />
+            </div>
+          </div>
+
+          {newSede.length > 0 ? (
+            <div className="space-y-4">
+              {newSede.map((sede, index) => (
+                <div
+                  key={`new-sede-${index}`}
+                  className="border rounded p-4 bg-gray-50"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="font-semibold">Sede #{index + 1}</p>
+                    <div className="w-32">
+                      <SimpleButton
+                        onClick={() => removeNewSede(index)}
+                        msj="Borrar"
+                        icon="Trash2"
+                        bg="bg-red-600"
+                        text="text-surface"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <SedeSelect
+                      name={`new_sede_${index}`}
+                      value={sede.id_sede || ""}
+                      onChange={(e) =>
+                        updateNewSedeField(index, "id_sede", e.target.value)
+                      }
+                      placeholder="Selecciona una sede"
+                    />
+
+                    <JourneySelect
+                      name={`new_journey_${index}`}
+                      value={sede.fk_journey || ""}
+                      filterValue={getSedeWorkday(sede.id_sede) || ""}
+                      onChange={(e) =>
+                        updateNewSedeField(index, "fk_journey", e.target.value)
+                      }
+                      disabled={!sede.id_sede}
+                    />
+                  </div>
+
+                  <div className="mt-3">
+                    <SimpleButton
+                      onClick={() => toggleSedeAsignatures(index)}
+                      msj={
+                        showSedeAsignatures[index]
+                          ? "Ocultar asignaturas"
+                          : "Agregar asignaturas"
+                      }
+                      icon={
+                        showSedeAsignatures[index] ? "ChevronUp" : "ChevronDown"
+                      }
+                      bg="bg-accent"
+                      text="text-surface"
+                    />
+
+                    {showSedeAsignatures[index] && (
+                      <div className="mt-3">
+                        <AsignatureGrades
+                          sede={sede.id_sede}
+                          workday={sede.fk_journey}
+                          asignatures={sede.asignatures || []}
+                          onAdd={(asign) =>
+                            handleAddSedeAsignature(index, asign)
+                          }
+                          onRemove={(asignIndex) =>
+                            handleRemoveSedeAsignature(index, asignIndex)
+                          }
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500">
+              No hay sedes nuevas agregadas.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* 5) Botones */}
       <div className="flex gap-3 justify-end">
         <SimpleButton
           msj="Cancelar"
@@ -287,20 +894,6 @@ const ProfileTeacher = ({
           text="text-primary"
           onClick={handleCancel}
         />
-        <div className="flex items-center gap-3">
-          <SimpleButton
-            msj="Guardar"
-            msjtooltip={!isEditing || !isDirty ? "Sin cambios" : null}
-            tooltip={!isEditing || !isDirty}
-            bg="bg-accent"
-            text="text-surface"
-            onClick={handleSave}
-            disabled={!isEditing || !isDirty}
-          />
-          {!isEditing || !isDirty ? (
-            <span className="text-sm text-gray-500">Sin cambios</span>
-          ) : null}
-        </div>
       </div>
     </div>
   );

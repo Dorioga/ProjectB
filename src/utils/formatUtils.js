@@ -18,6 +18,42 @@ export function formatDate(dateStr) {
   return str;
 }
 
+// Devuelve fecha para mostrar en UI: DD/MM/YYYY o cadena vacía si no hay valor
+export function formatDateToDisplay(dateStr) {
+  if (!dateStr) return "";
+  const str = String(dateStr).trim();
+  // ISO yyyy-mm-dd
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    const d = new Date(str + "T00:00:00");
+    if (!isNaN(d)) return d.toLocaleDateString("es-ES");
+  }
+  // already dd/mm/yyyy
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(str)) return str;
+  // try Date constructor
+  const d2 = new Date(str);
+  if (!isNaN(d2)) return d2.toLocaleDateString("es-ES");
+  return str;
+}
+
+// Convierte entrada de usuario (DD/MM/YYYY o YYYY-MM-DD) a "YYYY-MM-DD" para enviar al backend
+export function parseDateToISO(dateStr) {
+  if (!dateStr) return "";
+  const s = String(dateStr).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) {
+    const [dd, mm, yyyy] = s.split("/");
+    return `${yyyy}-${mm}-${dd}`;
+  }
+  const d = new Date(s);
+  if (!isNaN(d)) {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  }
+  return s;
+}
+
 /**
  * Formatea un número a cadena con separador de miles y decimales.
  * Si no es válido, devuelve la cadena original o "N/A".

@@ -26,8 +26,10 @@ const JourneySelect = ({
   }, []);
 
   const normalizedFilterValue = useMemo(() => {
-    if (typeof filterValue !== "string") return "";
-    return filterValue.trim().toLowerCase();
+    // Aceptar strings y números; ignorar null/undefined/vacío
+    if (filterValue === null || filterValue === undefined || filterValue === "")
+      return "";
+    return String(filterValue).trim().toLowerCase();
   }, [filterValue]);
 
   const options = useMemo(() => {

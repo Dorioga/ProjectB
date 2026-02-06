@@ -83,32 +83,73 @@ export async function getStudents(params = {}) {
   return studentsMock;
 }
 
-export async function getStudent(id) {
-  // Intenta obtener desde la API si existe (omitido aquí) y usa el mock como fallback.
-  const key = (id ?? "").toString().trim();
-  if (!key) throw new Error("Identificación vacía.");
+export async function getStudent(payload) {
+  // Aceptar tanto string/id como objeto payload
+  const body =
+    payload === null || payload === undefined
+      ? {}
+      : typeof payload === "string" || typeof payload === "number"
+        ? { identification: String(payload) }
+        : typeof payload === "object"
+          ? payload
+          : {};
 
-  const source = Array.isArray(studentsMock) ? studentsMock : [];
+  try {
+    // Intentar la llamada POST al endpoint /student/data
+    const res = await ApiClient.instance.post("/student/data", body);
+    const data = Array.isArray(res) ? res : (res?.data ?? res);
 
-  const found = source.find((s) => {
-    // Lista de posibles campos que pueden contener la identificación
-    const candidates = [
-      s.identification,
-      s.numero_identificacion,
-      s.documento,
-      s.id,
-      s.numeroDocumento,
-      s.numero_identificacion_acudiente, // por si acaso
-    ];
-    return candidates.some((c) => String(c ?? "").trim() === key);
-  });
+    const rows = Array.isArray(data) ? data : data?.data ? data.data : data;
 
-  if (!found) {
-    // Opcional: intentar llamada a la API real aquí
+    if (Array.isArray(rows) && rows.length > 0) return rows[0];
+    if (rows && typeof rows === "object" && Object.keys(rows).length)
+      return rows;
+
+    // Si no hay resultado, intentar fallback a mock en desarrollo
+    if (import.meta.env.DEV) {
+      const key = (body.identification ?? "").toString().trim();
+      if (!key) throw new Error("Identificación vacía.");
+
+      const source = Array.isArray(studentsMock) ? studentsMock : [];
+      const found = source.find((s) => {
+        const candidates = [
+          s.identification,
+          s.numero_identificacion,
+          s.documento,
+          s.id,
+          s.numeroDocumento,
+          s.numero_identificacion_acudiente,
+        ];
+        return candidates.some((c) => String(c ?? "").trim() === key);
+      });
+
+      if (!found) throw new Error("Estudiante no encontrado.");
+      return found;
+    }
+
     throw new Error("Estudiante no encontrado.");
-  }
+  } catch (err) {
+    // En desarrollo, intentar buscar en mock si la petición falla
+    if (import.meta.env.DEV) {
+      const key = (body.identification ?? "").toString().trim();
+      if (!key) throw err;
+      const source = Array.isArray(studentsMock) ? studentsMock : [];
+      const found = source.find((s) => {
+        const candidates = [
+          s.identification,
+          s.numero_identificacion,
+          s.documento,
+          s.id,
+          s.numeroDocumento,
+          s.numero_identificacion_acudiente,
+        ];
+        return candidates.some((c) => String(c ?? "").trim() === key);
+      });
 
-  return found;
+      if (found) return found;
+    }
+    throw err;
+  }
 }
 
 export async function createStudent(payload) {

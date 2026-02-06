@@ -73,8 +73,9 @@ const ManageSchools = () => {
 
   const handleEdit = async (institution) => {
     // Abrir modal y forzar que se abra en modo edición
-    setOpenAsEdit(true);
+    // Primero cargar la vista (handleView) y solo después forzar modo edición
     await handleView(institution);
+    setOpenAsEdit(true);
   };
 
   const columns = useMemo(
@@ -92,8 +93,9 @@ const ManageSchools = () => {
         id: "actions",
         header: "Acciones",
         cell: ({ row }) => (
-          <div className="w-full h-full flex ">
+          <div className="w-full h-full flex items-stretch ">
             <SimpleButton
+              className="h-full"
               onClick={() => handleView(row.original)}
               icon="UserSearch"
               bg="bg-primary"
@@ -102,6 +104,7 @@ const ManageSchools = () => {
               msjtooltip="Ver"
             />
             <SimpleButton
+              className="h-full"
               onClick={() => handleEdit(row.original)}
               icon="Pencil"
               bg="bg-secondary"

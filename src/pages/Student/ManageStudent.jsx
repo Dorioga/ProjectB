@@ -1,9 +1,7 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import useSchool from "../../lib/hooks/useSchool";
 import useAuth from "../../lib/hooks/useAuth";
 import DataTable from "../../components/atoms/DataTable";
-import AlertTable from "../../components/molecules/AlertTable";
-import { alertsResponse } from "../../services/DataExamples/alertsResponse";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import Modal from "../../components/atoms/Modal";
 import RegisterStudent from "./RegisterStudent";
@@ -12,84 +10,105 @@ import useStudent from "../../lib/hooks/useStudent";
 import { useNotify } from "../../lib/hooks/useNotify";
 
 const ManageStudent = () => {
-  const { idInstitution } = useAuth();
-  const { fetchAllStudents, loading } = useSchool();
-  const alerts = alertsResponse;
+  const { idInstitution, idSede } = useAuth();
+  const { fetchAllStudents } = useSchool();
+  const { updateStudent, getStudent } = useStudent();
+  const notify = useNotify();
 
-  const [students, setStudents] = useState([]);
   const [tableData, setTableData] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [fetchError, setFetchError] = useState(null);
-  const prevStudentsRef = useRef([]);
-  const hasFetchedRef = useRef(false);
-  const lastResponseRef = useRef(null);
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [initialEditing, setInitialEditing] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
 
-  const { updateStudent } = useStudent();
-  const notify = useNotify();
+  // Cargar estudiantes - memoizado para evitar recreación en cada render
+  const fetchStudentsData = useCallback(async () => {
+    if (!idInstitution) return;
 
-  // Cargar los estudiantes al montar el componente (una sola llamada)
-  // Extraer la lógica de carga en una función reutilizable para poder invocarla desde fuera (p.ej. al crear un estudiante)
-  const fetchStudentsData = async () => {
     setIsFetching(true);
+    setFetchError(null);
+
     try {
-      setFetchError(null);
-
-      if (!idInstitution) return;
-
-      const payload = { institucion: idInstitution };
-      const response = await fetchAllStudents(payload);
-
-      // Guardar respuesta cruda para depuración si hace falta
-      lastResponseRef.current = response;
-
-      const newStudents = Array.isArray(response)
+      const response = await fetchAllStudents({ institucion: idInstitution });
+      const students = Array.isArray(response)
         ? response
         : (response?.data ?? []);
-
-      // Actualizar tableData primero para asegurar que DataTable reciba los datos
-      prevStudentsRef.current = newStudents;
-      setTableData(newStudents);
-
-      setStudents(newStudents);
-      hasFetchedRef.current = true;
+      setTableData(students);
     } catch (error) {
       console.error("Error al cargar estudiantes:", error);
       setFetchError(error?.message || String(error));
-      hasFetchedRef.current = false; // permitir reintento
     } finally {
       setIsFetching(false);
     }
-  };
-
-  useEffect(() => {
-    let mounted = true;
-
-    if (!mounted) return;
-    // Cargar al montar
-    fetchStudentsData();
-
-    return () => {
-      mounted = false;
-    };
   }, [idInstitution, fetchAllStudents]);
 
-  // Función para abrir el modal con los datos del estudiante
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [initialEditing, setInitialEditing] = useState(false);
+  useEffect(() => {
+    fetchStudentsData();
+  }, [fetchStudentsData]);
 
-  const handleViewProfile = useCallback((student) => {
-    setSelectedStudent(student);
-    setInitialEditing(false);
-    setIsModalOpen(true);
-  }, []);
+  // Abrir modal (ver o editar) y cargar datos del estudiante
+  const openStudentModal = useCallback(
+    async (student, editing = false) => {
+      setInitialEditing(Boolean(editing));
+      setIsFetching(true);
 
-  const handleEditStudent = useCallback((student) => {
-    setSelectedStudent(student);
-    setInitialEditing(true);
-    setIsModalOpen(true);
-  }, []);
+      try {
+        const studentId = Number(
+          student?.id_estudiante ?? student?.id_student ?? student?.id,
+        );
+        const sedeId = Number(
+          student?.id_sede ??
+            student?.fk_sede ??
+            student?.sede_id ??
+            idSede ??
+            0,
+        );
+
+        if (!studentId) {
+          console.warn("ManageStudent: id_estudiante no disponible:", student);
+          setSelectedStudent(student);
+          setIsModalOpen(true);
+          return;
+        }
+
+        const detailed = await getStudent({
+          id_estudiante: studentId,
+          fk_sede: sedeId,
+        });
+
+        // Combinar información de la fila con los detalles del backend
+        const combinedData = {
+          ...student, // Información escolar de la fila
+          ...detailed, // Detalles completos del backend (sobrescribe si hay duplicados)
+        };
+
+        setSelectedStudent(combinedData);
+
+        setIsModalOpen(true);
+      } catch (err) {
+        console.error("Error al obtener detalles del estudiante:", err);
+        notify.error(
+          err?.message || "Error al obtener detalles del estudiante.",
+        );
+        setSelectedStudent(student);
+        setIsModalOpen(true);
+      } finally {
+        setIsFetching(false);
+      }
+    },
+    [getStudent, notify, idSede],
+  );
+
+  const handleViewProfile = useCallback(
+    (s) => openStudentModal(s, false),
+    [openStudentModal],
+  );
+  const handleEditStudent = useCallback(
+    (s) => openStudentModal(s, true),
+    [openStudentModal],
+  );
 
   // Define las columnas para la tabla
   const columns = useMemo(
@@ -137,8 +156,9 @@ const ManageStudent = () => {
         id: "actions",
         header: "Acciones",
         cell: ({ row }) => (
-          <div className="w-full h-full flex ">
+          <div className="w-full h-full flex items-stretch ">
             <SimpleButton
+              className="h-full"
               onClick={() => handleViewProfile(row.original)}
               icon="UserSearch"
               bg="bg-primary"
@@ -147,6 +167,7 @@ const ManageStudent = () => {
               msjtooltip="Ver perfil"
             />
             <SimpleButton
+              className="h-full"
               onClick={() => handleEditStudent(row.original)}
               icon="Pencil"
               bg="bg-secondary"
@@ -210,8 +231,7 @@ const ManageStudent = () => {
           size="4xl"
         >
           <RegisterStudent
-            onSuccess={(result) => {
-              // cerrar modal y refrescar la tabla
+            onSuccess={() => {
               setIsAddOpen(false);
               fetchStudentsData();
             }}
@@ -223,6 +243,7 @@ const ManageStudent = () => {
           onClose={() => setIsModalOpen(false)}
           student={selectedStudent}
           initialEditing={initialEditing}
+          isLoading={isFetching}
           onSave={async (studentId, personId, updatedData) => {
             try {
               await updateStudent(studentId, personId, updatedData);

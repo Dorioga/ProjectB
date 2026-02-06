@@ -15,7 +15,12 @@ export function StudentProvider({ children }) {
     setError(null);
     try {
       const res = await studentService.getStudents();
-      setStudents(Array.isArray(res) ? res : (res?.data ?? []));
+      const studentsArr = Array.isArray(res)
+        ? res
+        : res && res.data
+          ? res.data
+          : [];
+      setStudents(studentsArr);
     } catch (err) {
       setError(err);
     } finally {
@@ -28,56 +33,38 @@ export function StudentProvider({ children }) {
   //   loadStudents();
   // }, [loadStudents]);
 
-  const getStudent = useCallback(async (identification) => {
+  const getStudent = useCallback(async (payload) => {
+    console.log("StudentContext: getStudent llamado con payload:", payload);
     setLoading(true);
     setError(null);
     try {
-      const student = await studentService.getStudent(identification);
+      // Aceptar tanto identificación simple como objeto payload
+      const arg =
+        payload === null || payload === undefined
+          ? {}
+          : typeof payload === "string" || typeof payload === "number"
+            ? { identification: String(payload) }
+            : payload;
+
+      const studentRaw = await studentService.getStudent(arg);
+      console.log(
+        "StudentContext: Detalles del estudiante obtenidos (raw):sss",
+        studentRaw,
+      );
+
+      // Normalizar los campos para la UI (ProfileStudent espera claves en inglés/normalizadas)
+      const s = studentRaw || {};
+
       // Guardar en el contexto para que los componentes que lean 'selected' se actualicen
-      setSelected(student);
-      return student;
+      setSelected(s);
+      return s;
     } catch (err) {
       setError(err);
       throw err;
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  const updateStudent = async (studentId, personId, updatedData) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await studentService.updateStudent(
-        studentId,
-        personId,
-        updatedData,
-      );
-
-      setStudents((prevStudents) =>
-        prevStudents.map((student) => {
-          const matchesId =
-            student.id_student === studentId ||
-            String(student.identification) === String(studentId) ||
-            String(student.per_id) === String(personId);
-          if (matchesId) {
-            return { ...student, ...updatedData, ...(result || {}) };
-          }
-          return student;
-        }),
-      );
-
-      // Emitir notificación de éxito
-      eventBus.emit("¡Estudiante actualizado exitosamente!", "success");
-
-      return result;
-    } catch (err) {
-      setError(err);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
+  });
 
   const addStudent = async (payload) => {
     setLoading(true);
@@ -120,6 +107,42 @@ export function StudentProvider({ children }) {
     try {
       await studentService.deleteStudent(identification);
       setStudents((s) => s.filter((x) => x.identification !== identification));
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Actualizar estudiante (studentId: id student, personId: id persona)
+  const updateStudent = async (studentId, personId, updatedData) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await studentService.updateStudent(
+        studentId,
+        personId,
+        updatedData,
+      );
+
+      setStudents((prevStudents) =>
+        prevStudents.map((student) => {
+          const matchesId =
+            student.id_student === studentId ||
+            String(student.identification) === String(studentId) ||
+            String(student.per_id) === String(personId);
+          if (matchesId) {
+            return { ...student, ...updatedData, ...(result || {}) };
+          }
+          return student;
+        }),
+      );
+
+      // Emitir notificación de éxito
+      eventBus.emit("¡Estudiante actualizado exitosamente!", "success");
+
+      return result;
     } catch (err) {
       setError(err);
       throw err;

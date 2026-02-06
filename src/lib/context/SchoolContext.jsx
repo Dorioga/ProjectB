@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import * as schoolService from "../../services/schoolService";
 import { eventBus } from "../../services/ApiClient";
+import { mapTeacherRowsToProcessed } from "../../utils/teacherUtils";
 
 export const SchoolContext = createContext(null);
 
@@ -158,6 +159,27 @@ export function SchoolProvider({ children }) {
     setError(null);
     try {
       const updated = await schoolService.updateSchool(id, payload);
+      setSchools((s) =>
+        s.map((x) => (x.id === id || x._id === id ? updated : x)),
+      );
+
+      // Emitir notificación de éxito
+      eventBus.emit("¡Institución actualizada exitosamente!", "success");
+
+      return updated;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateInstitution = async (id, payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const updated = await schoolService.updateInstitution(id, payload);
       setSchools((s) =>
         s.map((x) => (x.id === id || x._id === id ? updated : x)),
       );
@@ -336,6 +358,9 @@ export function SchoolProvider({ children }) {
     }
   };
 
+  // export map util for reuse in other modules if needed
+  // (optional helper export - not required)
+
   const getDataSchool = async (payload) => {
     setLoading(true);
     setError(null);
@@ -355,114 +380,27 @@ export function SchoolProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      console.log("SchoolContext - getDataTeacher payload:", payload);
       const result = await schoolService.getDataTeacher(payload);
+      console.log("SchoolContext - getDataTeacher payload:", result);
+      // si el servicio ya devuelve una estructura procesada, devolverla tal cual
+      if (
+        result &&
+        typeof result === "object" &&
+        (result.basic || result.subjects)
+      ) {
+        return result;
+      }
 
       // Normalizar respuesta y construir objeto procesado:
       // {
       //   id_docente,
-      //   basic: { first_name, second_name, first_lastname, second_lastname, telephone, identification, email, fecha_nacimiento, direccion, nombre_sede },
-      //   subjects: [{ id_asignatura, asignatura, grades: [{ nombre_grado, grupo }] }],
+      //   first_name, second_name, first_lastname, second_lastname, telephone, identification, email, fecha_nacimiento, direccion, nombre_sede,
+      //   subjects: [{ id_asignatura, asignatura, groups: [{ grupo, nombre_grado }] }],
       //   estado
       // }
 
-      const raw = Array.isArray(result) ? result : (result?.data ?? result);
-      const rows = Array.isArray(raw) ? raw : [];
-      const processed = {
-        id_docente: null,
-        basic: {},
-        subjects: [],
-        estado: "",
-      };
-
-      if (rows.length > 0) {
-        const base = rows[0];
-        processed.id_docente = base.id_docente ?? null;
-        processed.basic = {
-          first_name: base.primero_nombre || "",
-          second_name: base.segundo_nombre || "",
-          first_lastname: base.primer_apellido || "",
-          second_lastname: base.segundo_apellido || "",
-          telephone: base.telefono || "",
-          identification: base.numero_identificacion || "",
-          email: base.correo || "",
-          fecha_nacimiento: base.fecha_nacimiento || "",
-          direccion: base.direccion || "",
-          nombre_sede: base.nombre_sede || "",
-        };
-
-        // Agrupar asignaturas por id_asignatura y también por grupo (para mostrar grupos primero)
-        const map = new Map();
-        const groupMap = new Map();
-
-        rows.forEach((r) => {
-          const ids = String(r.ids_asignaturas ?? "")
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean);
-          const names = String(r.asignaturas ?? "")
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean);
-
-          for (let i = 0; i < ids.length; i++) {
-            const idAsig = parseInt(ids[i], 10);
-            const nameAsig = names[i] || ids[i];
-            const grupo = r.grupo;
-            const nombre_grado = r.nombre_grado;
-
-            // por asignatura (mantener subjects con groups)
-            const key = `${idAsig}`;
-            if (!map.has(key)) {
-              map.set(key, {
-                id_asignatura: idAsig,
-                asignatura: nameAsig,
-                groupsMap: new Map(),
-              });
-            }
-            const subj = map.get(key);
-            if (!subj.groupsMap.has(grupo))
-              subj.groupsMap.set(grupo, new Set());
-            subj.groupsMap.get(grupo).add(nombre_grado);
-
-            // por grupo (nuevo formato para mostrar grupos primero)
-            if (!groupMap.has(grupo)) groupMap.set(grupo, new Map());
-            const assignmentsForGroup = groupMap.get(grupo);
-            const assignKey = `${idAsig}-${nombre_grado}`;
-            if (!assignmentsForGroup.has(assignKey)) {
-              assignmentsForGroup.set(assignKey, {
-                id_asignatura: idAsig,
-                asignatura: nameAsig,
-                nombre_grado,
-                grupo,
-              });
-            }
-          }
-        });
-
-        // Convertir map a subjects con groups
-        processed.subjects = Array.from(map.values()).map((s) => {
-          const groups = Array.from(s.groupsMap.entries()).map(
-            ([grupo, set]) => ({
-              grupo,
-              grados: Array.from(set),
-            }),
-          );
-          delete s.groupsMap;
-          return { ...s, groups };
-        });
-
-        // Convertir groupMap a array { grupo, assignments: [...] }
-        processed.groups = Array.from(groupMap.entries()).map(
-          ([grupo, assignmentsMap]) => ({
-            grupo,
-            assignments: Array.from(assignmentsMap.values()),
-          }),
-        );
-
-        processed.estado = rows[0].estado ?? "";
-      }
-
+      // Delegar la normalización a utils para mantener la lógica centralizada
+      const processed = mapTeacherRowsToProcessed(result, {});
       return processed;
     } catch (err) {
       setError(err);
@@ -609,6 +547,7 @@ export function SchoolProvider({ children }) {
     setError(null);
     try {
       const students = await schoolService.allstudent(payload);
+      console.log("Todos los estudiantes:", students);
       return students;
     } catch (error) {
       console.error("Error al obtener todos los estudiantes:", error);
@@ -659,6 +598,7 @@ export function SchoolProvider({ children }) {
         loadPeriods,
         addSchool,
         updateSchool,
+        updateInstitution,
         removeSchool,
         registerGrade,
         registerTeacher,

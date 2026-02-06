@@ -24,7 +24,8 @@ const ManageSedes = () => {
   const [isFetching, setIsFetching] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [initialEditing, setInitialEditing] = useState(false);
-
+  // Función para abrir el modal con los datos de la sede
+  const { getDataSede, updateSede } = useSchool();
   // Helper: compara sedes por id para evitar setState innecesarios
   const sedesEqual = (a = [], b = []) => {
     if (a === b) return true;
@@ -85,9 +86,6 @@ const ManageSedes = () => {
     };
   }, [idInstitution, loadInstitutionSedes]);
 
-  // Función para abrir el modal con los datos de la sede
-  const { getDataSede, updateSede } = useSchool();
-
   const handleViewSede = useCallback(
     async (sede) => {
       setSelectedSede(null);
@@ -123,7 +121,7 @@ const ManageSedes = () => {
       setSelectedSede(null);
       setInitialEditing(true);
       setIsModalOpen(true);
-
+      console.log("Editing sede:", sede);
       try {
         const payload = {
           idInstitution: idInstitution,
@@ -178,8 +176,9 @@ const ManageSedes = () => {
         id: "actions",
         header: "Acciones",
         cell: ({ row }) => (
-          <div className="w-full h-full flex">
+          <div className="w-full h-full flex items-stretch gap-2">
             <SimpleButton
+              className="h-full"
               onClick={() => handleViewSede(row.original)}
               icon="Eye"
               bg="bg-primary"
@@ -188,6 +187,7 @@ const ManageSedes = () => {
               msjtooltip="Ver detalles"
             />
             <SimpleButton
+              className="h-full"
               onClick={() => handleEditSede(row.original)}
               icon="Pencil"
               bg="bg-secondary"

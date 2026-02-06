@@ -88,8 +88,9 @@ const Auditory = () => {
         id: "actions",
         header: "Acciones",
         cell: ({ row }) => (
-          <div className="w-full h-full flex justify-center">
+          <div className="w-full h-full flex items-stretch justify-center">
             <SimpleButton
+              className="h-full"
               onClick={() => {
                 handleOpenModal("view", row.original);
               }}

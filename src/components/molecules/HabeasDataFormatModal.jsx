@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import Modal from "../atoms/Modal.jsx";
 import useStudent from "../../lib/hooks/useStudent.js";
+import useData from "../../lib/hooks/useData";
+import SedeSelect from "../atoms/SedeSelect.jsx";
 import SimpleButton from "../atoms/SimpleButton.jsx";
 import RegisterParentsModal from "./RegisterParentsModal.jsx";
 const HabeasDataModal = ({ isOpen, onClose, idEstudiante, mode = "view" }) => {
@@ -8,9 +10,12 @@ const HabeasDataModal = ({ isOpen, onClose, idEstudiante, mode = "view" }) => {
   console.log("ID del estudiante en HabeasDataModal:", idEstudiante);
 
   const { getStudent } = useStudent();
+  const { institutionSedes } = useData();
+
   const [idStudentSelected, setIdStudentSelected] = useState(
     idEstudiante || "",
   );
+  const [sedeSelected, setSedeSelected] = useState("");
   const [studentSelected, setStudentSelected] = useState(null);
   const [isOpenRegisterParents, setIsOpenRegisterParents] = useState(false);
   const [stateFormParents, setStateFormParents] = useState(false);
@@ -28,12 +33,29 @@ const HabeasDataModal = ({ isOpen, onClose, idEstudiante, mode = "view" }) => {
   const handleStudentChange = async (id = null) => {
     const idToUse = id ?? idStudentSelected;
     if (!idToUse) return;
+
+    // asegurarse de tener sede seleccionada
+    const sedeId =
+      sedeSelected ||
+      (Array.isArray(institutionSedes) && institutionSedes.length
+        ? String(institutionSedes[0].id)
+        : "");
+    if (!sedeId) {
+      alert("Selecciona una sede antes de buscar.");
+      return;
+    }
+
     setLoadingStudent(true);
     // resetear estados relacionados a la confirmación antes de nueva búsqueda
     setConfirmedAcudiente(false);
     setShowAcudienteQuestion(false);
     try {
-      const student = await getStudent(idToUse);
+      const payload = {
+        id_estudiante: Number(idToUse),
+        fk_sede: Number(sedeId),
+      };
+
+      const student = await getStudent(payload);
       setStudentSelected(student);
       setStateFormParents(true);
       // mostrar la pregunta después de obtener el estudiante
@@ -50,16 +72,41 @@ const HabeasDataModal = ({ isOpen, onClose, idEstudiante, mode = "view" }) => {
     // si llega id_student por prop, sincronizar input y disparar la búsqueda
     if (idEstudiante) {
       setIdStudentSelected(idEstudiante);
-      handleStudentChange(idEstudiante);
+      // si ya hay sedes cargadas, preseleccionar la primera
+      if (Array.isArray(institutionSedes) && institutionSedes.length) {
+        setSedeSelected(String(institutionSedes[0].id));
+        handleStudentChange(idEstudiante);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idEstudiante]);
+  }, [idEstudiante, institutionSedes]);
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Formato de firma" size="xl">
       <div className="signature-format-modal">
         <div className="modal-content">
           <div className="p-4 border-2 border-dashed rounded-lg w-full">
             <h3 className="text-center font-bold text-lg">Habeas Data</h3>
+
+            <div className="mt-2 mb-2 w-full max-w-md mx-auto">
+              <label className="block mb-1">Sede</label>
+              <div className="flex gap-2">
+                <SedeSelect
+                  value={sedeSelected}
+                  onChange={(e) => setSedeSelected(e.target.value)}
+                  className="w-full p-2 border rounded bg-surface"
+                />
+                {idEstudiante ? (
+                  <SimpleButton
+                    msj="Buscar"
+                    bg="bg-blue-600"
+                    text="text-surface"
+                    icon="Search"
+                    onClick={() => handleStudentChange(idStudentSelected)}
+                    disabled={!sedeSelected}
+                  />
+                ) : null}
+              </div>
+            </div>
 
             {/* Mostrar input mientras no exista idEstudiante prop */}
             {!idEstudiante && !loadingStudent && (
@@ -69,12 +116,17 @@ const HabeasDataModal = ({ isOpen, onClose, idEstudiante, mode = "view" }) => {
                   identificación para buscarlo.
                 </p>
                 <div className="grid grid-cols-3 gap-2 max-w-md">
+                  <SedeSelect
+                    value={sedeSelected}
+                    onChange={(e) => setSedeSelected(e.target.value)}
+                    className="w-full p-2 border rounded bg-surface col-span-1"
+                  />
                   <input
                     type="text"
                     placeholder="Identificación"
                     value={idStudentSelected}
                     onChange={(e) => setIdStudentSelected(e.target.value)}
-                    className="w-full p-2 border rounded bg-surface col-span-2"
+                    className="w-full p-2 border rounded bg-surface col-span-1"
                   />
                   <SimpleButton
                     msj="Buscar"
@@ -82,6 +134,7 @@ const HabeasDataModal = ({ isOpen, onClose, idEstudiante, mode = "view" }) => {
                     text="text-surface"
                     icon="Search"
                     onClick={() => handleStudentChange()}
+                    disabled={!idStudentSelected || !sedeSelected}
                   />
                 </div>
               </div>

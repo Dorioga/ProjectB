@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import useSchool from "../../lib/hooks/useSchool";
 import useAuth from "../../lib/hooks/useAuth";
+import { mapTeacherRowsToProcessed } from "../../utils/teacherUtils";
 import DataTable from "../../components/atoms/DataTable";
 import AlertTable from "../../components/molecules/AlertTable";
 import { alertsResponse } from "../../services/DataExamples/alertsResponse";
@@ -29,20 +30,6 @@ const ManageTeacher = () => {
   const [initialEditing, setInitialEditing] = useState(false);
   const [selectedTeacherForModal, setSelectedTeacherForModal] = useState(null);
   const notify = useNotify();
-
-  // Helper: compara por id_docente y largo para evitar setState innecesarios
-  const teachersEqual = (a = [], b = []) => {
-    if (a === b) return true;
-    if (!Array.isArray(a) || !Array.isArray(b)) return false;
-    if (a.length !== b.length) return false;
-    for (let i = 0; i < a.length; i++) {
-      const ai = a[i];
-      const bi = b[i];
-      if (!bi) return false;
-      if (ai.id_docente !== bi.id_docente) return false;
-    }
-    return true;
-  };
 
   // Cargar los profesores al montar el componente (solo una llamada)
   // Extraer la lógica de carga en una función reutilizable para poder invocarla desde fuera (p.ej. al crear un docente)
@@ -89,193 +76,51 @@ const ManageTeacher = () => {
     };
   }, [idInstitution, fetchAllTeachers]);
 
-  // Función para abrir el modal con los datos del profesor
-  const handleViewProfile = useCallback(
-    (teacher) => {
-      // fetch details and open modal (read-only)
-      (async () => {
-        try {
-          setIsFetching(true);
-          const payload = {
-            id_docente: Number(teacher?.id_docente),
-            fk_sede: Number(
-              teacher?.id_sede ?? teacher?.idSede ?? teacher?.id_sede,
-            ),
-          };
+  // Abrir modal (ver o editar) y cargar datos del docente
+  const openTeacherModal = useCallback(
+    async (teacher, editing = false) => {
+      try {
+        setIsFetching(true);
+        const payload = {
+          id_docente: Number(teacher?.id_docente),
+          fk_sede: Number(
+            teacher?.id_sede ?? teacher?.idSede ?? teacher?.id_sede,
+          ),
+        };
 
-          const res = await getDataTeacher(payload);
+        const res = await getDataTeacher(payload);
+        console.log("ManageTeacher getDataTeacher response:", res);
 
-          let processed;
-          // Si getDataTeacher ya devolvió la estructura procesada, úsala tal cual
-          if (res && typeof res === "object" && (res.basic || res.subjects)) {
-            processed = res;
-          } else {
-            // res puede venir como array o { code, data }
-            const rawData = Array.isArray(res) ? res : (res?.data ?? res);
-            const rows = Array.isArray(rawData) ? rawData : [];
-
-            processed = {};
-            if (rows.length > 0) {
-              const base = rows[0];
-              processed.id_docente = base.id_docente ?? teacher.id_docente;
-              processed.basic = {
-                first_name: base.primero_nombre || "",
-                second_name: base.segundo_nombre || "",
-                first_lastname: base.primer_apellido || "",
-                second_lastname: base.segundo_apellido || "",
-                telephone: base.telefono || "",
-                identification: base.numero_identificacion || "",
-                email: base.correo || "",
-                fecha_nacimiento: base.fecha_nacimiento || "",
-                direccion: base.direccion || "",
-                nombre_sede: base.nombre_sede || "",
-              };
-
-              // construir arreglo de asignaturas a partir de cada fila
-              const subjects = [];
-              rows.forEach((r) => {
-                const ids = String(r.ids_asignaturas ?? "")
-                  .split(",")
-                  .map((s) => s.trim())
-                  .filter(Boolean);
-                const names = String(r.asignaturas ?? "")
-                  .split(",")
-                  .map((s) => s.trim())
-                  .filter(Boolean);
-                for (let i = 0; i < ids.length; i++) {
-                  const idAsig = parseInt(ids[i], 10);
-                  const nameAsig = names[i] || ids[i];
-                  subjects.push({
-                    id_asignatura: idAsig,
-                    asignatura: nameAsig,
-                    nombre_grado: r.nombre_grado,
-                    grupo: r.grupo,
-                  });
-                }
-              });
-
-              // deduplicar por id_asignatura + nombre_grado + grupo
-              const seen = new Set();
-              processed.subjects = subjects.filter((s) => {
-                const key = `${s.id_asignatura}-${s.nombre_grado}-${s.grupo}`;
-                if (seen.has(key)) return false;
-                seen.add(key);
-                return true;
-              });
-
-              processed.estado = rows[0].estado ?? "";
-            } else {
-              processed.basic = {};
-              processed.subjects = [];
-              processed.estado = teacher?.estado ?? "";
-            }
-          }
-
-          setSelectedTeacher(teacher);
-          setSelectedTeacherForModal(processed);
-          setInitialEditing(false);
-          setIsModalOpen(true);
-        } catch (err) {
-          console.error("Error fetching teacher details:", err);
-          notify.error(err?.message || "Error al obtener datos del docente");
-        } finally {
-          setIsFetching(false);
+        let processed;
+        // Si getDataTeacher ya devolvió la estructura procesada, úsala tal cual
+        if (res && typeof res === "object" && (res.basic || res.subjects)) {
+          processed = res;
+        } else {
+          const rawData = Array.isArray(res) ? res : (res?.data ?? res);
+          processed = mapTeacherRowsToProcessed(rawData, teacher);
         }
-      })();
+
+        setSelectedTeacher(teacher);
+        setSelectedTeacherForModal(processed);
+        setInitialEditing(Boolean(editing));
+        setIsModalOpen(true);
+      } catch (err) {
+        console.error("Error fetching teacher details:", err);
+        notify.error(err?.message || "Error al obtener datos del docente");
+      } finally {
+        setIsFetching(false);
+      }
     },
     [getDataTeacher, notify],
   );
 
+  const handleViewProfile = useCallback(
+    (t) => openTeacherModal(t, false),
+    [openTeacherModal],
+  );
   const handleEditTeacher = useCallback(
-    (teacher) => {
-      // fetch details and open modal in edit mode
-      (async () => {
-        try {
-          setIsFetching(true);
-          const payload = {
-            id_docente: Number(teacher?.id_docente),
-            fk_sede: Number(
-              teacher?.id_sede ?? teacher?.idSede ?? teacher?.id_sede,
-            ),
-          };
-
-          const res = await getDataTeacher(payload);
-
-          let processed;
-          if (res && typeof res === "object" && (res.basic || res.subjects)) {
-            processed = res;
-          } else {
-            const rawData = Array.isArray(res) ? res : (res?.data ?? res);
-            const rows = Array.isArray(rawData) ? rawData : [];
-
-            processed = {};
-            if (rows.length > 0) {
-              const base = rows[0];
-              processed.id_docente = base.id_docente ?? teacher.id_docente;
-              processed.basic = {
-                first_name: base.primero_nombre || "",
-                second_name: base.segundo_nombre || "",
-                first_lastname: base.primer_apellido || "",
-                second_lastname: base.segundo_apellido || "",
-                telephone: base.telefono || "",
-                identification: base.numero_identificacion || "",
-                email: base.correo || "",
-                fecha_nacimiento: base.fecha_nacimiento || "",
-                direccion: base.direccion || "",
-                nombre_sede: base.nombre_sede || "",
-              };
-
-              const subjects = [];
-              rows.forEach((r) => {
-                const ids = String(r.ids_asignaturas ?? "")
-                  .split(",")
-                  .map((s) => s.trim())
-                  .filter(Boolean);
-                const names = String(r.asignaturas ?? "")
-                  .split(",")
-                  .map((s) => s.trim())
-                  .filter(Boolean);
-                for (let i = 0; i < ids.length; i++) {
-                  const idAsig = parseInt(ids[i], 10);
-                  const nameAsig = names[i] || ids[i];
-                  subjects.push({
-                    id_asignatura: idAsig,
-                    asignatura: nameAsig,
-                    nombre_grado: r.nombre_grado,
-                    grupo: r.grupo,
-                  });
-                }
-              });
-
-              const seen = new Set();
-              processed.subjects = subjects.filter((s) => {
-                const key = `${s.id_asignatura}-${s.nombre_grado}-${s.grupo}`;
-                if (seen.has(key)) return false;
-                seen.add(key);
-                return true;
-              });
-
-              processed.estado = rows[0].estado ?? "";
-            } else {
-              processed.basic = {};
-              processed.subjects = [];
-              processed.estado = teacher?.estado ?? "";
-            }
-          }
-
-          setSelectedTeacher(teacher);
-          setSelectedTeacherForModal(processed);
-          setInitialEditing(true);
-          setIsModalOpen(true);
-        } catch (err) {
-          console.error("Error fetching teacher details:", err);
-          notify.error(err?.message || "Error al obtener datos del docente");
-        } finally {
-          setIsFetching(false);
-        }
-      })();
-    },
-    [getDataTeacher, notify],
+    (t) => openTeacherModal(t, true),
+    [openTeacherModal],
   );
 
   // Define las columnas para la tabla
@@ -368,8 +213,9 @@ const ManageTeacher = () => {
         id: "actions",
         header: "Acciones",
         cell: ({ row }) => (
-          <div className="w-full h-full flex ">
+          <div className="w-full h-full flex items-stretch ">
             <SimpleButton
+              className="h-full"
               onClick={() => handleViewProfile(row.original)}
               icon="UserSearch"
               bg="bg-primary"
@@ -378,6 +224,7 @@ const ManageTeacher = () => {
               msjtooltip="Ver perfil"
             />
             <SimpleButton
+              className="h-full"
               onClick={() => handleEditTeacher(row.original)}
               icon="Pencil"
               bg="bg-secondary"
@@ -389,7 +236,7 @@ const ManageTeacher = () => {
         ),
       },
     ],
-    [handleViewProfile],
+    [handleViewProfile, handleEditTeacher],
   );
 
   return (

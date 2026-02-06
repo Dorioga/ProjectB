@@ -163,6 +163,36 @@ export async function updateTeacher(id, payload) {
 
   throw new Error("Respuesta inesperada de update_teacher.");
 }
+
+/**
+ * Actualiza la información de una institución.
+ *
+ * Endpoint esperado: PATCH /institution/:id
+ * @param {string|number} id - Identificador de la institución
+ * @param {Object} payload - Datos a actualizar
+ * @returns {Promise<Object>} Respuesta del servidor con la institución actualizada
+ */
+export async function updateInstitution(id, payload) {
+  if (!id) throw new Error("id es requerido para updateInstitution");
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+
+  const res = await ApiClient.instance.patch(`/institution/${id}`, payload);
+  const data = res;
+  console.log("SchoolService - updateInstitution:", data);
+
+  // Validación suave del payload: devolvemos data o data.data.
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de updateInstitution.");
+}
+
+/**
+ * Alias por compatibilidad: updateSchool -> updateInstitution
+ */
+
 /**
  * Actualiza datos de una sede para una institución.
  *

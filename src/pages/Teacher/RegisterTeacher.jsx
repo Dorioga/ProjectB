@@ -38,6 +38,7 @@ const RegisterTeacher = ({ onSuccess }) => {
 
   // El componente AsignatureGrades gestiona su estado interno y la carga de grados.
   const handleAddAsignature = (asign) => {
+    console.log("Agregar asignatura:", asign);
     setFormData((prev) => ({
       ...prev,
       asignature: [...prev.asignature, asign],

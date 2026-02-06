@@ -5,7 +5,6 @@ import { handleNumericInput } from "../../utils/formatUtils";
 import ProfileStudent from "../../components/molecules/ProfileStudent";
 import QRModal from "../../components/molecules/QRModal";
 import CarnetModal from "../../components/molecules/CarnetModal";
-import { getStudent } from "../../services/studentService";
 
 const SingleStudent = () => {
   const { getStudent, selected, loading, error } = useStudent(); // ✅ Obtener selected del contexto
@@ -28,7 +27,7 @@ const SingleStudent = () => {
     }
     //1096252058
     try {
-      const student = await getStudent(studentId);
+      const student = await getStudent({ identification: studentId });
       // getStudent del contexto ahora setea `selected`; además logueamos el resultado recibido
       console.log("Estudiante encontrado (retornado):", student);
     } catch (err) {

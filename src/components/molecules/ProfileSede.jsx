@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import SimpleButton from "../atoms/SimpleButton";
+import JourneySelect from "../atoms/JourneySelect";
 
 const ProfileSede = ({ data, onSave, initialEditing = false }) => {
   // data puede ser null mientras se carga; usar un objeto seguro
@@ -41,7 +42,23 @@ const ProfileSede = ({ data, onSave, initialEditing = false }) => {
         const id = data?.id ?? data?.id_sede ?? null;
         setIsSaving(true);
         try {
-          await onSave(id, form);
+          // Transformar el formulario al formato esperado por el backend
+          const payload = {};
+
+          // Mapear campos: direccion -> address, nombre_sede -> name, telefono -> phone
+          if (form.direccion !== undefined) payload.address = form.direccion;
+          if (form.nombre_sede !== undefined) payload.name = form.nombre_sede;
+          if (form.telefono !== undefined) payload.phone = form.telefono;
+
+          // workday debe ser numérico si existe
+          const parsedWorkday = parseInt(form.fk_jornada, 10);
+          if (!Number.isNaN(parsedWorkday)) {
+            payload.workday = parsedWorkday;
+          }
+          console.log("ProfileSede - payload to save:", payload);
+          // Llamar al callback con la carga transformada
+          await onSave(id, payload);
+
           // only exit edit mode on success
           setIsEditing(false);
         } catch (err) {
@@ -123,24 +140,38 @@ const ProfileSede = ({ data, onSave, initialEditing = false }) => {
 
         <div>
           <label className="font-semibold">Estado</label>
-          <input
+          <select
             name="estado"
             value={form.estado}
             onChange={handleChange}
             className={`w-full p-2 border rounded bg-surface ${isEditing && !isSaving ? "ring-2 ring-accent/30" : "opacity-80 text-gray-700"}`}
             disabled={!isEditing || isSaving}
-          />
+          >
+            <option value="">Selecciona estado</option>
+            <option value="Activo">Activo</option>
+            <option value="Desactivado">Desactivado</option>
+          </select>
         </div>
 
         <div>
-          <label className="font-semibold">ID Jornada</label>
-          <input
+          <JourneySelect
+            label="ID Jornada"
+            labelClassName="font-semibold"
             name="fk_jornada"
             value={form.fk_jornada}
+            filterValue={String(form.fk_jornada) === "3" ? "3" : ""}
             onChange={handleChange}
             className={`w-full p-2 border rounded bg-surface ${isEditing && !isSaving ? "ring-2 ring-accent/30" : "opacity-80 text-gray-700"}`}
             disabled={!isEditing || isSaving}
           />
+
+          {String(form.fk_jornada) === "3" && (
+            <p className="text-sm text-yellow-600 mt-2">
+              Nota: el valor actual es "Ambas" (ID 3). Aquí solo se muestran
+              "Mañana" y "Tarde"; selecciona una de ellas para actualizar la
+              jornada.
+            </p>
+          )}
         </div>
       </div>
     </div>

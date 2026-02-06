@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import AsignatureSelector from "./AsignatureSelector";
 import useSchool from "../../lib/hooks/useSchool";
 
@@ -10,6 +10,12 @@ export default function AsignatureGrades({
   onRemove,
 }) {
   const { getGradeAsignature } = useSchool();
+
+  // Estabilizar la referencia para evitar re-renders infinitos
+  const getGradeAsignatureRef = useRef(getGradeAsignature);
+  useEffect(() => {
+    getGradeAsignatureRef.current = getGradeAsignature;
+  });
 
   const [tempAsignature, setTempAsignature] = useState("");
   const [tempAsignatureName, setTempAsignatureName] = useState("");
@@ -34,7 +40,7 @@ export default function AsignatureGrades({
           idSede: Number(sede),
           idWorkDay: Number(workday),
         };
-        const response = await getGradeAsignature(payload);
+        const response = await getGradeAsignatureRef.current(payload);
         const grades = Array.isArray(response) ? response : [];
         if (!canceled) setAvailableAsignatureGrades(grades);
       } catch (err) {
@@ -50,7 +56,7 @@ export default function AsignatureGrades({
     return () => {
       canceled = true;
     };
-  }, [tempAsignature, sede, workday, getGradeAsignature]);
+  }, [tempAsignature, sede, workday]);
 
   const toggleAsignatureGrade = (gradeId) => {
     setTempGrades((prev) => {

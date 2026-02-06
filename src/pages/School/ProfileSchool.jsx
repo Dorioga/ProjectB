@@ -9,6 +9,7 @@ import DepartmentSelector from "../../components/molecules/DepartmentSelector";
 import CitySelector from "../../components/molecules/CitySelector";
 import { getInputClassName, getLabelClassName } from "../../utils/cssUtils";
 import useSchool from "../../lib/hooks/useSchool";
+import { useNotify } from "../../lib/hooks/useNotify";
 
 const ProfileSchool = ({
   mode: modeProp,
@@ -22,7 +23,8 @@ const ProfileSchool = ({
   const mode = (modeProp ?? modeFromParams ?? "register").toLowerCase();
   const isUpdate = mode === "update";
 
-  const { addSchool, updateSchool, loading } = useSchool();
+  const { addSchool, updateSchool, updateInstitution, loading, journeys } =
+    useSchool();
 
   const [formData, setFormData] = useState({
     municipality: "1",
@@ -116,19 +118,85 @@ const ProfileSchool = ({
   };
 
   const addSede = () => {
-    setFormData((prev) => ({
-      ...prev,
-      sede: [
-        ...(Array.isArray(prev.sede) ? prev.sede : []),
-        {
-          name_sede: "",
-          adress: "",
-          phone: "",
-          jornada: "",
-        },
-      ],
-    }));
+    setFormData((prev) => {
+      const currentWorkday =
+        prev && prev.workday !== undefined && prev.workday !== null
+          ? String(prev.workday)
+          : "";
+
+      return {
+        ...prev,
+        sede: [
+          ...(Array.isArray(prev.sede) ? prev.sede : []),
+          {
+            name_sede: "",
+            adress: "",
+            phone: "",
+            jornada: currentWorkday,
+          },
+        ],
+      };
+    });
   };
+
+  const notify = useNotify();
+
+  // Si la institución cambia de jornada, aplicamos reglas a las sedes:
+  // - Si es '3' (Ambas): limpiamos jornadas inválidas para forzar al usuario a elegir 1 o 2
+  // - Si es '1' o '2': forzamos todas las sedes a usar ese valor (y notificamos)
+  useEffect(() => {
+    const w = String(formData.workday);
+
+    if (w === "3") {
+      const seats = Array.isArray(formData.sede) ? formData.sede : [];
+      let changed = false;
+      const newSedes = seats.map((s) => {
+        const j =
+          s && s.jornada !== undefined && s.jornada !== null
+            ? String(s.jornada)
+            : "";
+        // mantener si ya es 1 o 2; si es vacío mantener vacío; para '3' u otros limpiar
+        if (j === "1" || j === "2" || j === "") return s;
+        changed = true;
+        return { ...s, jornada: "" };
+      });
+
+      if (changed) {
+        setFormData((prev) => ({ ...prev, sede: newSedes }));
+        notify.info(
+          "Se limpiaron jornadas no válidas en las sedes. Por favor selecciona 'Mañana' o 'Tarde' para cada sede.",
+        );
+      }
+
+      return;
+    }
+
+    // Si es diferente de '3' y no está vacío, actualizar todas las sedes para que usen ese workday
+    if (w !== "3" && w !== "") {
+      const seats = Array.isArray(formData.sede) ? formData.sede : [];
+      let changed = false;
+      const newSedes = seats.map((s) => {
+        const j =
+          s && s.jornada !== undefined && s.jornada !== null
+            ? String(s.jornada)
+            : "";
+        if (j === w) return s;
+        changed = true;
+        return { ...s, jornada: w };
+      });
+
+      if (changed) {
+        setFormData((prev) => ({ ...prev, sede: newSedes }));
+        const opt = (Array.isArray(journeys) ? journeys : []).find(
+          (o) => String(o.value) === w,
+        );
+        const label = opt ? opt.label : `Jornada ${w}`;
+        notify.success(
+          `Se actualizaron automáticamente las jornadas de las sedes a "${label}"`,
+        );
+      }
+    }
+  }, [formData.workday, journeys, notify]);
 
   const updateSedeField = (index, field, value) => {
     setFormData((prev) => ({
@@ -159,41 +227,70 @@ const ProfileSchool = ({
     try {
       const payload = { ...formData };
 
-      // Procesar sedes
-      let sedeData = payload.sede ?? [];
-
-      // Si no hay sedes, crear una sede principal automáticamente
-      if (sedeData.length === 0) {
-        sedeData = [
-          {
-            name_sede: "principal",
-            adress: "",
-            phone: "",
-            jornada: parseInt(payload.workday),
-          },
-        ];
-      } else {
-        // Convertir jornada a número para cada sede existente
-        sedeData = sedeData.map((sede) => ({
-          ...sede,
-          jornada: parseInt(sede.jornada),
-        }));
-      }
-
-      payload.sede = sedeData;
-
-      // Excluir campos auxiliares que no se envían al backend
-      delete payload.department_id;
-
-      console.log("Datos a enviar:", payload);
-
       let result;
+
       if (isUpdate && schoolId) {
-        // Modo actualización
-        result = await updateSchool(schoolId, payload);
-        console.log("Institución actualizada:", result);
+        // Para actualización, enviar sólo los campos permitidos
+        const updatePayload = {
+          address: payload.address ?? "",
+          codDane: payload.codDane ?? "",
+          coordinadorName: payload.coordinadorName ?? "",
+          email: payload.email ?? "",
+          logo: payload.logo ?? "",
+          mainColor: payload.mainColor ?? "",
+          municipality: payload.municipality ?? "",
+          name: payload.name ?? "",
+          phone: payload.phone ?? "",
+          principalName: payload.principalName ?? "",
+          secondaryColor: payload.secondaryColor ?? "",
+          signaturePrincipal: payload.signaturePrincipal ?? "",
+          slogan: payload.slogan ?? "",
+          workday: payload.workday ? parseInt(payload.workday) : null,
+        };
+
+        console.log("Datos a enviar (update):", updatePayload);
+
+        // Usar updateInstitution si existe, si no usar updateSchool como fallback
+        if (typeof updateInstitution === "function") {
+          result = await updateInstitution(schoolId, updatePayload);
+          console.log("Institución actualizada (updateInstitution):", result);
+        } else {
+          result = await updateSchool(schoolId, updatePayload);
+          console.log(
+            "Institución actualizada (updateSchool fallback):",
+            result,
+          );
+        }
       } else {
-        // Modo creación
+        // Modo creación: procesar sedes y enviar payload completo
+        // Procesar sedes
+        let sedeData = payload.sede ?? [];
+
+        // Si no hay sedes, crear una sede principal automáticamente
+        if (sedeData.length === 0) {
+          sedeData = [
+            {
+              name_sede: "principal",
+              adress: "",
+              phone: "",
+              jornada: parseInt(payload.workday),
+            },
+          ];
+        } else {
+          // Convertir jornada a número para cada sede existente
+          sedeData = sedeData.map((sede) => ({
+            ...sede,
+            jornada: parseInt(sede.jornada),
+          }));
+        }
+
+        payload.sede = sedeData;
+
+        // Excluir campos auxiliares que no se envían al backend
+        delete payload.department_id;
+
+        console.log("Datos a enviar (create):", payload);
+
         result = await addSchool(payload);
         console.log("Institución creada:", result);
       }
@@ -217,13 +314,22 @@ const ProfileSchool = ({
   };
 
   return (
-    <div className="border p-6 rounded bg-bg h-full gap-4 flex flex-col">
+    <div
+      className={`border p-6 rounded bg-bg h-full gap-4 flex flex-col ${isEditing ? "ring-2 ring-accent" : "opacity-95"}`}
+    >
       <form
         onSubmit={handleSubmit}
         className="grid grid-cols-1 md:grid-cols-2 gap-4"
       >
-        <div className="md:col-span-2 flex justify-between items-center mb-2">
-          <h2 className="text-xl font-semibold">{title}</h2>
+        <div className=" grid grid-cols-5 md:col-span-2  justify-between items-center mb-2">
+          <h2 className="text-xl font-semibold flex items-center col-span-4">
+            {title}
+            <span
+              className={`ml-3 inline-flex items-center px-2 py-1 rounded text-xs font-medium ${isEditing ? "bg-green-100 text-green-800" : "bg-gray-200 text-gray-700"}`}
+            >
+              {isEditing ? "Modo edición" : "Solo lectura"}
+            </span>
+          </h2>
           <SimpleButton
             type="button"
             onClick={toggleEditing}
@@ -235,39 +341,50 @@ const ProfileSchool = ({
         </div>
 
         <div className="md:col-span-2">
-          <label>Nombre de la institución</label>
+          <label className={getLabelClassName("", !isEditing)}>
+            Nombre de la institución
+          </label>
           <input
             type="text"
             name="name"
             value={formData.name}
             onChange={handleChange}
             disabled={!isEditing}
-            className="w-full p-2 border rounded bg-surface"
+            className={getInputClassName(
+              "w-full p-2 border rounded bg-surface",
+              !isEditing,
+            )}
             required
           />
         </div>
 
         <div className="md:col-span-2">
-          <label>Slogan</label>
+          <label className={getLabelClassName("", !isEditing)}>Slogan</label>
           <input
             type="text"
             name="slogan"
             value={formData.slogan}
             onChange={handleChange}
             disabled={!isEditing}
-            className="w-full p-2 border rounded bg-surface"
+            className={getInputClassName(
+              "w-full p-2 border rounded bg-surface",
+              !isEditing,
+            )}
           />
         </div>
 
         <div className="md:col-span-2">
-          <label>Dirección</label>
+          <label className={getLabelClassName("", !isEditing)}>Dirección</label>
           <input
             type="text"
             name="address"
             value={formData.address}
             onChange={handleChange}
             disabled={!isEditing}
-            className="w-full p-2 border rounded bg-surface"
+            className={getInputClassName(
+              "w-full p-2 border rounded bg-surface",
+              !isEditing,
+            )}
           />
         </div>
 
@@ -277,7 +394,10 @@ const ProfileSchool = ({
             label="Departamento"
             value={formData.department_id}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-surface"
+            className={getInputClassName(
+              "w-full p-2 border rounded bg-surface",
+              !isEditing,
+            )}
             disabled={!isEditing}
           />
         </div>
@@ -289,13 +409,16 @@ const ProfileSchool = ({
             value={formData.municipality}
             onChange={handleChange}
             departmentId={formData.department_id}
-            className="w-full p-2 border rounded bg-surface"
+            className={getInputClassName(
+              "w-full p-2 border rounded bg-surface",
+              !isEditing,
+            )}
             disabled={!isEditing}
           />
         </div>
 
         <div>
-          <label className={getLabelClassName("", false)}>Teléfono</label>
+          <label className={getLabelClassName("", !isEditing)}>Teléfono</label>
           <input
             type="tel"
             name="phone"
@@ -304,13 +427,13 @@ const ProfileSchool = ({
             disabled={!isEditing}
             className={getInputClassName(
               "w-full p-2 border rounded bg-surface",
-              false,
+              !isEditing,
             )}
           />
         </div>
 
         <div>
-          <label className={getLabelClassName("", false)}>
+          <label className={getLabelClassName("", !isEditing)}>
             Correo electrónico
           </label>
           <input
@@ -321,20 +444,25 @@ const ProfileSchool = ({
             disabled={!isEditing}
             className={getInputClassName(
               "w-full p-2 border rounded bg-surface",
-              false,
+              !isEditing,
             )}
           />
         </div>
 
         <div>
-          <label>Nombre del director</label>
+          <label className={getLabelClassName("", !isEditing)}>
+            Nombre del director
+          </label>
           <input
             type="text"
             name="principalName"
             value={formData.principalName}
             onChange={handleChange}
             disabled={!isEditing}
-            className="w-full p-2 border rounded bg-surface"
+            className={getInputClassName(
+              "w-full p-2 border rounded bg-surface",
+              !isEditing,
+            )}
           />
         </div>
 
@@ -347,19 +475,26 @@ const ProfileSchool = ({
               className="w-full p-2 border rounded"
             />
           ) : (
-            <p className="p-2">{formData.signaturePrincipal ? "Archivo cargado" : "No cargado"}</p>
+            <p className="p-2">
+              {formData.signaturePrincipal ? "Archivo cargado" : "No cargado"}
+            </p>
           )}
         </div>
 
         <div className="md:col-span-2">
-          <label>Nombre del coordinador</label>
+          <label className={getLabelClassName("", !isEditing)}>
+            Nombre del coordinador
+          </label>
           <input
             type="text"
             name="coordinadorName"
             value={formData.coordinadorName}
             onChange={handleChange}
             disabled={!isEditing}
-            className="w-full p-2 border rounded bg-surface"
+            className={getInputClassName(
+              "w-full p-2 border rounded bg-surface",
+              !isEditing,
+            )}
           />
         </div>
 
@@ -372,7 +507,9 @@ const ProfileSchool = ({
               className="w-full p-2 border rounded"
             />
           ) : (
-            <p className="p-2">{formData.logo ? "Archivo cargado" : "No cargado"}</p>
+            <p className="p-2">
+              {formData.logo ? "Archivo cargado" : "No cargado"}
+            </p>
           )}
         </div>
 
@@ -391,7 +528,9 @@ const ProfileSchool = ({
         </div>
 
         <div>
-          <label className={getLabelClassName("", isUpdate)}>Código DANE</label>
+          <label className={getLabelClassName("", !isEditing || isUpdate)}>
+            Código DANE
+          </label>
           <input
             type="text"
             name="codDane"
@@ -400,7 +539,7 @@ const ProfileSchool = ({
             disabled={!isEditing || isUpdate}
             className={getInputClassName(
               "w-full p-2 border rounded bg-surface",
-              isUpdate,
+              !isEditing || isUpdate,
             )}
             placeholder={
               isUpdate
@@ -416,7 +555,10 @@ const ProfileSchool = ({
             name="workday"
             value={formData.workday}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-surface"
+            className={getInputClassName(
+              "w-full p-2 border rounded bg-surface",
+              !isEditing,
+            )}
             disabled={!isEditing}
           />
         </div>
@@ -472,7 +614,11 @@ const ProfileSchool = ({
                             type="text"
                             value={sede?.name_sede ?? ""}
                             onChange={(e) =>
-                              updateSedeField(index, "name_sede", e.target.value)
+                              updateSedeField(
+                                index,
+                                "name_sede",
+                                e.target.value,
+                              )
                             }
                             className="w-full p-2 border rounded bg-surface"
                           />
@@ -506,6 +652,11 @@ const ProfileSchool = ({
                           label="Jornada"
                           name="jornada"
                           value={sede?.jornada ?? ""}
+                          filterValue={
+                            String(formData.workday) !== "3"
+                              ? String(formData.workday)
+                              : "3"
+                          }
                           onChange={(e) =>
                             updateSedeField(index, "jornada", e.target.value)
                           }

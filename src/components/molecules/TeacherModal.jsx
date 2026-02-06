@@ -10,7 +10,7 @@ const TeacherModal = ({
   onSave,
 }) => {
   const title = teacher ? "Perfil del docente" : "Crear nuevo docente";
-
+  console.log("TeacherModal teacher:", teacher);
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="4xl">
       <ProfileTeacher

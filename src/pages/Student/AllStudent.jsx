@@ -146,8 +146,9 @@ const AllStudent = () => {
         id: "actions",
         header: "Acciones",
         cell: ({ row }) => (
-          <div className="w-full h-full flex">
+          <div className="w-full h-full flex items-stretch">
             <SimpleButton
+              className="h-full"
               onClick={() => handleViewProfile(row.original)}
               msj="Ver Perfil"
               icon="User"
