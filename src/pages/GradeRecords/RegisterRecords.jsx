@@ -9,6 +9,7 @@ import { asignatureResponse } from "../../services/DataExamples/asignatureRespon
 import useSchool from "../../lib/hooks/useSchool";
 import useData from "../../lib/hooks/useData";
 import useAuth from "../../lib/hooks/useAuth";
+import tourRegisterRecords from "../../tour/tourRegisterRecords";
 
 const RegisterRecords = () => {
   const {
@@ -311,9 +312,24 @@ const RegisterRecords = () => {
 
   return (
     <div className="border p-6 rounded bg-bg h-full gap-4 flex flex-col">
-      <h2 className="font-bold text-2xl ">Registrar Notas</h2>
+      <div className="grid grid-cols-5 items-center justify-between">
+        <h2 className="col-span-4 text-2xl font-bold">Registrar Notas</h2>
+        <SimpleButton
+          type="button"
+          onClick={tourRegisterRecords}
+          icon="HelpCircle"
+          msjtooltip="Iniciar tutorial"
+          noRounded={false}
+          bg="bg-accent"
+          text="text-surface"
+          className="w-auto px-3 py-1.5"
+        />
+      </div>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div
+          id="tour-filters"
+          className="grid grid-cols-1 md:grid-cols-4 gap-4"
+        >
           <SedeSelect
             value={sedeSelected}
             onChange={(e) => setSedeSelected(e.target.value)}
@@ -374,7 +390,7 @@ const RegisterRecords = () => {
             autoLoad={true}
           />
 
-          <div>
+          <div id="tour-num-records">
             <label className="text-lg font-semibold">
               ¿Cuántas notas deseas registrar?
             </label>
@@ -394,7 +410,7 @@ const RegisterRecords = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div id="tour-final-test" className="flex items-center gap-2">
           <input
             id="useFinalTest"
             type="checkbox"
@@ -411,7 +427,7 @@ const RegisterRecords = () => {
         </div>
 
         {Array.isArray(auxRecords) && auxRecords.length > 0 ? (
-          <div className="flex flex-col gap-3">
+          <div id="tour-records-list" className="flex flex-col gap-3">
             {auxRecords.map((rec, idx) => (
               <div
                 key={idx}
@@ -515,7 +531,7 @@ const RegisterRecords = () => {
           </div>
         ) : null}
 
-        <div className="mt-2 flex justify-center">
+        <div id="tour-submit" className="mt-2 flex justify-center">
           <div className="w-full md:w-1/2">
             <SimpleButton
               msj="Registrar notas"

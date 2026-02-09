@@ -5,6 +5,7 @@ import Modal from "../../components/atoms/Modal";
 import ProfileSchool from "./ProfileSchool";
 import useSchool from "../../lib/hooks/useSchool";
 import { alertsResponse } from "../../services/DataExamples/alertsResponse";
+import tourManageSchools from "../../tour/tourManageSchools";
 
 const ManageSchools = () => {
   const { getInstitution, getDataSchool } = useSchool();
@@ -121,9 +122,24 @@ const ManageSchools = () => {
 
   return (
     <div className="border p-6 rounded bg-bg h-full gap-4 flex flex-col">
-      <div className="w-full flex justify-between items-center bg-primary text-surface p-3 rounded-t-lg">
-        <h2 className="text-2xl font-bold">Datos de Instituciones</h2>
-        <div className="w-56">
+      <div
+        id="tour-header"
+        className="w-full flex justify-between items-center bg-primary text-surface p-3 rounded-t-lg"
+      >
+        <div className="flex items-center gap-3">
+          <h2 className="text-2xl font-bold">Datos de Instituciones</h2>
+          <SimpleButton
+            type="button"
+            onClick={tourManageSchools}
+            icon="HelpCircle"
+            msjtooltip="Iniciar tutorial"
+            noRounded={false}
+            bg="bg-accent"
+            text="text-surface"
+            className="w-auto px-3 py-1.5"
+          />
+        </div>
+        <div id="tour-add-btn" className="w-56">
           <SimpleButton
             type="button"
             onClick={() => setIsAddOpen(true)}
@@ -135,7 +151,7 @@ const ManageSchools = () => {
         </div>
       </div>
 
-      <div className="relative flex-1">
+      <div id="tour-table" className="relative flex-1">
         <DataTable
           key="institutions-table"
           data={tableData || []}
@@ -220,7 +236,7 @@ const ManageSchools = () => {
           </div>
         </Modal>
 
-        <div className="mt-3">
+        <div id="tour-records-count" className="mt-3">
           <div className="text-sm text-gray-700">
             Registros: <strong>{institutions.length}</strong>
           </div>

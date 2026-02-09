@@ -43,8 +43,7 @@ const ProfileTeacher = ({
   const [showAsignatureGrades, setShowAsignatureGrades] = useState(false);
   const [newSede, setNewSede] = useState([]);
   const [showSedeAsignatures, setShowSedeAsignatures] = useState({});
-  const [selectedSubjects, setSelectedSubjects] = useState([]);
-  const [selectedTableRows, setSelectedTableRows] = useState([]);
+  const [activeRowKeys, setActiveRowKeys] = useState(new Set());
   const originalRef = useRef({ form: null, estado: null });
 
   // ahora `id_sede` y `fk_journey` forman parte del `form` (se sincronizan más abajo)
@@ -162,49 +161,86 @@ const ProfileTeacher = ({
     return Array.from(subjectsMap.values());
   }, [assignmentRows]);
 
-  // Seleccionar todas las asignaturas por defecto
-  useEffect(() => {
-    if (uniqueSubjects.length > 0) {
-      setSelectedSubjects(uniqueSubjects.map((s) => s.name));
-    }
-  }, [uniqueSubjects]);
+  // Claves estables para cada fila: "asignatura::grado::grupo"
+  const rowKeys = useMemo(
+    () => assignmentRows.map((r) => `${r.asignatura}::${r.grado}::${r.grupo}`),
+    [assignmentRows],
+  );
 
-  // Seleccionar todas las filas de la tabla por defecto
+  // Inicializar todas las filas como activas cuando cambian los datos
   useEffect(() => {
-    if (assignmentRows.length > 0) {
-      setSelectedTableRows(assignmentRows.map((_, idx) => idx));
-    }
-  }, [assignmentRows]);
+    const allKeys = new Set(rowKeys);
+    setActiveRowKeys(allKeys);
+    originalRef.current = {
+      ...originalRef.current,
+      activeRowKeys: new Set(rowKeys),
+    };
+  }, [rowKeys]);
 
-  // Manejar cambio de checkbox de asignaturas
-  const handleSubjectCheckboxChange = (subjectName) => {
-    setSelectedSubjects((prev) => {
-      if (prev.includes(subjectName)) {
-        return prev.filter((s) => s !== subjectName);
-      } else {
-        return [...prev, subjectName];
-      }
+  // Estado derivado: por cada asignatura, si está all/some/none activa
+  const subjectStatusMap = useMemo(() => {
+    const map = new Map();
+    uniqueSubjects.forEach((s) => {
+      const indices = [];
+      rowKeys.forEach((key, idx) => {
+        if (assignmentRows[idx].asignatura === s.name) indices.push(idx);
+      });
+      const activeCount = indices.filter((idx) =>
+        activeRowKeys.has(rowKeys[idx]),
+      ).length;
+      const total = indices.length;
+      map.set(s.name, {
+        checked: activeCount === total && total > 0,
+        indeterminate: activeCount > 0 && activeCount < total,
+        activeCount,
+        total,
+      });
+    });
+    return map;
+  }, [uniqueSubjects, rowKeys, activeRowKeys, assignmentRows]);
+
+  // Nombres de asignaturas con al menos 1 fila activa
+  const activeSubjectNames = useMemo(() => {
+    const names = [];
+    for (const [name, status] of subjectStatusMap) {
+      if (status.checked || status.indeterminate) names.push(name);
+    }
+    return names;
+  }, [subjectStatusMap]);
+
+  // Toggle una fila individual
+  const handleToggleRow = (idx) => {
+    const key = rowKeys[idx];
+    setActiveRowKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
     });
   };
 
-  // Manejar checkbox de fila de tabla
-  const handleTableRowCheckbox = (index) => {
-    setSelectedTableRows((prev) => {
-      if (prev.includes(index)) {
-        return prev.filter((i) => i !== index);
+  // Toggle todas las filas de una asignatura
+  const handleToggleSubject = (subjectName) => {
+    const status = subjectStatusMap.get(subjectName);
+    const subjectKeys = rowKeys.filter(
+      (_, idx) => assignmentRows[idx].asignatura === subjectName,
+    );
+    setActiveRowKeys((prev) => {
+      const next = new Set(prev);
+      if (status?.checked) {
+        subjectKeys.forEach((k) => next.delete(k));
       } else {
-        return [...prev, index];
+        subjectKeys.forEach((k) => next.add(k));
       }
+      return next;
     });
   };
 
-  // Seleccionar/deseleccionar todas las filas de la tabla
-  const handleSelectAllTableRows = () => {
-    if (selectedTableRows.length === assignmentRows.length) {
-      setSelectedTableRows([]);
-    } else {
-      setSelectedTableRows(assignmentRows.map((_, idx) => idx));
-    }
+  // Toggle todas las filas
+  const handleToggleAllRows = () => {
+    setActiveRowKeys((prev) =>
+      prev.size === rowKeys.length ? new Set() : new Set(rowKeys),
+    );
   };
 
   useEffect(() => {
@@ -234,7 +270,11 @@ const ProfileTeacher = ({
     };
     setForm(initialForm);
     setEstado(data.estado || "");
-    originalRef.current = { form: initialForm, estado: data.estado || "" };
+    originalRef.current = {
+      form: initialForm,
+      estado: data.estado || "",
+      activeRowKeys: originalRef.current?.activeRowKeys || null,
+    };
   }, [data]);
 
   const handleChange = (e) => {
@@ -345,6 +385,7 @@ const ProfileTeacher = ({
       },
     );
     setEstado(orig.estado || data.estado || "");
+    setActiveRowKeys(originalRef.current?.activeRowKeys || new Set(rowKeys));
     setNewAsignatures([]);
     setNewSede([]);
     setShowAsignatureGrades(false);
@@ -354,78 +395,105 @@ const ProfileTeacher = ({
   };
 
   const isDirty = useMemo(() => {
-    const orig = originalRef.current || { form: null, estado: null };
+    const orig = originalRef.current || {
+      form: null,
+      estado: null,
+      activeRowKeys: null,
+    };
     const formChanged =
       JSON.stringify(orig.form || {}) !== JSON.stringify(form || {});
     const estadoChanged = (orig.estado || "") !== (estado || "");
-    const asignChanged = newAsignatures.length > 0;
-    const sedeChanged = newSede.length > 0;
-    return formChanged || estadoChanged || asignChanged || sedeChanged;
-  }, [form, estado, newAsignatures, newSede]);
+    const origKeys = orig.activeRowKeys;
+    const rowsChanged = origKeys
+      ? origKeys.size !== activeRowKeys.size ||
+        [...origKeys].some((k) => !activeRowKeys.has(k))
+      : false;
+    return formChanged || estadoChanged || rowsChanged;
+  }, [form, estado, activeRowKeys]);
 
   const handleSave = async () => {
     if (!isDirty) {
       // Si no hay cambios, salir del modo edición
+      console.log("Saving with payload:");
       setIsEditing(false);
       return;
     }
+    // Derivar asignaturas activas desde las filas seleccionadas
+    const activeSubjects = new Set();
+    assignmentRows.forEach((row, idx) => {
+      if (activeRowKeys.has(rowKeys[idx])) {
+        activeSubjects.add(row.asignatura);
+      }
+    });
+
+    const asignatures = uniqueSubjects.map((s) => ({
+      fk_asignatura: Number(s.id),
+      status: activeSubjects.has(s.name) ? "Activo" : "Inactivo",
+    }));
+
+    // Construir grades usando grade_assignments si está disponible, si no, fallback a ids_grade_asignature_teacher
+    const grades = [];
+    (data.subjects || []).forEach((s) => {
+      const statusForSubject = activeSubjects.has(s.asignatura)
+        ? "Activo"
+        : "Inactivo";
+      if (
+        Array.isArray(s.grade_assignments) &&
+        s.grade_assignments.length > 0
+      ) {
+        s.grade_assignments.forEach((ga) => {
+          if (ga && ga.id_grade_asignature_teacher != null) {
+            grades.push({
+              id_grade_asignature_teacher: Number(
+                ga.id_grade_asignature_teacher,
+              ),
+              status: statusForSubject,
+            });
+          }
+        });
+      } else if (s.ids_grade_asignature_teacher != null) {
+        const arr = Array.isArray(s.ids_grade_asignature_teacher)
+          ? s.ids_grade_asignature_teacher
+          : [s.ids_grade_asignature_teacher];
+        arr.forEach((gId) => {
+          if (gId != null && gId !== "") {
+            grades.push({
+              id_grade_asignature_teacher: Number(gId),
+              status: statusForSubject,
+            });
+          }
+        });
+      }
+    });
 
     const payload = {
       first_name: form.first_name,
       second_name: form.second_name,
       first_lastname: form.first_lastname,
       second_lastname: form.second_lastname,
-      telefono: form.telephone,
-      correo: form.email,
-      identificacion: form.identification,
-      fecha_nacimiento: parseDateToISO(form.fecha_nacimiento),
-      direccion: form.direccion,
-      nombre_sede: form.nombre_sede,
-      estado,
+      phone: form.telephone,
+      identification_number: form.identification,
+      email: form.email,
+      id_sede: form.id_sede ? Number(form.id_sede) : null,
+      birth_date: parseDateToISO(form.fecha_nacimiento),
+      workday: form.fk_journey ? Number(form.fk_journey) : null,
+      address: form.direccion,
+      status: estado,
+      asignatures,
+      grades,
     };
-
-    // Añadir sede/jornada seleccionadas si están definidas (se almacenan en el form)
-    if (form.id_sede) {
-      payload.id_sede = form.id_sede;
-      payload.fk_sede = form.id_sede;
-    }
-    if (form.fk_journey) {
-      payload.fk_journey = form.fk_journey;
-    }
-
-    if (newAsignatures.length > 0) {
-      payload.newAsignatures = newAsignatures.map((asig) => ({
-        idAsignature: parseInt(asig.idAsignature, 10),
-        grades: Array.isArray(asig.grades)
-          ? asig.grades.map((g) => ({ idgrade: parseInt(g, 10) }))
-          : [],
-      }));
-    }
-
-    if (newSede.length > 0) {
-      payload.newSede = newSede.map((s) => ({
-        id_sede: s.id_sede,
-        fk_journey: s.fk_journey,
-        asignatures: (s.asignatures || []).map((asig) => ({
-          idAsignature: parseInt(asig.idAsignature, 10),
-          grades: Array.isArray(asig.grades)
-            ? asig.grades.map((g) => ({ idgrade: parseInt(g, 10) }))
-            : [],
-        })),
-      }));
-    }
 
     if (typeof onSave === "function") {
       try {
-        await onSave(
-          form.id_docente ?? data.id_docente ?? data.id ?? null,
-          payload,
-        );
+        const teacherId = form.id_docente ?? data.id_docente ?? data.id ?? null;
+        const personId = form.per_id ?? data.per_id ?? data.id_persona ?? null;
+        await onSave(teacherId, personId, payload);
         // actualizar snapshot
-        originalRef.current = { form: { ...form }, estado };
-        setNewAsignatures([]);
-        setNewSede([]);
-        setShowSedeAsignatures({});
+        originalRef.current = {
+          form: { ...form },
+          estado,
+          activeRowKeys: new Set(activeRowKeys),
+        };
         setIsEditing(false);
       } catch (err) {
         console.error("Error al guardar docente:", err);
@@ -433,11 +501,16 @@ const ProfileTeacher = ({
       }
     } else {
       // Si no hay callback, igual actualizar snapshot y salir
-      originalRef.current = { form: { ...form }, estado };
+      originalRef.current = {
+        form: { ...form },
+        estado,
+        activeRowKeys: new Set(activeRowKeys),
+      };
       setIsEditing(false);
     }
   };
-
+  const handleRegisterSede = () => {};
+  const handleRegisterAsignature = () => {};
   return (
     <div className={"w-full flex flex-col gap-4  px-4"}>
       <div className="grid grid-cols-5 items-center gap-4">
@@ -571,6 +644,19 @@ const ProfileTeacher = ({
             disabled={!isEditing}
           />
         </div>
+        {/* 3) Estado */}
+        <div>
+          <label className="font-semibold">Estado del docente</label>
+          <select
+            value={estado}
+            onChange={handleEstadoChange}
+            className={`w-full p-2 border rounded ${isEditing ? "bg-white border-gray-300" : "bg-gray-50 border-transparent text-gray-600 cursor-not-allowed"}`}
+            disabled={!isEditing}
+          >
+            <option value="Activo">Activo</option>
+            <option value="Desactivado">Desactivado</option>
+          </select>
+        </div>
       </div>
       <div className="">
         <div className="grid grid-cols-2">
@@ -648,8 +734,16 @@ const ProfileTeacher = ({
                 >
                   <input
                     type="checkbox"
-                    checked={selectedSubjects.includes(subject.name)}
-                    onChange={() => handleSubjectCheckboxChange(subject.name)}
+                    ref={(el) => {
+                      if (el)
+                        el.indeterminate =
+                          subjectStatusMap.get(subject.name)?.indeterminate ||
+                          false;
+                    }}
+                    checked={
+                      subjectStatusMap.get(subject.name)?.checked || false
+                    }
+                    onChange={() => handleToggleSubject(subject.name)}
                     className="w-4 h-4 text-accent border-gray-300 rounded focus:ring-accent"
                   />
                   <span className="text-sm">
@@ -668,13 +762,14 @@ const ProfileTeacher = ({
               No hay asignaturas registradas para este docente.
             </p>
           )}
-          {selectedSubjects.length > 0 && (
+          {activeSubjectNames.length > 0 && (
             <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded">
               <p className="text-sm font-semibold text-blue-800">
-                Asignaturas seleccionadas: {selectedSubjects.length}
+                Asignaturas activas: {activeSubjectNames.length} de{" "}
+                {uniqueSubjects.length}
               </p>
               <p className="text-xs text-blue-600 mt-1">
-                {selectedSubjects.join(", ")}
+                {activeSubjectNames.join(", ")}
               </p>
             </div>
           )}
@@ -682,7 +777,7 @@ const ProfileTeacher = ({
       )}
 
       {/* 2b) Asignaturas/Groups */}
-      <div className=" rounded bg-surface">
+      <div className=" rounded bg-surface flex flex-col gap-4 ">
         <h3 className="p-2 font-bold">Asignaturas/Grupos</h3>
         {assignmentRows.length > 0 ? (
           <div className="overflow-x-auto border">
@@ -693,11 +788,17 @@ const ProfileTeacher = ({
                     <th className="px-3 py-2 w-12">
                       <input
                         type="checkbox"
+                        ref={(el) => {
+                          if (el)
+                            el.indeterminate =
+                              activeRowKeys.size > 0 &&
+                              activeRowKeys.size < rowKeys.length;
+                        }}
                         checked={
-                          selectedTableRows.length === assignmentRows.length &&
-                          assignmentRows.length > 0
+                          activeRowKeys.size === rowKeys.length &&
+                          rowKeys.length > 0
                         }
-                        onChange={handleSelectAllTableRows}
+                        onChange={handleToggleAllRows}
                         className="w-4 h-4 cursor-pointer"
                       />
                     </th>
@@ -711,14 +812,14 @@ const ProfileTeacher = ({
                 {assignmentRows.map((row, idx) => (
                   <tr
                     key={`assign-row-${idx}`}
-                    className={`border-t text-center ${isEditing && selectedTableRows.includes(idx) ? "bg-blue-50" : ""}`}
+                    className={`border-t text-center ${isEditing && activeRowKeys.has(rowKeys[idx]) ? "bg-blue-50" : ""}`}
                   >
                     {isEditing && (
                       <td className="px-3 py-2">
                         <input
                           type="checkbox"
-                          checked={selectedTableRows.includes(idx)}
-                          onChange={() => handleTableRowCheckbox(idx)}
+                          checked={activeRowKeys.has(rowKeys[idx])}
+                          onChange={() => handleToggleRow(idx)}
                           className="w-4 h-4 cursor-pointer"
                         />
                       </td>
@@ -746,21 +847,22 @@ const ProfileTeacher = ({
 
         {/* Botón toggle y componente AsignatureGrades en modo edición */}
         {isEditing && (
-          <div className="mt-3">
-            <SimpleButton
-              onClick={() => setShowAsignatureGrades((prev) => !prev)}
-              msj={
-                showAsignatureGrades
-                  ? "Ocultar asignaturas"
-                  : "Agregar asignaturas"
-              }
-              icon={showAsignatureGrades ? "ChevronUp" : "ChevronDown"}
-              bg="bg-accent"
-              text="text-surface"
-            />
-
+          <div className="p-4 border">
+            <div className="">
+              <SimpleButton
+                onClick={() => setShowAsignatureGrades((prev) => !prev)}
+                msj={
+                  showAsignatureGrades
+                    ? "Ocultar asignaturas"
+                    : "Agregar asignaturas"
+                }
+                icon={showAsignatureGrades ? "Minus" : "Plus"}
+                bg="bg-accent"
+                text="text-surface"
+              />
+            </div>
             {showAsignatureGrades && (
-              <div className="mt-3">
+              <div className="mt-3 flex flex-col gap-4">
                 <AsignatureGrades
                   sede={form.id_sede}
                   workday={form.fk_journey}
@@ -768,23 +870,17 @@ const ProfileTeacher = ({
                   onAdd={handleAddAsignature}
                   onRemove={handleRemoveAsignature}
                 />
+                <SimpleButton
+                  onClick={handleRegisterAsignature}
+                  msj="Registrar Asignaturas"
+                  icon="Save"
+                  bg="bg-accent"
+                  text="text-surface"
+                />
               </div>
             )}
           </div>
         )}
-      </div>
-      {/* 3) Estado */}
-      <div className="p-4 border rounded bg-surface">
-        <h4 className="font-semibold mb-2">Estado del docente</h4>
-        <select
-          value={estado}
-          onChange={handleEstadoChange}
-          className={`p-2 border rounded w-48 ${isEditing ? "bg-white border-gray-300" : "bg-gray-50 border-transparent text-gray-600 cursor-not-allowed"}`}
-          disabled={!isEditing}
-        >
-          <option value="Activo">Activo</option>
-          <option value="Desactivado">Desactivado</option>
-        </select>
       </div>
 
       {/* 4) Agregar nuevas sedes con asignaturas */}
@@ -877,6 +973,13 @@ const ProfileTeacher = ({
                   </div>
                 </div>
               ))}
+              <SimpleButton
+                onClick={handleRegisterSede}
+                msj="Registrar Sedes"
+                icon="Save"
+                bg="bg-accent"
+                text="text-surface"
+              />
             </div>
           ) : (
             <p className="text-sm text-gray-500">
@@ -890,8 +993,8 @@ const ProfileTeacher = ({
       <div className="flex gap-3 justify-end">
         <SimpleButton
           msj="Cancelar"
-          bg="bg-surface"
-          text="text-primary"
+          bg="bg-error"
+          text="text-surface"
           onClick={handleCancel}
         />
       </div>

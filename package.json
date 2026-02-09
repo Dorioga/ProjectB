@@ -14,6 +14,7 @@
     "@tailwindcss/vite": "^4.1.16",
     "@tanstack/react-table": "^8.21.3",
     "axios": "^1.13.1",
+    "driver.js": "^1.4.0",
     "html2canvas": "^1.4.1",
     "htmldocs": "^0.2.30",
     "js-sha256": "^0.11.1",

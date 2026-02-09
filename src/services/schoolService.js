@@ -143,18 +143,23 @@ export async function registerTeacher(payload) {
 /**
  * Actualiza la información de un docente existente.
  *
- * Endpoint esperado: PUT /teachers/:id
- * @param {string|number} id - Identificador del docente
+ * Endpoint esperado: PUT /teacher/:teacherId/person/:personId
+ * @param {string|number} teacherId - Identificador del docente
+ * @param {string|number} personId - Identificador de la persona
  * @param {Object} payload - Datos a actualizar
  * @returns {Promise<Object>} Respuesta del servidor
  */
-export async function updateTeacher(id, payload) {
-  if (!id) throw new Error("id es requerido para updateTeacher");
+export async function updateTeacher(teacherId, personId, payload) {
+  if (!teacherId) throw new Error("teacherId es requerido para updateTeacher");
+  if (!personId) throw new Error("personId es requerido para updateTeacher");
   if (!payload || typeof payload !== "object") {
     throw new Error("payload debe ser un objeto.");
   }
 
-  const res = await ApiClient.instance.put(`/teachers/${id}`, payload);
+  const res = await ApiClient.instance.patch(
+    `/teacher/${teacherId}/person/${personId}`,
+    payload,
+  );
   const data = res;
   console.log("SchoolService - updateTeacher:", data);
 
@@ -177,7 +182,7 @@ export async function updateInstitution(id, payload) {
   if (!payload || typeof payload !== "object") {
     throw new Error("payload debe ser un objeto.");
   }
-
+  console.log("SchoolService - updateInstitution payload:", payload);
   const res = await ApiClient.instance.patch(`/institution/${id}`, payload);
   const data = res;
   console.log("SchoolService - updateInstitution:", data);

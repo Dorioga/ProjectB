@@ -49,6 +49,7 @@ export function mapTeacherRowsToProcessed(rawData, teacherRow = {}) {
   const subjectsMap = new Map();
   const gradosSet = new Set();
   const gruposSet = new Set();
+  const assignments = []; // plano: una entrada por fila (grado/grupo/asignatura)
 
   const splitCSV = (val) =>
     String(val ?? "")
@@ -92,12 +93,21 @@ export function mapTeacherRowsToProcessed(rawData, teacherRow = {}) {
       const idGradeAsignatureTeacher = idsGradeAsignatureTeacher[j] || null;
       const subjKey = `${idAsig}::${nameAsig}`;
 
+      // Agregar la fila al plano `assignments` para uso directo más tarde
+      assignments.push({
+        id_asignatura: idAsig,
+        asignatura: nameAsig,
+        nombre_grado,
+        grupo,
+        ids_grade_asignature_teacher: idGradeAsignatureTeacher,
+      });
+
       if (!subjectsMap.has(subjKey)) {
-        // _groupSet es un Set interno temporal para evitar duplicados rápidos
+        // _groupSet y _gradeAssignSet son Sets internos temporales para evitar duplicados rápidos
         subjectsMap.set(subjKey, {
           id_asignatura: idAsig,
           asignatura: nameAsig,
-          ids_grade_asignature_teacher: idGradeAsignatureTeacher,
+          _gradeAssignSet: new Set(),
           _groupSet: new Set(),
         });
       }
@@ -109,6 +119,11 @@ export function mapTeacherRowsToProcessed(rawData, teacherRow = {}) {
       if (!subjEntry._groupSet.has(gKey)) {
         subjEntry._groupSet.add(gKey);
       }
+
+      // Agregar info de assignment (id de gradeAsignatureTeacher por fila, si existe)
+      const gaKey = `${idGradeAsignatureTeacher || ""}::${grupo || ""}::${nombre_grado || ""}`;
+      if (!subjEntry._gradeAssignSet.has(gaKey))
+        subjEntry._gradeAssignSet.add(gaKey);
     }
   }
 
@@ -118,6 +133,22 @@ export function mapTeacherRowsToProcessed(rawData, teacherRow = {}) {
       const [grupo, nombre_grado] = gstr.split("::");
       return { grupo, nombre_grado };
     });
+
+    // Convertir gradeAssignSet -> array de objetos { id_grade_asignature_teacher, grupo, nombre_grado }
+    const gradeAssignments = Array.from(s._gradeAssignSet || new Set()).map(
+      (gstr) => {
+        const [idGrade, grupo, nombre_grado] = gstr.split("::");
+        return {
+          id_grade_asignature_teacher: idGrade
+            ? isNaN(Number(idGrade))
+              ? idGrade
+              : Number(idGrade)
+            : null,
+          grupo: grupo || "",
+          nombre_grado: nombre_grado || "",
+        };
+      },
+    );
 
     // Ordenar grupos: por grupo alfabético, luego por nombre_grado numérico cuando aplique
     groups.sort((a, b) => {
@@ -137,10 +168,21 @@ export function mapTeacherRowsToProcessed(rawData, teacherRow = {}) {
       );
     });
 
+    const idsGradeArr = gradeAssignments
+      .map((g) => g.id_grade_asignature_teacher)
+      .filter(Boolean);
+
     return {
       id_asignatura: s.id_asignatura,
       asignatura: s.asignatura,
-      ids_grade_asignature_teacher: s.ids_grade_asignature_teacher,
+      // Mantener compatibilidad: si sólo hay 1 id devolverlo como escalar, si hay varios devolver array
+      ids_grade_asignature_teacher:
+        idsGradeArr.length === 0
+          ? null
+          : idsGradeArr.length === 1
+            ? idsGradeArr[0]
+            : idsGradeArr,
+      grade_assignments: gradeAssignments,
       groups,
     };
   });
@@ -169,6 +211,7 @@ export function mapTeacherRowsToProcessed(rawData, teacherRow = {}) {
     nombre_jornada: base.nombre_jornada || base.nombre_jornada_estudiante || "",
     id_sede: base.id_sede ?? null,
     subjects: uniqueSubjects,
+    assignments: assignments, // plano (grado/grupo/asignatura por fila)
     estado: rows[0]?.estado ?? teacherRow?.estado ?? "",
   };
 }
@@ -216,7 +259,28 @@ export function buildGroupsWithAssignments(processed = {}) {
     });
   }
 
-  // 2) Si processed.subjects existe, agregar/mezclar su información
+  // 2) Si processed.assignments existe, poblar grupos desde el array plano (prioritario)
+  if (
+    Array.isArray(processed.assignments) &&
+    processed.assignments.length > 0
+  ) {
+    processed.assignments.forEach((a) => {
+      const subjectId = a.id_asignatura ?? a.id ?? null;
+      const subjectName = a.asignatura || a.nombre_asignatura || "";
+      const grupoKey = String(a.grupo || "Sin Grupo");
+      if (!groupsMap.has(grupoKey))
+        groupsMap.set(grupoKey, { grupo: grupoKey, assignments: [] });
+      const existing = groupsMap.get(grupoKey);
+      existing.assignments.push({
+        id_asignatura: subjectId,
+        asignatura: subjectName,
+        nombre_grado: a.nombre_grado || "",
+        grupo: grupoKey,
+      });
+    });
+  }
+
+  // 3) Si processed.subjects existe, agregar/mezclar su información
   if (Array.isArray(processed.subjects)) {
     processed.subjects.forEach((s) => {
       const subjectId = s.id_asignatura ?? s.id ?? null;

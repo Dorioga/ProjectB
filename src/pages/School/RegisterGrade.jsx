@@ -4,6 +4,7 @@ import JourneySelect from "../../components/atoms/JourneySelect";
 import SedeSelect from "../../components/atoms/SedeSelect";
 import useSchool from "../../lib/hooks/useSchool";
 import useData from "../../lib/hooks/useData";
+import tourRegisterGrade from "../../tour/tourRegisterGrade";
 
 const RegisterGrade = () => {
   const { journeys, loadingJourneys, registerGrade, loading } = useSchool();
@@ -162,7 +163,19 @@ const RegisterGrade = () => {
 
   return (
     <div className="border p-6 rounded bg-bg h-full gap-4 flex flex-col">
-      <h2 className="font-bold text-2xl ">Registrar Grado</h2>
+      <div className="grid grid-cols-5 items-center justify-between">
+        <h2 className="col-span-4 font-bold text-2xl">Registrar Grado</h2>
+        <SimpleButton
+          type="button"
+          onClick={tourRegisterGrade}
+          icon="HelpCircle"
+          msjtooltip="Iniciar tutorial"
+          noRounded={false}
+          bg="bg-accent"
+          text="text-surface"
+          className="w-auto px-3 py-1.5"
+        />
+      </div>
 
       <form
         onSubmit={handleSubmit}
@@ -170,7 +183,7 @@ const RegisterGrade = () => {
       >
         <div className="md:col-span-4 font-bold">Información del grado</div>
 
-        <div>
+        <div id="tour-grade-name">
           <label>Nombre del grado</label>
           <input
             type="text"
@@ -181,20 +194,24 @@ const RegisterGrade = () => {
             placeholder="Ej: 6°"
           />
         </div>
-        <SedeSelect value={formData.id_sede} onChange={handleSedeChange} />
-        <JourneySelect
-          name="workday"
-          label="Jornada"
-          value={formData.workday}
-          filterValue={sedeWorkday}
-          onChange={handleJornadaChange}
-          includeAmbas={false}
-          disabled={loadingJourneys}
-          placeholder="Selecciona una jornada"
-          className="w-full p-2 border rounded bg-surface"
-        />
+        <div id="tour-grade-sede">
+          <SedeSelect value={formData.id_sede} onChange={handleSedeChange} />
+        </div>
+        <div id="tour-grade-workday">
+          <JourneySelect
+            name="workday"
+            label="Jornada"
+            value={formData.workday}
+            filterValue={sedeWorkday}
+            onChange={handleJornadaChange}
+            includeAmbas={false}
+            disabled={loadingJourneys}
+            placeholder="Selecciona una jornada"
+            className="w-full p-2 border rounded bg-surface"
+          />
+        </div>
 
-        <div>
+        <div id="tour-grade-numgroups">
           <label>¿Cuántos grupos?</label>
           <input
             type="number"
@@ -208,7 +225,7 @@ const RegisterGrade = () => {
           />
         </div>
 
-        <div className="md:col-span-4">
+        <div id="tour-grade-groups" className="md:col-span-4">
           <label>Grupos a crear</label>
           {formData.group.length === 0 ? (
             <div className="w-full p-2 border rounded bg-surface text-sm">
@@ -232,7 +249,10 @@ const RegisterGrade = () => {
           )}
         </div>
 
-        <div className="md:col-span-3 mt-4 flex justify-center">
+        <div
+          id="tour-grade-submit"
+          className="md:col-span-3 mt-4 flex justify-center"
+        >
           <div className="w-full md:w-1/2">
             <SimpleButton
               msj={loading ? "Registrando..." : "Registrar grado"}

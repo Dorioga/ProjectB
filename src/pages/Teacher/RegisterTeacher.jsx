@@ -9,6 +9,7 @@ import useStudent from "../../lib/hooks/useStudent";
 import { sha256 } from "js-sha256";
 import useData from "../../lib/hooks/useData";
 import { useNotify } from "../../lib/hooks/useNotify";
+import tourRegisterTeacher from "../../tour/tourRegisterTeacher";
 
 const RegisterTeacher = ({ onSuccess }) => {
   const {
@@ -209,30 +210,52 @@ const RegisterTeacher = ({ onSuccess }) => {
 
   return (
     <div className="border p-6 rounded bg-bg h-full gap-4 flex flex-col">
-      <h2 className="font-bold text-2xl ">Registrar Docente</h2>
+      <div className="grid grid-cols-5 items-center justify-between">
+        <h2 className="col-span-4 font-bold text-2xl">Registrar Docente</h2>
+        <SimpleButton
+          type="button"
+          onClick={tourRegisterTeacher}
+          icon="HelpCircle"
+          msjtooltip="Iniciar tutorial"
+          noRounded={false}
+          bg="bg-accent"
+          text="text-surface"
+          className="w-auto px-3 py-1.5"
+        />
+      </div>
       <form
         onSubmit={handleSubmit}
         className="grid grid-cols-1 md:grid-cols-3 gap-4"
       >
         <div className="md:col-span-3 font-bold">Información personal</div>
 
-        <SedeSelect name="sede" value={formData.sede} onChange={handleChange} />
-        <JourneySelect
-          name="workday"
-          value={formData.workday}
-          filterValue={sedeJornada}
-          onChange={handleChange}
-          disabled={!String(formData.sede ?? "").trim()}
-        />
+        <div id="tour-sede">
+          <SedeSelect
+            name="sede"
+            value={formData.sede}
+            onChange={handleChange}
+          />
+        </div>
+        <div id="tour-workday">
+          <JourneySelect
+            name="workday"
+            value={formData.workday}
+            filterValue={sedeJornada}
+            onChange={handleChange}
+            disabled={!String(formData.sede ?? "").trim()}
+          />
+        </div>
 
-        <TypeDocumentSelector
-          name="identificationtype"
-          value={formData.identificationtype}
-          onChange={handleChange}
-          placeholder="Selecciona un tipo"
-        />
+        <div id="tour-doctype">
+          <TypeDocumentSelector
+            name="identificationtype"
+            value={formData.identificationtype}
+            onChange={handleChange}
+            placeholder="Selecciona un tipo"
+          />
+        </div>
 
-        <div>
+        <div id="tour-identification">
           <label>N.º de identificación</label>
           <input
             type="text"
@@ -243,7 +266,7 @@ const RegisterTeacher = ({ onSuccess }) => {
           />
         </div>
 
-        <div>
+        <div id="tour-birthdate">
           <label>Fecha de nacimiento</label>
           <input
             type="date"
@@ -254,7 +277,7 @@ const RegisterTeacher = ({ onSuccess }) => {
           />
         </div>
 
-        <div>
+        <div id="tour-firstname">
           <label>Primer nombre</label>
           <input
             type="text"
@@ -265,7 +288,7 @@ const RegisterTeacher = ({ onSuccess }) => {
           />
         </div>
 
-        <div>
+        <div id="tour-secondname">
           <label>Segundo nombre</label>
           <input
             type="text"
@@ -276,7 +299,7 @@ const RegisterTeacher = ({ onSuccess }) => {
           />
         </div>
 
-        <div>
+        <div id="tour-firstlastname">
           <label>Primer apellido</label>
           <input
             type="text"
@@ -287,7 +310,7 @@ const RegisterTeacher = ({ onSuccess }) => {
           />
         </div>
 
-        <div>
+        <div id="tour-secondlastname">
           <label>Segundo apellido</label>
           <input
             type="text"
@@ -298,7 +321,7 @@ const RegisterTeacher = ({ onSuccess }) => {
           />
         </div>
 
-        <div className="md:col-span-3 font-bold mt-4">
+        <div id="tour-contact-info" className="md:col-span-3 font-bold mt-4">
           Información de contacto
         </div>
 
@@ -346,13 +369,15 @@ const RegisterTeacher = ({ onSuccess }) => {
           />
         </div>
 
-        <AsignatureGrades
-          sede={formData.sede}
-          workday={formData.workday}
-          asignatures={formData.asignature}
-          onAdd={handleAddAsignature}
-          onRemove={handleRemoveAsignature}
-        />
+        <div id="tour-asignatures" className="md:col-span-3">
+          <AsignatureGrades
+            sede={formData.sede}
+            workday={formData.workday}
+            asignatures={formData.asignature}
+            onAdd={handleAddAsignature}
+            onRemove={handleRemoveAsignature}
+          />
+        </div>
 
         {submitOk ? (
           <div className="md:col-span-3 p-4 rounded-lg border-l-4 border-green-500 bg-gray-50 text-green-700">
@@ -378,7 +403,10 @@ const RegisterTeacher = ({ onSuccess }) => {
           </div>
         ) : null}
 
-        <div className="md:col-span-3 mt-4 flex justify-center">
+        <div
+          id="tour-submit"
+          className="md:col-span-3 mt-4 flex justify-center"
+        >
           <div className="w-full md:w-1/2">
             <SimpleButton
               msj={teacherLoading ? "Registrando..." : "Registrar docente"}

@@ -232,11 +232,15 @@ export function SchoolProvider({ children }) {
     }
   };
 
-  const updateTeacher = async (id, payload) => {
+  const updateTeacher = async (teacherId, personId, payload) => {
     setLoading(true);
     setError(null);
     try {
-      const updated = await schoolService.updateTeacher(id, payload);
+      const updated = await schoolService.updateTeacher(
+        teacherId,
+        personId,
+        payload,
+      );
 
       // Emitir notificación de éxito
       eventBus.emit("¡Profesor actualizado exitosamente!", "success");
@@ -608,6 +612,7 @@ export function SchoolProvider({ children }) {
         getDataSede,
         getDataSchool,
         getDataTeacher,
+        updateTeacher,
         updateSede,
         getGradeAsignature,
         createNote,

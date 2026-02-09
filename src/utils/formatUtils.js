@@ -27,23 +27,34 @@ export function formatDateToDisplay(dateStr) {
     const d = new Date(str + "T00:00:00");
     if (!isNaN(d)) return d.toLocaleDateString("es-ES");
   }
-  // already dd/mm/yyyy
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(str)) return str;
+  // already d/m/yyyy or dd/mm/yyyy (allow single digits)
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(str)) {
+    const [ddRaw, mmRaw, yyyy] = str.split("/");
+    const dd = String(ddRaw).padStart(2, "0");
+    const mm = String(mmRaw).padStart(2, "0");
+    return `${dd}/${mm}/${yyyy}`;
+  }
   // try Date constructor
   const d2 = new Date(str);
   if (!isNaN(d2)) return d2.toLocaleDateString("es-ES");
   return str;
 }
 
-// Convierte entrada de usuario (DD/MM/YYYY o YYYY-MM-DD) a "YYYY-MM-DD" para enviar al backend
+// Convierte entrada de usuario (DD/MM/YYYY, D/M/YYYY, D-M-YYYY o YYYY-MM-DD) a "YYYY-MM-DD" para enviar al backend
 export function parseDateToISO(dateStr) {
   if (!dateStr) return "";
   const s = String(dateStr).trim();
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) {
-    const [dd, mm, yyyy] = s.split("/");
+
+  // Acepta formatos con separador '/' o '-' y días/meses de 1 o 2 dígitos
+  const sepMatch = s.match(/^(\d{1,2})([\/\-])(\d{1,2})[\/\-](\d{4})$/);
+  if (sepMatch) {
+    const dd = String(sepMatch[1]).padStart(2, "0");
+    const mm = String(sepMatch[3]).padStart(2, "0");
+    const yyyy = sepMatch[4];
     return `${yyyy}-${mm}-${dd}`;
   }
+
   const d = new Date(s);
   if (!isNaN(d)) {
     const yyyy = d.getFullYear();

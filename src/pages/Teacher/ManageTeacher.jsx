@@ -26,6 +26,7 @@ const ManageTeacher = () => {
   const lastResponseRef = useRef(null); // para depuración: guarda la última respuesta cruda
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
+  const [isTableLoading, setIsTableLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [initialEditing, setInitialEditing] = useState(false);
   const [selectedTeacherForModal, setSelectedTeacherForModal] = useState(null);
@@ -36,8 +37,10 @@ const ManageTeacher = () => {
   const fetchTeachersData = async () => {
     try {
       setFetchError(null);
+      setIsTableLoading(true);
 
       if (!idInstitution) {
+        setIsTableLoading(false);
         return;
       }
 
@@ -63,6 +66,8 @@ const ManageTeacher = () => {
       setFetchError(error?.message || String(error));
       // Permitir reintento en caso de error
       hasFetchedRef.current = false;
+    } finally {
+      setIsTableLoading(false);
     }
   };
 
@@ -251,6 +256,7 @@ const ManageTeacher = () => {
             bg="bg-accent"
             text="text-surface"
             noRounded={false}
+            disabled={isTableLoading}
           />
         </div>
       </div>
@@ -266,12 +272,14 @@ const ManageTeacher = () => {
           showDownloadButtons={false}
         />
 
-        {isFetching && (
+        {(isTableLoading || isFetching) && (
           <div className="absolute inset-0 flex items-center justify-center bg-surface/60 z-10">
             <div className="text-center py-8 bg-transparent">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2" />
               <div className="text-sm font-medium text-primary">
-                Cargando profesores...
+                {isFetching
+                  ? "Cargando datos del docente..."
+                  : "Cargando profesores..."}
               </div>
             </div>
           </div>
@@ -304,9 +312,9 @@ const ManageTeacher = () => {
           onClose={() => setIsModalOpen(false)}
           teacher={selectedTeacherForModal}
           initialEditing={initialEditing}
-          onSave={async (id, payload) => {
+          onSave={async (teacherId, personId, payload) => {
             try {
-              await updateTeacher(id, payload);
+              await updateTeacher(teacherId, personId, payload);
               setIsModalOpen(false);
               fetchTeachersData();
               notify.success("Docente actualizado exitosamente");

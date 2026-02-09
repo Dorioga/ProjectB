@@ -5,6 +5,7 @@ import SedeSelect from "../../components/atoms/SedeSelect";
 import useSchool from "../../lib/hooks/useSchool";
 import useData from "../../lib/hooks/useData";
 import { useNotify } from "../../lib/hooks/useNotify";
+import tourRegisterAsignature from "../../tour/tourRegisterAsignature";
 
 const RegisterAsignature = () => {
   const {
@@ -241,9 +242,21 @@ const RegisterAsignature = () => {
 
   return (
     <div className="border p-6 rounded bg-bg h-full gap-4 flex flex-col">
-      <h2 className="font-bold text-2xl ">Registrar Asignatura</h2>
+      <div className="grid grid-cols-5 items-center justify-between">
+        <h2 className="font-bold col-span-4 text-2xl">Registrar Asignatura</h2>
+        <SimpleButton
+          type="button"
+          onClick={tourRegisterAsignature}
+          icon="HelpCircle"
+          msjtooltip="Iniciar tutorial"
+          noRounded={false}
+          bg="bg-accent"
+          text="text-surface"
+          className="w-auto px-3 py-1.5"
+        />
+      </div>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div>
+        <div id="tour-name">
           <label className={labelClassName}>Nombre de la asignatura</label>
           <input
             className={inputClassName}
@@ -254,7 +267,7 @@ const RegisterAsignature = () => {
           />
         </div>
 
-        <div>
+        <div id="tour-code">
           <label className={labelClassName}>Código de la asignatura</label>
           <input
             className={inputClassName}
@@ -265,7 +278,7 @@ const RegisterAsignature = () => {
           />
         </div>
 
-        <div>
+        <div id="tour-description">
           <label className={labelClassName}>Descripción de la asignatura</label>
           <input
             className={inputClassName}
@@ -277,22 +290,26 @@ const RegisterAsignature = () => {
             }
           />
         </div>
-        <SedeSelect
-          value={formData.sedeId}
-          onChange={handleChange}
-          className={inputClassName}
-          labelClassName={labelClassName}
-        />
-        <JourneySelect
-          value={formData.jornada}
-          onChange={handleChange}
-          filterValue={sedeWorkday}
-          includeAmbas={false}
-          className={inputClassName}
-          labelClassName={labelClassName}
-        />
+        <div id="tour-sede">
+          <SedeSelect
+            value={formData.sedeId}
+            onChange={handleChange}
+            className={inputClassName}
+            labelClassName={labelClassName}
+          />
+        </div>
+        <div id="tour-jornada">
+          <JourneySelect
+            value={formData.jornada}
+            onChange={handleChange}
+            filterValue={sedeWorkday}
+            includeAmbas={false}
+            className={inputClassName}
+            labelClassName={labelClassName}
+          />
+        </div>
 
-        <div>
+        <div id="tour-grades">
           <div className="text-lg font-semibold">Grados donde se dictará</div>
           {!formData.sedeId || !formData.jornada ? (
             <div className="text-sm opacity-80">
@@ -431,7 +448,7 @@ const RegisterAsignature = () => {
           )}
         </div>
 
-        <div className="mt-2 flex justify-center">
+        <div id="tour-submit" className="mt-2 flex justify-center">
           <div className="w-full md:w-1/2">
             <SimpleButton
               msj="Registrar asignatura"
