@@ -43,9 +43,9 @@ const RegisterRecords = () => {
   const teacherGradesParams = useMemo(() => {
     const params = {};
     if (idDocente) params.idTeacher = Number(idDocente);
-    if (idSede) params.idSede = Number(idSede);
+    if (sedeSelected) params.idSede = Number(sedeSelected);
     return params;
-  }, [idDocente, idSede]);
+  }, [idDocente, sedeSelected]);
 
   const teacherSubjectsParams = useMemo(() => {
     return gradeSelected && idDocente
@@ -124,7 +124,7 @@ const RegisterRecords = () => {
       if (mounted) setLoadingTeacherSedes(true);
 
       const prom = (async () => {
-        const res = await getTeacherSede({ idDocente: Number(idDocente) });
+        const res = await getTeacherSede({ idTeacher: Number(idDocente) });
         // Respuesta esperada: array de objetos o { code, data: [...] }
         const list = Array.isArray(res) ? res : (res?.data ?? []);
         const mapped = (Array.isArray(list) ? list : [])
@@ -168,6 +168,15 @@ const RegisterRecords = () => {
   // Limpiar jornada cuando cambia la sede
   useEffect(() => {
     setWorkdaySelected("");
+  }, [sedeSelected]);
+
+  // Si se limpia la sede, limpiar selección de grado, asignatura y registros asociados
+  useEffect(() => {
+    if (sedeSelected) return;
+    setGradeSelected("");
+    setAsignatureSelected("");
+    setNumberRecords(0);
+    setAuxRecords([]);
   }, [sedeSelected]);
 
   // Auto-seleccionar jornada basada en el fk_workday de la sede

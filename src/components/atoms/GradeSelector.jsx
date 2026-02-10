@@ -23,12 +23,26 @@ const GradeSelector = ({
   // Serializar additionalParams para evitar re-renders infinitos
   const additionalParamsStr = JSON.stringify(additionalParams);
 
+  // Intentar parsear additionalParams de forma segura para reutilizarlo en checks
+  let parsedAdditionalParams = {};
+  try {
+    parsedAdditionalParams = JSON.parse(additionalParamsStr) || {};
+  } catch (e) {
+    parsedAdditionalParams = {};
+  }
+
   // Cargar grados cuando se proporciona sedeId y workdayId
   useEffect(() => {
-    // Si hay customFetchMethod, solo verificar que haya additionalParams
-    // Si no hay customFetchMethod, verificar sedeId y workdayId
+    // Si hay customFetchMethod, requerir explícitamente que exista una sede seleccionada
+    // (ya sea via prop `sedeId` o en `additionalParams` como `idSede` / `id_sede`)
+    const hasSedeInParams = Boolean(
+      parsedAdditionalParams?.idSede ||
+      parsedAdditionalParams?.id_sede ||
+      parsedAdditionalParams?.sedeId,
+    );
+
     const canLoad = customFetchMethod
-      ? Object.keys(JSON.parse(additionalParamsStr)).length > 0
+      ? Boolean(sedeId) || hasSedeInParams
       : sedeId && workdayId;
 
     if (!canLoad) {
@@ -39,7 +53,7 @@ const GradeSelector = ({
     const loadGrades = async () => {
       setLoadingGrades(true);
       try {
-        const parsedParams = JSON.parse(additionalParamsStr);
+        const parsedParams = parsedAdditionalParams;
         console.log("GradeSelector - Cargando grados:", {
           sedeId,
           workdayId,
@@ -49,7 +63,7 @@ const GradeSelector = ({
 
         const fetchMethod = customFetchMethod || getGradeSede;
 
-        // Si hay customFetchMethod, solo usar additionalParams
+        // Si hay customFetchMethod, usar additionalParams (que debe incluir idSede)
         // Si no, usar el payload completo con idSede e idWorkDay
         const payload = customFetchMethod
           ? parsedParams
@@ -105,14 +119,16 @@ const GradeSelector = ({
 
   // Determinar si el selector debe estar deshabilitado
   const isDisabled = customFetchMethod
-    ? disabled || isLoading
+    ? disabled || isLoading || !sedeId
     : disabled || isLoading || !sedeId || !workdayId;
 
   // Determinar el mensaje del placeholder
   const placeholderMessage = isLoading
     ? "Cargando grados..."
     : customFetchMethod
-      ? placeholder
+      ? !sedeId
+        ? "Selecciona una sede primero"
+        : placeholder
       : !sedeId
         ? "Selecciona una sede primero"
         : !workdayId
