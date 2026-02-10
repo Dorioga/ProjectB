@@ -156,14 +156,14 @@ const ManageStudent = () => {
         id: "actions",
         header: "Acciones",
         cell: ({ row }) => (
-          <div className="w-full h-full flex items-stretch ">
+          <div className="w-full h-full flex items-stretch gap-2 p-2">
             <SimpleButton
               className="h-full"
               onClick={() => handleViewProfile(row.original)}
               icon="UserSearch"
               bg="bg-primary"
               text="text-surface"
-              noRounded={true}
+              noRounded={false}
               msjtooltip="Ver perfil"
             />
             <SimpleButton
@@ -172,7 +172,7 @@ const ManageStudent = () => {
               icon="Pencil"
               bg="bg-secondary"
               text="text-surface"
-              noRounded={true}
+              noRounded={false}
               msjtooltip="Actualizar"
             />
           </div>

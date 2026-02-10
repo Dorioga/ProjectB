@@ -176,14 +176,14 @@ const ManageSedes = () => {
         id: "actions",
         header: "Acciones",
         cell: ({ row }) => (
-          <div className="w-full h-full flex items-stretch gap-2">
+          <div className="w-full h-full flex items-stretch gap-2 p-2">
             <SimpleButton
               className="h-full"
               onClick={() => handleViewSede(row.original)}
               icon="Eye"
               bg="bg-primary"
               text="text-surface"
-              noRounded={true}
+              noRounded={false}
               msjtooltip="Ver detalles"
             />
             <SimpleButton
@@ -192,7 +192,7 @@ const ManageSedes = () => {
               icon="Pencil"
               bg="bg-secondary"
               text="text-surface"
-              noRounded={true}
+              noRounded={false}
               msjtooltip="Editar sede"
             />
           </div>

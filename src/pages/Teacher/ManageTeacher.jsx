@@ -32,7 +32,7 @@ const ManageTeacher = () => {
   const [selectedTeacherForModal, setSelectedTeacherForModal] = useState(null);
   const notify = useNotify();
 
-  // Cargar los profesores al montar el componente (solo una llamada)
+  // Cargar los docentes al montar el componente (solo una llamada)
   // Extraer la lógica de carga en una función reutilizable para poder invocarla desde fuera (p.ej. al crear un docente)
   const fetchTeachersData = async () => {
     try {
@@ -45,7 +45,7 @@ const ManageTeacher = () => {
       }
 
       const payload = { institucion: idInstitution };
-      console.log("Cargando profesores con payload:", payload);
+      console.log("Cargando docentes con payload:", payload);
       const response = await fetchAllTeachers(payload);
 
       // Guardar la respuesta cruda también para depuración
@@ -62,7 +62,7 @@ const ManageTeacher = () => {
       setTeachers(newTeachers);
       hasFetchedRef.current = true;
     } catch (error) {
-      console.error("Error al cargar profesores:", error);
+      console.error("Error al cargar docentes:", error);
       setFetchError(error?.message || String(error));
       // Permitir reintento en caso de error
       hasFetchedRef.current = false;
@@ -178,7 +178,7 @@ const ManageTeacher = () => {
             .filter(Boolean);
           if (parts.length === 0) return null;
           return (
-            <div className="flex flex-col items-start gap-0">
+            <div className="grid grid-cols-4 items-start gap-1">
               {parts.map((p, i) => (
                 <div key={i} className="text-left text-sm">
                   - {p}
@@ -218,14 +218,14 @@ const ManageTeacher = () => {
         id: "actions",
         header: "Acciones",
         cell: ({ row }) => (
-          <div className="w-full h-full flex items-stretch ">
+          <div className="w-full h-full flex items-stretch gap-2 p-2">
             <SimpleButton
               className="h-full"
               onClick={() => handleViewProfile(row.original)}
               icon="UserSearch"
               bg="bg-primary"
               text="text-surface"
-              noRounded={true}
+              noRounded={false}
               msjtooltip="Ver perfil"
             />
             <SimpleButton
@@ -234,7 +234,7 @@ const ManageTeacher = () => {
               icon="Pencil"
               bg="bg-secondary"
               text="text-surface"
-              noRounded={true}
+              noRounded={false}
               msjtooltip="Actualizar"
             />
           </div>
@@ -247,7 +247,7 @@ const ManageTeacher = () => {
   return (
     <div className="border p-6 rounded bg-bg h-full gap-4 flex flex-col">
       <div className="w-full flex justify-between items-center bg-primary text-surface p-3 rounded-t-lg">
-        <h2 className="text-2xl font-bold">Datos de Profesores</h2>
+        <h2 className="text-2xl font-bold">Datos de Docentes</h2>
         <div className="w-56">
           <SimpleButton
             onClick={() => setIsAddOpen(true)}
@@ -279,7 +279,7 @@ const ManageTeacher = () => {
               <div className="text-sm font-medium text-primary">
                 {isFetching
                   ? "Cargando datos del docente..."
-                  : "Cargando profesores..."}
+                  : "Cargando docentes..."}
               </div>
             </div>
           </div>
@@ -287,7 +287,7 @@ const ManageTeacher = () => {
 
         {fetchError && (
           <div className="mt-4 text-center text-red-600">
-            Error al cargar profesores: {fetchError}
+            Error al cargar docentes: {fetchError}
           </div>
         )}
 
@@ -309,7 +309,10 @@ const ManageTeacher = () => {
         {/* Modal para ver/editar docente */}
         <TeacherModal
           isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
+          onClose={() => {
+            setIsModalOpen(false);
+            fetchTeachersData();
+          }}
           teacher={selectedTeacherForModal}
           initialEditing={initialEditing}
           onSave={async (teacherId, personId, payload) => {
@@ -320,6 +323,11 @@ const ManageTeacher = () => {
               notify.success("Docente actualizado exitosamente");
             } catch (err) {
               notify.error(err?.message || "Error al actualizar docente");
+            }
+          }}
+          onReload={async () => {
+            if (selectedTeacher) {
+              await openTeacherModal(selectedTeacher, initialEditing);
             }
           }}
         />

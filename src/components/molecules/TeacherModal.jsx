@@ -8,11 +8,12 @@ const TeacherModal = ({
   teacher,
   initialEditing = false,
   onSave,
+  onReload,
 }) => {
   const title = teacher ? "Perfil del docente" : "Crear nuevo docente";
   console.log("TeacherModal teacher:", teacher);
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={title} size="4xl">
+    <Modal isOpen={isOpen} onClose={onClose} title={title} size="7xl">
       <ProfileTeacher
         data={
           teacher && teacher.basic
@@ -28,6 +29,7 @@ const TeacherModal = ({
         initialEditing={initialEditing}
         onSave={onSave}
         onClose={onClose}
+        onReload={onReload}
       />
     </Modal>
   );

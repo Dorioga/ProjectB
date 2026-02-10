@@ -25,7 +25,6 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("entra login");
     try {
       await login(formData);
       navigate("/dashboard/home");

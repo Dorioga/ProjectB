@@ -221,7 +221,7 @@ export function SchoolProvider({ children }) {
       const result = await schoolService.registerTeacher(formData);
 
       // Emitir notificación de éxito
-      eventBus.emit("¡Profesor registrado exitosamente!", "success");
+      eventBus.emit("¡Docente registrado exitosamente!", "success");
 
       return result;
     } catch (err) {
@@ -243,7 +243,7 @@ export function SchoolProvider({ children }) {
       );
 
       // Emitir notificación de éxito
-      eventBus.emit("¡Profesor actualizado exitosamente!", "success");
+      eventBus.emit("¡Docente actualizado exitosamente!", "success");
 
       return updated;
     } catch (err) {
@@ -321,6 +321,43 @@ export function SchoolProvider({ children }) {
 
       // Emitir notificación de éxito
       eventBus.emit("¡Asignatura registrada exitosamente!", "success");
+
+      return result;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createTeacherAsignature = async (payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      console.log("SchoolContext - createTeacherAsignature payload:", payload);
+      const result = await schoolService.createTeacherAsignature(payload);
+
+      // Emitir notificación de éxito
+      eventBus.emit("¡Asignatura asignada al docente exitosamente!", "success");
+
+      return result;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+  const createTeacherSede = async (payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      console.log("SchoolContext - createTeacherSede payload:", payload);
+      const result = await schoolService.createTeacherSede(payload);
+
+      // Emitir notificación de éxito
+      eventBus.emit("¡Sede asignada al docente exitosamente!", "success");
 
       return result;
     } catch (err) {
@@ -569,7 +606,7 @@ export function SchoolProvider({ children }) {
       const teachers = await schoolService.allteacher(payload);
       return teachers;
     } catch (error) {
-      console.error("Error al obtener todos los profesores:", error);
+      console.error("Error al obtener todos los docentes:", error);
       setError(error);
       throw error;
     } finally {
@@ -608,6 +645,8 @@ export function SchoolProvider({ children }) {
         registerTeacher,
         getGradeSede,
         registerAsignature,
+        createTeacherAsignature,
+        createTeacherSede,
         getSedeAsignature,
         getDataSede,
         getDataSchool,

@@ -116,10 +116,10 @@ export async function registerGrade(gradeData) {
   throw new Error("Respuesta inesperada de register_grade.");
 }
 /**
- * Registra un nuevo profesor.
+ * Registra un nuevo docente.
  *
  * Endpoint esperado: POST /register_teacher
- * @param {Object} payload - Datos del profesor en formato JSON
+ * @param {Object} payload - Datos del docente en formato JSON
  * @returns {Promise<Object>} Respuesta del servidor
  */
 export async function registerTeacher(payload) {
@@ -276,6 +276,50 @@ export async function registerAsignature(payload) {
   if (data !== undefined && data !== null) return data;
 
   throw new Error("Respuesta inesperada de register_asignature.");
+}
+/**
+ * Asigna una nueva asignatura a un docente.
+ *
+ * Endpoint esperado: POST /teacher/new/asignature
+ * @param {Object} payload - Datos de la asignación (ej: { idTeacher, idAsignature, idSede, idWorkDay })
+ * @returns {Promise<Object>} Respuesta del servidor
+ */
+export async function createTeacherAsignature(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+
+  console.log("SchoolService - createTeacherAsignature payload:", payload);
+
+  const res = await ApiClient.instance.post("/teacher/new/asignature", payload);
+
+  const data = res;
+  console.log("SchoolService - createTeacherAsignature:", data);
+
+  // Validación suave del payload: devolvemos data o data.data.
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de teacher/new/asignature.");
+}
+
+export async function createTeacherSede(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+
+  console.log("SchoolService - createTeacherSede payload:", payload);
+
+  const res = await ApiClient.instance.post("/teacher/sede/new", payload);
+
+  const data = res;
+  console.log("SchoolService - createTeacherSede:", data);
+
+  // Validación suave del payload: devolvemos data o data.data.
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de teacher/new/sede.");
 }
 /**
  * Obtiene las asignaturas por sede.
@@ -435,11 +479,11 @@ export async function createNote(payload) {
   throw new Error("Respuesta inesperada de createNote.");
 }
 /**
- * Obtiene las asignaturas de un profesor.
+ * Obtiene las asignaturas de un docente.
  *
  * Endpoint esperado: POST /teacher/subjects
- * @param {Object} payload - Datos para filtrar asignaturas del profesor
- * @returns {Promise<Object>} Respuesta del servidor con las asignaturas del profesor
+ * @param {Object} payload - Datos para filtrar asignaturas del docente
+ * @returns {Promise<Object>} Respuesta del servidor con las asignaturas del docente
  */
 export async function getTeacherSubjects(payload) {
   if (!payload || typeof payload !== "object") {
@@ -458,11 +502,11 @@ export async function getTeacherSubjects(payload) {
   throw new Error("Respuesta inesperada de teacher/subjects.");
 }
 /**
- * Obtiene los grados de un profesor por sede y jornada.
+ * Obtiene los grados de un docente por sede y jornada.
  *
  * Endpoint esperado: POST /teacherS/grades
- * @param {Object} payload - Datos para filtrar grados del profesor (ej: {idSede: 1, idWorkDay: 1, idDocente: 123})
- * @returns {Promise<Object>} Respuesta del servidor con los grados del profesor
+ * @param {Object} payload - Datos para filtrar grados del docente (ej: {idSede: 1, idWorkDay: 1, idDocente: 123})
+ * @returns {Promise<Object>} Respuesta del servidor con los grados del docente
  */
 export async function getTeacherGrades(payload) {
   if (!payload || typeof payload !== "object") {
@@ -583,11 +627,11 @@ export async function allstudent(payload) {
   throw new Error("Respuesta inesperada de /institution/students.");
 }
 /**
- * Obtiene todos los profesores de la institución.
+ * Obtiene todos los docentes de la institución.
  *
  * Endpoint esperado: POST /institution/teachers
- * @param {Object} payload - Datos para filtrar profesores
- * @returns {Promise<Object>} Respuesta del servidor con los profesores
+ * @param {Object} payload - Datos para filtrar docentes
+ * @returns {Promise<Object>} Respuesta del servidor con los docentes
  */
 export async function allteacher(payload) {
   if (!payload || typeof payload !== "object") {

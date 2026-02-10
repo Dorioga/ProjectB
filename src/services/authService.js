@@ -7,8 +7,6 @@ import { sha256 } from "js-sha256";
  * Ajusta las rutas según tu backend.
  */
 export async function login(credentials) {
-  console.log("AuthService - login called with:", credentials);
-
   const payload = {
     ...credentials,
     // En este proyecto el campo de contraseña del form se llama `infokey`.
@@ -16,11 +14,9 @@ export async function login(credentials) {
   };
 
   const res = await ApiClient.instance.post("/auth/login", payload);
-  console.log("AuthService - login response:", res);
   // ApiClient tiene interceptor que normalmente devuelve res.data.
   // Pero aquí usamos instance.post directamente; res ya es data por interceptor.
   const data = res;
-  console.log("AuthService - login:", data);
 
   // ✅ Validar si hay datos válidos
   if (!data || typeof data !== "object") {
@@ -33,7 +29,7 @@ export async function login(credentials) {
     // Verificar que tenga al menos token o datos de usuario
     if (!loginData.token && !loginData.id && !loginData.name) {
       throw new Error(
-        "Credenciales incorrectas. Por favor, verifica tu usuario y contraseña."
+        "Credenciales incorrectas. Por favor, verifica tu usuario y contraseña.",
       );
     }
     return loginData;
@@ -42,7 +38,7 @@ export async function login(credentials) {
   // Si viene directo sin data.data, validar también
   if (!data.token && !data.id && !data.name) {
     throw new Error(
-      "Credenciales incorrectas. Por favor, verifica tu usuario y contraseña."
+      "Credenciales incorrectas. Por favor, verifica tu usuario y contraseña.",
     );
   }
 

@@ -12,6 +12,7 @@ const Modal = ({
   const containerRef = useRef(null);
 
   // Mapear tamaños a clases Tailwind
+  // Se añadieron tamaños intermedios entre 4xl y full: 5xl, 6xl, 7xl y variantes pantalla
   const sizeClasses = {
     sm: "max-w-sm",
     md: "max-w-md",
@@ -20,6 +21,12 @@ const Modal = ({
     "2xl": "max-w-2xl",
     "3xl": "max-w-3xl",
     "4xl": "max-w-4xl",
+    "5xl": "max-w-5xl",
+    "6xl": "max-w-6xl",
+    "7xl": "max-w-7xl",
+    "screen-lg": "max-w-screen-lg",
+    "screen-xl": "max-w-screen-xl",
+    "screen-2xl": "max-w-screen-2xl",
     full: "max-w-full",
   };
 

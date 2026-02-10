@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import SimpleButton from "../atoms/SimpleButton";
+import Modal from "../atoms/Modal";
 import { formatDateToDisplay, parseDateToISO } from "../../utils/formatUtils";
 import SedeSelect from "../atoms/SedeSelect";
 import JourneySelect from "../atoms/JourneySelect";
@@ -16,6 +17,7 @@ const ProfileTeacher = ({
   onSave,
   initialEditing = false,
   onClose,
+  onReload,
 }) => {
   console.log("ProfileTeacher data:", data);
   const [isEditing, setIsEditing] = useState(Boolean(initialEditing));
@@ -46,9 +48,61 @@ const ProfileTeacher = ({
   const [activeRowKeys, setActiveRowKeys] = useState(new Set());
   const originalRef = useRef({ form: null, estado: null });
 
+  // Confirm modal for changing current sede (it will deactivate checkboxes)
+  const [confirmChangeSedeOpen, setConfirmChangeSedeOpen] = useState(false);
+  const [pendingSedeChange, setPendingSedeChange] = useState(null);
+
+  const handleCurrentSedeChange = (e) => {
+    const val = e.target.value;
+    const label =
+      (e.target.options &&
+        e.target.options[e.target.selectedIndex] &&
+        e.target.options[e.target.selectedIndex].text) ||
+      form.nombre_sede ||
+      "";
+    const wday = getSedeWorkday(val);
+
+    // If the selection didn't change, just set it silently
+    if (String(val) === String(form.id_sede)) {
+      setForm((prev) => ({
+        ...prev,
+        id_sede: val,
+        nombre_sede: label,
+        fk_journey: wday && wday !== "3" ? wday : "",
+        nombre_jornada: "",
+      }));
+      return;
+    }
+
+    // Open confirmation modal before applying change
+    setPendingSedeChange({ val, label, wday });
+    setConfirmChangeSedeOpen(true);
+  };
+
+  const confirmChangeSede = () => {
+    if (!pendingSedeChange) return;
+    const { val, label, wday } = pendingSedeChange;
+    setForm((prev) => ({
+      ...prev,
+      id_sede: val,
+      nombre_sede: label,
+      fk_journey: wday && wday !== "3" ? wday : "",
+      nombre_jornada: "",
+    }));
+    // Deactivate all checkboxes (clear active selections)
+    setActiveRowKeys(new Set());
+    setConfirmChangeSedeOpen(false);
+    setPendingSedeChange(null);
+  };
+
+  const cancelChangeSede = () => {
+    setConfirmChangeSedeOpen(false);
+    setPendingSedeChange(null);
+  };
+
   // ahora `id_sede` y `fk_journey` forman parte del `form` (se sincronizan más abajo)
 
-  const { journeys } = useSchool();
+  const { journeys, createTeacherAsignature, createTeacherSede } = useSchool();
   const { institutionSedes } = useData();
 
   // Obtener el fk_workday de una sede por su id
@@ -66,12 +120,21 @@ const ProfileTeacher = ({
     [data],
   );
 
-  // Construir filas para la tabla: {grado, grupo, asignatura, id_asignatura}
+  // Construir filas para la tabla: {grado, grupo, asignatura, id_asignatura, id_grade_asignature_teacher}
   const assignmentRows = useMemo(() => {
     const rows = [];
 
     if (!Array.isArray(computedGroups) || computedGroups.length === 0)
       return [];
+
+    // Crear un mapa de asignaturas con sus grade_assignments para búsqueda rápida
+    const subjectsMap = new Map();
+    if (Array.isArray(data.subjects)) {
+      data.subjects.forEach((subj) => {
+        const key = `${subj.id_asignatura}::${subj.asignatura}`;
+        subjectsMap.set(key, subj);
+      });
+    }
 
     computedGroups.forEach((grp) => {
       const groupGrados =
@@ -86,31 +149,39 @@ const ProfileTeacher = ({
               .filter(Boolean)
           : [];
 
-        if (nameGrades.length > 0) {
-          nameGrades.forEach((g) => {
-            rows.push({
-              grado: g,
-              grupo: grp.grupo || "",
-              asignatura: a.asignatura || "",
-              id_asignatura: a.id_asignatura ?? a.id ?? null,
-            });
-          });
-        } else if (groupGrados.length > 0 && groupGrados[0] !== "") {
-          groupGrados.forEach((g) => {
-            rows.push({
-              grado: g,
-              grupo: grp.grupo || "",
-              asignatura: a.asignatura || "",
-              id_asignatura: a.id_asignatura ?? a.id ?? null,
-            });
-          });
-        } else {
+        // Buscar el subject correspondiente para obtener grade_assignments
+        const subjKey = `${a.id_asignatura}::${a.asignatura}`;
+        const subject = subjectsMap.get(subjKey);
+        const gradeAssignments = subject?.grade_assignments || [];
+
+        const processGrade = (g) => {
+          // Buscar el id_grade_asignature_teacher que corresponda a este grupo/grado
+          let idGradeAsignature = null;
+          if (gradeAssignments.length > 0) {
+            const match = gradeAssignments.find(
+              (ga) =>
+                String(ga.grupo || "").trim() ===
+                  String(grp.grupo || "").trim() &&
+                String(ga.nombre_grado || "").trim() === String(g || "").trim(),
+            );
+            idGradeAsignature = match?.id_grade_asignature_teacher ?? null;
+          }
+
           rows.push({
-            grado: "",
+            grado: g,
             grupo: grp.grupo || "",
             asignatura: a.asignatura || "",
             id_asignatura: a.id_asignatura ?? a.id ?? null,
+            id_grade_asignature_teacher: idGradeAsignature,
           });
+        };
+
+        if (nameGrades.length > 0) {
+          nameGrades.forEach(processGrade);
+        } else if (groupGrados.length > 0 && groupGrados[0] !== "") {
+          groupGrados.forEach(processGrade);
+        } else {
+          processGrade("");
         }
       });
     });
@@ -145,7 +216,7 @@ const ProfileTeacher = ({
     });
 
     return deduped;
-  }, [computedGroups]);
+  }, [computedGroups, data.subjects]);
 
   // Extraer asignaturas únicas del docente
   const uniqueSubjects = useMemo(() => {
@@ -420,50 +491,51 @@ const ProfileTeacher = ({
     }
     // Derivar asignaturas activas desde las filas seleccionadas
     const activeSubjects = new Set();
+    const activeGradeIds = new Set();
+    const inactiveGradeIds = new Set();
+
     assignmentRows.forEach((row, idx) => {
       if (activeRowKeys.has(rowKeys[idx])) {
         activeSubjects.add(row.asignatura);
+        // Recolectar los id_grade_asignature_teacher de las filas activas
+        if (row.id_grade_asignature_teacher != null) {
+          activeGradeIds.add(Number(row.id_grade_asignature_teacher));
+        }
+      } else {
+        // Recolectar los id_grade_asignature_teacher de las filas inactivas
+        if (row.id_grade_asignature_teacher != null) {
+          inactiveGradeIds.add(Number(row.id_grade_asignature_teacher));
+        }
       }
     });
 
+    // Incluir TODAS las asignaturas con su estado correspondiente
     const asignatures = uniqueSubjects.map((s) => ({
       fk_asignatura: Number(s.id),
       status: activeSubjects.has(s.name) ? "Activo" : "Inactivo",
     }));
 
-    // Construir grades usando grade_assignments si está disponible, si no, fallback a ids_grade_asignature_teacher
-    const grades = [];
-    (data.subjects || []).forEach((s) => {
-      const statusForSubject = activeSubjects.has(s.asignatura)
-        ? "Activo"
-        : "Inactivo";
-      if (
-        Array.isArray(s.grade_assignments) &&
-        s.grade_assignments.length > 0
-      ) {
-        s.grade_assignments.forEach((ga) => {
-          if (ga && ga.id_grade_asignature_teacher != null) {
-            grades.push({
-              id_grade_asignature_teacher: Number(
-                ga.id_grade_asignature_teacher,
-              ),
-              status: statusForSubject,
-            });
-          }
-        });
-      } else if (s.ids_grade_asignature_teacher != null) {
-        const arr = Array.isArray(s.ids_grade_asignature_teacher)
-          ? s.ids_grade_asignature_teacher
-          : [s.ids_grade_asignature_teacher];
-        arr.forEach((gId) => {
-          if (gId != null && gId !== "") {
-            grades.push({
-              id_grade_asignature_teacher: Number(gId),
-              status: statusForSubject,
-            });
-          }
-        });
-      }
+    // Incluir TODOS los grades con su estado correspondiente
+    const grades = [
+      ...Array.from(activeGradeIds).map((id) => ({
+        id_grade_asignature_teacher: id,
+        status: "Activo",
+      })),
+      ...Array.from(inactiveGradeIds).map((id) => ({
+        id_grade_asignature_teacher: id,
+        status: "Inactivo",
+      })),
+    ];
+
+    console.log("Filas activas e inactivas:", {
+      totalRows: assignmentRows.length,
+      activeRowsCount: activeRowKeys.size,
+      inactiveRowsCount: assignmentRows.length - activeRowKeys.size,
+      activeSubjects: Array.from(activeSubjects),
+      activeGradeIds: Array.from(activeGradeIds),
+      inactiveGradeIds: Array.from(inactiveGradeIds),
+      asignatures,
+      grades,
     });
 
     const payload = {
@@ -482,6 +554,7 @@ const ProfileTeacher = ({
       asignatures,
       grades,
     };
+    console.log("Saving with payload:", payload);
 
     if (typeof onSave === "function") {
       try {
@@ -509,8 +582,101 @@ const ProfileTeacher = ({
       setIsEditing(false);
     }
   };
-  const handleRegisterSede = () => {};
-  const handleRegisterAsignature = () => {};
+  const handleRegisterSede = async () => {
+    console.log("Registering new sedes:", newSede);
+
+    if (!createTeacherSede) {
+      console.warn("createTeacherSede no está disponible en el contexto");
+      return;
+    }
+
+    if (!Array.isArray(newSede) || newSede.length === 0) {
+      console.warn("No hay sedes nuevas para registrar");
+      return;
+    }
+
+    try {
+      // Enviar una petición por cada sede nueva (serialmente)
+      for (const s of newSede) {
+        const payload = {
+          id_new_sede: s.id_sede ? Number(s.id_sede) : null,
+          workday_new_sede: s.fk_journey ? Number(s.fk_journey) : null,
+          fk_teacher: form.id_docente ? Number(form.id_docente) : null,
+          asignature_new_sede: (Array.isArray(s.asignatures)
+            ? s.asignatures
+            : []
+          ).map((a) => ({
+            idAsignature_new: Number(a.idAsignature),
+            grades_new: (Array.isArray(a.grades) ? a.grades : []).map((g) => ({
+              idgrade_new: Number(g),
+            })),
+          })),
+        };
+
+        console.log("createTeacherSede payload:", payload);
+        const result = await createTeacherSede(payload);
+        console.log("createTeacherSede result:", result);
+      }
+
+      // Limpiar estado y cerrar UI de agregar sedes
+      setNewSede([]);
+      setShowSedeAsignatures({});
+
+      // Recargar datos del docente
+      if (typeof onReload === "function") {
+        await onReload();
+      }
+    } catch (err) {
+      console.error("Error al registrar sedes nuevas:", err);
+      throw err;
+    }
+  };
+  const handleRegisterAsignature = async () => {
+    console.log("Registering new asignature:", newAsignatures);
+
+    if (!createTeacherAsignature) {
+      console.warn("createTeacherAsignature no está disponible en el contexto");
+      return;
+    }
+
+    if (!Array.isArray(newAsignatures) || newAsignatures.length === 0) {
+      console.warn("No hay asignaturas nuevas para registrar");
+      return;
+    }
+
+    const payload = {
+      id_sede_new_asignature: form.id_sede ? Number(form.id_sede) : null,
+      workday_new: form.fk_journey ? Number(form.fk_journey) : form.id_sede,
+
+      fk_teacher: form.id_docente ? Number(form.id_docente) : null,
+      asignature_new: newAsignatures.map((a) => ({
+        idAsignature_new: Number(a.idAsignature),
+        grades_new: (Array.isArray(a.grades) ? a.grades : []).map((g) => ({
+          idgrade_new: Number(g),
+        })),
+      })),
+    };
+
+    try {
+      const result = await createTeacherAsignature(payload);
+      console.log("createTeacherAsignature result:", result);
+
+      // Limpiar estado y cerrar UI de agregar asignaturas
+      setNewAsignatures([]);
+      setShowAsignatureGrades(false);
+
+      // Recargar los datos del docente para mostrar las nuevas asignaturas
+      if (typeof onReload === "function") {
+        await onReload();
+      }
+
+      return result;
+    } catch (err) {
+      console.error("Error al asignar asignaturas al docente:", err);
+      // Reexponer el error para manejarlo en UI si fuera necesario
+      throw err;
+    }
+  };
   return (
     <div className={"w-full flex flex-col gap-4  px-4"}>
       <div className="grid grid-cols-5 items-center gap-4">
@@ -665,29 +831,44 @@ const ProfileTeacher = ({
             <p>{form.nombre_sede}</p>
           </div>
           {isEditing ? (
-            <SedeSelect
-              name="id_sede"
-              value={form.id_sede || ""}
-              onChange={(e) => {
-                const val = e.target.value;
-                const label =
-                  (e.target.options &&
-                    e.target.options[e.target.selectedIndex] &&
-                    e.target.options[e.target.selectedIndex].text) ||
-                  form.nombre_sede ||
-                  "";
-                const wday = getSedeWorkday(val);
-                setForm((prev) => ({
-                  ...prev,
-                  id_sede: val,
-                  nombre_sede: label,
-                  fk_journey: wday && wday !== "3" ? wday : "",
-                  nombre_jornada: "",
-                }));
-              }}
-              placeholder="Selecciona una sede"
-              label="Nueva Sede"
-            />
+            <>
+              <SedeSelect
+                name="id_sede"
+                value={form.id_sede || ""}
+                onChange={handleCurrentSedeChange}
+                placeholder="Selecciona una sede"
+                label="Nueva Sede"
+              />
+
+              <Modal
+                isOpen={confirmChangeSedeOpen}
+                onClose={cancelChangeSede}
+                title="Confirmar cambio de sede"
+                size="md"
+              >
+                <div>
+                  <p>
+                    Al cambiar la sede se desactivarán los checkbox de
+                    asignaturas y grados asociados a este docente. ¿Deseas
+                    continuar?
+                  </p>
+                  <div className="flex justify-end gap-2 mt-4">
+                    <SimpleButton
+                      msj="Cancelar"
+                      bg="bg-error"
+                      text="text-surface"
+                      onClick={cancelChangeSede}
+                    />
+                    <SimpleButton
+                      msj="Confirmar"
+                      bg="bg-accent"
+                      text="text-surface"
+                      onClick={confirmChangeSede}
+                    />
+                  </div>
+                </div>
+              </Modal>
+            </>
           ) : null}
         </div>
 

@@ -111,7 +111,7 @@ const Sidebar = () => {
             <LucideIcons.Users className="text-surface text-2xl" />
             {isOpen ? (
               <li className="px-2 hover:bg-secondary rounded text-xl text-surface">
-                Gestionar Profesores
+                Gestionar Docentes
               </li>
             ) : null}
           </Link>
