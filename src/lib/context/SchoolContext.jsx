@@ -500,6 +500,24 @@ export function SchoolProvider({ children }) {
     [setLoading, setError],
   );
 
+  const getTeacherSede = useCallback(
+    async (payload) => {
+      setLoading(true);
+      setError(null);
+      try {
+        console.log("SchoolContext - getTeacherSede payload:", payload);
+        const result = await schoolService.getTeacherSede(payload);
+        return result;
+      } catch (err) {
+        setError(err);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [setLoading, setError],
+  );
+
   const getInstitution = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -656,6 +674,7 @@ export function SchoolProvider({ children }) {
         getGradeAsignature,
         createNote,
         getTeacherSubjects,
+        getTeacherSede,
         getTeacherGrades,
         getInstitution,
         getStudentGrades,

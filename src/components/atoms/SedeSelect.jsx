@@ -13,9 +13,11 @@ const SedeSelect = ({
   disabled = false,
   autoSelectPrincipal = false,
   data = null, // Permite pasar data manualmente (ej. para docentes)
+  loading = false,
 }) => {
   const { institutionSedes, loadingInstitutionSedes, loadInstitutionSedes } =
     useData();
+  const isLoading = loading || loadingInstitutionSedes;
   const { idInstitution } = useAuth();
 
   // Cargar sedes cuando se monta el componente o cambia idInstitution
@@ -55,8 +57,16 @@ const SedeSelect = ({
     const normalized = source
       .filter(Boolean)
       .map((sede) => {
-        const id = String(sede?.id ?? "").trim();
-        const nombre = String(sede?.name ?? sede?.nombre ?? "").trim();
+        const id = String(
+          sede?.id ?? sede?.id_sede ?? sede?.idSede ?? "",
+        ).trim();
+        const nombre = String(
+          sede?.name ??
+            sede?.nombre ??
+            sede?.nombre_sede ??
+            sede?.nombreSede ??
+            "",
+        ).trim();
 
         const labelBase = nombre || id || "Sede";
         const optionLabel = labelBase;
@@ -106,7 +116,7 @@ const SedeSelect = ({
         disabled={disabled}
       >
         <option value="">
-          {loadingInstitutionSedes ? "Cargando sedes..." : placeholder}
+          {isLoading ? "Cargando sedes..." : placeholder}
         </option>
         {sedeOptions.map((sede) => (
           <option key={sede.id} value={sede.id}>

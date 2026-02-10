@@ -321,6 +321,33 @@ export async function createTeacherSede(payload) {
 
   throw new Error("Respuesta inesperada de teacher/new/sede.");
 }
+
+/**
+ * Obtiene las sedes asignadas a un docente.
+ *
+ * Endpoint esperado: POST /teacher/sedes
+ * @param {Object} payload - Datos para filtrar, por ejemplo { idDocente: 123 }
+ * @returns {Promise<Object>} Respuesta del servidor con las sedes del docente
+ */
+export async function getTeacherSede(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+
+  console.log("SchoolService - getTeacherSede payload:", payload);
+
+  const res = await ApiClient.instance.post("/teacher/sedes", payload);
+
+  const data = res;
+  console.log("SchoolService - getTeacherSede:", data);
+
+  // Validación suave del payload: devolvemos data o data.data.
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de teacher/sedes.");
+}
+
 /**
  * Obtiene las asignaturas por sede.
  *

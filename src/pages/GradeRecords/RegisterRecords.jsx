@@ -17,9 +17,10 @@ const RegisterRecords = () => {
     loading: loadingSchool,
     getTeacherGrades,
     getTeacherSubjects,
+    getTeacherSede,
   } = useSchool();
   const { institutionSedes } = useData();
-  const { idSede, nameSede, rol, idDocente } = useAuth();
+  const { idSede, nameSede, rol, idDocente, token } = useAuth();
   const [sedeSelected, setSedeSelected] = useState("");
   const [workdaySelected, setWorkdaySelected] = useState("");
   const [gradeSelected, setGradeSelected] = useState("");
@@ -33,6 +34,10 @@ const RegisterRecords = () => {
     record: 0,
     goal: "",
   });
+
+  // SedEs del docente (obtenidas vía getTeacherSede)
+  const [teacherSedes, setTeacherSedes] = useState([]);
+  const [loadingTeacherSedes, setLoadingTeacherSedes] = useState(false);
 
   // Memoizar additionalParams para evitar re-renders
   const teacherGradesParams = useMemo(() => {
@@ -52,17 +57,23 @@ const RegisterRecords = () => {
     return Array.isArray(asignatureResponse) ? asignatureResponse : [];
   }, []);
 
-  // Obtener el fk_workday de la sede seleccionada
+  // Obtener el fk_workday de la sede seleccionada (buscar tanto en institutionSedes como en teacherSedes)
   const sedeWorkday = useMemo(() => {
-    if (!sedeSelected || !Array.isArray(institutionSedes)) return null;
-    const sede = institutionSedes.find(
-      (s) => String(s?.id) === String(sedeSelected),
+    if (!sedeSelected) return null;
+    const candidates = Array.isArray(institutionSedes) ? institutionSedes : [];
+    const teacherCandidates = Array.isArray(teacherSedes) ? teacherSedes : [];
+    const combined = [...candidates, ...teacherCandidates];
+
+    const sede = combined.find(
+      (s) => String(s?.id ?? s?.id_sede) === String(sedeSelected),
     );
     return sede?.fk_workday ? String(sede.fk_workday) : null;
-  }, [sedeSelected, institutionSedes]);
+  }, [sedeSelected, institutionSedes, teacherSedes]);
 
-  // Datos de la sede del docente desde AuthContext
+  // Datos de la sede del docente: preferir resultado de getTeacherSede si existe
   const teacherSedeData = useMemo(() => {
+    if (Array.isArray(teacherSedes) && teacherSedes.length) return teacherSedes;
+
     console.log("RegisterRecords - rol:", rol);
     console.log("RegisterRecords - idSede:", idSede);
     console.log("RegisterRecords - nameSede:", nameSede);
@@ -73,15 +84,86 @@ const RegisterRecords = () => {
       return data;
     }
     return null;
-  }, [rol, idSede, nameSede]);
+  }, [rol, idSede, nameSede, teacherSedes]);
 
-  // Si el rol es 7, cargar idsede y establecerlo como seleccionado
+  // Si existe idDocente, cargar sedes desde el servicio y mapear a {id, name}
+  // Mejoras: esperar a que haya token y evitar llamadas duplicadas (deduplicación por idDocente)
   useEffect(() => {
-    if ((rol === "7" || rol === 7) && idSede) {
-      console.log("RegisterRecords - Estableciendo sede seleccionada:", idSede);
-      setSedeSelected(idSede);
-    }
-  }, [rol, idSede]);
+    let mounted = true;
+
+    // Usar cache temporal a nivel global para evitar duplicados entre mounts en StrictMode
+    if (!window.__inflightTeacherSedeRequests)
+      window.__inflightTeacherSedeRequests = new Map();
+    const inflight = window.__inflightTeacherSedeRequests;
+
+    const load = async () => {
+      if (!idDocente || !getTeacherSede || !token) {
+        // Si no hay idDocente o token aún, limpiar y salir
+        if (mounted) setTeacherSedes([]);
+        return;
+      }
+
+      const key = String(idDocente);
+
+      // Si ya hay una petición en curso para este docente, reutilizarla
+      if (inflight.has(key)) {
+        try {
+          if (mounted) setLoadingTeacherSedes(true);
+          const mapped = await inflight.get(key);
+          if (mounted) setTeacherSedes(mapped || []);
+          return;
+        } catch (err) {
+          console.warn("RegisterRecords - petición ya en curso falló:", err);
+          if (mounted) setTeacherSedes([]);
+          return;
+        } finally {
+          if (mounted) setLoadingTeacherSedes(false);
+        }
+      }
+
+      if (mounted) setLoadingTeacherSedes(true);
+
+      const prom = (async () => {
+        const res = await getTeacherSede({ idDocente: Number(idDocente) });
+        // Respuesta esperada: array de objetos o { code, data: [...] }
+        const list = Array.isArray(res) ? res : (res?.data ?? []);
+        const mapped = (Array.isArray(list) ? list : [])
+          .filter(Boolean)
+          .map((s) => ({
+            id: String(s?.id ?? s?.id_sede ?? "").trim(),
+            name: String(s?.name ?? s?.nombre ?? s?.nombre_sede ?? "").trim(),
+            fk_workday: s?.fk_workday ?? s?.fkWorkday ?? undefined,
+          }));
+        return mapped;
+      })();
+
+      inflight.set(key, prom);
+
+      try {
+        const mapped = await prom;
+        if (mounted) setTeacherSedes(mapped || []);
+
+        // Si solo hay una sede, autoseleccionar si no hay selección
+        if (mounted && mapped.length === 1 && !sedeSelected) {
+          setSedeSelected(mapped[0].id);
+        }
+      } catch (err) {
+        console.error(
+          "RegisterRecords - Error cargando sedes de docente:",
+          err,
+        );
+        if (mounted) setTeacherSedes([]);
+      } finally {
+        inflight.delete(key);
+        if (mounted) setLoadingTeacherSedes(false);
+      }
+    };
+    load();
+
+    return () => {
+      mounted = false;
+    };
+  }, [idDocente, getTeacherSede, token]);
 
   // Limpiar jornada cuando cambia la sede
   useEffect(() => {
@@ -338,8 +420,8 @@ const RegisterRecords = () => {
             onChange={(e) => setSedeSelected(e.target.value)}
             className="w-full p-2 border rounded bg-surface"
             labelClassName="text-lg font-semibold"
-            disabled={rol === "7" || rol === 7}
             data={teacherSedeData}
+            loading={loadingTeacherSedes}
           />
           <GradeSelector
             name="grade"
