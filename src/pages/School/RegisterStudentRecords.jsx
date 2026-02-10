@@ -20,6 +20,7 @@ const normalize = (value) =>
 
 const RegisterStudentRecords = () => {
   const {
+    getTeacherSede,
     records,
     loadingRecords,
     errorRecords,
@@ -31,7 +32,7 @@ const RegisterStudentRecords = () => {
     saveAssignmentNotes,
   } = useSchool();
   const { institutionSedes } = useData();
-  const { idSede, nameSede, rol, idDocente } = useAuth();
+  const { idSede, nameSede, rol, idDocente, token } = useAuth();
   const notify = useNotify();
   const [sedeSelected, setSedeSelected] = useState("");
   const [workdaySelected, setWorkdaySelected] = useState("");
@@ -46,33 +47,49 @@ const RegisterStudentRecords = () => {
   const [loadingData, setLoadingData] = useState(false);
   const [commentsById, setCommentsById] = useState({});
 
+  // SedEs del docente (obtenidas vía getTeacherSede)
+  const [teacherSedes, setTeacherSedes] = useState([]);
+  const [loadingTeacherSedes, setLoadingTeacherSedes] = useState(false);
+  const [detectedJourney, setDetectedJourney] = useState(null);
+
   // Memoizar additionalParams para evitar re-renders
-  const teacherGradesParams = useMemo(() => {
-    return idDocente ? { idTeacher: Number(idDocente) } : {};
-  }, [idDocente]);
+  const teacherGradesParams = useMemo(
+    () => ({
+      ...(idDocente && { idTeacher: Number(idDocente) }),
+      ...(sedeSelected && { idSede: Number(sedeSelected) }),
+    }),
+    [idDocente, sedeSelected],
+  );
 
-  const teacherSubjectsParams = useMemo(() => {
-    return gradeSelected && idDocente
-      ? { idGrade: Number(gradeSelected), idTeacher: Number(idDocente) }
-      : {};
-  }, [gradeSelected, idDocente]);
+  const teacherSubjectsParams = useMemo(
+    () =>
+      gradeSelected && idDocente
+        ? { idGrade: Number(gradeSelected), idTeacher: Number(idDocente) }
+        : {},
+    [gradeSelected, idDocente],
+  );
 
-  // Obtener el fk_workday de la sede seleccionada
+  // Obtener el fk_workday de la sede seleccionada (buscar tanto en institutionSedes como en teacherSedes)
   const sedeWorkday = useMemo(() => {
-    if (!sedeSelected || !Array.isArray(institutionSedes)) return null;
-    const sede = institutionSedes.find(
-      (s) => String(s?.id) === String(sedeSelected),
+    if (!sedeSelected) return null;
+    const candidates = Array.isArray(institutionSedes) ? institutionSedes : [];
+    const teacherCandidates = Array.isArray(teacherSedes) ? teacherSedes : [];
+    const combined = [...candidates, ...teacherCandidates];
+
+    const sede = combined.find(
+      (s) => String(s?.id ?? s?.id_sede) === String(sedeSelected),
     );
     return sede?.fk_workday ? String(sede.fk_workday) : null;
-  }, [sedeSelected, institutionSedes]);
+  }, [sedeSelected, institutionSedes, teacherSedes]);
 
-  // Datos de la sede del docente desde AuthContext
+  // Datos de la sede del docente: preferir resultado de getTeacherSede si existe
   const teacherSedeData = useMemo(() => {
-    if ((rol === "7" || rol === 7) && idSede && nameSede) {
+    if (teacherSedes.length) return teacherSedes;
+    if (String(rol) === "7" && idSede && nameSede) {
       return [{ id: idSede, name: nameSede }];
     }
     return null;
-  }, [rol, idSede, nameSede]);
+  }, [rol, idSede, nameSede, teacherSedes]);
 
   const canShowStudents = Boolean(
     sedeSelected &&
@@ -84,17 +101,102 @@ const RegisterStudentRecords = () => {
     asignatureCode,
   );
 
-  // Si el rol es 7, cargar idsede y establecerlo como seleccionado
+  // Si existe idDocente, cargar sedes desde el servicio y mapear a {id, name}
+  // Mejoras: esperar a que haya token y evitar llamadas duplicadas (deduplicación por idDocente)
   useEffect(() => {
-    if ((rol === "7" || rol === 7) && idSede) {
-      setSedeSelected(idSede);
-    }
-  }, [rol, idSede]);
+    let mounted = true;
 
-  // Limpiar jornada cuando cambia la sede
+    // Usar cache temporal a nivel global para evitar duplicados entre mounts en StrictMode
+    if (!window.__inflightTeacherSedeRequests)
+      window.__inflightTeacherSedeRequests = new Map();
+    const inflight = window.__inflightTeacherSedeRequests;
+
+    const load = async () => {
+      if (!idDocente || !getTeacherSede || !token) {
+        // Si no hay idDocente o token aún, limpiar y salir
+        if (mounted) setTeacherSedes([]);
+        return;
+      }
+
+      const key = String(idDocente);
+
+      // Si ya hay una petición en curso para este docente, reutilizarla
+      if (inflight.has(key)) {
+        try {
+          if (mounted) setLoadingTeacherSedes(true);
+          const mapped = await inflight.get(key);
+          if (mounted) setTeacherSedes(mapped || []);
+          return;
+        } catch (err) {
+          console.warn(
+            "RegisterStudentRecords - petición ya en curso falló:",
+            err,
+          );
+          if (mounted) setTeacherSedes([]);
+          return;
+        } finally {
+          if (mounted) setLoadingTeacherSedes(false);
+        }
+      }
+
+      if (mounted) setLoadingTeacherSedes(true);
+
+      const prom = (async () => {
+        const res = await getTeacherSede({ idTeacher: Number(idDocente) });
+        // Respuesta esperada: array de objetos o { code, data: [...] }
+        const list = Array.isArray(res) ? res : (res?.data ?? []);
+        const mapped = (Array.isArray(list) ? list : [])
+          .filter(Boolean)
+          .map((s) => ({
+            id: String(s?.id ?? s?.id_sede ?? "").trim(),
+            name: String(s?.name ?? s?.nombre ?? s?.nombre_sede ?? "").trim(),
+            fk_workday: s?.fk_workday ?? s?.fkWorkday ?? undefined,
+          }));
+        return mapped;
+      })();
+
+      inflight.set(key, prom);
+
+      try {
+        const mapped = await prom;
+        if (mounted) setTeacherSedes(mapped || []);
+
+        // Si solo hay una sede, autoseleccionar si no hay selección
+        if (mounted && mapped.length === 1 && !sedeSelected) {
+          setSedeSelected(mapped[0].id);
+        }
+      } catch (err) {
+        console.error(
+          "RegisterStudentRecords - Error cargando sedes de docente:",
+          err,
+        );
+        if (mounted) setTeacherSedes([]);
+      } finally {
+        inflight.delete(key);
+        if (mounted) setLoadingTeacherSedes(false);
+      }
+    };
+    load();
+
+    return () => {
+      mounted = false;
+    };
+  }, [idDocente, getTeacherSede, token, sedeSelected]);
+
+  // Limpiar cascada cuando cambia la sede
   useEffect(() => {
+    setGradeSelected("");
+    setAsignatureSelected("");
     setWorkdaySelected("");
+    setDetectedJourney(null);
   }, [sedeSelected]);
+
+  // Limpiar cascada cuando cambia el grado
+  useEffect(() => {
+    setAsignatureSelected("");
+    setWorkdaySelected("");
+    setDetectedJourney(null);
+  }, [gradeSelected]);
 
   // Auto-seleccionar jornada basada en el fk_workday de la sede
   useEffect(() => {
@@ -117,6 +219,7 @@ const RegisterStudentRecords = () => {
   }, [asignatureSelected]);
 
   const reloadOnceRef = useRef(false);
+  const errorNotifiedRef = useRef(false);
 
   useEffect(() => {
     if (reloadOnceRef.current) return;
@@ -139,6 +242,15 @@ const RegisterStudentRecords = () => {
       notify.error("No fue posible recargar la estructura de notas");
     }
   }, [reloadRecords, notify]);
+
+  useEffect(() => {
+    if (errorRecords && !errorNotifiedRef.current) {
+      notify.error("No fue posible cargar la estructura de notas");
+      errorNotifiedRef.current = true;
+    } else if (!errorRecords) {
+      errorNotifiedRef.current = false;
+    }
+  }, [errorRecords, notify]);
 
   useEffect(() => {
     setRecordValuesByStudent({});
@@ -349,12 +461,14 @@ const RegisterStudentRecords = () => {
       setLoadingData(true);
       await saveAssignmentNotes(payload);
       console.log("Notas guardadas exitosamente");
+      notify.success("Notas guardadas exitosamente");
 
       // Opcional: Limpiar los valores después de guardar
       // setRecordValuesByStudent({});
       // setCommentsById({});
     } catch (error) {
       console.error("Error al guardar notas:", error);
+      notify.error("Error al guardar notas");
     } finally {
       setLoadingData(false);
     }
@@ -379,8 +493,8 @@ const RegisterStudentRecords = () => {
           onChange={(e) => setSedeSelected(e.target.value)}
           className="w-full p-2 border rounded bg-surface"
           labelClassName="text-lg font-semibold"
-          disabled={rol === "7" || rol === 7}
           data={teacherSedeData}
+          loading={loadingTeacherSedes}
         />
         <GradeSelector
           name="grade"
@@ -393,6 +507,7 @@ const RegisterStudentRecords = () => {
           workdayId={workdaySelected}
           customFetchMethod={getTeacherGrades}
           additionalParams={teacherGradesParams}
+          disabled={!sedeSelected}
         />
         <AsignatureSelector
           name="asignature"
@@ -405,9 +520,17 @@ const RegisterStudentRecords = () => {
           workdayId={workdaySelected}
           customFetchMethod={getTeacherSubjects}
           additionalParams={teacherSubjectsParams}
-          onJourneyDetected={(journeyId) => {
-            setWorkdaySelected(String(journeyId));
+          onJourneyDetected={(journey) => {
+            console.log(
+              "RegisterStudentRecords - Jornada detectada de asignatura:",
+              journey,
+            );
+            if (journey && journey.id) {
+              setWorkdaySelected(String(journey.id));
+              setDetectedJourney(journey);
+            }
           }}
+          disabled={!gradeSelected}
         />
         <JourneySelect
           name="workday"
@@ -418,6 +541,14 @@ const RegisterStudentRecords = () => {
           className="w-full p-2 border rounded bg-surface"
           filterValue={sedeWorkday}
           includeAmbas={false}
+          subjectJourney={detectedJourney}
+          // Solo cargar jornadas si hay grado seleccionado y no hay asignatura
+          useTeacherSubjects={
+            !Boolean(asignatureSelected) && Boolean(gradeSelected)
+          }
+          sedeId={sedeSelected}
+          idTeacher={idDocente}
+          lockByAsignature={true}
         />
 
         <PeriodSelector
@@ -460,10 +591,6 @@ const RegisterStudentRecords = () => {
       {loadingRecords || loadingData ? (
         <div className="text-sm opacity-80">
           Cargando estructura de notas y estudiantes...
-        </div>
-      ) : errorRecords ? (
-        <div className="text-sm text-red-600">
-          No se pudieron cargar las notas.
         </div>
       ) : recordsList.length === 0 ? (
         <div className="text-sm opacity-80">No hay notas configuradas.</div>
