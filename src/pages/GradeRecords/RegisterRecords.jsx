@@ -36,8 +36,11 @@ const RegisterRecords = () => {
 
   // Memoizar additionalParams para evitar re-renders
   const teacherGradesParams = useMemo(() => {
-    return idDocente ? { idTeacher: Number(idDocente) } : {};
-  }, [idDocente]);
+    const params = {};
+    if (idDocente) params.idTeacher = Number(idDocente);
+    if (idSede) params.idSede = Number(idSede);
+    return params;
+  }, [idDocente, idSede]);
 
   const teacherSubjectsParams = useMemo(() => {
     return gradeSelected && idDocente
