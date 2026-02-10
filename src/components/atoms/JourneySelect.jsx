@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 import useSchool from "../../lib/hooks/useSchool";
 
@@ -14,6 +14,12 @@ const JourneySelect = ({
   includeAmbas = true,
   useServiceJourneys = true,
   disabled = false,
+  // Cuando se proporciona, `subjectJourney` tiene forma { id, name } y
+  // el selector mostrará únicamente esa opción (y la seleccionará automáticamente)
+  subjectJourney = null,
+
+  // Cuando hay una asignatura seleccionada, bloquear la jornada para evitar cambios manuales
+  lockByAsignature = false,
 }) => {
   const { journeys, loadingJourneys, errorJourneys, reloadJourneys } =
     useSchool();
@@ -33,6 +39,14 @@ const JourneySelect = ({
   }, [filterValue]);
 
   const options = useMemo(() => {
+    // Si viene una jornada proveniente de la asignatura, usar SOLO esa
+    if (subjectJourney && subjectJourney.id) {
+      const id = String(subjectJourney.id).trim();
+      const label =
+        String(subjectJourney.name || subjectJourney.label || "").trim() || id;
+      return [{ value: id, label }];
+    }
+
     if (!Array.isArray(journeys) || journeys.length === 0) {
       return [];
     }
@@ -66,10 +80,14 @@ const JourneySelect = ({
     }
 
     return filtered;
-  }, [includeAmbas, journeys, normalizedFilterValue]);
+  }, [includeAmbas, journeys, normalizedFilterValue, subjectJourney]);
 
   // Validar que el valor seleccionado existe en las opciones disponibles
   const effectiveValue = useMemo(() => {
+    // Si la jornada viene desde la asignatura, priorizar su id
+    if (subjectJourney && subjectJourney.id)
+      return String(subjectJourney.id).trim();
+
     if (!value) return "";
 
     const isValidOption = options.some(
@@ -78,17 +96,42 @@ const JourneySelect = ({
 
     // Si el valor no existe en opciones y hay opciones disponibles, limpiar
     return isValidOption || options.length === 0 ? value : "";
-  }, [options, value]);
+  }, [options, value, subjectJourney]);
 
   return (
     <div>
-      <label className={labelClassName}>{label}</label>
+      <div className="flex items-center gap-2">
+        <label className={labelClassName}>{label}</label>
+        {subjectJourney && subjectJourney.id ? (
+          <span
+            role="img"
+            aria-label="info"
+            title="La jornada fue establecida por la asignatura"
+            className="text-sm text-gray-500"
+          >
+            ℹ️
+          </span>
+        ) : null}
+      </div>
+
       <select
         name={name}
         value={effectiveValue}
         onChange={onChange}
         className={className}
-        disabled={disabled || loadingJourneys}
+        title={
+          subjectJourney
+            ? "Jornada establecida por la asignatura"
+            : lockByAsignature
+              ? "Jornada no editable"
+              : undefined
+        }
+        disabled={
+          disabled ||
+          loadingJourneys ||
+          Boolean(subjectJourney && subjectJourney.id) ||
+          Boolean(lockByAsignature)
+        }
       >
         <option value="">
           {loadingJourneys
@@ -105,6 +148,12 @@ const JourneySelect = ({
           </option>
         ))}
       </select>
+
+      {lockByAsignature && !subjectJourney ? (
+        <div className="text-sm italic text-gray-500 mt-1">
+          Jornada bloqueada
+        </div>
+      ) : null}
     </div>
   );
 };

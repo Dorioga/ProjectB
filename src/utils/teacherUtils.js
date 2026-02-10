@@ -367,7 +367,7 @@ export function buildGroupsWithAssignments(processed = {}) {
   for (const [, grp] of groupsMap) {
     const seen = new Set();
     grp.assignments = grp.assignments.filter((a) => {
-      const key = `${a.id_asignatura ?? "noid"}-${String(a.nombre_grado || "")}`;
+      const key = `${a.id_asignatura ?? "noid"}-${String(a.nombre_grado ?? "")}`;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;

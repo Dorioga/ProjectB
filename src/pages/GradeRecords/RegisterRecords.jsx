@@ -1,15 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import SedeSelect from "../../components/atoms/SedeSelect";
 import JourneySelect from "../../components/atoms/JourneySelect";
 import PeriodSelector from "../../components/atoms/PeriodSelector";
 import GradeSelector from "../../components/atoms/GradeSelector";
 import AsignatureSelector from "../../components/molecules/AsignatureSelector";
-import { asignatureResponse } from "../../services/DataExamples/asignatureResponse";
 import useSchool from "../../lib/hooks/useSchool";
 import useData from "../../lib/hooks/useData";
 import useAuth from "../../lib/hooks/useAuth";
 import tourRegisterRecords from "../../tour/tourRegisterRecords";
+
+// Función auxiliar para redondeo consistente
+const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
 
 const RegisterRecords = () => {
   const {
@@ -38,24 +40,24 @@ const RegisterRecords = () => {
   // SedEs del docente (obtenidas vía getTeacherSede)
   const [teacherSedes, setTeacherSedes] = useState([]);
   const [loadingTeacherSedes, setLoadingTeacherSedes] = useState(false);
+  const [detectedJourney, setDetectedJourney] = useState(null);
 
   // Memoizar additionalParams para evitar re-renders
-  const teacherGradesParams = useMemo(() => {
-    const params = {};
-    if (idDocente) params.idTeacher = Number(idDocente);
-    if (sedeSelected) params.idSede = Number(sedeSelected);
-    return params;
-  }, [idDocente, sedeSelected]);
+  const teacherGradesParams = useMemo(
+    () => ({
+      ...(idDocente && { idTeacher: Number(idDocente) }),
+      ...(sedeSelected && { idSede: Number(sedeSelected) }),
+    }),
+    [idDocente, sedeSelected],
+  );
 
-  const teacherSubjectsParams = useMemo(() => {
-    return gradeSelected && idDocente
-      ? { idGrade: Number(gradeSelected), idTeacher: Number(idDocente) }
-      : {};
-  }, [gradeSelected, idDocente]);
-
-  const asignatures = useMemo(() => {
-    return Array.isArray(asignatureResponse) ? asignatureResponse : [];
-  }, []);
+  const teacherSubjectsParams = useMemo(
+    () =>
+      gradeSelected && idDocente
+        ? { idGrade: Number(gradeSelected), idTeacher: Number(idDocente) }
+        : {},
+    [gradeSelected, idDocente],
+  );
 
   // Obtener el fk_workday de la sede seleccionada (buscar tanto en institutionSedes como en teacherSedes)
   const sedeWorkday = useMemo(() => {
@@ -72,16 +74,9 @@ const RegisterRecords = () => {
 
   // Datos de la sede del docente: preferir resultado de getTeacherSede si existe
   const teacherSedeData = useMemo(() => {
-    if (Array.isArray(teacherSedes) && teacherSedes.length) return teacherSedes;
-
-    console.log("RegisterRecords - rol:", rol);
-    console.log("RegisterRecords - idSede:", idSede);
-    console.log("RegisterRecords - nameSede:", nameSede);
-
-    if ((rol === "7" || rol === 7) && idSede && nameSede) {
-      const data = [{ id: idSede, name: nameSede }];
-      console.log("RegisterRecords - teacherSedeData creado:", data);
-      return data;
+    if (teacherSedes.length) return teacherSedes;
+    if (String(rol) === "7" && idSede && nameSede) {
+      return [{ id: idSede, name: nameSede }];
     }
     return null;
   }, [rol, idSede, nameSede, teacherSedes]);
@@ -165,19 +160,22 @@ const RegisterRecords = () => {
     };
   }, [idDocente, getTeacherSede, token]);
 
-  // Limpiar jornada cuando cambia la sede
+  // Limpiar cascada cuando cambia la sede
   useEffect(() => {
-    setWorkdaySelected("");
-  }, [sedeSelected]);
-
-  // Si se limpia la sede, limpiar selección de grado, asignatura y registros asociados
-  useEffect(() => {
-    if (sedeSelected) return;
     setGradeSelected("");
     setAsignatureSelected("");
+    setWorkdaySelected("");
+    setDetectedJourney(null);
     setNumberRecords(0);
     setAuxRecords([]);
   }, [sedeSelected]);
+
+  // Limpiar cascada cuando cambia el grado
+  useEffect(() => {
+    setAsignatureSelected("");
+    setWorkdaySelected("");
+    setDetectedJourney(null);
+  }, [gradeSelected]);
 
   // Auto-seleccionar jornada basada en el fk_workday de la sede
   useEffect(() => {
@@ -193,6 +191,22 @@ const RegisterRecords = () => {
     setPorcentualTotal(isTest ? 80 : 100);
   }, [isTest]);
 
+  // Función auxiliar para calcular distribución de porcentajes
+  const distributePercentages = useCallback((records, total) => {
+    const lockedSum = records.reduce(
+      (sum, r) => (r.locked ? sum + (Number(r.porcentual) || 0) : sum),
+      0,
+    );
+    const unlockedCount = records.filter((r) => !r.locked).length;
+    const remaining = Math.max(0, total - lockedSum);
+    const perUnlocked = unlockedCount > 0 ? remaining / unlockedCount : 0;
+
+    return records.map((r) => ({
+      ...r,
+      porcentual: round2(r.locked ? Number(r.porcentual) || 0 : perUnlocked),
+    }));
+  }, []);
+
   useEffect(() => {
     const safeNumber = Number(numberRecords);
     if (!safeNumber || safeNumber < 1) {
@@ -200,43 +214,18 @@ const RegisterRecords = () => {
       return;
     }
 
-    const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
-    const total = Number(porcentualTotal);
-
     setAuxRecords((prev) => {
-      const prevList = Array.isArray(prev) ? prev : [];
-      const next = Array.from({ length: safeNumber }, (_, idx) => {
-        const existing = prevList[idx] ?? {};
-        return {
-          name: existing.name ?? "",
-          record: existing.record ?? 0,
-          porcentual: Number.isFinite(Number(existing.porcentual))
-            ? Number(existing.porcentual)
-            : 0,
-          goal: existing.goal ?? "",
-          locked: Boolean(existing.locked),
-        };
-      });
+      const next = Array.from({ length: safeNumber }, (_, idx) => ({
+        name: prev[idx]?.name ?? "",
+        record: prev[idx]?.record ?? 0,
+        porcentual: Number(prev[idx]?.porcentual) || 0,
+        goal: prev[idx]?.goal ?? "",
+        locked: Boolean(prev[idx]?.locked),
+      }));
 
-      const lockedSum = next.reduce((acc, r) => {
-        if (!r.locked) return acc;
-        const value = Number(r.porcentual);
-        return acc + (Number.isFinite(value) ? value : 0);
-      }, 0);
-
-      const unlockedCount = next.filter((r) => !r.locked).length;
-      const remaining = Math.max(0, total - lockedSum);
-      const perUnlocked = unlockedCount > 0 ? remaining / unlockedCount : 0;
-
-      return next.map((r) => {
-        if (r.locked) {
-          const v = Number(r.porcentual);
-          return { ...r, porcentual: round2(Number.isFinite(v) ? v : 0) };
-        }
-        return { ...r, porcentual: round2(perUnlocked) };
-      });
+      return distributePercentages(next, porcentualTotal);
     });
-  }, [numberRecords, porcentualTotal]);
+  }, [numberRecords, porcentualTotal, distributePercentages]);
 
   const canSetNumberRecords =
     Boolean(sedeSelected) &&
@@ -261,135 +250,99 @@ const RegisterRecords = () => {
     });
   };
 
-  const togglePorcentualLock = (index) => {
-    const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+  const togglePorcentualLock = useCallback(
+    (index) => {
+      setAuxRecords((prev) => {
+        if (!prev.length) return prev;
 
-    setAuxRecords((prev) => {
-      const list = Array.isArray(prev) ? prev.slice() : [];
-      const total = Number(porcentualTotal);
-      if (!list.length || !Number.isFinite(total) || total < 0) return list;
+        const list = prev.slice();
+        list[index] = { ...list[index], locked: !list[index].locked };
 
-      list[index] = {
-        ...(list[index] ?? { name: "", record: 0, porcentual: 0, goal: "" }),
-        locked: !Boolean(list[index]?.locked),
-      };
-
-      const lockedSum = list.reduce((acc, r) => {
-        if (!r?.locked) return acc;
-        const value = Number(r?.porcentual);
-        return acc + (Number.isFinite(value) ? value : 0);
-      }, 0);
-      const unlockedIndexes = list
-        .map((r, idx) => ({ r, idx }))
-        .filter(({ r }) => !r?.locked)
-        .map(({ idx }) => idx);
-
-      const remaining = Math.max(0, total - lockedSum);
-      const perUnlocked =
-        unlockedIndexes.length > 0 ? remaining / unlockedIndexes.length : 0;
-
-      return list.map((r, idx) => {
-        if (unlockedIndexes.includes(idx)) {
-          return { ...r, porcentual: round2(perUnlocked) };
-        }
-        const v = Number(r?.porcentual);
-        return { ...r, porcentual: round2(Number.isFinite(v) ? v : 0) };
+        return distributePercentages(list, porcentualTotal);
       });
-    });
-  };
+    },
+    [porcentualTotal, distributePercentages],
+  );
 
-  const handlePorcentualChange = (index, rawValue) => {
-    const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+  const handlePorcentualChange = useCallback(
+    (index, rawValue) => {
+      setAuxRecords((prev) => {
+        if (!prev.length) return prev;
 
-    setAuxRecords((prev) => {
-      const list = Array.isArray(prev) ? prev.slice() : [];
-      const count = list.length;
-      const total = Number(porcentualTotal);
+        const list = prev.slice();
+        const value = Math.max(0, Number(rawValue) || 0);
 
-      if (!count || !Number.isFinite(total) || total < 0) return list;
+        // Calcular suma de otros valores bloqueados
+        const lockedSumOther = list.reduce(
+          (sum, r, idx) =>
+            idx !== index && r.locked ? sum + (Number(r.porcentual) || 0) : sum,
+          0,
+        );
 
-      const lockedSumOther = list.reduce((acc, r, idx) => {
-        if (idx === index) return acc;
-        if (!r?.locked) return acc;
-        const value = Number(r?.porcentual);
-        return acc + (Number.isFinite(value) ? value : 0);
-      }, 0);
+        // Limitar el valor al máximo permitido
+        const maxAllowed = Math.max(0, porcentualTotal - lockedSumOther);
+        const clamped = Math.min(maxAllowed, value);
 
-      const value = Number(rawValue);
-      const safeValue = Number.isFinite(value) ? value : 0;
-      const maxAllowed = Math.max(0, total - lockedSumOther);
-      const clamped = Math.max(0, Math.min(maxAllowed, safeValue));
-
-      if (count === 1) {
-        list[0] = { ...list[0], porcentual: round2(total) };
-        return list;
-      }
-
-      const unlockedIndexes = list
-        .map((r, idx) => ({ r, idx }))
-        .filter(({ r, idx }) => !r?.locked && idx !== index)
-        .map(({ idx }) => idx);
-
-      const remaining = Math.max(0, total - lockedSumOther - clamped);
-      const perOther =
-        unlockedIndexes.length > 0 ? remaining / unlockedIndexes.length : 0;
-
-      return list.map((rec, idx) => {
-        if (idx === index) {
-          return { ...rec, porcentual: round2(clamped) };
+        // Caso especial: solo una nota
+        if (list.length === 1) {
+          list[0] = { ...list[0], porcentual: round2(porcentualTotal) };
+          return list;
         }
 
-        if (rec?.locked) {
-          const v = Number(rec?.porcentual);
-          return { ...rec, porcentual: round2(Number.isFinite(v) ? v : 0) };
-        }
+        // Actualizar el valor en el índice actual
+        list[index] = { ...list[index], porcentual: clamped };
 
-        if (unlockedIndexes.includes(idx)) {
-          return { ...rec, porcentual: round2(perOther) };
-        }
+        // Distribuir el resto entre los no bloqueados
+        const otherUnlocked = list.filter(
+          (r, idx) => idx !== index && !r.locked,
+        );
+        const remaining = Math.max(
+          0,
+          porcentualTotal - lockedSumOther - clamped,
+        );
+        const perOther =
+          otherUnlocked.length > 0 ? remaining / otherUnlocked.length : 0;
 
-        const v = Number(rec?.porcentual);
-        return { ...rec, porcentual: round2(Number.isFinite(v) ? v : 0) };
+        return list.map((r, idx) => {
+          if (idx === index) return { ...r, porcentual: round2(clamped) };
+          if (r.locked)
+            return { ...r, porcentual: round2(Number(r.porcentual) || 0) };
+          return { ...r, porcentual: round2(perOther) };
+        });
       });
-    });
-  };
+    },
+    [porcentualTotal],
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Construir el array de notas en el formato requerido
+    const commonFields = {
+      fk_asignature: Number(asignatureSelected),
+      fk_docente: Number(idDocente),
+      fk_period: Number(periodSelected),
+      fk_grade: Number(gradeSelected),
+    };
+
     const notes = auxRecords.map((rec) => ({
       name_note: rec.name || "",
       porcentage: String(rec.porcentual || 0),
       logro: rec.goal || "",
-      fk_asignature: Number(asignatureSelected),
-      fk_docente: parseInt(idDocente, 10),
-      fk_period: Number(periodSelected),
-      fk_grade: Number(gradeSelected),
+      ...commonFields,
     }));
 
-    // Si hay examen final, agregarlo al array
     if (isTest) {
       notes.push({
         name_note: "Examen final",
         porcentage: "20",
         logro: finalTest.goal || "",
-        fk_asignature: Number(asignatureSelected),
-        fk_docente: parseInt(idDocente, 10),
-        fk_period: Number(periodSelected),
-        fk_grade: Number(gradeSelected),
+        ...commonFields,
       });
     }
 
-    const payload = { notes };
-
-    console.log("Registro de notas - Payload:", payload);
-
     try {
-      const result = await createNote(payload);
-      console.log("Notas registradas exitosamente:", result);
-
-      // Limpiar formulario después del éxito
+      await createNote({ notes });
+      // Limpiar formulario
       setSedeSelected("");
       setWorkdaySelected("");
       setGradeSelected("");
@@ -443,6 +396,7 @@ const RegisterRecords = () => {
             workdayId={workdaySelected}
             customFetchMethod={getTeacherGrades}
             additionalParams={teacherGradesParams}
+            disabled={!sedeSelected}
           />
           <AsignatureSelector
             name="asignature"
@@ -455,13 +409,17 @@ const RegisterRecords = () => {
             workdayId={workdaySelected}
             customFetchMethod={getTeacherSubjects}
             additionalParams={teacherSubjectsParams}
-            onJourneyDetected={(journeyId) => {
+            onJourneyDetected={(journey) => {
               console.log(
                 "RegisterRecords - Jornada detectada de asignatura:",
-                journeyId,
+                journey,
               );
-              setWorkdaySelected(String(journeyId));
+              if (journey && journey.id) {
+                setWorkdaySelected(String(journey.id));
+                setDetectedJourney(journey);
+              }
             }}
+            disabled={!gradeSelected}
           />
           <JourneySelect
             name="workday"
@@ -472,6 +430,12 @@ const RegisterRecords = () => {
             className="w-full p-2 border rounded bg-surface"
             filterValue={sedeWorkday}
             includeAmbas={false}
+            subjectJourney={detectedJourney}
+            // Solo cargar jornadas si hay grado seleccionado y no hay asignatura
+            useTeacherSubjects={!Boolean(asignatureSelected) && Boolean(gradeSelected)}
+            sedeId={sedeSelected}
+            idTeacher={idDocente}
+            lockByAsignature={true}
           />
 
           <PeriodSelector

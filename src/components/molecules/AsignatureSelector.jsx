@@ -159,13 +159,20 @@ const AsignatureSelector = ({
       );
 
       if (selectedAsignature?.id_jornada) {
+        const journeyObj = {
+          id: String(selectedAsignature.id_jornada),
+          name: String(
+            selectedAsignature.nombre_jornada ||
+              selectedAsignature.nombre ||
+              "",
+          ).trim(),
+        };
         console.log(
           "AsignatureSelector - Jornada detectada al seleccionar:",
-          selectedAsignature.id_jornada,
-          "nombre:",
-          selectedAsignature.nombre_jornada,
+          journeyObj,
         );
-        onJourneyDetected(selectedAsignature.id_jornada);
+        // Enviar objeto {id, name} para que los selectores puedan usar ambos valores
+        onJourneyDetected(journeyObj);
       }
     }
   };
