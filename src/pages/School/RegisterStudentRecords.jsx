@@ -241,7 +241,8 @@ const RegisterStudentRecords = () => {
       console.error("reloadRecords threw:", err);
       notify.error("No fue posible recargar la estructura de notas");
     }
-  }, [reloadRecords, notify]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reloadRecords]);
 
   useEffect(() => {
     if (errorRecords && !errorNotifiedRef.current) {
@@ -250,16 +251,18 @@ const RegisterStudentRecords = () => {
     } else if (!errorRecords) {
       errorNotifiedRef.current = false;
     }
-  }, [errorRecords, notify]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [errorRecords]);
 
   useEffect(() => {
     setRecordValuesByStudent({});
   }, [asignatureCode, journey]);
 
-  // Llamar a los servicios cuando se tengan los 4 campos requeridos
+  // Llamar a los servicios cuando se tengan los 4 campos requeridos (secuencial):
+  // 1) cargar estudiantes del grado
+  // 2) por cada estudiante llamar a getStudentNotes con fk_estudiante y consolidar
   useEffect(() => {
     const fetchData = async () => {
-      // Validar que todos los campos requeridos estén presentes
       if (
         !idDocente ||
         !asignatureSelected ||
@@ -268,52 +271,97 @@ const RegisterStudentRecords = () => {
       ) {
         setNotesFromService([]);
         setStudentsFromService([]);
+        setRecordValuesByStudent({});
         return;
       }
 
       setLoadingData(true);
       try {
-        // Llamar a ambos servicios en paralelo
-        const [notesResponse, studentsResponse] = await Promise.all([
-          getStudentNotes({
-            fk_docente: Number(idDocente),
-            fk_asignatura: Number(asignatureSelected),
-            fk_grade: Number(gradeSelected),
-            fk_period: Number(periodSelected),
-          }),
-          getStudentGrades({
-            idGrade: Number(gradeSelected),
-          }),
-        ]);
-
-        console.log("Notas recibidas:", notesResponse);
-        console.log("Estudiantes recibidos:", studentsResponse);
-
-        // Guardar las notas
-        const notesArray = Array.isArray(notesResponse)
-          ? notesResponse
-          : (notesResponse?.data ?? []);
-        setNotesFromService(notesArray);
-
-        // Guardar los estudiantes
+        // 1) Cargar estudiantes
+        const studentsResponse = await getStudentGrades({
+          idGrade: Number(gradeSelected),
+        });
         const studentsArray = Array.isArray(studentsResponse)
           ? studentsResponse
           : (studentsResponse?.data ?? []);
+
         setStudentsFromService(studentsArray);
 
-        // Limpiar valores y comentarios cuando cambian los parámetros
-        setRecordValuesByStudent({});
+        // 2) Para cada estudiante pedir sus notas con fk_estudiante
+        const notePromises = (studentsArray || []).map((s) =>
+          getStudentNotes({
+            fk_estudiante: Number(s?.id_estudiante ?? s?.id_student ?? s?.id),
+            fk_docente: Number(idDocente),
+            fk_asignatura: Number(asignatureSelected),
+            fk_period: Number(periodSelected),
+            fk_grade: Number(gradeSelected),
+          }),
+        );
+
+        const settled = await Promise.allSettled(notePromises);
+
+        const notesMap = new Map();
+        const valuesByStudent = {};
+
+        settled.forEach((res, idx) => {
+          const student = studentsArray[idx];
+          const studentKey = getStudentKey(student);
+          if (res.status !== "fulfilled") {
+            console.warn(
+              "getStudentNotes failed for student",
+              studentKey,
+              res.reason,
+            );
+            return;
+          }
+
+          const data = Array.isArray(res.value)
+            ? res.value
+            : (res.value?.data ?? []);
+
+          data.forEach((n) => {
+            const name = String(
+              n?.nombre_nota ?? n?.name ?? n?.nombre ?? "",
+            ).trim();
+            const id = n?.id_nota ?? n?.id ?? null;
+            const key = id != null ? String(id) : `name:${name}`;
+            if (!name && !id) return;
+
+            if (!notesMap.has(key)) {
+              notesMap.set(key, {
+                nombre_nota: name,
+                id_nota: id ?? undefined,
+                porcentaje: n?.porcentaje ?? n?.porcentual ?? undefined,
+              });
+            }
+
+            // Preferir el campo 'valor_nota' si lo entrega el servicio
+            const studentValue =
+              n?.valor_nota ?? n?.value_note ?? n?.value ?? n?.nota ?? n?.valor;
+            if (studentValue !== undefined) {
+              valuesByStudent[studentKey] = valuesByStudent[studentKey] || {};
+              valuesByStudent[studentKey][key] = String(studentValue);
+            }
+          });
+        });
+
+        const consolidatedNotes = Array.from(notesMap.values());
+        setNotesFromService(consolidatedNotes);
+        setRecordValuesByStudent(valuesByStudent);
         setCommentsById({});
       } catch (error) {
-        console.error("Error al cargar datos:", error);
+        console.error("Error al cargar datos secuencialmente:", error);
         setNotesFromService([]);
         setStudentsFromService([]);
+        setRecordValuesByStudent({});
+        notify.error("No fue posible cargar estudiantes o notas");
       } finally {
         setLoadingData(false);
       }
     };
 
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     idDocente,
     asignatureSelected,
@@ -364,11 +412,12 @@ const RegisterStudentRecords = () => {
 
     const weightedSum = list.reduce((acc, r) => {
       const name = String(r?.nombre_nota ?? r?.name ?? "").trim();
-      if (!name) return acc;
+      const id = r?.id_nota ?? r?.id ?? name;
+      if (!name && !id) return acc;
 
       const p = Number(r?.porcentaje ?? r?.porcentual);
       const porcentual = Number.isFinite(p) ? p : 0;
-      const rawValue = values?.[name];
+      const rawValue = values?.[id] ?? values?.[name];
       const n = Number(rawValue);
       const nota = Number.isFinite(n) ? n : 0;
       return acc + nota * (porcentual / 100);
@@ -381,8 +430,9 @@ const RegisterStudentRecords = () => {
         list.length > 0 &&
         list.every((r) => {
           const name = String(r?.nombre_nota ?? r?.name ?? "").trim();
-          if (!name) return false;
-          const v = values?.[name];
+          const id = r?.id_nota ?? r?.id ?? name;
+          if (!id) return false;
+          const v = values?.[id] ?? values?.[name];
           return String(v ?? "").trim() !== "";
         }),
     };
@@ -401,14 +451,14 @@ const RegisterStudentRecords = () => {
     return String(rounded);
   };
 
-  const handleRecordValueChange = (studentKey, recordName, value) => {
+  const handleRecordValueChange = (studentKey, recordKey, value) => {
     setRecordValuesByStudent((prev) => {
       const prevStudent = prev?.[studentKey] ?? {};
       return {
         ...prev,
         [studentKey]: {
           ...prevStudent,
-          [recordName]: value,
+          [recordKey]: value,
         },
       };
     });
@@ -437,7 +487,11 @@ const RegisterStudentRecords = () => {
         const recordName = String(
           record?.nombre_nota ?? record?.name ?? "",
         ).trim();
-        const noteValue = values?.[recordName];
+        const recordKey = record?.id_nota
+          ? String(record?.id_nota)
+          : `name:${recordName}`;
+        // Leer el valor según la clave consolidada (id o name)
+        const noteValue = values?.[recordKey] ?? values?.[recordName];
 
         // Solo agregar si hay un valor ingresado
         if (noteValue && String(noteValue).trim() !== "") {
@@ -633,14 +687,14 @@ const RegisterStudentRecords = () => {
                       const recordName = String(
                         r?.nombre_nota ?? r?.name ?? "",
                       ).trim();
-                      if (!recordName) return null;
+                      if (!recordName && !r?.id_nota) return null;
                       const porcentual = Number(r?.porcentaje ?? r?.porcentual);
                       return (
                         <th
                           key={r?.id_nota ?? recordName}
                           className="p-3 text-center"
                         >
-                          <div>{recordName}</div>
+                          <div>{recordName || r?.id_nota}</div>
                           {Number.isFinite(porcentual) ? (
                             <div className="text-xs opacity-90">
                               {porcentual}%
@@ -681,8 +735,14 @@ const RegisterStudentRecords = () => {
                           const recordName = String(
                             r?.nombre_nota ?? r?.name ?? "",
                           ).trim();
-                          if (!recordName) return null;
-                          const value = studentValues?.[recordName] ?? "";
+                          if (!recordName && !r?.id_nota) return null;
+                          const recordKey = r?.id_nota
+                            ? String(r?.id_nota)
+                            : `name:${recordName}`;
+                          const value =
+                            studentValues?.[recordKey] ??
+                            studentValues?.[recordName] ??
+                            "";
 
                           return (
                             <td
@@ -698,7 +758,7 @@ const RegisterStudentRecords = () => {
                                 onChange={(e) =>
                                   handleRecordValueChange(
                                     studentKey,
-                                    recordName,
+                                    recordKey,
                                     sanitizeGradeInput(e.target.value),
                                   )
                                 }

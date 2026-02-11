@@ -1,7 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 
+import SedeSelect from "../../components/atoms/SedeSelect";
 import JourneySelect from "../../components/atoms/JourneySelect";
 import SimpleButton from "../../components/atoms/SimpleButton";
+import GradeSelector from "../../components/atoms/GradeSelector";
+import AsignatureSelector from "../../components/molecules/AsignatureSelector";
+import useSchool from "../../lib/hooks/useSchool";
+import useData from "../../lib/hooks/useData";
+import useAuth from "../../lib/hooks/useAuth";
+import { useNotify } from "../../lib/hooks/useNotify";
 import { asignatureResponse } from "../../services/DataExamples/asignatureResponse";
 import { studentsResponse } from "../../services/DataExamples/studentsResponse";
 
@@ -18,44 +25,201 @@ const uniqueSorted = (values) => {
 };
 
 const RegisterAssistance = () => {
+  const [sedeSelected, setSedeSelected] = useState("");
+  const [teacherSedes, setTeacherSedes] = useState([]);
+  const [loadingTeacherSedes, setLoadingTeacherSedes] = useState(false);
+  const [detectedJourney, setDetectedJourney] = useState(null);
+
   const [journey, setJourney] = useState("");
   const [asignatureCode, setAsignatureCode] = useState("");
   const [grade, setGrade] = useState("");
   const [group, setGroup] = useState("");
   const [attendanceByStudent, setAttendanceByStudent] = useState({});
 
-  const canShowStudents = Boolean(journey && asignatureCode && grade && group);
+  const [studentsFromService, setStudentsFromService] = useState([]);
+  const [loadingData, setLoadingData] = useState(false);
 
+  const notify = useNotify();
+
+  // Hooks y servicios
+  const {
+    getTeacherSede,
+    getTeacherGrades,
+    getTeacherSubjects,
+    getStudentGrades,
+  } = useSchool();
+  const { institutionSedes } = useData();
+  const { idSede: authIdSede, nameSede, rol, idDocente, token } = useAuth();
+
+  const canShowStudents = Boolean(
+    sedeSelected && journey && asignatureCode && grade,
+  );
+
+  // Limpiar cascada cuando cambia la sede
   useEffect(() => {
     setGrade("");
-    setGroup("");
-  }, [journey]);
+    setDetectedJourney(null);
+  }, [sedeSelected]);
 
+  // Cuando cambia la jornada, solo evitar limpiar grado para prevenir parpadeos
+  // useEffect(() => {
+  //   setGroup("");
+  // }, [journey]);
+
+  // Seleccionar sede desde auth si rol=7
   useEffect(() => {
-    setGroup("");
+    if (String(rol) === "7" && authIdSede) {
+      setSedeSelected(authIdSede);
+    }
+  }, [rol, authIdSede]);
+
+  // Si existe idDocente, cargar sedes desde el servicio y mapear a {id, name}
+  useEffect(() => {
+    let mounted = true;
+
+    if (!window.__inflightTeacherSedeRequests)
+      window.__inflightTeacherSedeRequests = new Map();
+    const inflight = window.__inflightTeacherSedeRequests;
+
+    const load = async () => {
+      if (!idDocente || !getTeacherSede || !token) {
+        if (mounted) setTeacherSedes([]);
+        return;
+      }
+
+      const key = String(idDocente);
+
+      if (inflight.has(key)) {
+        try {
+          if (mounted) setLoadingTeacherSedes(true);
+          const mapped = await inflight.get(key);
+          if (mounted) setTeacherSedes(mapped || []);
+          return;
+        } catch (err) {
+          console.warn("RegisterAssistance - petición ya en curso falló:", err);
+          if (mounted) setTeacherSedes([]);
+          return;
+        } finally {
+          if (mounted) setLoadingTeacherSedes(false);
+        }
+      }
+
+      if (mounted) setLoadingTeacherSedes(true);
+
+      const prom = (async () => {
+        const res = await getTeacherSede({ idTeacher: Number(idDocente) });
+        const list = Array.isArray(res) ? res : (res?.data ?? []);
+        const mapped = (Array.isArray(list) ? list : [])
+          .filter(Boolean)
+          .map((s) => ({
+            id: String(s?.id ?? s?.id_sede ?? "").trim(),
+            name: String(s?.name ?? s?.nombre ?? s?.nombre_sede ?? "").trim(),
+            fk_workday: s?.fk_workday ?? s?.fkWorkday ?? undefined,
+          }));
+        return mapped;
+      })();
+
+      inflight.set(key, prom);
+
+      try {
+        const mapped = await prom;
+        if (mounted) setTeacherSedes(mapped || []);
+
+        if (mounted && mapped.length === 1 && !sedeSelected) {
+          setSedeSelected(mapped[0].id);
+        }
+      } catch (err) {
+        console.error(
+          "RegisterAssistance - Error cargando sedes de docente:",
+          err,
+        );
+        notify.error("No fue posible cargar las sedes del docente");
+        if (mounted) setTeacherSedes([]);
+      } finally {
+        inflight.delete(key);
+        if (mounted) setLoadingTeacherSedes(false);
+      }
+    };
+
+    load();
+
+    return () => {
+      mounted = false;
+    };
+  }, [idDocente, getTeacherSede, token, sedeSelected]);
+
+  // Limpiar asignatura y detectedJourney cuando cambia el grado para evitar incoherencias
+  useEffect(() => {
+    setAsignatureCode("");
+    setDetectedJourney(null);
   }, [grade]);
 
-  const asignatureOptions = useMemo(() => {
-    const source = Array.isArray(asignatureResponse) ? asignatureResponse : [];
-    return source
-      .filter(Boolean)
-      .map((a) => ({
-        value: String(a.codigo ?? "").trim(),
-        label: String(a.nombre ?? a.codigo ?? "").trim(),
-      }))
-      .filter((opt) => opt.value);
-  }, []);
+  // Opciones / params para asignaturas basadas en el grado y docente
+  const teacherSubjectsParams = useMemo(() => {
+    return grade && idDocente
+      ? { idGrade: Number(grade), idTeacher: Number(idDocente) }
+      : {};
+  }, [grade, idDocente]);
+
+  const teacherGradesParams = useMemo(() => {
+    return {
+      ...(idDocente && { idTeacher: Number(idDocente) }),
+      ...(sedeSelected && { idSede: Number(sedeSelected) }),
+    };
+  }, [idDocente, sedeSelected]);
+
+  // Obtener el fk_workday de la sede seleccionada (buscar tanto en institutionSedes como en teacherSedes)
+  const sedeWorkday = useMemo(() => {
+    if (!sedeSelected) return null;
+    const candidates = Array.isArray(institutionSedes) ? institutionSedes : [];
+    const teacherCandidates = Array.isArray(teacherSedes) ? teacherSedes : [];
+    const combined = [...candidates, ...teacherCandidates];
+
+    const sede = combined.find(
+      (s) => String(s?.id ?? s?.id_sede) === String(sedeSelected),
+    );
+    return sede?.fk_workday ? String(sede.fk_workday) : null;
+  }, [sedeSelected, institutionSedes, teacherSedes]);
+
+  // Auto-seleccionar jornada basada en el fk_workday de la sede
+  useEffect(() => {
+    if (!sedeWorkday) return;
+
+    // Si fk_workday es 3 (Ambas/Completa), el usuario debe elegir manualmente
+    if (sedeWorkday === "3") return;
+
+    setJourney(sedeWorkday);
+  }, [sedeWorkday]);
+
+  // Datos de la sede del docente: preferir resultado de getTeacherSede si existe
+  const teacherSedeData = useMemo(() => {
+    if (teacherSedes.length) return teacherSedes;
+    if (String(rol) === "7" && authIdSede && nameSede) {
+      return [{ id: authIdSede, name: nameSede }];
+    }
+    return null;
+  }, [rol, authIdSede, nameSede, teacherSedes]);
 
   const gradeOptions = useMemo(() => {
-    const base = Array.isArray(studentsResponse) ? studentsResponse : [];
+    const base =
+      Array.isArray(studentsFromService) && studentsFromService.length > 0
+        ? studentsFromService
+        : Array.isArray(studentsResponse)
+          ? studentsResponse
+          : [];
     const filtered = journey
       ? base.filter((s) => normalize(s?.journey) === normalize(journey))
       : base;
     return uniqueSorted(filtered.map((s) => s?.grade_scholar));
-  }, [journey]);
+  }, [journey, studentsFromService]);
 
   const groupOptions = useMemo(() => {
-    const base = Array.isArray(studentsResponse) ? studentsResponse : [];
+    const base =
+      Array.isArray(studentsFromService) && studentsFromService.length > 0
+        ? studentsFromService
+        : Array.isArray(studentsResponse)
+          ? studentsResponse
+          : [];
     const filtered = base.filter((s) => {
       if (journey && normalize(s?.journey) !== normalize(journey)) return false;
       if (grade && String(s?.grade_scholar ?? "").trim() !== String(grade)) {
@@ -64,10 +228,15 @@ const RegisterAssistance = () => {
       return true;
     });
     return uniqueSorted(filtered.map((s) => s?.group_grade));
-  }, [grade, journey]);
+  }, [grade, journey, studentsFromService]);
 
   const filteredStudents = useMemo(() => {
-    const base = Array.isArray(studentsResponse) ? studentsResponse : [];
+    const base =
+      Array.isArray(studentsFromService) && studentsFromService.length > 0
+        ? studentsFromService
+        : Array.isArray(studentsResponse)
+          ? studentsResponse
+          : [];
     return base.filter((s) => {
       if (journey && normalize(s?.journey) !== normalize(journey)) return false;
       if (grade && String(s?.grade_scholar ?? "").trim() !== String(grade)) {
@@ -78,7 +247,7 @@ const RegisterAssistance = () => {
       }
       return true;
     });
-  }, [grade, group, journey]);
+  }, [grade, group, journey, studentsFromService]);
 
   const getStudentKey = (student) => {
     const id = student?.id_student ?? student?.identification;
@@ -117,6 +286,32 @@ const RegisterAssistance = () => {
     });
   };
 
+  // Cargar estudiantes del servicio cuando haya grado seleccionado (DESACTIVADO - sin servicio)
+  // useEffect(() => {
+  //   const fetchStudents = async () => {
+  //     if (!grade) {
+  //       setStudentsFromService([]);
+  //       return;
+  //     }
+  //     setLoadingData(true);
+  //     try {
+  //       const res = await getStudentGrades({ idGrade: Number(grade) });
+  //       const list = Array.isArray(res) ? res : (res?.data ?? []);
+  //       setStudentsFromService(list);
+  //     } catch (err) {
+  //       console.error("RegisterAssistance - Error cargando estudiantes:", err);
+  //       notify.error(
+  //         "No fue posible cargar estudiantes para el curso seleccionado",
+  //       );
+  //       setStudentsFromService([]);
+  //     } finally {
+  //       setLoadingData(false);
+  //     }
+  //   };
+
+  //   fetchStudents();
+  // }, [grade, getStudentGrades, notify]);
+
   const handleSubmitAll = (e) => {
     e.preventDefault();
 
@@ -149,75 +344,81 @@ const RegisterAssistance = () => {
       <h2 className="font-bold text-2xl">Registrar Asistencia</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <JourneySelect
-          value={journey}
-          onChange={(e) => setJourney(e.target.value)}
-          placeholder="Selecciona una jornada"
-          includeAmbas={false}
+        <SedeSelect
+          value={sedeSelected}
+          onChange={(e) => setSedeSelected(e.target.value)}
+          className="w-full p-2 border rounded bg-surface"
+          labelClassName="text-lg font-semibold"
+          data={teacherSedeData}
+          loading={loadingTeacherSedes}
         />
 
-        <div>
-          <label>Asignatura</label>
-          <select
-            value={asignatureCode}
-            onChange={(e) => setAsignatureCode(e.target.value)}
-            className="w-full p-2 border rounded bg-surface"
-          >
-            <option value="">Selecciona una asignatura</option>
-            {asignatureOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        <GradeSelector
+          name="grade"
+          label="Curso"
+          labelClassName="text-lg font-semibold"
+          value={grade}
+          onChange={(e) => setGrade(e.target.value)}
+          className="w-full p-2 border rounded bg-surface"
+          sedeId={sedeSelected}
+          workdayId={journey}
+          customFetchMethod={getTeacherGrades}
+          additionalParams={teacherGradesParams}
+          disabled={!sedeSelected}
+        />
 
-        <div>
-          <label>Curso</label>
-          <select
-            value={grade}
-            onChange={(e) => setGrade(e.target.value)}
-            className="w-full p-2 border rounded bg-surface"
-            disabled={!journey}
-          >
-            <option value="">
-              {journey ? "Selecciona un curso" : "Selecciona jornada primero"}
-            </option>
-            {gradeOptions.map((g) => (
-              <option key={g} value={g}>
-                {g}
-              </option>
-            ))}
-          </select>
-        </div>
+        <AsignatureSelector
+          name="asignature"
+          label="Asignatura"
+          labelClassName="text-lg font-semibold"
+          value={asignatureCode}
+          onChange={(e) => setAsignatureCode(e.target.value)}
+          className="w-full p-2 border rounded bg-surface"
+          sedeId={sedeSelected}
+          workdayId={journey}
+          customFetchMethod={getTeacherSubjects}
+          additionalParams={teacherSubjectsParams}
+          onJourneyDetected={(journeyObj) => {
+            if (journeyObj && journeyObj.id) {
+              setJourney(String(journeyObj.id));
+              setDetectedJourney(journeyObj);
+            }
+          }}
+          disabled={!grade}
+        />
 
-        <div>
-          <label>Grupo</label>
-          <select
-            value={group}
-            onChange={(e) => setGroup(e.target.value)}
-            className="w-full p-2 border rounded bg-surface"
-            disabled={!journey || !grade}
-          >
-            <option value="">
-              {journey && grade
-                ? "Selecciona un grupo"
-                : "Selecciona jornada y curso"}
-            </option>
-            {groupOptions.map((g) => (
-              <option key={g} value={g}>
-                {g}
-              </option>
-            ))}
-          </select>
-        </div>
+        <JourneySelect
+          name="workday"
+          label="Jornada"
+          labelClassName="text-lg font-semibold"
+          value={journey}
+          onChange={(e) => setJourney(e.target.value)}
+          className="w-full p-2 border rounded bg-surface"
+          filterValue={sedeWorkday}
+          includeAmbas={false}
+          subjectJourney={detectedJourney}
+          useTeacherSubjects={!Boolean(asignatureCode) && Boolean(grade)}
+          sedeId={sedeSelected}
+          idTeacher={idDocente}
+          lockByAsignature={true}
+        />
       </div>
 
-      <div className="flex flex-col gap-4">
+      {canShowStudents && (
+        <div className="mt-4 p-4 bg-surface border rounded">
+          <p className="text-sm opacity-80">
+            Sede: <span className="font-medium">{sedeSelected}</span> · Curso:{" "}
+            <span className="font-medium">{grade}</span> · Asignatura:{" "}
+            <span className="font-medium">{asignatureCode}</span> · Jornada:{" "}
+            <span className="font-medium">{journey}</span>
+          </p>
+        </div>
+      )}
+
+      {/* <div className="flex flex-col gap-4">
         {!canShowStudents ? (
           <div className="text-sm opacity-80">
-            Completa los filtros (jornada, asignatura, curso y grupo) para ver
-            los estudiantes.
+            Completa los 4 filtros (sede, curso, asignatura y jornada).
           </div>
         ) : filteredStudents.length === 0 ? (
           <div className="text-sm opacity-80">
@@ -304,8 +505,7 @@ const RegisterAssistance = () => {
               </div>
             </div>
           </form>
-        )}
-      </div>
+        )} */}
     </div>
   );
 };

@@ -196,7 +196,8 @@ const ProfileSchool = ({
         );
       }
     }
-  }, [formData.workday, journeys, notify]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.workday, journeys]);
 
   const updateSedeField = (index, field, value) => {
     setFormData((prev) => ({
