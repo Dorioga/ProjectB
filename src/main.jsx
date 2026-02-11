@@ -4,6 +4,7 @@ import "./styles/globals.css";
 import App from "./pages/App.jsx";
 import { BrowserRouter } from "react-router-dom";
 import { SchoolProvider } from "./lib/context/SchoolContext.jsx";
+import { TeacherProvider } from "./lib/context/TeacherContext.jsx";
 import { AuthProvider } from "./lib/context/AuthContext.jsx";
 import { StudentProvider } from "./lib/context/StudentContext.jsx";
 import { DataProvider } from "./lib/context/DataContext.jsx";
@@ -16,13 +17,15 @@ createRoot(document.getElementById("root")).render(
         <AuthProvider>
           <DataProvider>
             <SchoolProvider>
-              <StudentProvider>
-                <App />
-              </StudentProvider>
+              <TeacherProvider>
+                <StudentProvider>
+                  <App />
+                </StudentProvider>
+              </TeacherProvider>
             </SchoolProvider>
           </DataProvider>
         </AuthProvider>
       </NotificationProvider>
     </BrowserRouter>
-  </StrictMode>
+  </StrictMode>,
 );

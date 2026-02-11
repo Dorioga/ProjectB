@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import useSchool from "../../lib/hooks/useSchool";
+import useTeacher from "../../lib/hooks/useTeacher";
 import useAuth from "../../lib/hooks/useAuth";
 import { mapTeacherRowsToProcessed } from "../../utils/teacherUtils";
 import DataTable from "../../components/atoms/DataTable";
@@ -13,8 +14,8 @@ import { useNotify } from "../../lib/hooks/useNotify";
 
 const ManageTeacher = () => {
   const { idInstitution } = useAuth();
-  const { fetchAllTeachers, loading, updateTeacher, getDataTeacher } =
-    useSchool();
+  const { loading } = useSchool();
+  const { fetchAllTeachers, updateTeacher, getDataTeacher } = useTeacher();
   const alerts = alertsResponse;
 
   const [teachers, setTeachers] = useState([]);

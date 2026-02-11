@@ -6,6 +6,7 @@ import PeriodSelector from "../../components/atoms/PeriodSelector";
 import GradeSelector from "../../components/atoms/GradeSelector";
 import AsignatureSelector from "../../components/molecules/AsignatureSelector";
 import useSchool from "../../lib/hooks/useSchool";
+import useTeacher from "../../lib/hooks/useTeacher";
 import useData from "../../lib/hooks/useData";
 import useAuth from "../../lib/hooks/useAuth";
 import tourRegisterRecords from "../../tour/tourRegisterRecords";
@@ -14,13 +15,8 @@ import tourRegisterRecords from "../../tour/tourRegisterRecords";
 const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
 
 const RegisterRecords = () => {
-  const {
-    createNote,
-    loading: loadingSchool,
-    getTeacherGrades,
-    getTeacherSubjects,
-    getTeacherSede,
-  } = useSchool();
+  const { createNote, loading: loadingSchool } = useSchool();
+  const { getTeacherGrades, getTeacherSubjects, getTeacherSede } = useTeacher();
   const { institutionSedes } = useData();
   const { idSede, nameSede, rol, idDocente, token } = useAuth();
   const [sedeSelected, setSedeSelected] = useState("");
@@ -432,7 +428,9 @@ const RegisterRecords = () => {
             includeAmbas={false}
             subjectJourney={detectedJourney}
             // Solo cargar jornadas si hay grado seleccionado y no hay asignatura
-            useTeacherSubjects={!Boolean(asignatureSelected) && Boolean(gradeSelected)}
+            useTeacherSubjects={
+              !Boolean(asignatureSelected) && Boolean(gradeSelected)
+            }
             sedeId={sedeSelected}
             idTeacher={idDocente}
             lockByAsignature={true}

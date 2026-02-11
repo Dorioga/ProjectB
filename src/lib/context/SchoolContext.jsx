@@ -214,46 +214,6 @@ export function SchoolProvider({ children }) {
     }
   };
 
-  const registerTeacher = async (formData) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await schoolService.registerTeacher(formData);
-
-      // Emitir notificación de éxito
-      eventBus.emit("¡Docente registrado exitosamente!", "success");
-
-      return result;
-    } catch (err) {
-      setError(err);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateTeacher = async (teacherId, personId, payload) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const updated = await schoolService.updateTeacher(
-        teacherId,
-        personId,
-        payload,
-      );
-
-      // Emitir notificación de éxito
-      eventBus.emit("¡Docente actualizado exitosamente!", "success");
-
-      return updated;
-    } catch (err) {
-      setError(err);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const updateSede = async (institutionId, sedeId, payload) => {
     setLoading(true);
     setError(null);
@@ -331,43 +291,6 @@ export function SchoolProvider({ children }) {
     }
   };
 
-  const createTeacherAsignature = async (payload) => {
-    setLoading(true);
-    setError(null);
-    try {
-      console.log("SchoolContext - createTeacherAsignature payload:", payload);
-      const result = await schoolService.createTeacherAsignature(payload);
-
-      // Emitir notificación de éxito
-      eventBus.emit("¡Asignatura asignada al docente exitosamente!", "success");
-
-      return result;
-    } catch (err) {
-      setError(err);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-  const createTeacherSede = async (payload) => {
-    setLoading(true);
-    setError(null);
-    try {
-      console.log("SchoolContext - createTeacherSede payload:", payload);
-      const result = await schoolService.createTeacherSede(payload);
-
-      // Emitir notificación de éxito
-      eventBus.emit("¡Sede asignada al docente exitosamente!", "success");
-
-      return result;
-    } catch (err) {
-      setError(err);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const getSedeAsignature = async (payload) => {
     setLoading(true);
     setError(null);
@@ -417,40 +340,6 @@ export function SchoolProvider({ children }) {
     }
   };
 
-  const getDataTeacher = async (payload) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await schoolService.getDataTeacher(payload);
-      console.log("SchoolContext - getDataTeacher payload:", result);
-      // si el servicio ya devuelve una estructura procesada, devolverla tal cual
-      if (
-        result &&
-        typeof result === "object" &&
-        (result.basic || result.subjects)
-      ) {
-        return result;
-      }
-
-      // Normalizar respuesta y construir objeto procesado:
-      // {
-      //   id_docente,
-      //   first_name, second_name, first_lastname, second_lastname, telephone, identification, email, fecha_nacimiento, direccion, nombre_sede,
-      //   subjects: [{ id_asignatura, asignatura, groups: [{ grupo, nombre_grado }] }],
-      //   estado
-      // }
-
-      // Delegar la normalización a utils para mantener la lógica centralizada
-      const processed = mapTeacherRowsToProcessed(result, {});
-      return processed;
-    } catch (err) {
-      setError(err);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const getGradeAsignature = async (payload) => {
     setLoading(true);
     setError(null);
@@ -483,40 +372,7 @@ export function SchoolProvider({ children }) {
     }
   };
 
-  const getTeacherSubjects = useCallback(
-    async (payload) => {
-      setLoading(true);
-      setError(null);
-      try {
-        const result = await schoolService.getTeacherSubjects(payload);
-        return result;
-      } catch (err) {
-        setError(err);
-        throw err;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [setLoading, setError],
-  );
-
-  const getTeacherSede = useCallback(
-    async (payload) => {
-      setLoading(true);
-      setError(null);
-      try {
-        console.log("SchoolContext - getTeacherSede payload:", payload);
-        const result = await schoolService.getTeacherSede(payload);
-        return result;
-      } catch (err) {
-        setError(err);
-        throw err;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [setLoading, setError],
-  );
+  // getTeacherSubjects is provided by TeacherContext (useTeacher).
 
   const getInstitution = useCallback(async () => {
     setLoading(true);
@@ -532,22 +388,7 @@ export function SchoolProvider({ children }) {
     }
   }, []);
 
-  const getTeacherGrades = useCallback(
-    async (payload) => {
-      setLoading(true);
-      setError(null);
-      try {
-        const result = await schoolService.getTeacherGrades(payload);
-        return result;
-      } catch (err) {
-        setError(err);
-        throw err;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [setLoading, setError],
-  );
+  // getTeacherGrades is provided by TeacherContext (useTeacher).
 
   const getStudentGrades = useCallback(
     async (payload) => {
@@ -566,41 +407,6 @@ export function SchoolProvider({ children }) {
     [setLoading, setError],
   );
 
-  const getStudentNotes = useCallback(
-    async (payload) => {
-      setLoading(true);
-      setError(null);
-      try {
-        const result = await schoolService.getStudentNotes(payload);
-        return result;
-      } catch (err) {
-        setError(err);
-        throw err;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [setLoading, setError],
-  );
-
-  const saveAssignmentNotes = async (payload) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await schoolService.saveAssignmentNotes(payload);
-
-      // Emitir notificación de éxito
-      eventBus.emit("¡Notas guardadas exitosamente!", "success");
-
-      return result;
-    } catch (err) {
-      setError(err);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const fetchAllStudents = useCallback(async (payload) => {
     setLoading(true);
     setError(null);
@@ -610,21 +416,6 @@ export function SchoolProvider({ children }) {
       return students;
     } catch (error) {
       console.error("Error al obtener todos los estudiantes:", error);
-      setError(error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const fetchAllTeachers = useCallback(async (payload) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const teachers = await schoolService.allteacher(payload);
-      return teachers;
-    } catch (error) {
-      console.error("Error al obtener todos los docentes:", error);
       setError(error);
       throw error;
     } finally {
@@ -660,30 +451,19 @@ export function SchoolProvider({ children }) {
         updateInstitution,
         removeSchool,
         registerGrade,
-        registerTeacher,
         getGradeSede,
         registerAsignature,
-        createTeacherAsignature,
-        createTeacherSede,
         getSedeAsignature,
         getDataSede,
         getDataSchool,
-        getDataTeacher,
-        updateTeacher,
         updateSede,
         getGradeAsignature,
         createNote,
-        getTeacherSubjects,
-        getTeacherSede,
-        getTeacherGrades,
         getInstitution,
         getStudentGrades,
-        getStudentNotes,
-        saveAssignmentNotes,
         pathSignature,
         setPathSignature,
         fetchAllStudents,
-        fetchAllTeachers,
       }}
     >
       {children}

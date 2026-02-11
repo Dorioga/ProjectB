@@ -5,6 +5,7 @@ import { formatDateToDisplay, parseDateToISO } from "../../utils/formatUtils";
 import SedeSelect from "../atoms/SedeSelect";
 import JourneySelect from "../atoms/JourneySelect";
 import useSchool from "../../lib/hooks/useSchool";
+import useTeacher from "../../lib/hooks/useTeacher";
 import useData from "../../lib/hooks/useData";
 import AsignatureGrades from "./AsignatureGrades";
 import {
@@ -102,7 +103,8 @@ const ProfileTeacher = ({
 
   // ahora `id_sede` y `fk_journey` forman parte del `form` (se sincronizan más abajo)
 
-  const { journeys, createTeacherAsignature, createTeacherSede } = useSchool();
+  const { journeys } = useSchool();
+  const { createTeacherAsignature, createTeacherSede } = useTeacher();
   const { institutionSedes } = useData();
 
   // Obtener el fk_workday de una sede por su id

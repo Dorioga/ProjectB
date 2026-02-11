@@ -5,6 +5,7 @@ import SedeSelect from "../../components/atoms/SedeSelect";
 import TypeDocumentSelector from "../../components/molecules/TypeDocumentSelector";
 import AsignatureGrades from "../../components/molecules/AsignatureGrades";
 import useSchool from "../../lib/hooks/useSchool";
+import useTeacher from "../../lib/hooks/useTeacher";
 import useStudent from "../../lib/hooks/useStudent";
 import { sha256 } from "js-sha256";
 import useData from "../../lib/hooks/useData";
@@ -12,12 +13,8 @@ import { useNotify } from "../../lib/hooks/useNotify";
 import tourRegisterTeacher from "../../tour/tourRegisterTeacher";
 
 const RegisterTeacher = ({ onSuccess }) => {
-  const {
-    sedes,
-    reloadSedes,
-    registerTeacher,
-    loading: teacherLoading,
-  } = useSchool();
+  const { sedes, reloadSedes } = useSchool();
+  const { registerTeacher, loadingTeachers: teacherLoading } = useTeacher();
   const { institutionSedes } = useData();
   const { students, loading: studentsLoading, reload } = useStudent();
   const [formData, setFormData] = useState({

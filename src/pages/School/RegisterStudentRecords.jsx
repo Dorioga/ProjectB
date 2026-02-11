@@ -1,12 +1,22 @@
-import React, { useEffect, useMemo, useState, useRef } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  useRef,
+  useCallback,
+} from "react";
+import { Edit, Plus } from "lucide-react";
 
 import SimpleButton from "../../components/atoms/SimpleButton";
+import DataTable from "../../components/atoms/DataTable";
+import Loader from "../../components/atoms/Loader";
 import SedeSelect from "../../components/atoms/SedeSelect";
 import JourneySelect from "../../components/atoms/JourneySelect";
 import PeriodSelector from "../../components/atoms/PeriodSelector";
 import GradeSelector from "../../components/atoms/GradeSelector";
 import AsignatureSelector from "../../components/molecules/AsignatureSelector";
 import useSchool from "../../lib/hooks/useSchool";
+import useTeacher from "../../lib/hooks/useTeacher";
 import useData from "../../lib/hooks/useData";
 import useAuth from "../../lib/hooks/useAuth";
 import { useNotify } from "../../lib/hooks/useNotify";
@@ -20,17 +30,20 @@ const normalize = (value) =>
 
 const RegisterStudentRecords = () => {
   const {
-    getTeacherSede,
     records,
     loadingRecords,
     errorRecords,
     reloadRecords,
+    getStudentGrades,
+  } = useSchool();
+  const {
+    getTeacherSede,
     getTeacherGrades,
     getTeacherSubjects,
-    getStudentGrades,
     getStudentNotes,
     saveAssignmentNotes,
-  } = useSchool();
+    updateAssignmentNote,
+  } = useTeacher();
   const { institutionSedes } = useData();
   const { idSede, nameSede, rol, idDocente, token } = useAuth();
   const notify = useNotify();
@@ -44,8 +57,39 @@ const RegisterStudentRecords = () => {
   const [recordValuesByStudent, setRecordValuesByStudent] = useState({});
   const [notesFromService, setNotesFromService] = useState([]);
   const [studentsFromService, setStudentsFromService] = useState([]);
+  // Metadatos de notas por estudiante: { [studentKey]: { [recordKey]: { id_estudiante_nota } } }
+  const [noteMetaByStudent, setNoteMetaByStudent] = useState({});
   const [loadingData, setLoadingData] = useState(false);
+  // Estado de carga por fila: { [studentKey]: boolean }
+  const [rowLoadingById, setRowLoadingById] = useState({});
+  // Estado de guardado por fila para mostrar check temporal: { [studentKey]: boolean }
+  const [rowSavedById, setRowSavedById] = useState({});
+  // Snapshot de valores iniciales por fila (para revertir cuando se cancela edición)
+  const [rowInitialValuesById, setRowInitialValuesById] = useState({});
+  // Control de edición por fila: true = editable, false = locked por servicio
+  const [rowEditById, setRowEditById] = useState({});
   const [commentsById, setCommentsById] = useState({});
+  const [recoveryNotesById, setRecoveryNotesById] = useState({});
+
+  // === Refs para estado mutable en celdas (evitar pérdida de foco por recreación de columnas) ===
+  const recordValuesByStudentRef = useRef(recordValuesByStudent);
+  const commentsByIdRef = useRef(commentsById);
+  const recoveryNotesByIdRef = useRef(recoveryNotesById);
+  const rowEditByIdRef = useRef(rowEditById);
+  const rowLoadingByIdRef = useRef(rowLoadingById);
+  const rowSavedByIdRef = useRef(rowSavedById);
+  const loadingDataRef = useRef(loadingData);
+  const handleAddRef = useRef(null);
+  const handleEditRef = useRef(null);
+
+  // Sincronizar refs en cada render
+  recordValuesByStudentRef.current = recordValuesByStudent;
+  commentsByIdRef.current = commentsById;
+  recoveryNotesByIdRef.current = recoveryNotesById;
+  rowEditByIdRef.current = rowEditById;
+  rowLoadingByIdRef.current = rowLoadingById;
+  rowSavedByIdRef.current = rowSavedById;
+  loadingDataRef.current = loadingData;
 
   // SedEs del docente (obtenidas vía getTeacherSede)
   const [teacherSedes, setTeacherSedes] = useState([]);
@@ -219,7 +263,6 @@ const RegisterStudentRecords = () => {
   }, [asignatureSelected]);
 
   const reloadOnceRef = useRef(false);
-  const errorNotifiedRef = useRef(false);
 
   useEffect(() => {
     if (reloadOnceRef.current) return;
@@ -245,123 +288,148 @@ const RegisterStudentRecords = () => {
   }, [reloadRecords]);
 
   useEffect(() => {
-    if (errorRecords && !errorNotifiedRef.current) {
-      notify.error("No fue posible cargar la estructura de notas");
-      errorNotifiedRef.current = true;
-    } else if (!errorRecords) {
-      errorNotifiedRef.current = false;
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [errorRecords]);
-
-  useEffect(() => {
+    console.debug(
+      "clear recordValuesByStudent because asignatureCode/journey changed",
+      { asignatureCode, journey },
+    );
     setRecordValuesByStudent({});
+    setRecoveryNotesById({});
   }, [asignatureCode, journey]);
 
   // Llamar a los servicios cuando se tengan los 4 campos requeridos (secuencial):
   // 1) cargar estudiantes del grado
   // 2) por cada estudiante llamar a getStudentNotes con fk_estudiante y consolidar
-  useEffect(() => {
-    const fetchData = async () => {
-      if (
-        !idDocente ||
-        !asignatureSelected ||
-        !gradeSelected ||
-        !periodSelected
-      ) {
-        setNotesFromService([]);
-        setStudentsFromService([]);
-        setRecordValuesByStudent({});
-        return;
-      }
+  const loadStudentsAndNotes = useCallback(async () => {
+    if (
+      !idDocente ||
+      !asignatureSelected ||
+      !gradeSelected ||
+      !periodSelected
+    ) {
+      console.debug(
+        "fetchData early exit - clearing records because missing params",
+        { idDocente, asignatureSelected, gradeSelected, periodSelected },
+      );
+      setNotesFromService([]);
+      setStudentsFromService([]);
+      setRecordValuesByStudent({});
+      setNoteMetaByStudent({});
+      return;
+    }
 
-      setLoadingData(true);
-      try {
-        // 1) Cargar estudiantes
-        const studentsResponse = await getStudentGrades({
-          idGrade: Number(gradeSelected),
-        });
-        const studentsArray = Array.isArray(studentsResponse)
-          ? studentsResponse
-          : (studentsResponse?.data ?? []);
+    setLoadingData(true);
+    try {
+      // 1) Cargar estudiantes
+      const studentsResponse = await getStudentGrades({
+        idGrade: Number(gradeSelected),
+      });
+      const studentsArray = Array.isArray(studentsResponse)
+        ? studentsResponse
+        : (studentsResponse?.data ?? []);
 
-        setStudentsFromService(studentsArray);
+      setStudentsFromService(studentsArray);
 
-        // 2) Para cada estudiante pedir sus notas con fk_estudiante
-        const notePromises = (studentsArray || []).map((s) =>
-          getStudentNotes({
-            fk_estudiante: Number(s?.id_estudiante ?? s?.id_student ?? s?.id),
-            fk_docente: Number(idDocente),
-            fk_asignatura: Number(asignatureSelected),
-            fk_period: Number(periodSelected),
-            fk_grade: Number(gradeSelected),
-          }),
-        );
+      // 2) Para cada estudiante pedir sus notas con fk_estudiante
+      const notePromises = (studentsArray || []).map((s) =>
+        getStudentNotes({
+          fk_estudiante: Number(s?.id_estudiante ?? s?.id_student ?? s?.id),
+          fk_docente: Number(idDocente),
+          fk_asignatura: Number(asignatureSelected),
+          fk_period: Number(periodSelected),
+          fk_grade: Number(gradeSelected),
+        }),
+      );
 
-        const settled = await Promise.allSettled(notePromises);
+      const settled = await Promise.allSettled(notePromises);
 
-        const notesMap = new Map();
-        const valuesByStudent = {};
+      const notesMap = new Map();
+      const valuesByStudent = {};
+      const metaByStudent = {};
 
-        settled.forEach((res, idx) => {
-          const student = studentsArray[idx];
-          const studentKey = getStudentKey(student);
-          if (res.status !== "fulfilled") {
-            console.warn(
-              "getStudentNotes failed for student",
-              studentKey,
-              res.reason,
-            );
-            return;
+      settled.forEach((res, idx) => {
+        const student = studentsArray[idx];
+        const studentKey = getStudentKey(student);
+        if (res.status !== "fulfilled") {
+          console.warn(
+            "getStudentNotes failed for student",
+            studentKey,
+            res.reason,
+          );
+          return;
+        }
+
+        const data = Array.isArray(res.value)
+          ? res.value
+          : (res.value?.data ?? []);
+
+        data.forEach((n) => {
+          const name = String(
+            n?.nombre_nota ?? n?.name ?? n?.nombre ?? "",
+          ).trim();
+          const id = n?.id_nota ?? n?.id ?? null;
+          const key = id != null ? String(id) : `name:${name}`;
+          if (!name && !id) return;
+
+          if (!notesMap.has(key)) {
+            notesMap.set(key, {
+              nombre_nota: name,
+              id_nota: id ?? undefined,
+              porcentaje: n?.porcentaje ?? n?.porcentual ?? undefined,
+            });
           }
 
-          const data = Array.isArray(res.value)
-            ? res.value
-            : (res.value?.data ?? []);
+          // Preferir el campo 'valor_nota' si lo entrega el servicio
+          const studentValue =
+            n?.valor_nota ?? n?.value_note ?? n?.value ?? n?.nota ?? n?.valor;
+          if (studentValue !== undefined) {
+            valuesByStudent[studentKey] = valuesByStudent[studentKey] || {};
+            valuesByStudent[studentKey][key] = String(studentValue);
+          }
 
-          data.forEach((n) => {
-            const name = String(
-              n?.nombre_nota ?? n?.name ?? n?.nombre ?? "",
-            ).trim();
-            const id = n?.id_nota ?? n?.id ?? null;
-            const key = id != null ? String(id) : `name:${name}`;
-            if (!name && !id) return;
-
-            if (!notesMap.has(key)) {
-              notesMap.set(key, {
-                nombre_nota: name,
-                id_nota: id ?? undefined,
-                porcentaje: n?.porcentaje ?? n?.porcentual ?? undefined,
-              });
-            }
-
-            // Preferir el campo 'valor_nota' si lo entrega el servicio
-            const studentValue =
-              n?.valor_nota ?? n?.value_note ?? n?.value ?? n?.nota ?? n?.valor;
-            if (studentValue !== undefined) {
-              valuesByStudent[studentKey] = valuesByStudent[studentKey] || {};
-              valuesByStudent[studentKey][key] = String(studentValue);
-            }
-          });
+          // Guardar metadatos por student+note (ej. id_estudiante_nota)
+          const studentNoteId =
+            n?.id_estudiante_nota ?? n?.id_student_note ?? n?.id ?? null;
+          if (studentNoteId != null) {
+            metaByStudent[studentKey] = metaByStudent[studentKey] || {};
+            metaByStudent[studentKey][key] = {
+              id_estudiante_nota: Number(studentNoteId),
+            };
+          }
         });
+      });
 
-        const consolidatedNotes = Array.from(notesMap.values());
-        setNotesFromService(consolidatedNotes);
-        setRecordValuesByStudent(valuesByStudent);
-        setCommentsById({});
-      } catch (error) {
-        console.error("Error al cargar datos secuencialmente:", error);
-        setNotesFromService([]);
-        setStudentsFromService([]);
-        setRecordValuesByStudent({});
-        notify.error("No fue posible cargar estudiantes o notas");
-      } finally {
-        setLoadingData(false);
-      }
-    };
+      const consolidatedNotes = Array.from(notesMap.values());
+      setNotesFromService(consolidatedNotes);
+      console.debug("initial valuesByStudent set", { valuesByStudent });
+      setRecordValuesByStudent(valuesByStudent);
+      setCommentsById({});
+      setRecoveryNotesById({});
+      setNoteMetaByStudent(metaByStudent);
 
-    fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+      // Inicializar estados por fila basados en valores traídos del servicio:
+      setRowInitialValuesById(valuesByStudent);
+      // Si el estudiante tiene valores, bloquear inputs (editable=false). Si no, desbloquear.
+      const editMap = {};
+      (studentsArray || []).forEach((s) => {
+        const key = getStudentKey(s);
+        const hasValues = Boolean(
+          valuesByStudent?.[key] &&
+          Object.keys(valuesByStudent[key]).length > 0,
+        );
+        editMap[key] = !hasValues; // editable si NO tiene valores desde servicio
+      });
+      setRowEditById(editMap);
+      setRowSavedById({});
+    } catch (error) {
+      console.error("Error al cargar datos secuencialmente:", error);
+      setNotesFromService([]);
+      setStudentsFromService([]);
+      setRecordValuesByStudent({});
+      setNoteMetaByStudent({});
+      notify.error("No fue posible cargar estudiantes o notas");
+    } finally {
+      setLoadingData(false);
+    }
   }, [
     idDocente,
     asignatureSelected,
@@ -370,6 +438,11 @@ const RegisterStudentRecords = () => {
     getStudentNotes,
     getStudentGrades,
   ]);
+
+  useEffect(() => {
+    loadStudentsAndNotes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadStudentsAndNotes]);
 
   const filteredStudents = useMemo(() => {
     return Array.isArray(studentsFromService) ? studentsFromService : [];
@@ -438,93 +511,296 @@ const RegisterStudentRecords = () => {
     };
   };
 
-  const sanitizeGradeInput = (raw) => {
+  const sanitizeGradeInput = useCallback((raw) => {
     const text = String(raw ?? "").trim();
     if (text === "") return "";
 
     const normalizedText = text.replace(",", ".");
     const n = Number(normalizedText);
-    if (!Number.isFinite(n)) return "";
+    if (!Number.isFinite(n)) return raw; // Mantener el valor durante la edición
 
-    const clamped = Math.min(5, Math.max(1, n));
-    const rounded = Math.round((clamped + Number.EPSILON) * 100) / 100;
-    return String(rounded);
+    // No validar límites mientras se escribe
+    if (n < 0 || n > 5) return raw;
+
+    return text;
+  }, []);
+
+  // Normalizar valores numéricos en el payload: reemplazar coma por punto y convertir a Number
+  const normalizeNumericInPayload = (payload) => {
+    if (!payload || typeof payload !== "object") return payload;
+    const copy = { ...payload };
+
+    if (Array.isArray(copy.note_student)) {
+      copy.note_student = copy.note_student.map((it) => {
+        const item = { ...it };
+        [
+          "value_note",
+          "note_percentage_final",
+          "nota_periodo_porcentual",
+          "nota_final",
+        ].forEach((k) => {
+          if (item[k] != null) {
+            const s = String(item[k]).trim().replace(/,/g, ".");
+            const n = Number(s);
+            if (Number.isFinite(n)) item[k] = n;
+          }
+        });
+        return item;
+      });
+    }
+
+    if (copy.recovery_note != null) {
+      const s = String(copy.recovery_note).trim().replace(/,/g, ".");
+      const n = Number(s);
+      if (Number.isFinite(n)) copy.recovery_note = n;
+    }
+
+    return copy;
   };
 
-  const handleRecordValueChange = (studentKey, recordKey, value) => {
+  // Clampear y formatear valores al perder foco: asegurar 0 <= n <= 5 y redondear a 2 decimales
+  const clampAndFormatNoteValue = useCallback((studentKey, recordKey) => {
     setRecordValuesByStudent((prev) => {
       const prevStudent = prev?.[studentKey] ?? {};
+      const raw = prevStudent?.[recordKey];
+      const s = String(raw ?? "")
+        .trim()
+        .replace(/,/g, ".");
+      const n = Number(s);
+      if (!Number.isFinite(n)) return prev; // si no es número, no cambiar
+      const clamped = Math.min(5, Math.max(0, n));
+      const rounded = Math.round((clamped + Number.EPSILON) * 100) / 100;
       return {
         ...prev,
         [studentKey]: {
           ...prevStudent,
-          [recordKey]: value,
+          [recordKey]: String(rounded),
         },
       };
     });
-  };
+  }, []);
 
-  const handleCommentChange = (studentKey, value) => {
+  const clampAndFormatRecovery = useCallback((studentKey) => {
+    setRecoveryNotesById((prev) => {
+      const raw = prev?.[studentKey];
+      const s = String(raw ?? "")
+        .trim()
+        .replace(/,/g, ".");
+      const n = Number(s);
+      if (!Number.isFinite(n)) return prev;
+      const clamped = Math.min(5, Math.max(0, n));
+      const rounded = Math.round((clamped + Number.EPSILON) * 100) / 100;
+      return {
+        ...prev,
+        [studentKey]: String(rounded),
+      };
+    });
+  }, []);
+
+  const handleRecordValueChange = useCallback(
+    (studentKey, recordKey, value) => {
+      setRecordValuesByStudent((prev) => {
+        const prevStudent = prev?.[studentKey] ?? {};
+        return {
+          ...prev,
+          [studentKey]: {
+            ...prevStudent,
+            [recordKey]: value,
+          },
+        };
+      });
+    },
+    [],
+  );
+
+  const handleCommentChange = useCallback((studentKey, value) => {
     setCommentsById((prev) => ({
       ...prev,
       [studentKey]: value,
     }));
-  };
+  }, []);
 
-  const handleSubmitAll = async (e) => {
-    e.preventDefault();
+  const handleRecoveryNoteChange = useCallback((studentKey, value) => {
+    setRecoveryNotesById((prev) => ({
+      ...prev,
+      [studentKey]: value,
+    }));
+  }, []);
 
-    // Construir el array note_student según el formato requerido
+  /**
+   * Guarda notas para UNA sola fila (estudiante).
+   * - Construye payload con fk_grado, fk_sede, fk_beca y note_student[]
+   * - Cada item de note_student incluye note_percentage_final y, si está completo, final_note
+   */
+  const saveStudentNotes = async (student, { action } = {}) => {
+    const studentKey = getStudentKey(student);
+    const values = recordValuesByStudent?.[studentKey] ?? {};
+    const comment = commentsById?.[studentKey] ?? "";
+    const recoveryNote = recoveryNotesById?.[studentKey] ?? "";
+
+    const finalInfo = computeFinalRecord(values);
+    console.debug("saveStudentNotes - computed finalInfo", {
+      finalInfo,
+      values,
+    });
     const noteStudentArray = [];
-    filteredStudents.forEach((student) => {
-      const studentKey = getStudentKey(student);
-      const values = recordValuesByStudent?.[studentKey] ?? {};
-      const comment = commentsById?.[studentKey] ?? "";
-      const studentId = student?.id_estudiante;
+    const updateNoteStudentArray = [];
 
-      // Agregar una entrada por cada nota del estudiante
-      recordsList.forEach((record) => {
-        const recordName = String(
-          record?.nombre_nota ?? record?.name ?? "",
-        ).trim();
-        const recordKey = record?.id_nota
-          ? String(record?.id_nota)
-          : `name:${recordName}`;
-        // Leer el valor según la clave consolidada (id o name)
-        const noteValue = values?.[recordKey] ?? values?.[recordName];
+    recordsList.forEach((record) => {
+      const recordName = String(
+        record?.nombre_nota ?? record?.name ?? "",
+      ).trim();
+      if (!recordName && !record?.id_nota) return;
+      const recordKey = record?.id_nota
+        ? String(record?.id_nota)
+        : `name:${recordName}`;
+      const noteValue = values?.[recordKey] ?? values?.[recordName];
 
-        // Solo agregar si hay un valor ingresado
-        if (noteValue && String(noteValue).trim() !== "") {
-          noteStudentArray.push({
-            fk_student: Number(studentId),
-            fk_note: Number(record?.id_nota),
-            value_note: Number(noteValue),
-            goal_student: comment || "",
-          });
+      if (noteValue && String(noteValue).trim() !== "") {
+        const percent = Number(record?.porcentaje ?? record?.porcentual) || 0;
+        const noteNum = Number(noteValue);
+        let notePercentageFinal = round2(noteNum * (percent / 100));
+        // Si la fila está completa, note_percentage_final debe tomar el valor total final
+        if (finalInfo.isComplete) {
+          notePercentageFinal = finalInfo.final;
         }
-      });
+
+        const item = {
+          fk_student: Number(
+            student?.id_estudiante ?? student?.id ?? student?.id_student,
+          ),
+          fk_note: record?.id_nota ? Number(record.id_nota) : undefined,
+          value_note: noteNum,
+          goal_student: comment || "",
+          // Enviar la contribución de esta nota según su porcentaje de la columna
+          // o el valor final si la fila está completa
+          note_percentage_final: notePercentageFinal,
+        };
+
+        // Si la fila está completa, incluir final_note (suma ponderada total)
+        if (finalInfo.isComplete) {
+          item.final_note = finalInfo.final;
+        }
+
+        noteStudentArray.push(item);
+
+        // --- Construir item para update (/assignment_note) con campos solicitados ---
+        const meta = noteMetaByStudent?.[studentKey]?.[recordKey];
+        const updateItem = {
+          // Añadir id_estudiante_nota si existe
+          ...(meta && meta.id_estudiante_nota
+            ? { id_estudiante_nota: meta.id_estudiante_nota }
+            : {}),
+          fk_student: Number(
+            student?.id_estudiante ?? student?.id ?? student?.id_student,
+          ),
+          fk_note: record?.id_nota ? Number(record.id_nota) : undefined,
+          value_note: noteNum,
+          // nota_periodo_porcentual: contribución de esta nota en el periodo
+          nota_periodo_porcentual: notePercentageFinal,
+        };
+
+        // Si la fila está completa, incluir nota_final
+        if (finalInfo.isComplete) {
+          updateItem.nota_final = finalInfo.final;
+        }
+
+        updateNoteStudentArray.push(updateItem);
+      }
     });
 
+    if (noteStudentArray.length === 0) {
+      notify.info("No hay notas para guardar en esta fila.");
+      return;
+    }
+
+    // Mapear estado de beca del estudiante a fk_beca (fallback 1)
+    const becaIdMap = { Activo: 1, Retirado: 0 };
+    const fk_beca = student?.state_beca
+      ? (becaIdMap[student.state_beca] ?? 1)
+      : (student?.fk_beca ?? 1);
+
     const payload = {
+      fk_grado: Number(gradeSelected),
+      fk_sede: Number(sedeSelected),
+      fk_beca: Number(fk_beca),
       note_student: noteStudentArray,
     };
 
-    console.log("Registro de notas (payload):", payload);
+    // Agregar nota de recuperación si existe
+    if (recoveryNote && String(recoveryNote).trim() !== "") {
+      payload.recovery_note = Number(recoveryNote);
+    }
+
+    const isUpdateMode = Boolean(
+      rowInitialValuesById?.[studentKey] &&
+      Object.keys(rowInitialValuesById[studentKey] || {}).length > 0,
+    );
 
     try {
-      setLoadingData(true);
-      await saveAssignmentNotes(payload);
-      console.log("Notas guardadas exitosamente");
-      notify.success("Notas guardadas exitosamente");
+      // Indicador por fila en lugar de global para este guardado
+      setRowLoadingById((prev) => ({ ...prev, [studentKey]: true }));
 
-      // Opcional: Limpiar los valores después de guardar
-      // setRecordValuesByStudent({});
-      // setCommentsById({});
+      if (isUpdateMode) {
+        // Construir payload con esquema solicitado para update (/assignment_note)
+        const payloadUpdate = {
+          fk_grado: Number(gradeSelected),
+          fk_sede: Number(sedeSelected),
+          fk_beca: Number(fk_beca),
+          note_student: updateNoteStudentArray,
+        };
+
+        // Normalizar numéricos (coma -> punto) antes de enviar
+        const normalizedUpdate = normalizeNumericInPayload(payloadUpdate);
+        await updateAssignmentNote(normalizedUpdate);
+
+        // Recargar datos de la tabla
+        await loadStudentsAndNotes();
+
+        // Actualizar snapshot inicial para permitir revertir (ya recargado pero mantenemos coherencia local)
+        setRowInitialValuesById((prev) => ({
+          ...prev,
+          [studentKey]: { ...(values || {}) },
+        }));
+        setRowEditById((prev) => ({ ...prev, [studentKey]: false }));
+
+        setRowSavedById((prev) => ({ ...prev, [studentKey]: true }));
+        notify.success(`Notas actualizadas para ${getStudentName(student)}`);
+
+        // Quitar el check luego de 3s
+        setTimeout(() => {
+          setRowSavedById((prev) => ({ ...prev, [studentKey]: false }));
+        }, 3000);
+      } else {
+        // Normalizar numéricos (coma -> punto) antes de enviar
+        const normalizedPayload = normalizeNumericInPayload(payload);
+        await saveAssignmentNotes(normalizedPayload);
+
+        // Recargar datos de la tabla
+        await loadStudentsAndNotes();
+
+        // Marcar fila como guardada y actualizar snapshot inicial para permitir revertir si se edita y cancela
+        setRowSavedById((prev) => ({ ...prev, [studentKey]: true }));
+        setRowInitialValuesById((prev) => ({
+          ...prev,
+          [studentKey]: { ...(values || {}) },
+        }));
+        setRowEditById((prev) => ({ ...prev, [studentKey]: false }));
+
+        notify.success(
+          `Notas guardadas para ${getStudentName(student)}${action ? ` (${action})` : ""}`,
+        );
+
+        // Quitar el check luego de 3s
+        setTimeout(() => {
+          setRowSavedById((prev) => ({ ...prev, [studentKey]: false }));
+        }, 3000);
+      }
     } catch (error) {
-      console.error("Error al guardar notas:", error);
+      console.error("Error guardando notas por fila:", error);
       notify.error("Error al guardar notas");
     } finally {
-      setLoadingData(false);
+      setRowLoadingById((prev) => ({ ...prev, [studentKey]: false }));
     }
   };
 
@@ -537,11 +813,280 @@ const RegisterStudentRecords = () => {
     }, 0);
   }, [filteredStudents, recordValuesByStudent, recordsList]);
 
+  // Funciones para los botones de acciones
+  const handleAdd = async (student) => {
+    await saveStudentNotes(student, { action: "add" });
+  };
+
+  const handleEdit = useCallback(
+    (student) => {
+      const studentKey = getStudentKey(student);
+      const isEditing = Boolean(rowEditById?.[studentKey]);
+
+      if (isEditing) {
+        // Cancelar edición: revertir a snapshot inicial
+        setRecordValuesByStudent((prev) => ({
+          ...prev,
+          [studentKey]: rowInitialValuesById?.[studentKey] ?? {},
+        }));
+        setRowEditById((prev) => ({ ...prev, [studentKey]: false }));
+        notify.info(`Edición cancelada para ${getStudentName(student)}`);
+      } else {
+        // Habilitar edición de la fila
+        setRowEditById((prev) => ({ ...prev, [studentKey]: true }));
+      }
+    },
+    [rowEditById, rowInitialValuesById, notify],
+  );
+
+  // Mantener refs de handlers actualizados para las celdas
+  handleAddRef.current = handleAdd;
+  handleEditRef.current = handleEdit;
+
+  // Definir las columnas para DataTable
+  const tableColumns = useMemo(() => {
+    const columns = [
+      {
+        accessorKey: "studentInfo",
+        header: (
+          <div className="lowercase first-letter:uppercase">Estudiante</div>
+        ),
+        cell: ({ row }) => {
+          const student = row.original;
+          const fullName = getStudentName(student);
+          return (
+            <div className="text-left p-3">
+              <div className="font-medium">{fullName || "Estudiante"}</div>
+              <div className="text-xs opacity-80">
+                ID: {student?.id_estudiante || "-"} · Grado:{" "}
+                {student?.grado || student?.grade_scholar || "-"}
+              </div>
+            </div>
+          );
+        },
+      },
+    ];
+
+    // Agregar una columna por cada nota
+    recordsList.forEach((r) => {
+      const recordName = String(r?.nombre_nota ?? r?.name ?? "").trim();
+      if (!recordName && !r?.id_nota) return;
+      const recordKey = r?.id_nota ? String(r?.id_nota) : `name:${recordName}`;
+      const porcentual = Number(r?.porcentaje ?? r?.porcentual);
+
+      columns.push({
+        id: recordKey,
+        header: (
+          <div>
+            <div className="lowercase first-letter:uppercase">
+              {recordName || String(r?.id_nota)}
+            </div>
+            {Number.isFinite(porcentual) ? (
+              <div className="text-xs opacity-90">{porcentual}%</div>
+            ) : null}
+          </div>
+        ),
+        cell: ({ row }) => {
+          const student = row.original;
+          const studentKey = getStudentKey(student);
+          const studentValues =
+            recordValuesByStudentRef.current?.[studentKey] ?? {};
+          const value =
+            studentValues?.[recordKey] ?? studentValues?.[recordName] ?? "";
+
+          const editing = rowEditByIdRef.current?.[studentKey] !== false;
+          return (
+            <div className="p-2">
+              <input
+                type="number"
+                min={0}
+                max={5}
+                step={0.01}
+                value={value}
+                onChange={(e) =>
+                  handleRecordValueChange(
+                    studentKey,
+                    recordKey,
+                    sanitizeGradeInput(e.target.value),
+                  )
+                }
+                onBlur={() => clampAndFormatNoteValue(studentKey, recordKey)}
+                className="w-full p-2 border rounded bg-surface text-center"
+                placeholder="0.00"
+                disabled={loadingDataRef.current || editing === false}
+              />
+            </div>
+          );
+        },
+      });
+    });
+
+    // Columna de nota final
+    columns.push({
+      accessorKey: "final",
+      header: <div className="lowercase first-letter:uppercase">Final</div>,
+      cell: ({ row }) => {
+        const student = row.original;
+        const studentKey = getStudentKey(student);
+        const studentValues =
+          recordValuesByStudentRef.current?.[studentKey] ?? {};
+        const finalInfo = computeFinalRecord(studentValues);
+
+        const bgClass = finalInfo.isComplete ? "bg-green-100" : "bg-yellow-100";
+
+        return (
+          <div className={`p-3 text-center ${bgClass} rounded`}>
+            <div className="font-medium">{finalInfo.final}</div>
+            <div className="text-xs opacity-80">
+              {finalInfo.isComplete ? "Completo" : "En progreso"}
+              {finalInfo.porcentualTotal !== 100 ? (
+                <span className="opacity-80">
+                  {" "}
+                  · Total %: {finalInfo.porcentualTotal}
+                </span>
+              ) : null}
+            </div>
+          </div>
+        );
+      },
+    });
+
+    // Columna de nota de recuperación
+    columns.push({
+      accessorKey: "recovery",
+      header: (
+        <div className="lowercase first-letter:uppercase">Recuperación</div>
+      ),
+      cell: ({ row }) => {
+        const student = row.original;
+        const studentKey = getStudentKey(student);
+        const recoveryValue = recoveryNotesByIdRef.current?.[studentKey] ?? "";
+        const editing = rowEditByIdRef.current?.[studentKey] !== false;
+
+        return (
+          <div className="p-2">
+            <input
+              type="number"
+              min={0}
+              max={5}
+              step={0.01}
+              value={recoveryValue}
+              onChange={(e) =>
+                handleRecoveryNoteChange(
+                  studentKey,
+                  sanitizeGradeInput(e.target.value),
+                )
+              }
+              onBlur={() => clampAndFormatRecovery(studentKey)}
+              className="w-full p-2 border rounded bg-surface text-center"
+              placeholder="0.00"
+              disabled={loadingDataRef.current || editing === false}
+            />
+          </div>
+        );
+      },
+    });
+
+    // Columna de comentarios
+    columns.push({
+      accessorKey: "comments",
+      header: (
+        <div className="lowercase first-letter:uppercase">
+          Comentarios del docente
+        </div>
+      ),
+      cell: ({ row }) => {
+        const student = row.original;
+        const studentKey = getStudentKey(student);
+        const comment = commentsByIdRef.current?.[studentKey] ?? "";
+
+        return (
+          <div className="p-2">
+            <select
+              value={comment}
+              onChange={(e) => handleCommentChange(studentKey, e.target.value)}
+              className="w-full min-w-[200px] p-2 border rounded bg-surface text-sm"
+              disabled={loadingDataRef.current}
+            >
+              <option value="">-- Selecciona --</option>
+            </select>
+          </div>
+        );
+      },
+    });
+
+    // Columna de acciones
+    columns.push({
+      id: "actions",
+      header: <div className="lowercase first-letter:uppercase">Acciones</div>,
+      cell: ({ row }) => {
+        const student = row.original;
+        const studentKey = getStudentKey(student);
+        const rowLoading = Boolean(rowLoadingByIdRef.current?.[studentKey]);
+        const editing = rowEditByIdRef.current?.[studentKey] !== false;
+        const saved = Boolean(rowSavedByIdRef.current?.[studentKey]);
+        return (
+          <div className="p-3 flex gap-2 justify-center">
+            {editing ? (
+              <div className="w-10">
+                <SimpleButton
+                  type="button"
+                  onClick={() => handleAddRef.current?.(student)}
+                  icon={rowLoading ? "Loader2" : saved ? "Check" : "Save"}
+                  bg={
+                    rowLoading
+                      ? "bg-gray-400"
+                      : saved
+                        ? "bg-green-700"
+                        : "bg-green-600"
+                  }
+                  text="text-surface"
+                  msjtooltip="Guardar"
+                  tooltip={true}
+                  className={`w-10 h-10 p-2 ${rowLoading ? "animate-spin" : ""}`}
+                  disabled={rowLoading || loadingDataRef.current}
+                />
+              </div>
+            ) : null}
+
+            <div className="w-10">
+              <SimpleButton
+                type="button"
+                onClick={() => handleEditRef.current?.(student)}
+                icon={editing ? "X" : "Edit"}
+                bg={editing ? "bg-yellow-600" : "bg-blue-600"}
+                text="text-surface"
+                msjtooltip={editing ? "Cancelar" : "Editar"}
+                tooltip={true}
+                className={`w-10 h-10 p-2 ${editing ? "" : ""}`}
+                disabled={rowLoading || loadingDataRef.current}
+              />
+            </div>
+          </div>
+        );
+      },
+    });
+
+    return columns;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    recordsList,
+    handleRecordValueChange,
+    handleCommentChange,
+    handleRecoveryNoteChange,
+    sanitizeGradeInput,
+  ]);
+
+  // Preparar los datos para DataTable
+  const tableData = useMemo(() => {
+    return filteredStudents;
+  }, [filteredStudents]);
+
   return (
     <div className="border p-6 rounded bg-bg h-full gap-4 flex flex-col">
       <h2 className="font-bold text-2xl">Registrar Notas Estudiantes</h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <SedeSelect
           value={sedeSelected}
           onChange={(e) => setSedeSelected(e.target.value)}
@@ -643,8 +1188,8 @@ const RegisterStudentRecords = () => {
       ) : null}
 
       {loadingRecords || loadingData ? (
-        <div className="text-sm opacity-80">
-          Cargando estructura de notas y estudiantes...
+        <div className="p-4">
+          <Loader message="Cargando estructura de notas y estudiantes..." />
         </div>
       ) : recordsList.length === 0 ? (
         <div className="text-sm opacity-80">No hay notas configuradas.</div>
@@ -660,10 +1205,7 @@ const RegisterStudentRecords = () => {
             No hay estudiantes para los filtros seleccionados.
           </div>
         ) : (
-          <form
-            onSubmit={handleSubmitAll}
-            className="bg-surface border rounded"
-          >
+          <div className="bg-surface border rounded">
             <div className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
               <div className="text-sm opacity-80">
                 Estudiantes:{" "}
@@ -678,154 +1220,17 @@ const RegisterStudentRecords = () => {
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[920px]">
-                <thead className="bg-primary text-surface font-semibold">
-                  <tr>
-                    <th className="p-3 text-left">Estudiante</th>
-                    {recordsList.map((r) => {
-                      const recordName = String(
-                        r?.nombre_nota ?? r?.name ?? "",
-                      ).trim();
-                      if (!recordName && !r?.id_nota) return null;
-                      const porcentual = Number(r?.porcentaje ?? r?.porcentual);
-                      return (
-                        <th
-                          key={r?.id_nota ?? recordName}
-                          className="p-3 text-center"
-                        >
-                          <div>{recordName || r?.id_nota}</div>
-                          {Number.isFinite(porcentual) ? (
-                            <div className="text-xs opacity-90">
-                              {porcentual}%
-                            </div>
-                          ) : null}
-                        </th>
-                      );
-                    })}
-                    <th className="p-3 text-center">Final</th>
-                    <th className="p-3 text-center">Comentarios del docente</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredStudents.map((student) => {
-                    const studentKey = getStudentKey(student);
-                    const fullName = getStudentName(student);
-                    const studentValues =
-                      recordValuesByStudent?.[studentKey] ?? {};
-                    const finalInfo = computeFinalRecord(studentValues);
-                    const comment = commentsById?.[studentKey] ?? "";
-
-                    return (
-                      <tr
-                        key={studentKey}
-                        className="border-t bg-surface hover:bg-gray-50"
-                      >
-                        <td className="p-3 align-top">
-                          <div className="font-medium">
-                            {fullName || "Estudiante"}
-                          </div>
-                          <div className="text-xs opacity-80">
-                            ID: {student?.id_estudiante || "-"} · Grado:{" "}
-                            {student?.grado || student?.grade_scholar || "-"}
-                          </div>
-                        </td>
-
-                        {recordsList.map((r) => {
-                          const recordName = String(
-                            r?.nombre_nota ?? r?.name ?? "",
-                          ).trim();
-                          if (!recordName && !r?.id_nota) return null;
-                          const recordKey = r?.id_nota
-                            ? String(r?.id_nota)
-                            : `name:${recordName}`;
-                          const value =
-                            studentValues?.[recordKey] ??
-                            studentValues?.[recordName] ??
-                            "";
-
-                          return (
-                            <td
-                              key={r?.id_nota ?? recordName}
-                              className="p-2 align-top"
-                            >
-                              <input
-                                type="number"
-                                min={1}
-                                max={5}
-                                step={0.01}
-                                value={value}
-                                onChange={(e) =>
-                                  handleRecordValueChange(
-                                    studentKey,
-                                    recordKey,
-                                    sanitizeGradeInput(e.target.value),
-                                  )
-                                }
-                                className="w-full p-2 border rounded bg-surface text-center"
-                                placeholder="1.00"
-                                disabled={loadingData}
-                              />
-                            </td>
-                          );
-                        })}
-
-                        <td className="p-3 align-top text-center">
-                          <div className="font-medium">{finalInfo.final}</div>
-                          <div className="text-xs opacity-80">
-                            {finalInfo.isComplete ? "Completo" : "En progreso"}
-                            {finalInfo.porcentualTotal !== 100 ? (
-                              <span className="opacity-80">
-                                {" "}
-                                · Total %: {finalInfo.porcentualTotal}
-                              </span>
-                            ) : null}
-                          </div>
-                        </td>
-
-                        <td className="p-2 align-top">
-                          <textarea
-                            value={comment}
-                            onChange={(e) =>
-                              handleCommentChange(studentKey, e.target.value)
-                            }
-                            className="w-full min-w-[200px] p-2 border rounded bg-surface resize-y"
-                            placeholder="Escribe un comentario..."
-                            rows={2}
-                            disabled={loadingData}
-                          />
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            <div className="px-4">
+              <DataTable
+                data={tableData}
+                columns={tableColumns}
+                fileName="registro_notas_estudiantes"
+                showDownloadButtons={false}
+              />
             </div>
 
-            <div className="p-4 border-t flex justify-end">
-              <div className="w-full md:w-56">
-                <SimpleButton
-                  type="submit"
-                  msj="Guardar notas"
-                  text="text-surface"
-                  bg="bg-accent"
-                  icon="Save"
-                  disabled={
-                    !sedeSelected ||
-                    !gradeSelected ||
-                    !asignatureSelected ||
-                    !workdaySelected ||
-                    !periodSelected ||
-                    !asignatureCode ||
-                    loadingRecords ||
-                    loadingData ||
-                    recordsList.length === 0 ||
-                    filteredStudents.length === 0
-                  }
-                />
-              </div>
-            </div>
-          </form>
+            {/* Guardado por fila: usar botones en la columna "Acciones" */}
+          </div>
         )}
       </div>
     </div>

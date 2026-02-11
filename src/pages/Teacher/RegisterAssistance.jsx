@@ -6,6 +6,7 @@ import SimpleButton from "../../components/atoms/SimpleButton";
 import GradeSelector from "../../components/atoms/GradeSelector";
 import AsignatureSelector from "../../components/molecules/AsignatureSelector";
 import useSchool from "../../lib/hooks/useSchool";
+import useTeacher from "../../lib/hooks/useTeacher";
 import useData from "../../lib/hooks/useData";
 import useAuth from "../../lib/hooks/useAuth";
 import { useNotify } from "../../lib/hooks/useNotify";
@@ -42,12 +43,8 @@ const RegisterAssistance = () => {
   const notify = useNotify();
 
   // Hooks y servicios
-  const {
-    getTeacherSede,
-    getTeacherGrades,
-    getTeacherSubjects,
-    getStudentGrades,
-  } = useSchool();
+  const { getStudentGrades } = useSchool();
+  const { getTeacherGrades, getTeacherSubjects, getTeacherSede } = useTeacher();
   const { institutionSedes } = useData();
   const { idSede: authIdSede, nameSede, rol, idDocente, token } = useAuth();
 
