@@ -40,7 +40,12 @@ const ManageTeacher = () => {
       setFetchError(null);
       setIsTableLoading(true);
 
+      console.log("ManageTeacher - idInstitution:", idInstitution);
       if (!idInstitution) {
+        console.warn(
+          "ManageTeacher - idInstitution no disponible; abortando fetchAllTeachers.",
+        );
+        setFetchError("No hay idInstitution — revisa la sesión de usuario.");
         setIsTableLoading(false);
         return;
       }

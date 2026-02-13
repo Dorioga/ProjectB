@@ -15,6 +15,7 @@ import RegisterAsignature from "../pages/GradeRecords/RegisterAsignature";
 import RegisterRecords from "../pages/GradeRecords/RegisterRecords";
 import RegisterTeacher from "../pages/Teacher/RegisterTeacher";
 import RegisterAssistance from "../pages/Teacher/RegisterAssistance";
+import ManageLogro from "../pages/Teacher/ManageLogro";
 import RegisterGrade from "../pages/School/RegisterGrade";
 import RegisterStudentRecords from "../pages/School/RegisterStudentRecords";
 import ManageTeacher from "../pages/Teacher/ManageTeacher";
@@ -53,6 +54,7 @@ const GeneralRoutes = () => {
               element={<RegisterStudentRecords />}
             />
             <Route path="manageTeacher" element={<ManageTeacher />} />
+            <Route path="manageLogro" element={<ManageLogro />} />
             <Route path="manageStudent" element={<ManageStudent />} />
             <Route path="manageSchool" element={<ManageSchools />} />
             <Route path="manageSedes" element={<ManageSedes />} />

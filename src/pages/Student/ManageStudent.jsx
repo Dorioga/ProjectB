@@ -25,12 +25,22 @@ const ManageStudent = () => {
 
   // Cargar estudiantes - memoizado para evitar recreación en cada render
   const fetchStudentsData = useCallback(async () => {
-    if (!idInstitution) return;
+    console.log("ManageStudent - idInstitution:", idInstitution);
+    if (!idInstitution) {
+      console.warn(
+        "ManageStudent - idInstitution no disponible; abortando fetchAllStudents.",
+      );
+      setFetchError("No hay idInstitution — revisa la sesión de usuario.");
+      return;
+    }
 
     setIsFetching(true);
     setFetchError(null);
 
     try {
+      console.log("ManageStudent - llamando fetchAllStudents con:", {
+        institucion: idInstitution,
+      });
       const response = await fetchAllStudents({ institucion: idInstitution });
       const students = Array.isArray(response)
         ? response

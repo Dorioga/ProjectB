@@ -8,6 +8,13 @@ import InstitutionSelector from "../../components/molecules/InstitutionSelector"
 import useSchool from "../../lib/hooks/useSchool";
 import useData from "../../lib/hooks/useData";
 import useAuth from "../../lib/hooks/useAuth";
+import {
+  required,
+  isEmail,
+  minLength,
+  isText,
+  matchesPattern,
+} from "../../utils/validationUtils";
 
 const RegisterUser = () => {
   const { schools, loading, reload } = useSchool();
@@ -27,6 +34,8 @@ const RegisterUser = () => {
     role: "",
     idInstitution: "",
   });
+
+  const [formErrors, setFormErrors] = useState({});
 
   // Cargar las escuelas cuando se monta el componente
   useEffect(() => {
@@ -50,14 +59,108 @@ const RegisterUser = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    // actualizar valor
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
+
+    // validar campo al vuelo
+    const fieldValidation = validateField(name, value);
+    setFormErrors((prev) => ({ ...prev, [name]: fieldValidation }));
+  };
+
+  const validateField = (name, value) => {
+    // devuelve null si válido o mensaje de error
+    switch (name) {
+      case "identificationtype": {
+        const r = required(value, "Selecciona un tipo de documento");
+        return r.valid ? null : r.msg;
+      }
+      case "identification": {
+        const r = required(value, "Número de identificación requerido");
+        if (!r.valid) return r.msg;
+        const digits = matchesPattern(value, /^[0-9]+$/, "Sólo dígitos");
+        if (!digits.valid) return digits.msg;
+        const min = minLength(value, 6, "Número demasiado corto");
+        return min.valid ? null : min.msg;
+      }
+      case "telephone": {
+        if (!value) return null; // opcional
+        const ok = matchesPattern(
+          value,
+          /^[0-9+\s\-()]{7,}$/,
+          "Teléfono inválido",
+        );
+        return ok.valid ? null : ok.msg;
+      }
+      case "email": {
+        const r = required(value, "Correo requerido");
+        if (!r.valid) return r.msg;
+        const e = isEmail(value, "Correo inválido");
+        return e.valid ? null : e.msg;
+      }
+      case "first_name": {
+        const r = required(value, "Primer nombre requerido");
+        if (!r.valid) return r.msg;
+        const t = isText(value, "Sólo letras y espacios");
+        return t.valid ? null : t.msg;
+      }
+      case "second_name": {
+        if (!value) return null;
+        const t = isText(value, "Sólo letras y espacios");
+        return t.valid ? null : t.msg;
+      }
+      case "first_lastname": {
+        const r = required(value, "Primer apellido requerido");
+        if (!r.valid) return r.msg;
+        const t = isText(value, "Sólo letras y espacios");
+        return t.valid ? null : t.msg;
+      }
+      case "second_lastname": {
+        if (!value) return null;
+        const t = isText(value, "Sólo letras y espacios");
+        return t.valid ? null : t.msg;
+      }
+      case "password": {
+        const r = required(value, "Contraseña requerida");
+        if (!r.valid) return r.msg;
+        const m = minLength(value, 6, "Mínimo 6 caracteres");
+        return m.valid ? null : m.msg;
+      }
+      case "role": {
+        const r = required(value, "Selecciona un rol");
+        return r.valid ? null : r.msg;
+      }
+      case "idInstitution": {
+        // si el selector está visible, es requerido
+        if (["2", "3", "4"].includes(rol)) return null;
+        const r = required(value, "Selecciona una institución");
+        return r.valid ? null : r.msg;
+      }
+      default:
+        return null;
+    }
+  };
+
+  const validateForm = () => {
+    const keys = Object.keys(formData);
+    const errors = {};
+    keys.forEach((k) => {
+      const msg = validateField(k, formData[k]);
+      if (msg) errors[k] = msg;
+    });
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
 
     const payload = {
       ...formData,
@@ -121,9 +224,14 @@ const RegisterUser = () => {
             name="identification"
             value={formData.identification}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-surface"
+            className={`w-full p-2 border rounded bg-surface ${formErrors.identification ? "border-error" : ""}`}
             disabled={loadingRegisterUser}
           />
+          {formErrors.identification ? (
+            <p className="text-sm text-red-600 mt-1">
+              {formErrors.identification}
+            </p>
+          ) : null}
         </div>
 
         <div>
@@ -133,9 +241,12 @@ const RegisterUser = () => {
             name="telephone"
             value={formData.telephone}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-surface"
+            className={`w-full p-2 border rounded bg-surface ${formErrors.telephone ? "border-error" : ""}`}
             disabled={loadingRegisterUser}
           />
+          {formErrors.telephone ? (
+            <p className="text-sm text-red-600 mt-1">{formErrors.telephone}</p>
+          ) : null}
         </div>
 
         <div>
@@ -145,9 +256,12 @@ const RegisterUser = () => {
             name="email"
             value={formData.email}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-surface"
+            className={`w-full p-2 border rounded bg-surface ${formErrors.email ? "border-error" : ""}`}
             disabled={loadingRegisterUser}
           />
+          {formErrors.email ? (
+            <p className="text-sm text-red-600 mt-1">{formErrors.email}</p>
+          ) : null}
         </div>
 
         <div>
@@ -157,9 +271,12 @@ const RegisterUser = () => {
             name="first_name"
             value={formData.first_name}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-surface"
+            className={`w-full p-2 border rounded bg-surface ${formErrors.first_name ? "border-error" : ""}`}
             disabled={loadingRegisterUser}
           />
+          {formErrors.first_name ? (
+            <p className="text-sm text-red-600 mt-1">{formErrors.first_name}</p>
+          ) : null}
         </div>
 
         <div>
@@ -169,9 +286,14 @@ const RegisterUser = () => {
             name="second_name"
             value={formData.second_name}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-surface"
+            className={`w-full p-2 border rounded bg-surface ${formErrors.second_name ? "border-error" : ""}`}
             disabled={loadingRegisterUser}
           />
+          {formErrors.second_name ? (
+            <p className="text-sm text-red-600 mt-1">
+              {formErrors.second_name}
+            </p>
+          ) : null}
         </div>
 
         <div>
@@ -181,9 +303,14 @@ const RegisterUser = () => {
             name="first_lastname"
             value={formData.first_lastname}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-surface"
+            className={`w-full p-2 border rounded bg-surface ${formErrors.first_lastname ? "border-error" : ""}`}
             disabled={loadingRegisterUser}
           />
+          {formErrors.first_lastname ? (
+            <p className="text-sm text-red-600 mt-1">
+              {formErrors.first_lastname}
+            </p>
+          ) : null}
         </div>
 
         <div>
@@ -193,9 +320,14 @@ const RegisterUser = () => {
             name="second_lastname"
             value={formData.second_lastname}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-surface"
+            className={`w-full p-2 border rounded bg-surface ${formErrors.second_lastname ? "border-error" : ""}`}
             disabled={loadingRegisterUser}
           />
+          {formErrors.second_lastname ? (
+            <p className="text-sm text-red-600 mt-1">
+              {formErrors.second_lastname}
+            </p>
+          ) : null}
         </div>
 
         <div className="md:col-span-3 font-bold mt-4">Acceso</div>
@@ -207,9 +339,12 @@ const RegisterUser = () => {
             name="password"
             value={formData.password}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-surface"
+            className={`w-full p-2 border rounded bg-surface ${formErrors.password ? "border-error" : ""}`}
             disabled={loadingRegisterUser}
           />
+          {formErrors.password ? (
+            <p className="text-sm text-red-600 mt-1">{formErrors.password}</p>
+          ) : null}
         </div>
 
         <div>
@@ -241,8 +376,15 @@ const RegisterUser = () => {
               text={"text-surface"}
               bg={"bg-accent"}
               icon={"Save"}
-              disabled={loadingRegisterUser}
+              disabled={
+                loadingRegisterUser || Object.values(formErrors).some(Boolean)
+              }
             />
+            {Object.values(formErrors).some(Boolean) ? (
+              <p className="mt-2 text-sm text-red-600">
+                Corrige los errores del formulario antes de continuar.
+              </p>
+            ) : null}
           </div>
         </div>
       </form>

@@ -4,9 +4,9 @@ import { ApiClient } from "./ApiClient";
  * Obtiene la lista de docentes
  * Endpoint esperado: GET /teachers
  */
-export async function getTeachers(params = {}) {
+export async function getTeachers(payload) {
   try {
-    const res = await ApiClient.get("/teachers", params);
+    const res = await ApiClient.post("/institution/teachers", payload);
     const data = Array.isArray(res) ? res : (res?.data ?? []);
     return data;
   } catch (error) {
@@ -199,6 +199,39 @@ export async function getStudentNotes(payload) {
     throw new Error("Respuesta inesperada de studentS/notes.");
   } catch (error) {
     console.error("teacherService - getStudentNotes error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Obtiene los tipos de logro
+ * Endpoint esperado: GET /type_logro
+ */
+export async function getLogroType() {
+  try {
+    const res = await ApiClient.get("/type_logro");
+    const data = Array.isArray(res) ? res : (res?.data ?? res);
+    return data;
+  } catch (error) {
+    console.error("teacherService - getLogroType error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Consulta logros por institución / asignatura / grado / periodo / tipo
+ * Endpoint esperado: POST /logro_institution
+ */
+export async function getLogroInstitution(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto para getLogroInstitution.");
+  }
+  try {
+    const res = await ApiClient.instance.post("/logro_institution", payload);
+    const data = Array.isArray(res) ? res : (res?.data ?? res);
+    return data;
+  } catch (error) {
+    console.error("teacherService - getLogroInstitution error:", error);
     throw error;
   }
 }

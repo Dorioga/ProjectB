@@ -120,7 +120,7 @@ export function TeacherProvider({ children }) {
   }, []);
 
   // Obtener todos los docentes (compatibilidad con fetchAllTeachers)
-  const fetchAllTeachers = useCallback(async (payload = {}) => {
+  const fetchAllTeachers = useCallback(async (payload) => {
     setLoadingTeachers(true);
     setErrorTeachers(null);
     try {
@@ -176,6 +176,35 @@ export function TeacherProvider({ children }) {
     setErrorTeachers(null);
     try {
       const res = await teacherService.getStudentNotes(payload);
+      return res;
+    } catch (err) {
+      setErrorTeachers(err);
+      throw err;
+    } finally {
+      setLoadingTeachers(false);
+    }
+  }, []);
+
+  // ----------------- Logros (nuevo) -----------------
+  const getLogroType = useCallback(async () => {
+    setLoadingTeachers(true);
+    setErrorTeachers(null);
+    try {
+      const res = await teacherService.getLogroType();
+      return res;
+    } catch (err) {
+      setErrorTeachers(err);
+      throw err;
+    } finally {
+      setLoadingTeachers(false);
+    }
+  }, []);
+
+  const getLogroInstitution = useCallback(async (payload = {}) => {
+    setLoadingTeachers(true);
+    setErrorTeachers(null);
+    try {
+      const res = await teacherService.getLogroInstitution(payload);
       return res;
     } catch (err) {
       setErrorTeachers(err);
@@ -275,6 +304,9 @@ export function TeacherProvider({ children }) {
         fetchAllTeachers,
         assignSede,
         assignAsignature,
+        // Logros
+        getLogroType,
+        getLogroInstitution,
       }}
     >
       {children}
