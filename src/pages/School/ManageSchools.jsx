@@ -121,7 +121,7 @@ const ManageSchools = () => {
   );
 
   return (
-    <div className="border p-6 rounded bg-bg h-full gap-4 flex flex-col">
+    <div className=" p-6  h-full gap-4 flex flex-col">
       <div
         id="tour-header"
         className="w-full flex justify-between items-center bg-primary text-surface p-3 rounded-t-lg"

@@ -2,6 +2,7 @@ import React, {
   createContext,
   useCallback,
   useEffect,
+  useMemo,
   useState,
   useRef,
 } from "react";
@@ -135,7 +136,7 @@ export function SchoolProvider({ children }) {
     }
   }, []);
 
-  const addSchool = async (payload) => {
+  const addSchool = useCallback(async (payload) => {
     setLoading(true);
     setError(null);
     try {
@@ -152,9 +153,9 @@ export function SchoolProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const updateSchool = async (id, payload) => {
+  const updateSchool = useCallback(async (id, payload) => {
     setLoading(true);
     setError(null);
     try {
@@ -173,9 +174,9 @@ export function SchoolProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const updateInstitution = async (id, payload) => {
+  const updateInstitution = useCallback(async (id, payload) => {
     setLoading(true);
     setError(null);
     try {
@@ -194,9 +195,9 @@ export function SchoolProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const registerGrade = async (gradeData) => {
+  const registerGrade = useCallback(async (gradeData) => {
     setLoading(true);
     setError(null);
     try {
@@ -212,9 +213,9 @@ export function SchoolProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const updateSede = async (institutionId, sedeId, payload) => {
+  const updateSede = useCallback(async (institutionId, sedeId, payload) => {
     setLoading(true);
     setError(null);
     try {
@@ -243,9 +244,9 @@ export function SchoolProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const removeSchool = async (id) => {
+  const removeSchool = useCallback(async (id) => {
     setLoading(true);
     setError(null);
     try {
@@ -257,9 +258,9 @@ export function SchoolProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const getGradeSede = async (payload) => {
+  const getGradeSede = useCallback(async (payload) => {
     setLoading(true);
     setError(null);
     try {
@@ -271,9 +272,9 @@ export function SchoolProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const registerAsignature = async (payload) => {
+  const registerAsignature = useCallback(async (payload) => {
     setLoading(true);
     setError(null);
     try {
@@ -289,9 +290,9 @@ export function SchoolProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const getSedeAsignature = async (payload) => {
+  const getSedeAsignature = useCallback(async (payload) => {
     setLoading(true);
     setError(null);
     try {
@@ -305,9 +306,9 @@ export function SchoolProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const getDataSede = async (payload) => {
+  const getDataSede = useCallback(async (payload) => {
     setLoading(true);
     setError(null);
     try {
@@ -320,12 +321,12 @@ export function SchoolProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // export map util for reuse in other modules if needed
   // (optional helper export - not required)
 
-  const getDataSchool = async (payload) => {
+  const getDataSchool = useCallback(async (payload) => {
     setLoading(true);
     setError(null);
     try {
@@ -338,9 +339,9 @@ export function SchoolProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const getGradeAsignature = async (payload) => {
+  const getGradeAsignature = useCallback(async (payload) => {
     setLoading(true);
     setError(null);
     try {
@@ -352,9 +353,9 @@ export function SchoolProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const createNote = async (payload) => {
+  const createNote = useCallback(async (payload) => {
     setLoading(true);
     setError(null);
     try {
@@ -370,7 +371,7 @@ export function SchoolProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // getTeacherSubjects is provided by TeacherContext (useTeacher).
 
@@ -423,50 +424,89 @@ export function SchoolProvider({ children }) {
     }
   }, []);
 
+  const value = useMemo(
+    () => ({
+      schools,
+      loading,
+      error,
+      sedes,
+      loadingSedes,
+      errorSedes,
+      journeys,
+      loadingJourneys,
+      errorJourneys,
+      records,
+      loadingRecords,
+      errorRecords,
+      periods,
+      loadingPeriods,
+      errorPeriods,
+      reload: loadSchools,
+      reloadSedes: loadSedes,
+      reloadJourneys: loadJourneys,
+      reloadRecords: loadRecords,
+      loadPeriods,
+      addSchool,
+      updateSchool,
+      updateInstitution,
+      removeSchool,
+      registerGrade,
+      getGradeSede,
+      registerAsignature,
+      getSedeAsignature,
+      getDataSede,
+      getDataSchool,
+      updateSede,
+      getGradeAsignature,
+      createNote,
+      getInstitution,
+      getStudentGrades,
+      pathSignature,
+      setPathSignature,
+      fetchAllStudents,
+    }),
+    [
+      schools,
+      loading,
+      error,
+      sedes,
+      loadingSedes,
+      errorSedes,
+      journeys,
+      loadingJourneys,
+      errorJourneys,
+      records,
+      loadingRecords,
+      errorRecords,
+      periods,
+      loadingPeriods,
+      errorPeriods,
+      loadSchools,
+      loadSedes,
+      loadJourneys,
+      loadRecords,
+      loadPeriods,
+      addSchool,
+      updateSchool,
+      updateInstitution,
+      removeSchool,
+      registerGrade,
+      getGradeSede,
+      registerAsignature,
+      getSedeAsignature,
+      getDataSede,
+      getDataSchool,
+      updateSede,
+      getGradeAsignature,
+      createNote,
+      getInstitution,
+      getStudentGrades,
+      pathSignature,
+      fetchAllStudents,
+    ],
+  );
+
   return (
-    <SchoolContext.Provider
-      value={{
-        schools,
-        loading,
-        error,
-        sedes,
-        loadingSedes,
-        errorSedes,
-        journeys,
-        loadingJourneys,
-        errorJourneys,
-        records,
-        loadingRecords,
-        errorRecords,
-        periods,
-        loadingPeriods,
-        errorPeriods,
-        reload: loadSchools,
-        reloadSedes: loadSedes,
-        reloadJourneys: loadJourneys,
-        reloadRecords: loadRecords,
-        loadPeriods,
-        addSchool,
-        updateSchool,
-        updateInstitution,
-        removeSchool,
-        registerGrade,
-        getGradeSede,
-        registerAsignature,
-        getSedeAsignature,
-        getDataSede,
-        getDataSchool,
-        updateSede,
-        getGradeAsignature,
-        createNote,
-        getInstitution,
-        getStudentGrades,
-        pathSignature,
-        setPathSignature,
-        fetchAllStudents,
-      }}
-    >
-      {children}
-    </SchoolContext.Provider>
+    <SchoolContext.Provider value={value}>{children}</SchoolContext.Provider>
   );
 }

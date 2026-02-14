@@ -20,6 +20,8 @@ const DataTable = ({
   mode = null,
   refreshKey = 0,
   showDownloadButtons = true,
+  // optional: function (row) => string | string
+  rowClassName,
 }) => {
   const [sorting, setSorting] = useState([]);
   const [globalFilter, setGlobalFilter] = useState("");
@@ -233,7 +235,14 @@ const DataTable = ({
           </thead>
           <tbody>
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="border-b bg-surface hover:bg-gray-50">
+              <tr
+                key={row.id}
+                className={`border-b bg-surface hover:bg-gray-50 transition-colors duration-300 ${
+                  typeof rowClassName === "function"
+                    ? rowClassName(row)
+                    : (rowClassName ?? "")
+                }`}
+              >
                 {row.getVisibleCells().map((cell) => (
                   <td
                     key={cell.id}

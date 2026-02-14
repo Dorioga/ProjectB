@@ -251,7 +251,7 @@ const ManageTeacher = () => {
   );
 
   return (
-    <div className="border p-6 rounded bg-bg h-full gap-4 flex flex-col">
+    <div className=" p-6  h-full gap-4 flex flex-col">
       <div className="w-full flex justify-between items-center bg-primary text-surface p-3 rounded-t-lg">
         <h2 className="text-2xl font-bold">Datos de Docentes</h2>
         <div className="w-56">

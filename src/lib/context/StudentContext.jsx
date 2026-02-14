@@ -1,4 +1,10 @@
-import React, { createContext, useCallback, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import * as studentService from "../../services/studentService";
 import { eventBus } from "../../services/ApiClient";
 
@@ -35,17 +41,30 @@ export function StudentProvider({ children }) {
 
   const getStudent = useCallback(async (payload) => {
     console.log("StudentContext: getStudent llamado con payload:", payload);
+
+    // Aceptar tanto identificación simple como objeto payload
+    const arg =
+      payload === null || payload === undefined
+        ? {}
+        : typeof payload === "string" || typeof payload === "number"
+          ? { identification: String(payload) }
+          : payload;
+
+    // Evitar llamadas vacías que generan errores en el inicio; si no hay parámetros de búsqueda válidos, retornar null sin setear `error`.
+    const hasQuery = Boolean(
+      (arg && typeof arg === "object" && Object.keys(arg).length > 0 &&
+        (arg.identification || arg.id_estudiante || arg.id || arg.per_id || arg.numero_identificacion)) ||
+      false,
+    );
+
+    if (!hasQuery) {
+      // No cambiar estados globales para llamadas vacías
+      return null;
+    }
+
     setLoading(true);
     setError(null);
     try {
-      // Aceptar tanto identificación simple como objeto payload
-      const arg =
-        payload === null || payload === undefined
-          ? {}
-          : typeof payload === "string" || typeof payload === "number"
-            ? { identification: String(payload) }
-            : payload;
-
       const studentRaw = await studentService.getStudent(arg);
       console.log(
         "StudentContext: Detalles del estudiante obtenidos (raw):sss",
@@ -59,14 +78,15 @@ export function StudentProvider({ children }) {
       setSelected(s);
       return s;
     } catch (err) {
+      // Solo registrar el error en el contexto cuando fue una búsqueda explícita
       setError(err);
       throw err;
     } finally {
       setLoading(false);
     }
-  });
+  }, []);
 
-  const addStudent = async (payload) => {
+  const addStudent = useCallback(async (payload) => {
     setLoading(true);
     setError(null);
     try {
@@ -79,9 +99,9 @@ export function StudentProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const registerStudent = async (formData) => {
+  const registerStudent = useCallback(async (formData) => {
     setLoading(true);
     setError(null);
     try {
@@ -99,9 +119,9 @@ export function StudentProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const removeStudent = async (identification) => {
+  const removeStudent = useCallback(async (identification) => {
     setLoading(true);
     setError(null);
     try {
@@ -113,43 +133,45 @@ export function StudentProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // Actualizar estudiante (studentId: id student, personId: id persona)
-  const updateStudent = async (studentId, personId, updatedData) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await studentService.updateStudent(
-        studentId,
-        personId,
-        updatedData,
-      );
+  const updateStudent = useCallback(
+    async (studentId, personId, updatedData) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await studentService.updateStudent(
+          studentId,
+          personId,
+          updatedData,
+        );
 
-      setStudents((prevStudents) =>
-        prevStudents.map((student) => {
-          const matchesId =
-            student.id_student === studentId ||
-            String(student.identification) === String(studentId) ||
-            String(student.per_id) === String(personId);
-          if (matchesId) {
-            return { ...student, ...updatedData, ...(result || {}) };
-          }
-          return student;
-        }),
-      );
+        setStudents((prevStudents) =>
+          prevStudents.map((student) => {
+            const matchesId =
+              student.id_student === studentId ||
+              String(student.identification) === String(studentId) ||
+              String(student.per_id) === String(personId);
+            if (matchesId) {
+              return { ...student, ...updatedData, ...(result || {}) };
+            }
+            return student;
+          }),
+        );
 
-      // Emitir notificación de éxito
-      eventBus.emit("¡Estudiante actualizado exitosamente!", "success");
+        // Emitir notificación de éxito
+        eventBus.emit("¡Estudiante actualizado exitosamente!", "success");
 
-      return result;
-    } catch (err) {
-      setError(err);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
+        return result;
+      } catch (err) {
+        setError(err);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   // Sube un Excel para carga masiva de estudiantes.
   const uploadStudentsExcel = useCallback(async (file, options = {}) => {
@@ -181,24 +203,38 @@ export function StudentProvider({ children }) {
     }
   }, []);
 
+  const value = useMemo(
+    () => ({
+      students,
+      loading,
+      error,
+      selected,
+      reload: loadStudents,
+      getStudent,
+      updateStudent,
+      getRandomStudents,
+      addStudent,
+      registerStudent,
+      removeStudent,
+      uploadStudentsExcel,
+    }),
+    [
+      students,
+      loading,
+      error,
+      selected,
+      loadStudents,
+      getStudent,
+      updateStudent,
+      getRandomStudents,
+      addStudent,
+      registerStudent,
+      removeStudent,
+      uploadStudentsExcel,
+    ],
+  );
+
   return (
-    <StudentContext.Provider
-      value={{
-        students,
-        loading,
-        error,
-        selected,
-        reload: loadStudents,
-        getStudent,
-        updateStudent,
-        getRandomStudents,
-        addStudent,
-        registerStudent,
-        removeStudent,
-        uploadStudentsExcel,
-      }}
-    >
-      {children}
-    </StudentContext.Provider>
+    <StudentContext.Provider value={value}>{children}</StudentContext.Provider>
   );
 }

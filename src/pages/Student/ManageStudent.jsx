@@ -5,6 +5,7 @@ import DataTable from "../../components/atoms/DataTable";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import Modal from "../../components/atoms/Modal";
 import RegisterStudent from "./RegisterStudent";
+import UploadStudentExcel from "./UploadStudentExcel";
 import StudentModal from "../../components/molecules/StudentModal";
 import useStudent from "../../lib/hooks/useStudent";
 import { useNotify } from "../../lib/hooks/useNotify";
@@ -19,6 +20,7 @@ const ManageStudent = () => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [fetchError, setFetchError] = useState(null);
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isBulkOpen, setIsBulkOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [initialEditing, setInitialEditing] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
@@ -193,15 +195,24 @@ const ManageStudent = () => {
   );
 
   return (
-    <div className="border rounded-lg bg-bg h-full gap-4 flex flex-col">
+    <div className=" p-6  h-full gap-4 flex flex-col">
       <div className="w-full flex justify-between items-center bg-primary text-surface p-3 rounded-t-lg">
         <h2 className="text-2xl font-bold">Datos de Estudiantes</h2>
-        <div className="w-56">
+        <div className="flex gap-2">
           <SimpleButton
             onClick={() => setIsAddOpen(true)}
             msj="Agregar estudiante"
             icon="Plus"
             bg="bg-accent"
+            text="text-surface"
+            noRounded={false}
+          />
+
+          <SimpleButton
+            onClick={() => setIsBulkOpen(true)}
+            msj="Carga masiva de estudiantes"
+            icon="Upload"
+            bg="bg-secondary"
             text="text-surface"
             noRounded={false}
           />
@@ -243,6 +254,20 @@ const ManageStudent = () => {
           <RegisterStudent
             onSuccess={() => {
               setIsAddOpen(false);
+              fetchStudentsData();
+            }}
+          />
+        </Modal>
+
+        <Modal
+          isOpen={isBulkOpen}
+          onClose={() => setIsBulkOpen(false)}
+          title="Carga masiva de estudiantes"
+          size="4xl"
+        >
+          <UploadStudentExcel
+            onSuccess={() => {
+              setIsBulkOpen(false);
               fetchStudentsData();
             }}
           />

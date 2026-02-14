@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import useSchool from "../../lib/hooks/useSchool";
+import useAuth from "../../lib/hooks/useAuth";
 
 const GradeSelector = ({
   name = "gradeId",
@@ -16,7 +17,24 @@ const GradeSelector = ({
   customFetchMethod = null,
   additionalParams = {},
 }) => {
+  console.log("GradeSelector - props:", {
+    name,
+    label,
+    labelClassName,
+    value,
+    onChange,
+    placeholder,
+    className,
+    disabled,
+    sedeId,
+    workdayId,
+    autoLoad,
+    customFetchMethod,
+    additionalParams,
+  });
+
   const { getGradeSede, loading } = useSchool();
+  const { token } = useAuth();
   const [grades, setGrades] = useState([]);
   const [loadingGrades, setLoadingGrades] = useState(false);
 
@@ -33,6 +51,29 @@ const GradeSelector = ({
 
   // Cargar grados cuando se proporciona sedeId y workdayId
   useEffect(() => {
+    console.log(
+      "GradeSelector useEffect TRIGGERED - disabled:",
+      disabled,
+      "sedeId:",
+      sedeId,
+      "workdayId:",
+      workdayId,
+      "hasToken:",
+      !!token,
+    );
+
+    // No intentar cargar si no hay token (usuario desconectado)
+    if (!token) {
+      setGrades([]);
+      return;
+    }
+
+    // No cargar si el selector está deshabilitado
+    if (disabled) {
+      setGrades([]);
+      return;
+    }
+
     // Si hay customFetchMethod, requerir explícitamente que exista una sede seleccionada
     // (ya sea via prop `sedeId` o en `additionalParams` como `idSede` / `id_sede`)
     const hasSedeInParams = Boolean(
@@ -41,9 +82,23 @@ const GradeSelector = ({
       parsedAdditionalParams?.sedeId,
     );
 
+    const isValidSedeId =
+      sedeId && String(sedeId).trim() !== "" && Number(sedeId) > 0;
+    const isValidWorkdayId =
+      workdayId && String(workdayId).trim() !== "" && Number(workdayId) > 0;
+
     const canLoad = customFetchMethod
       ? Boolean(sedeId) || hasSedeInParams
-      : sedeId && workdayId;
+      : isValidSedeId && isValidWorkdayId;
+
+    console.log("GradeSelector - canLoad:", canLoad, {
+      sedeId,
+      workdayId,
+      isValidSedeId,
+      isValidWorkdayId,
+      customFetchMethod,
+      hasSedeInParams,
+    });
 
     if (!canLoad) {
       setGrades([]);
@@ -87,7 +142,12 @@ const GradeSelector = ({
         console.log("GradeSelector - Grados cargados:", gradesData);
         setGrades(gradesData);
       } catch (err) {
-        console.error("GradeSelector - Error al cargar grados:", err);
+        // Silenciar errores relacionados con token inválido para evitar spam al hacer logout
+        if (err?.message && /token|autenticaci/i.test(String(err.message))) {
+          console.warn("GradeSelector: petición abortada por token inválido");
+        } else {
+          console.error("GradeSelector - Error al cargar grados:", err);
+        }
         setGrades([]);
       } finally {
         setLoadingGrades(false);
@@ -97,8 +157,15 @@ const GradeSelector = ({
     if (autoLoad || canLoad) {
       loadGrades();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sedeId, workdayId, autoLoad, customFetchMethod, additionalParamsStr]);
+  }, [
+    sedeId,
+    workdayId,
+    autoLoad,
+    customFetchMethod,
+    additionalParamsStr,
+    disabled,
+    token,
+  ]);
 
   const gradeOptions = useMemo(() => {
     if (!Array.isArray(grades)) return [];

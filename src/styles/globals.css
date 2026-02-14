@@ -43,6 +43,13 @@
   .bg-surface {
     background-color: var(--color-surface);
   }
+  /* Clase para filas guardadas: usa !important para sobrescribir bg-surface */
+  .saved-row {
+    background-color: #ecfdf5 !important; /* verde pálido */
+  }
+  .saved-row td {
+    background-color: #ecfdf5 !important;
+  }
   .text-surface {
     color: var(--color-surface);
   }

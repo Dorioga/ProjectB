@@ -280,6 +280,48 @@ export async function updateAssignmentNote(payload) {
 }
 
 /**
+ * Registra asistencia de estudiantes (POST /assistance/student)
+ * payload: objeto con la información de asistencia requerida por el backend
+ */
+export async function registerAssistance(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto para registerAssistance.");
+  }
+
+  try {
+    const res = await ApiClient.instance.post("/assistance/student", payload);
+    const data = res;
+    console.log("teacherService - registerAssistance payload:", payload);
+    if (data && typeof data === "object" && "data" in data) return data.data;
+    if (data !== undefined && data !== null) return data;
+    throw new Error("Respuesta inesperada de /assistance/student.");
+  } catch (error) {
+    console.error("teacherService - registerAssistance error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Obtiene todos los logros filtrando por institución, asignatura, grado, periodo y tipo
+ * Endpoint esperado: POST /logro_data
+ * @param {Object} payload - { fk_institucion, fk_asignatura, fk_grado, fk_periodo, fk_tipo_logro }
+ * @returns {Promise<Array>} Lista de logros
+ */
+export async function getAllLogros(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto para getAllLogros.");
+  }
+  try {
+    const res = await ApiClient.instance.post("/logro_data", payload);
+    const data = Array.isArray(res) ? res : (res?.data ?? res);
+    return data;
+  } catch (error) {
+    console.error("teacherService - getAllLogros error:", error);
+    throw error;
+  }
+}
+
+/**
  * Obtiene la lista de docentes (alias de getTeachers) para compatibilidad
  */
 export async function allteacher(payload) {

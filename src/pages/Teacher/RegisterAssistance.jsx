@@ -4,7 +4,9 @@ import SedeSelect from "../../components/atoms/SedeSelect";
 import JourneySelect from "../../components/atoms/JourneySelect";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import GradeSelector from "../../components/atoms/GradeSelector";
+import PeriodSelector from "../../components/atoms/PeriodSelector";
 import AsignatureSelector from "../../components/molecules/AsignatureSelector";
+import DataTable from "../../components/atoms/DataTable";
 import useSchool from "../../lib/hooks/useSchool";
 import useTeacher from "../../lib/hooks/useTeacher";
 import useData from "../../lib/hooks/useData";
@@ -39,24 +41,59 @@ const RegisterAssistance = () => {
 
   const [studentsFromService, setStudentsFromService] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
+  const [period, setPeriod] = useState("");
 
   const notify = useNotify();
 
   // Hooks y servicios
   const { getStudentGrades } = useSchool();
-  const { getTeacherGrades, getTeacherSubjects, getTeacherSede } = useTeacher();
+  const {
+    getTeacherGrades,
+    getTeacherSubjects,
+    getTeacherSede,
+    registerAssistance,
+  } = useTeacher();
   const { institutionSedes } = useData();
   const { idSede: authIdSede, nameSede, rol, idDocente, token } = useAuth();
 
+  // Detectar si el usuario es docente
+  const isTeacher = Boolean(idDocente);
+
   const canShowStudents = Boolean(
-    sedeSelected && journey && asignatureCode && grade,
+    sedeSelected && journey && asignatureCode && grade && period,
   );
 
-  // Limpiar cascada cuando cambia la sede
-  useEffect(() => {
+  // Handlers de cascada: limpian los selectores hijos al cambiar el padre.
+  // Se ejecutan inline (no en useEffect) para evitar un render intermedio
+  // con valores obsoletos que dispararía llamadas a la API con parámetros inválidos.
+  const handleSedeChange = (e) => {
+    const val = e.target.value;
+    setSedeSelected(val);
     setGrade("");
+    setAsignatureCode("");
+    setJourney("");
     setDetectedJourney(null);
-  }, [sedeSelected]);
+  };
+
+  // Para docentes: Sede -> Grado -> Asignatura -> Jornada
+  const handleGradeChangeTeacher = (e) => {
+    setGrade(e.target.value);
+    setAsignatureCode("");
+    setJourney("");
+    setDetectedJourney(null);
+  };
+
+  // Para no docentes: Sede -> Jornada -> Asignatura -> Grado
+  const handleJourneyChangeNonTeacher = (e) => {
+    setJourney(e.target.value);
+    setAsignatureCode("");
+    setGrade("");
+  };
+
+  const handleAsignatureChangeNonTeacher = (e) => {
+    setAsignatureCode(e.target.value);
+    setGrade("");
+  };
 
   // Cuando cambia la jornada, solo evitar limpiar grado para prevenir parpadeos
   // useEffect(() => {
@@ -65,7 +102,11 @@ const RegisterAssistance = () => {
 
   // Seleccionar sede desde auth si rol=7
   useEffect(() => {
-    if (String(rol) === "7" && authIdSede) {
+    // aceptar tanto rol numérico '7' como la cadena 'docente'
+    if (
+      (String(rol).toLowerCase() === "docente" || String(rol) === "7") &&
+      authIdSede
+    ) {
       setSedeSelected(authIdSede);
     }
   }, [rol, authIdSede]);
@@ -151,12 +192,98 @@ const RegisterAssistance = () => {
     setDetectedJourney(null);
   }, [grade]);
 
+  // NOTE: `getStudentKey`, `getStudentName` y `handleToggleAttendance` están
+  // definidos más abajo (implementaciones consolidadas). Se eliminó la
+  // duplicación para evitar conflictos de declaración.
+
+  const selectedCount = useMemo(() => {
+    const values = Object.values(attendanceByStudent ?? {});
+    return values.filter((v) => String(v ?? "").trim() !== "").length;
+  }, [attendanceByStudent]);
+
+  const handleSubmitAll = async (e) => {
+    e.preventDefault();
+    const rows = (studentsFromService || []).map((student) => {
+      const studentKey = getStudentKey(student);
+      const attendance = attendanceByStudent?.[studentKey] ?? "";
+      return {
+        fk_estudiante:
+          Number(
+            student?.id_estudiante ?? student?.id_student ?? student?.id,
+          ) || null,
+        fk_asignatura: Number(asignatureCode) || null,
+        fk_grado: Number(grade) || null,
+        fk_periodo: Number(period) || null,
+        presente: String(attendance === "PRESENTE" ? "Si" : "No"),
+        fk_sede: Number(sedeSelected) || null,
+      };
+    });
+
+    try {
+      await registerAssistance(rows);
+      notify.success("Asistencia registrada correctamente");
+      // marcar todas las filas como guardadas (persistente)
+      setRowSavedById((prev) => {
+        const next = { ...(prev ?? {}) };
+        (studentsFromService || []).forEach((s) => {
+          next[getStudentKey(s)] = true;
+        });
+        return next;
+      });
+      // opcional: limpiar seleccion
+      setAttendanceByStudent({});
+    } catch (err) {
+      console.error("RegisterAssistance - error registrando asistencia:", err);
+      notify.error(err?.message || "Error al registrar asistencia");
+    }
+  };
+
   // Opciones / params para asignaturas basadas en el grado y docente
   const teacherSubjectsParams = useMemo(() => {
     return grade && idDocente
       ? { idGrade: Number(grade), idTeacher: Number(idDocente) }
       : {};
   }, [grade, idDocente]);
+
+  // Cargar estudiantes cuando estén los filtros mínimos
+  useEffect(() => {
+    let mounted = true;
+    const loadStudents = async () => {
+      if (!canShowStudents) {
+        if (mounted) setStudentsFromService([]);
+        return;
+      }
+
+      setLoadingData(true);
+      try {
+        const res = await getStudentGrades({ idGrade: Number(grade) });
+        const list = Array.isArray(res) ? res : (res?.data ?? []);
+        if (!mounted) return;
+        setStudentsFromService(list || []);
+        // inicializar estado de asistencia para los estudiantes si no existe
+        const initial = {};
+        (list || []).forEach((s) => {
+          const key = getStudentKey(s);
+          initial[key] = attendanceByStudent[key] || "";
+        });
+        if (mounted)
+          setAttendanceByStudent((prev) => ({ ...initial, ...prev }));
+      } catch (err) {
+        console.error("RegisterAssistance - error cargando estudiantes:", err);
+        notify.error(
+          "No fue posible cargar estudiantes para el curso seleccionado",
+        );
+        if (mounted) setStudentsFromService([]);
+      } finally {
+        if (mounted) setLoadingData(false);
+      }
+    };
+
+    loadStudents();
+    return () => {
+      mounted = false;
+    };
+  }, [canShowStudents, grade, getStudentGrades]);
 
   const teacherGradesParams = useMemo(() => {
     return {
@@ -178,20 +305,23 @@ const RegisterAssistance = () => {
     return sede?.fk_workday ? String(sede.fk_workday) : null;
   }, [sedeSelected, institutionSedes, teacherSedes]);
 
-  // Auto-seleccionar jornada basada en el fk_workday de la sede
+  // Auto-seleccionar jornada basada en el fk_workday de la sede (solo docentes)
   useEffect(() => {
-    if (!sedeWorkday) return;
-
-    // Si fk_workday es 3 (Ambas/Completa), el usuario debe elegir manualmente
-    if (sedeWorkday === "3") return;
-
-    setJourney(sedeWorkday);
-  }, [sedeWorkday]);
+    if (!sedeWorkday || sedeWorkday === "3") return;
+    if (isTeacher) {
+      setJourney(sedeWorkday);
+    }
+  }, [sedeWorkday, isTeacher]);
 
   // Datos de la sede del docente: preferir resultado de getTeacherSede si existe
   const teacherSedeData = useMemo(() => {
     if (teacherSedes.length) return teacherSedes;
-    if (String(rol) === "7" && authIdSede && nameSede) {
+    // aceptar tanto rol numérico '7' como la cadena 'docente'
+    if (
+      (String(rol).toLowerCase() === "docente" || String(rol) === "7") &&
+      authIdSede &&
+      nameSede
+    ) {
       return [{ id: authIdSede, name: nameSede }];
     }
     return null;
@@ -247,11 +377,16 @@ const RegisterAssistance = () => {
   }, [grade, group, journey, studentsFromService]);
 
   const getStudentKey = (student) => {
-    const id = student?.id_student ?? student?.identification;
+    const id =
+      student?.id_estudiante ??
+      student?.id_student ??
+      student?.identification ??
+      student?.id;
     return String(id ?? "").trim();
   };
 
   const getStudentName = (student) => {
+    if (student?.nombre) return String(student.nombre).trim();
     const firstName = String(student?.first_name ?? "").trim();
     const secondName = String(student?.second_name ?? "").trim();
     const firstLastname = String(student?.first_lastname ?? "").trim();
@@ -262,6 +397,8 @@ const RegisterAssistance = () => {
   };
 
   const handleAttendanceChange = (studentKey, value) => {
+    // al modificar la asistencia, marcar la fila como 'no guardada'
+    setRowSavedById((prev) => ({ ...(prev ?? {}), [studentKey]: false }));
     setAttendanceByStudent((prev) => ({
       ...(prev ?? {}),
       [studentKey]: value,
@@ -270,6 +407,8 @@ const RegisterAssistance = () => {
 
   const handleToggleAttendance = (studentKey, option) => (e) => {
     const checked = Boolean(e.target.checked);
+    // al modificar la asistencia, marcar la fila como 'no guardada'
+    setRowSavedById((prev) => ({ ...(prev ?? {}), [studentKey]: false }));
     setAttendanceByStudent((prev) => {
       const next = { ...(prev ?? {}) };
       if (!checked) {
@@ -283,141 +422,162 @@ const RegisterAssistance = () => {
     });
   };
 
-  // Cargar estudiantes del servicio cuando haya grado seleccionado (DESACTIVADO - sin servicio)
-  // useEffect(() => {
-  //   const fetchStudents = async () => {
-  //     if (!grade) {
-  //       setStudentsFromService([]);
-  //       return;
-  //     }
-  //     setLoadingData(true);
-  //     try {
-  //       const res = await getStudentGrades({ idGrade: Number(grade) });
-  //       const list = Array.isArray(res) ? res : (res?.data ?? []);
-  //       setStudentsFromService(list);
-  //     } catch (err) {
-  //       console.error("RegisterAssistance - Error cargando estudiantes:", err);
-  //       notify.error(
-  //         "No fue posible cargar estudiantes para el curso seleccionado",
-  //       );
-  //       setStudentsFromService([]);
-  //     } finally {
-  //       setLoadingData(false);
-  //     }
-  //   };
+  // Estados por fila para carga/guardado individual
+  const [rowLoadingById, setRowLoadingById] = useState({});
+  const [rowSavedById, setRowSavedById] = useState({});
 
-  //   fetchStudents();
-  // }, [grade, getStudentGrades, notify]);
+  const saveRow = async (student) => {
+    const key = getStudentKey(student);
 
-  const handleSubmitAll = (e) => {
-    e.preventDefault();
+    // permitir guardar aunque no haya marca: ausente por defecto ("No")
+    const attendance = attendanceByStudent?.[key] ?? "";
 
-    const payload = filteredStudents.map((student) => {
-      const studentKey = getStudentKey(student);
-      return {
-        student: {
-          id_student: student?.id_student,
-          identification: student?.identification,
-          fullName: getStudentName(student),
-          journey: student?.journey,
-          grade_scholar: student?.grade_scholar,
-          group_grade: student?.group_grade,
-        },
-        asignatureCode,
-        attendance: attendanceByStudent?.[studentKey] ?? "",
+    setRowLoadingById((prev) => ({ ...(prev ?? {}), [key]: true }));
+    try {
+      const payload = {
+        fk_estudiante:
+          Number(
+            student?.id_estudiante ?? student?.id_student ?? student?.id,
+          ) || null,
+        fk_asignatura: Number(asignatureCode) || null,
+        fk_grado: Number(grade) || null,
+        fk_periodo: Number(period) || null,
+        presente: String(attendance === "PRESENTE" ? "Si" : "No"),
+        fk_sede: Number(sedeSelected) || null,
       };
-    });
-
-    console.log("Registro de asistencia (grupo):", payload);
+      await registerAssistance(payload);
+      // marcar como guardado (persistente hasta que el usuario cambie la fila)
+      setRowSavedById((prev) => ({ ...(prev ?? {}), [key]: true }));
+      notify.success(
+        "Asistencia guardada para " + (getStudentName(student) || key),
+      );
+    } catch (err) {
+      console.error("saveRow error:", err);
+      notify.error(err?.message || "No se pudo guardar la asistencia");
+    } finally {
+      setRowLoadingById((prev) => ({ ...(prev ?? {}), [key]: false }));
+    }
   };
-
-  const selectedCount = useMemo(() => {
-    const values = Object.values(attendanceByStudent ?? {});
-    return values.filter((v) => String(v ?? "").trim() !== "").length;
-  }, [attendanceByStudent]);
 
   return (
     <div className="border p-6 rounded bg-bg h-full gap-4 flex flex-col">
       <h2 className="font-bold text-2xl">Registrar Asistencia</h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <SedeSelect
           value={sedeSelected}
-          onChange={(e) => setSedeSelected(e.target.value)}
+          onChange={handleSedeChange}
           className="w-full p-2 border rounded bg-surface"
           labelClassName="text-lg font-semibold"
           data={teacherSedeData}
           loading={loadingTeacherSedes}
         />
 
-        <GradeSelector
-          name="grade"
-          label="Curso"
+        {/* Orden para Docentes: Sede -> Grado -> Asignatura -> Jornada */}
+        {isTeacher ? (
+          <>
+            <GradeSelector
+              name="grade"
+              label="Curso"
+              labelClassName="text-lg font-semibold"
+              value={grade}
+              onChange={handleGradeChangeTeacher}
+              className="w-full p-2 border rounded bg-surface"
+              sedeId={sedeSelected}
+              workdayId={journey}
+              customFetchMethod={getTeacherGrades}
+              additionalParams={teacherGradesParams}
+              disabled={!sedeSelected}
+            />
+            <AsignatureSelector
+              name="asignature"
+              label="Asignatura"
+              labelClassName="text-lg font-semibold"
+              value={asignatureCode}
+              onChange={(e) => setAsignatureCode(e.target.value)}
+              className="w-full p-2 border rounded bg-surface"
+              sedeId={sedeSelected}
+              workdayId={journey}
+              customFetchMethod={getTeacherSubjects}
+              additionalParams={teacherSubjectsParams}
+              onJourneyDetected={(journeyObj) => {
+                if (journeyObj && journeyObj.id) {
+                  setJourney(String(journeyObj.id));
+                  setDetectedJourney(journeyObj);
+                }
+              }}
+              disabled={!grade}
+            />
+            <JourneySelect
+              name="workday"
+              label="Jornada"
+              labelClassName="text-lg font-semibold"
+              value={journey}
+              onChange={(e) => setJourney(e.target.value)}
+              className="w-full p-2 border rounded bg-surface"
+              filterValue={sedeWorkday}
+              includeAmbas={false}
+              subjectJourney={detectedJourney}
+              useTeacherSubjects={!Boolean(asignatureCode) && Boolean(grade)}
+              sedeId={sedeSelected}
+              idTeacher={idDocente}
+              lockByAsignature={true}
+            />
+          </>
+        ) : (
+          /* Orden para No Docentes: Sede -> Jornada -> Asignatura -> Grado */
+          <>
+            <JourneySelect
+              name="workday"
+              label="Jornada"
+              labelClassName="text-lg font-semibold"
+              value={journey}
+              onChange={handleJourneyChangeNonTeacher}
+              className="w-full p-2 border rounded bg-surface"
+              filterValue={sedeWorkday}
+              includeAmbas={false}
+              disabled={!sedeSelected}
+            />
+            <AsignatureSelector
+              name="asignature"
+              label="Asignatura"
+              labelClassName="text-lg font-semibold"
+              value={asignatureCode}
+              onChange={handleAsignatureChangeNonTeacher}
+              className="w-full p-2 border rounded bg-surface"
+              sedeId={sedeSelected}
+              workdayId={journey}
+              disabled={!journey}
+            />
+            <GradeSelector
+              name="grade"
+              label="Curso"
+              labelClassName="text-lg font-semibold"
+              value={grade}
+              onChange={(e) => setGrade(e.target.value)}
+              className="w-full p-2 border rounded bg-surface"
+              sedeId={sedeSelected}
+              workdayId={journey}
+              disabled={!asignatureCode}
+            />
+          </>
+        )}
+        <PeriodSelector
+          name="period"
+          label="Período"
           labelClassName="text-lg font-semibold"
-          value={grade}
-          onChange={(e) => setGrade(e.target.value)}
+          value={period}
+          onChange={(e) => setPeriod(e.target.value)}
           className="w-full p-2 border rounded bg-surface"
-          sedeId={sedeSelected}
-          workdayId={journey}
-          customFetchMethod={getTeacherGrades}
-          additionalParams={teacherGradesParams}
-          disabled={!sedeSelected}
-        />
-
-        <AsignatureSelector
-          name="asignature"
-          label="Asignatura"
-          labelClassName="text-lg font-semibold"
-          value={asignatureCode}
-          onChange={(e) => setAsignatureCode(e.target.value)}
-          className="w-full p-2 border rounded bg-surface"
-          sedeId={sedeSelected}
-          workdayId={journey}
-          customFetchMethod={getTeacherSubjects}
-          additionalParams={teacherSubjectsParams}
-          onJourneyDetected={(journeyObj) => {
-            if (journeyObj && journeyObj.id) {
-              setJourney(String(journeyObj.id));
-              setDetectedJourney(journeyObj);
-            }
-          }}
-          disabled={!grade}
-        />
-
-        <JourneySelect
-          name="workday"
-          label="Jornada"
-          labelClassName="text-lg font-semibold"
-          value={journey}
-          onChange={(e) => setJourney(e.target.value)}
-          className="w-full p-2 border rounded bg-surface"
-          filterValue={sedeWorkday}
-          includeAmbas={false}
-          subjectJourney={detectedJourney}
-          useTeacherSubjects={!Boolean(asignatureCode) && Boolean(grade)}
-          sedeId={sedeSelected}
-          idTeacher={idDocente}
-          lockByAsignature={true}
         />
       </div>
 
-      {canShowStudents && (
-        <div className="mt-4 p-4 bg-surface border rounded">
-          <p className="text-sm opacity-80">
-            Sede: <span className="font-medium">{sedeSelected}</span> · Curso:{" "}
-            <span className="font-medium">{grade}</span> · Asignatura:{" "}
-            <span className="font-medium">{asignatureCode}</span> · Jornada:{" "}
-            <span className="font-medium">{journey}</span>
-          </p>
-        </div>
-      )}
-
-      {/* <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4">
         {!canShowStudents ? (
           <div className="text-sm opacity-80">
-            Completa los 4 filtros (sede, curso, asignatura y jornada).
+            Completa los filtros (sede, curso, asignatura, jornada y período).
           </div>
-        ) : filteredStudents.length === 0 ? (
+        ) : (studentsFromService || []).length === 0 ? (
           <div className="text-sm opacity-80">
             No hay estudiantes para los filtros seleccionados.
           </div>
@@ -429,80 +589,103 @@ const RegisterAssistance = () => {
             <div className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
               <div className="text-sm opacity-80">
                 Estudiantes:{" "}
-                <span className="font-medium">{filteredStudents.length}</span> ·
-                Marcados: <span className="font-medium">{selectedCount}</span>
-              </div>
-              <div className="w-full md:w-56">
-                <SimpleButton
-                  type="submit"
-                  msj="Guardar asistencia"
-                  text="text-surface"
-                  bg="bg-accent"
-                  icon="Save"
-                  disabled={selectedCount === 0}
-                />
+                <span className="font-medium">
+                  {studentsFromService.length}
+                </span>{" "}
+                · Marcados: <span className="font-medium">{selectedCount}</span>
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <div className="min-w-[720px]">
-                <div className="grid grid-cols-10 bg-primary text-surface font-semibold">
-                  <div className="col-span-6 p-3">Estudiante</div>
-                  <div className="col-span-2 p-3 text-center">Presente</div>
-                  <div className="col-span-2 p-3 text-center">Ausente</div>
-                </div>
-
-                {filteredStudents.map((student) => {
-                  const studentKey = getStudentKey(student);
-                  const fullName = getStudentName(student);
-                  const attendance = attendanceByStudent?.[studentKey] ?? "";
-
-                  return (
-                    <div
-                      key={studentKey}
-                      className="grid grid-cols-10 border-t hover:bg-gray-50"
-                    >
-                      <div className="col-span-6 p-3">
-                        <div className="font-medium">
-                          {fullName || "Estudiante"}
-                        </div>
-                        <div className="text-xs opacity-80">
-                          Doc: {student?.identification || "-"} · Curso:{" "}
-                          {student?.grade_scholar || "-"} · Grupo:{" "}
-                          {student?.group_grade || "-"}
-                        </div>
-                      </div>
-
-                      <div className="col-span-2 p-3 flex justify-center items-center">
+            <div className="p-4">
+              <DataTable
+                data={(studentsFromService || []).map((s) => ({
+                  id: getStudentKey(s),
+                  identification:
+                    s?.identification || s?.id_estudiante || s?.id || "",
+                  fullName: s?.nombre || getStudentName(s),
+                  grade: s?.grado || s?.grade_scholar || s?.grade || "",
+                  group: s?.group_grade || s?.group || "",
+                }))}
+                rowClassName={(row) =>
+                  rowSavedById?.[row.original.id] ? "saved-row" : ""
+                }
+                columns={[
+                  { accessorKey: "identification", header: "Documento" },
+                  {
+                    accessorKey: "fullName",
+                    header: "Estudiante",
+                    meta: { hideOnSM: false },
+                  },
+                  {
+                    id: "present",
+                    header: "Presente",
+                    cell: ({ row }) => {
+                      const key = row.original.id;
+                      const attendance = attendanceByStudent?.[key] ?? "";
+                      return (
                         <input
                           type="checkbox"
-                          className="w-6 h-6 cursor-pointer"
+                          className="w-5 h-5 mx-auto"
                           checked={attendance === "PRESENTE"}
-                          onChange={handleToggleAttendance(
-                            studentKey,
-                            "PRESENTE",
-                          )}
+                          onChange={handleToggleAttendance(key, "PRESENTE")}
                         />
-                      </div>
+                      );
+                    },
+                  },
+                  {
+                    id: "actions",
+                    header: "Acciones",
+                    cell: ({ row }) => {
+                      const key = row.original.id;
+                      // buscar el objeto estudiante original si está disponible
+                      const student = (studentsFromService || []).find(
+                        (s) => String(getStudentKey(s)) === String(key),
+                      ) || { id_student: key };
 
-                      <div className="col-span-2 p-3 flex justify-center items-center">
-                        <input
-                          type="checkbox"
-                          className="w-6 h-6 cursor-pointer"
-                          checked={attendance === "AUSENTE"}
-                          onChange={handleToggleAttendance(
-                            studentKey,
-                            "AUSENTE",
-                          )}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                      const rowLoading = Boolean(rowLoadingById?.[key]);
+                      const rowSaved = Boolean(rowSavedById?.[key]);
+
+                      return (
+                        <div className="flex justify-center p-2 gap-2">
+                          <div className="w-10">
+                            <SimpleButton
+                              type="button"
+                              onClick={() => saveRow(student)}
+                              icon={
+                                rowLoading
+                                  ? "Loader2"
+                                  : rowSaved
+                                    ? "Check"
+                                    : "Save"
+                              }
+                              bg={
+                                rowLoading
+                                  ? "bg-gray-400"
+                                  : rowSaved
+                                    ? "bg-green-700"
+                                    : "bg-green-600"
+                              }
+                              text="text-surface"
+                              msjtooltip={
+                                rowLoading
+                                  ? "Guardando..."
+                                  : "Guardar asistencia"
+                              }
+                              tooltip={true}
+                              className={`w-10 h-10 p-2 ${rowLoading ? "animate-spin" : ""}`}
+                              disabled={rowLoading}
+                            />
+                          </div>
+                        </div>
+                      );
+                    },
+                  },
+                ]}
+              />
             </div>
           </form>
-        )} */}
+        )}
+      </div>
     </div>
   );
 };

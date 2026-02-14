@@ -27,15 +27,15 @@ const Sidebar = () => {
   const displayName = String(userName ?? "").trim();
   return (
     <div
-      className={`fixed left-0 top-0  z-50 h-screen grid grid-rows-12 border  bg-primary transition-all duration-300 ease-in-out${
+      className={`fixed left-0 top-0  z-50 h-screen grid grid-rows-12 border rounded-r-4xl bg-primary transition-all duration-300 ease-in-out${
         isOpen
           ? " w-4/5 sm:w-3/6 md:w-2/5 lg:w-1/3 xl:w-3/12 2xl:w-2/12 bg-primary"
           : "w-15"
       }`}
     >
-      <div className="p-2 row-span-3">
+      <div className="row-span-3">
         <div
-          className="flex justify-end p-2 cursor-pointer"
+          className="flex justify-end py-3 px-4 cursor-pointer"
           onClick={toggleIsOpen}
         >
           {isOpen ? (
@@ -60,7 +60,7 @@ const Sidebar = () => {
           </div>
         )}
       </div>
-      <div className="row-span-7 flex flex-col justify-start xl:justify-center 2xl:justify-start overflow-y-auto ">
+      <div className="row-span-7 flex flex-col justify-start xl:justify-center 2xl:justify-start overflow-y-auto px-2">
         <ul className="">
           {menu &&
             Array.isArray(menu) &&
@@ -169,13 +169,13 @@ const Sidebar = () => {
           </Link>
         </ul>
       </div>
-      <div className="flex flex-col items-center row-span-3 justify-center ">
-        <div className="flex flex-row items-center gap-2 ">
+      <div className="flex flex-col items-center row-span-2 justify-center py-6 ">
+        <div className="flex flex-col items-center ">
           <User className="text-surface text-2xl" />
           {isOpen ? (
             <div className="flex flex-col">
               {displayName ? (
-                <h2 className="text-surface font-bold text-xl text-center">
+                <h2 className="text-surface font-bold text-lg text-center">
                   {(() => {
                     const words = displayName.split(" ");
                     if (words.length >= 4) {
@@ -201,7 +201,7 @@ const Sidebar = () => {
           <LogOut className="text-xl" />
           {isOpen ? <h2 className="text-lg">Cerrar sesión</h2> : null}
         </button>
-        <div className="flex flex-row items-center gap-2 ">
+        <div className="flex flex-row items-center">
           {isOpen ? (
             <h2 className="text-surface font-bold text-xl">NEXUS</h2>
           ) : null}

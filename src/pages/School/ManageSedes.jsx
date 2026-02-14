@@ -203,7 +203,7 @@ const ManageSedes = () => {
   );
 
   return (
-    <div className="border rounded-lg bg-bg h-full gap-4 flex flex-col">
+    <div className=" p-6  h-full gap-4 flex flex-col">
       <div className="w-full flex justify-between items-center bg-primary text-surface p-3 rounded-t-lg">
         <h2 className="text-2xl font-bold">Datos de Sedes</h2>
         <div className="w-56">

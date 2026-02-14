@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import useSchool from "../../lib/hooks/useSchool";
+import useAuth from "../../lib/hooks/useAuth";
 
 const AsignatureSelector = ({
   name = "asignature",
@@ -19,6 +20,7 @@ const AsignatureSelector = ({
   onJourneyDetected = null,
 }) => {
   const { getSedeAsignature, loading: schoolLoading } = useSchool();
+  const { token } = useAuth();
   const [asignaturas, setAsignaturas] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -36,14 +38,47 @@ const AsignatureSelector = ({
 
   // Cargar asignaturas cuando cambie la sede o jornada
   useEffect(() => {
-    console.log("AsignatureSelector useEffect TRIGGERED - autoLoad:", autoLoad);
+    console.log(
+      "AsignatureSelector useEffect TRIGGERED - autoLoad:",
+      autoLoad,
+      "disabled:",
+      disabled,
+      "hasToken:",
+      !!token,
+    );
+
+    // No intentar cargar si no hay token (usuario desconectado)
+    if (!token) {
+      setAsignaturas([]);
+      return;
+    }
+
     if (!autoLoad) return;
 
+    // No cargar si el selector está deshabilitado
+    if (disabled) {
+      setAsignaturas([]);
+      return;
+    }
+
     // Si hay customFetchMethod, solo verificar que haya additionalParams
-    // Si no hay customFetchMethod, verificar sedeId y workdayId
+    // Si no hay customFetchMethod, verificar sedeId y workdayId válidos
+    const isValidSedeId =
+      sedeId && String(sedeId).trim() !== "" && Number(sedeId) > 0;
+    const isValidWorkdayId =
+      workdayId && String(workdayId).trim() !== "" && Number(workdayId) > 0;
+
     const canLoad = customFetchMethod
       ? Object.keys(JSON.parse(additionalParamsStr)).length > 0
-      : sedeId && workdayId;
+      : isValidSedeId && isValidWorkdayId;
+
+    console.log("AsignatureSelector - canLoad:", canLoad, {
+      sedeId,
+      workdayId,
+      isValidSedeId,
+      isValidWorkdayId,
+      customFetchMethod,
+    });
 
     if (!canLoad) {
       setAsignaturas([]);
@@ -85,7 +120,15 @@ const AsignatureSelector = ({
         console.log("AsignatureSelector - Asignaturas procesadas:", data);
         setAsignaturas(data);
       } catch (err) {
-        console.error("Error al cargar asignaturas:", err);
+        // Si el token es inválido, ApiClient ya limpiará el token del localStorage.
+        // Evitar spam en consola cuando el usuario está en proceso de logout.
+        if (err?.message && /token|autenticaci/i.test(String(err.message))) {
+          console.warn(
+            "AsignatureSelector: petición abortada por token inválido",
+          );
+        } else {
+          console.error("Error al cargar asignaturas:", err);
+        }
         setError(err);
         setAsignaturas([]);
       } finally {
@@ -94,13 +137,14 @@ const AsignatureSelector = ({
     };
 
     loadAsignaturas();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    // Solo incluir sedeId y workdayId si NO hay customFetchMethod
-    ...(customFetchMethod ? [] : [sedeId, workdayId]),
+    sedeId,
+    workdayId,
     autoLoad,
     customFetchMethod,
     additionalParamsStr,
+    disabled,
+    token,
   ]);
 
   const items = useMemo(() => {

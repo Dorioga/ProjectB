@@ -42,6 +42,7 @@ const ProfileStudent = ({
     habeas_data: null,
     id_Student: null,
     id_Acudiente: null,
+    piar: null,
   });
 
   const [editedData, setEditedData] = useState({
@@ -64,10 +65,22 @@ const ProfileStudent = ({
     data?.jornada_estudiante || data?.fk_journey || data?.fk_jornada || "",
   );
 
+  // Estado para PIAR (checkbox + posible archivo)
+  const [hasPiar, setHasPiar] = useState(
+    Boolean(data?.cuenta_piar || data?.auDoc_piar || data?.link_piar),
+  );
+
   useEffect(() => {
     // Sincronizar selects cuando cambian los datos
     setSelectedSede(data?.id_sede || data?.sede_id || "");
     setSelectedJourney(data?.fk_journey || data?.fk_jornada || "");
+  }, [data]);
+
+  // Sincronizar el checkbox PIAR cuando cambian los datos
+  useEffect(() => {
+    setHasPiar(
+      Boolean(data?.cuenta_piar || data?.auDoc_piar || data?.link_piar),
+    );
   }, [data]);
 
   const toggleEditing = () => {
@@ -114,6 +127,8 @@ const ProfileStudent = ({
       nui: data.nui || "",
       per_id: data.per_id || "",
       fk_beca: becaIdMap[editedData.state_beca] ?? 1,
+      // PIAR
+      cuenta_piar: hasPiar,
     };
 
     // Si hay archivos nuevos, actualizar los links correspondientes
@@ -130,6 +145,12 @@ const ProfileStudent = ({
     if (documentFiles.id_Student) {
       // El documento se subirá y se actualizará el identification_link
       updatedData.identification_link = ""; // Se actualizará después de subir
+    }
+
+    // PIAR (archivo Excel)
+    if (documentFiles.piar) {
+      // Se subirá y el backend deberá devolver el enlace en la respuesta
+      updatedData.piar_link = "";
     }
 
     if (onSave) {
@@ -590,6 +611,60 @@ const ProfileStudent = ({
                 icon="View"
                 text="text-surface"
               />
+            )}
+          </div>
+
+          {/* PIAR - checkbox + FileChooser (edit) / descarga (view) */}
+          <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-4 items-center">
+            <label className="text-lg font-medium">Cuenta con PIAR:</label>
+
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={hasPiar}
+                disabled={!isEditing}
+                onChange={(e) => setHasPiar(!!e.target.checked)}
+                className="w-4 h-4"
+              />
+              <span
+                className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
+                  hasPiar
+                    ? "bg-green-100 text-green-800 border-green-200"
+                    : "bg-yellow-100 text-yellow-800 border-yellow-200"
+                }`}
+              >
+                {hasPiar ? "Sí" : "No"}
+              </span>
+            </div>
+
+            {isEditing ? (
+              hasPiar ? (
+                <div className="flex">
+                  <FileChooser
+                    accept=".xlsx,.xls"
+                    onChange={(file) => handleDocumentChange("piar", file)}
+                    label={
+                      documentFiles.piar
+                        ? documentFiles.piar.name
+                        : "Cargar (.xlsx)"
+                    }
+                  />
+                </div>
+              ) : (
+                <div />
+              )
+            ) : String(data?.auDoc_piar || "").includes("https://") ||
+              data?.link_piar ? (
+              <a
+                className="text-primary underline"
+                href={data.auDoc_piar || data?.link_piar}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Descargar PIAR
+              </a>
+            ) : (
+              <div />
             )}
           </div>
           <div

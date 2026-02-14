@@ -33,7 +33,7 @@ apiClient.interceptors.request.use((config) => {
 
   const token = localStorage.getItem("token");
   if (token) {
-    config.headers.token = token;
+    config.headers.Authorization = `Bearer ${token}`; // <-- aquí
   }
   // Si envías FormData, NO fijes Content-Type
   if (config.data instanceof FormData) {
@@ -125,3 +125,10 @@ export const ApiClient = {
 };
 
 export default apiClient;
+/*try {
+   await axios.post("/refresh-token", {
+      refreshToken: storedRefreshToken (esto es el localstorage donde debe poner el refreshtoken)
+   });
+} catch (err) {
+   ejecutar metodo que le voy a crear para cerrar sesion como tal
+}*/

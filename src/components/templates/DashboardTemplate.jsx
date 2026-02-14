@@ -10,8 +10,8 @@ const DashboardTemplate = ({ data, options }) => {
 
       {/* Área principal con margen para la barra lateral */}
       <main
-        className={`flex-1 flex flex-col py-10 px-5  overflow-y-auto ${
-          isOpen ? "xl:pl-85" : "pl-20"
+        className={`flex-1 flex flex-col overflow-y-auto ${
+          isOpen ? "xl:pl-80" : "pl-20"
         }`}
       >
         <Outlet />

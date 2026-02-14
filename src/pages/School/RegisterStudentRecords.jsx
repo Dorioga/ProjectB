@@ -47,6 +47,10 @@ const RegisterStudentRecords = () => {
   const { institutionSedes } = useData();
   const { idSede, nameSede, rol, idDocente, token } = useAuth();
   const notify = useNotify();
+
+  // Detectar si el usuario es docente
+  const isTeacher = Boolean(idDocente);
+
   const [sedeSelected, setSedeSelected] = useState("");
   const [workdaySelected, setWorkdaySelected] = useState("");
   const [gradeSelected, setGradeSelected] = useState("");
@@ -129,7 +133,12 @@ const RegisterStudentRecords = () => {
   // Datos de la sede del docente: preferir resultado de getTeacherSede si existe
   const teacherSedeData = useMemo(() => {
     if (teacherSedes.length) return teacherSedes;
-    if (String(rol) === "7" && idSede && nameSede) {
+    // aceptar tanto rol numérico '7' como la cadena 'docente'
+    if (
+      (String(rol).toLowerCase() === "docente" || String(rol) === "7") &&
+      idSede &&
+      nameSede
+    ) {
       return [{ id: idSede, name: nameSede }];
     }
     return null;
@@ -227,30 +236,45 @@ const RegisterStudentRecords = () => {
     };
   }, [idDocente, getTeacherSede, token, sedeSelected]);
 
-  // Limpiar cascada cuando cambia la sede
-  useEffect(() => {
+  // Handlers de cascada: limpian los selectores hijos al cambiar el padre.
+  // Se ejecutan inline (no en useEffect) para evitar un render intermedio
+  // con valores obsoletos que dispararía llamadas a la API con parámetros inválidos.
+  const handleSedeChange = (e) => {
+    const val = e.target.value;
+    setSedeSelected(val);
     setGradeSelected("");
     setAsignatureSelected("");
     setWorkdaySelected("");
     setDetectedJourney(null);
-  }, [sedeSelected]);
+  };
 
-  // Limpiar cascada cuando cambia el grado
-  useEffect(() => {
+  // Para docentes: Sede -> Grado -> Asignatura -> Jornada
+  const handleGradeChangeTeacher = (e) => {
+    setGradeSelected(e.target.value);
     setAsignatureSelected("");
     setWorkdaySelected("");
     setDetectedJourney(null);
-  }, [gradeSelected]);
+  };
 
-  // Auto-seleccionar jornada basada en el fk_workday de la sede
+  // Para no docentes: Sede -> Jornada -> Asignatura -> Grado
+  const handleWorkdayChangeNonTeacher = (e) => {
+    setWorkdaySelected(e.target.value);
+    setAsignatureSelected("");
+    setGradeSelected("");
+  };
+
+  const handleAsignatureChangeNonTeacher = (e) => {
+    setAsignatureSelected(e.target.value);
+    setGradeSelected("");
+  };
+
+  // Auto-seleccionar jornada basada en el fk_workday de la sede (solo docentes)
   useEffect(() => {
-    if (!sedeWorkday) return;
-
-    // Si fk_workday es 3 (Ambas/Completa), el usuario debe elegir manualmente
-    if (sedeWorkday === "3") return;
-
-    setWorkdaySelected(sedeWorkday);
-  }, [sedeWorkday]);
+    if (!sedeWorkday || sedeWorkday === "3") return;
+    if (isTeacher) {
+      setWorkdaySelected(sedeWorkday);
+    }
+  }, [sedeWorkday, isTeacher]);
 
   // Sincronizar journey con workdaySelected
   useEffect(() => {
@@ -1089,66 +1113,108 @@ const RegisterStudentRecords = () => {
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <SedeSelect
           value={sedeSelected}
-          onChange={(e) => setSedeSelected(e.target.value)}
+          onChange={handleSedeChange}
           className="w-full p-2 border rounded bg-surface"
           labelClassName="text-lg font-semibold"
           data={teacherSedeData}
           loading={loadingTeacherSedes}
         />
-        <GradeSelector
-          name="grade"
-          label="Grado"
-          labelClassName="text-lg font-semibold"
-          value={gradeSelected}
-          onChange={(e) => setGradeSelected(e.target.value)}
-          className="w-full p-2 border rounded bg-surface"
-          sedeId={sedeSelected}
-          workdayId={workdaySelected}
-          customFetchMethod={getTeacherGrades}
-          additionalParams={teacherGradesParams}
-          disabled={!sedeSelected}
-        />
-        <AsignatureSelector
-          name="asignature"
-          label="Asignatura"
-          labelClassName="text-lg font-semibold"
-          value={asignatureSelected}
-          onChange={(e) => setAsignatureSelected(e.target.value)}
-          className="w-full p-2 border rounded bg-surface"
-          sedeId={sedeSelected}
-          workdayId={workdaySelected}
-          customFetchMethod={getTeacherSubjects}
-          additionalParams={teacherSubjectsParams}
-          onJourneyDetected={(journey) => {
-            console.log(
-              "RegisterStudentRecords - Jornada detectada de asignatura:",
-              journey,
-            );
-            if (journey && journey.id) {
-              setWorkdaySelected(String(journey.id));
-              setDetectedJourney(journey);
-            }
-          }}
-          disabled={!gradeSelected}
-        />
-        <JourneySelect
-          name="workday"
-          label="Jornada"
-          labelClassName="text-lg font-semibold"
-          value={workdaySelected}
-          onChange={(e) => setWorkdaySelected(e.target.value)}
-          className="w-full p-2 border rounded bg-surface"
-          filterValue={sedeWorkday}
-          includeAmbas={false}
-          subjectJourney={detectedJourney}
-          // Solo cargar jornadas si hay grado seleccionado y no hay asignatura
-          useTeacherSubjects={
-            !Boolean(asignatureSelected) && Boolean(gradeSelected)
-          }
-          sedeId={sedeSelected}
-          idTeacher={idDocente}
-          lockByAsignature={true}
-        />
+
+        {/* Orden para Docentes: Sede -> Grado -> Asignatura -> Jornada */}
+        {isTeacher ? (
+          <>
+            <GradeSelector
+              name="grade"
+              label="Grado"
+              labelClassName="text-lg font-semibold"
+              value={gradeSelected}
+              onChange={handleGradeChangeTeacher}
+              className="w-full p-2 border rounded bg-surface"
+              sedeId={sedeSelected}
+              workdayId={workdaySelected}
+              customFetchMethod={getTeacherGrades}
+              additionalParams={teacherGradesParams}
+              disabled={!sedeSelected}
+            />
+            <AsignatureSelector
+              name="asignature"
+              label="Asignatura"
+              labelClassName="text-lg font-semibold"
+              value={asignatureSelected}
+              onChange={(e) => setAsignatureSelected(e.target.value)}
+              className="w-full p-2 border rounded bg-surface"
+              sedeId={sedeSelected}
+              workdayId={workdaySelected}
+              customFetchMethod={getTeacherSubjects}
+              additionalParams={teacherSubjectsParams}
+              onJourneyDetected={(journey) => {
+                console.log(
+                  "RegisterStudentRecords - Jornada detectada de asignatura:",
+                  journey,
+                );
+                if (journey && journey.id) {
+                  setWorkdaySelected(String(journey.id));
+                  setDetectedJourney(journey);
+                }
+              }}
+              disabled={!gradeSelected}
+            />
+            <JourneySelect
+              name="workday"
+              label="Jornada"
+              labelClassName="text-lg font-semibold"
+              value={workdaySelected}
+              onChange={(e) => setWorkdaySelected(e.target.value)}
+              className="w-full p-2 border rounded bg-surface"
+              filterValue={sedeWorkday}
+              includeAmbas={false}
+              subjectJourney={detectedJourney}
+              useTeacherSubjects={
+                !Boolean(asignatureSelected) && Boolean(gradeSelected)
+              }
+              sedeId={sedeSelected}
+              idTeacher={idDocente}
+              lockByAsignature={true}
+            />
+          </>
+        ) : (
+          /* Orden para No Docentes: Sede -> Jornada -> Asignatura -> Grado */
+          <>
+            <JourneySelect
+              name="workday"
+              label="Jornada"
+              labelClassName="text-lg font-semibold"
+              value={workdaySelected}
+              onChange={handleWorkdayChangeNonTeacher}
+              className="w-full p-2 border rounded bg-surface"
+              filterValue={sedeWorkday}
+              includeAmbas={false}
+              disabled={!sedeSelected}
+            />
+            <AsignatureSelector
+              name="asignature"
+              label="Asignatura"
+              labelClassName="text-lg font-semibold"
+              value={asignatureSelected}
+              onChange={handleAsignatureChangeNonTeacher}
+              className="w-full p-2 border rounded bg-surface"
+              sedeId={sedeSelected}
+              workdayId={workdaySelected}
+              disabled={!workdaySelected}
+            />
+            <GradeSelector
+              name="grade"
+              label="Grado"
+              labelClassName="text-lg font-semibold"
+              value={gradeSelected}
+              onChange={(e) => setGradeSelected(e.target.value)}
+              className="w-full p-2 border rounded bg-surface"
+              sedeId={sedeSelected}
+              workdayId={workdaySelected}
+              disabled={!asignatureSelected}
+            />
+          </>
+        )}
 
         <PeriodSelector
           name="period"

@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useState } from "react";
+import React, { createContext, useCallback, useMemo, useState } from "react";
 import * as teacherService from "../../services/teacherService";
 import { eventBus } from "../../services/ApiClient";
 
@@ -185,6 +185,22 @@ export function TeacherProvider({ children }) {
     }
   }, []);
 
+  // Registrar asistencia de estudiante(s)
+  const registerAssistance = useCallback(async (payload = {}) => {
+    setLoadingTeachers(true);
+    setErrorTeachers(null);
+    try {
+      const res = await teacherService.registerAssistance(payload);
+      eventBus.emit("¡Asistencia registrada exitosamente!", "success");
+      return res;
+    } catch (err) {
+      setErrorTeachers(err);
+      throw err;
+    } finally {
+      setLoadingTeachers(false);
+    }
+  }, []);
+
   // ----------------- Logros (nuevo) -----------------
   const getLogroType = useCallback(async () => {
     setLoadingTeachers(true);
@@ -205,6 +221,20 @@ export function TeacherProvider({ children }) {
     setErrorTeachers(null);
     try {
       const res = await teacherService.getLogroInstitution(payload);
+      return res;
+    } catch (err) {
+      setErrorTeachers(err);
+      throw err;
+    } finally {
+      setLoadingTeachers(false);
+    }
+  }, []);
+
+  const getAllLogros = useCallback(async (payload = {}) => {
+    setLoadingTeachers(true);
+    setErrorTeachers(null);
+    try {
+      const res = await teacherService.getAllLogros(payload);
       return res;
     } catch (err) {
       setErrorTeachers(err);
@@ -281,36 +311,65 @@ export function TeacherProvider({ children }) {
     [assignAsignature],
   );
 
+  const value = useMemo(
+    () => ({
+      teachers,
+      loadingTeachers,
+      errorTeachers,
+      selectedTeacher,
+      loadingSelectedTeacher,
+      loadTeachers,
+      getTeacher,
+      addTeacher,
+      editTeacher,
+      getSedes,
+      getTeacherSede,
+      getTeacherSubjects,
+      getTeacherGrades,
+      getStudentNotes,
+      saveAssignmentNotes,
+      updateAssignmentNote,
+      getDataTeacher,
+      fetchAllTeachers,
+      assignSede,
+      assignAsignature,
+      // Logros
+      getLogroType,
+      getLogroInstitution,
+      getAllLogros,
+      // Asistencia
+      registerAssistance,
+    }),
+    [
+      teachers,
+      loadingTeachers,
+      errorTeachers,
+      selectedTeacher,
+      loadingSelectedTeacher,
+      loadTeachers,
+      getTeacher,
+      addTeacher,
+      editTeacher,
+      getSedes,
+      getTeacherSede,
+      getTeacherSubjects,
+      getTeacherGrades,
+      getStudentNotes,
+      saveAssignmentNotes,
+      updateAssignmentNote,
+      getDataTeacher,
+      fetchAllTeachers,
+      assignSede,
+      assignAsignature,
+      getLogroType,
+      getLogroInstitution,
+      getAllLogros,
+      registerAssistance,
+    ],
+  );
+
   return (
-    <TeacherContext.Provider
-      value={{
-        teachers,
-        loadingTeachers,
-        errorTeachers,
-        selectedTeacher,
-        loadingSelectedTeacher,
-        loadTeachers,
-        getTeacher,
-        addTeacher,
-        editTeacher,
-        getSedes,
-        getTeacherSede,
-        getTeacherSubjects,
-        getTeacherGrades,
-        getStudentNotes,
-        saveAssignmentNotes,
-        updateAssignmentNote,
-        getDataTeacher,
-        fetchAllTeachers,
-        assignSede,
-        assignAsignature,
-        // Logros
-        getLogroType,
-        getLogroInstitution,
-      }}
-    >
-      {children}
-    </TeacherContext.Provider>
+    <TeacherContext.Provider value={value}>{children}</TeacherContext.Provider>
   );
 }
 
