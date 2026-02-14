@@ -52,8 +52,14 @@ export function StudentProvider({ children }) {
 
     // Evitar llamadas vacías que generan errores en el inicio; si no hay parámetros de búsqueda válidos, retornar null sin setear `error`.
     const hasQuery = Boolean(
-      (arg && typeof arg === "object" && Object.keys(arg).length > 0 &&
-        (arg.identification || arg.id_estudiante || arg.id || arg.per_id || arg.numero_identificacion)) ||
+      (arg &&
+        typeof arg === "object" &&
+        Object.keys(arg).length > 0 &&
+        (arg.identification ||
+          arg.id_estudiante ||
+          arg.id ||
+          arg.per_id ||
+          arg.numero_identificacion)) ||
       false,
     );
 
