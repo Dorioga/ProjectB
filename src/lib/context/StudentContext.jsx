@@ -180,11 +180,12 @@ export function StudentProvider({ children }) {
   );
 
   // Sube un Excel para carga masiva de estudiantes.
-  const uploadStudentsExcel = useCallback(async (file, options = {}) => {
+  const uploadStudentsExcel = useCallback(async (file) => {
+    console.log("StudentContext: uploadStudentsExcel llamado con file:", file);
     setLoading(true);
     setError(null);
     try {
-      const res = await studentService.uploadStudentsExcel(file, options);
+      const res = await studentService.uploadStudentsExcel(file);
       return res;
     } catch (err) {
       setError(err);

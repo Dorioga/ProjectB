@@ -8,6 +8,12 @@ import JourneySelect from "../../components/atoms/JourneySelect";
 import DepartmentSelector from "../../components/molecules/DepartmentSelector";
 import CitySelector from "../../components/molecules/CitySelector";
 import { getInputClassName, getLabelClassName } from "../../utils/cssUtils";
+import {
+  required,
+  isEmail,
+  isText,
+  compose,
+} from "../../utils/validationUtils";
 import useSchool from "../../lib/hooks/useSchool";
 import { useNotify } from "../../lib/hooks/useNotify";
 
@@ -257,6 +263,34 @@ const validatePerformanceScale = (scaleArray) => {
   };
 };
 
+// Construye el objeto `sistema_evaluacion` que será enviado en el payload
+const buildSistemaEvaluacion = (evaluationState) => {
+  const parseNum = (v) => {
+    if (v === undefined || v === null || v === "") return null;
+    const n = parseFloat(String(v).replace(",", "."));
+    return Number.isNaN(n) ? null : n;
+  };
+
+  const escala_desempeno = (
+    Array.isArray(evaluationState?.performanceScale)
+      ? evaluationState.performanceScale
+      : []
+  ).map((r) => ({
+    escala: (r?.label ?? "").toString(),
+    desde: parseNum(r?.start ?? ""),
+    hasta: parseNum(r?.end ?? ""),
+  }));
+
+  const politica_promocion =
+    evaluationState?.promotionThreshold === undefined ||
+    evaluationState?.promotionThreshold === null ||
+    evaluationState?.promotionThreshold === ""
+      ? null
+      : parseNum(evaluationState.promotionThreshold);
+
+  return { escala_desempeno, politica_promocion };
+};
+
 const ProfileSchool = ({
   mode: modeProp,
   schoolId,
@@ -352,6 +386,9 @@ const ProfileSchool = ({
   const [scaleErrors, setScaleErrors] = useState([]);
   // Errores por fila (índice -> array de mensajes) - eliminado (se usan sólo errores globales en `scaleErrors`)
 
+  // Errores de validación del formulario
+  const [formErrors, setFormErrors] = useState({});
+
   // Modo de edición (por defecto: editable en modo registro, vista en modo update)
   const [isEditing, setIsEditing] = useState(
     typeof initialEditing === "boolean" ? initialEditing : !isUpdate,
@@ -365,9 +402,144 @@ const ProfileSchool = ({
     }
   }, [initialEditing, isUpdate]);
 
+  // Función para validar todo el formulario
+  const validateForm = useCallback(() => {
+    const errors = {};
+
+    // Validar nombre de la institución
+    const nameValidation = compose(required, isText)(formData.name);
+    if (!nameValidation.valid) errors.name = nameValidation.msg;
+
+    // Validar municipio
+    const municipalityValidation = required(formData.municipality);
+    if (!municipalityValidation.valid)
+      errors.municipality = municipalityValidation.msg;
+
+    // Validar email
+    const emailValidation = compose(required, isEmail)(formData.email);
+    if (!emailValidation.valid) errors.email = emailValidation.msg;
+
+    // Validar teléfono
+    const phoneValidation = required(
+      formData.phone,
+      "El teléfono es obligatorio",
+    );
+    if (!phoneValidation.valid) errors.phone = phoneValidation.msg;
+
+    // Validar dirección
+    const addressValidation = required(
+      formData.address,
+      "La dirección es obligatoria",
+    );
+    if (!addressValidation.valid) errors.address = addressValidation.msg;
+
+    // Validar nombre del director
+    const principalValidation = compose(
+      required,
+      isText,
+    )(formData.principalName);
+    if (!principalValidation.valid)
+      errors.principalName = principalValidation.msg;
+
+    // Validar nombre del coordinador
+    const coordinadorValidation = compose(
+      required,
+      isText,
+    )(formData.coordinadorName);
+    if (!coordinadorValidation.valid)
+      errors.coordinadorName = coordinadorValidation.msg;
+
+    // Validar jornada
+    const workdayValidation = required(
+      formData.workday,
+      "La jornada es obligatoria",
+    );
+    if (!workdayValidation.valid) errors.workday = workdayValidation.msg;
+
+    // Validar código DANE solo en modo creación
+    if (!isUpdate) {
+      const codDaneValidation = required(
+        formData.codDane,
+        "El código DANE es obligatorio",
+      );
+      if (!codDaneValidation.valid) errors.codDane = codDaneValidation.msg;
+    }
+
+    // Validar colores
+    const mainColorValidation = required(
+      formData.mainColor,
+      "El color principal es obligatorio",
+    );
+    if (!mainColorValidation.valid) errors.mainColor = mainColorValidation.msg;
+
+    const secondaryColorValidation = required(
+      formData.secondaryColor,
+      "El color secundario es obligatorio",
+    );
+    if (!secondaryColorValidation.valid)
+      errors.secondaryColor = secondaryColorValidation.msg;
+
+    // Validar sedes en modo creación
+    if (!isUpdate) {
+      const sedeErrors = {};
+      if (Array.isArray(formData.sede) && formData.sede.length > 0) {
+        formData.sede.forEach((sede, index) => {
+          const sedeFieldErrors = {};
+
+          const nameSedeValidation = required(
+            sede.name_sede,
+            "El nombre de la sede es obligatorio",
+          );
+          if (!nameSedeValidation.valid)
+            sedeFieldErrors.name_sede = nameSedeValidation.msg;
+
+          const adressValidation = required(
+            sede.adress,
+            "La dirección de la sede es obligatoria",
+          );
+          if (!adressValidation.valid)
+            sedeFieldErrors.adress = adressValidation.msg;
+
+          const phoneSedeValidation = required(
+            sede.phone,
+            "El teléfono de la sede es obligatorio",
+          );
+          if (!phoneSedeValidation.valid)
+            sedeFieldErrors.phone = phoneSedeValidation.msg;
+
+          const jornadaValidation = required(
+            sede.jornada,
+            "La jornada de la sede es obligatoria",
+          );
+          if (!jornadaValidation.valid)
+            sedeFieldErrors.jornada = jornadaValidation.msg;
+
+          if (Object.keys(sedeFieldErrors).length > 0) {
+            sedeErrors[index] = sedeFieldErrors;
+          }
+        });
+      }
+
+      if (Object.keys(sedeErrors).length > 0) {
+        errors.sede = sedeErrors;
+      }
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  }, [formData, isUpdate]);
+
   const handleSubmit = useCallback(
     async (e) => {
       if (e && e.preventDefault) e.preventDefault();
+
+      // Validar formulario principal
+      if (!validateForm()) {
+        notify.error(
+          "Por favor completa todos los campos obligatorios correctamente.",
+        );
+        return;
+      }
 
       // validar escala antes de enviar
       const { valid, errors, rowErrors } = validatePerformanceScale(
@@ -415,15 +587,8 @@ const ProfileSchool = ({
             signaturePrincipal: payload.signaturePrincipal ?? "",
             slogan: payload.slogan ?? "",
             workday: payload.workday ? parseInt(payload.workday) : null,
-            // Sistema de evaluación
-            sistema_evaluacion: {
-              escala_desempeno: JSON.stringify(
-                evaluation.performanceScale ?? "",
-              ),
-              politica_promocion: JSON.stringify({
-                threshold: evaluation.promotionThreshold ?? "",
-              }),
-            },
+            // Sistema de evaluación (desde estado local)
+            sistema_evaluacion: buildSistemaEvaluacion(evaluation),
           };
 
           console.log("Datos a enviar (update):", updatePayload);
@@ -465,12 +630,7 @@ const ProfileSchool = ({
           payload.sede = sedeData;
 
           // Agregar sistema de evaluación desde el estado local
-          payload.sistema_evaluacion = {
-            escala_desempeno: JSON.stringify(evaluation.performanceScale ?? ""),
-            politica_promocion: JSON.stringify({
-              threshold: evaluation.promotionThreshold ?? "",
-            }),
-          };
+          payload.sistema_evaluacion = buildSistemaEvaluacion(evaluation);
 
           // Excluir campos auxiliares que no se envían al backend
           delete payload.department_id;
@@ -508,6 +668,7 @@ const ProfileSchool = ({
       addSchool,
       onSuccess,
       notify,
+      validateForm,
     ],
   );
 
@@ -896,7 +1057,7 @@ const ProfileSchool = ({
 
         <div className="md:col-span-2">
           <label className={getLabelClassName("", !isEditing)}>
-            Nombre de la institución
+            Nombre de la institución <span className="text-red-600">*</span>
           </label>
           <input
             type="text"
@@ -905,11 +1066,14 @@ const ProfileSchool = ({
             onChange={handleChange}
             disabled={!isEditing}
             className={getInputClassName(
-              "w-full p-2 border rounded bg-surface",
+              `w-full p-2 border rounded bg-surface ${formErrors.name ? "border-red-500" : ""}`,
               !isEditing,
             )}
             required
           />
+          {formErrors.name && (
+            <p className="text-red-600 text-sm mt-1">{formErrors.name}</p>
+          )}
         </div>
 
         <div className="md:col-span-2">
@@ -928,7 +1092,9 @@ const ProfileSchool = ({
         </div>
 
         <div className="md:col-span-2">
-          <label className={getLabelClassName("", !isEditing)}>Dirección</label>
+          <label className={getLabelClassName("", !isEditing)}>
+            Dirección <span className="text-red-600">*</span>
+          </label>
           <input
             type="text"
             name="address"
@@ -936,10 +1102,13 @@ const ProfileSchool = ({
             onChange={handleChange}
             disabled={!isEditing}
             className={getInputClassName(
-              "w-full p-2 border rounded bg-surface",
+              `w-full p-2 border rounded bg-surface ${formErrors.address ? "border-red-500" : ""}`,
               !isEditing,
             )}
           />
+          {formErrors.address && (
+            <p className="text-red-600 text-sm mt-1">{formErrors.address}</p>
+          )}
         </div>
 
         <div>
@@ -964,15 +1133,23 @@ const ProfileSchool = ({
             onChange={handleChange}
             departmentId={formData.department_id}
             className={getInputClassName(
-              "w-full p-2 border rounded bg-surface",
+              `w-full p-2 border rounded bg-surface ${formErrors.municipality ? "border-red-500" : ""}`,
               !isEditing,
             )}
             disabled={!isEditing}
+            required
           />
+          {formErrors.municipality && (
+            <p className="text-red-600 text-sm mt-1">
+              {formErrors.municipality}
+            </p>
+          )}
         </div>
 
         <div>
-          <label className={getLabelClassName("", !isEditing)}>Teléfono</label>
+          <label className={getLabelClassName("", !isEditing)}>
+            Teléfono <span className="text-red-600">*</span>
+          </label>
           <input
             type="tel"
             name="phone"
@@ -980,15 +1157,18 @@ const ProfileSchool = ({
             onChange={handleChange}
             disabled={!isEditing}
             className={getInputClassName(
-              "w-full p-2 border rounded bg-surface",
+              `w-full p-2 border rounded bg-surface ${formErrors.phone ? "border-red-500" : ""}`,
               !isEditing,
             )}
           />
+          {formErrors.phone && (
+            <p className="text-red-600 text-sm mt-1">{formErrors.phone}</p>
+          )}
         </div>
 
         <div>
           <label className={getLabelClassName("", !isEditing)}>
-            Correo electrónico
+            Correo electrónico <span className="text-red-600">*</span>
           </label>
           <input
             type="email"
@@ -997,15 +1177,18 @@ const ProfileSchool = ({
             onChange={handleChange}
             disabled={!isEditing}
             className={getInputClassName(
-              "w-full p-2 border rounded bg-surface",
+              `w-full p-2 border rounded bg-surface ${formErrors.email ? "border-red-500" : ""}`,
               !isEditing,
             )}
           />
+          {formErrors.email && (
+            <p className="text-red-600 text-sm mt-1">{formErrors.email}</p>
+          )}
         </div>
 
         <div>
           <label className={getLabelClassName("", !isEditing)}>
-            Nombre del director
+            Nombre del director <span className="text-red-600">*</span>
           </label>
           <input
             type="text"
@@ -1014,10 +1197,15 @@ const ProfileSchool = ({
             onChange={handleChange}
             disabled={!isEditing}
             className={getInputClassName(
-              "w-full p-2 border rounded bg-surface",
+              `w-full p-2 border rounded bg-surface ${formErrors.principalName ? "border-red-500" : ""}`,
               !isEditing,
             )}
           />
+          {formErrors.principalName && (
+            <p className="text-red-600 text-sm mt-1">
+              {formErrors.principalName}
+            </p>
+          )}
         </div>
 
         <div>
@@ -1037,7 +1225,7 @@ const ProfileSchool = ({
 
         <div className="md:col-span-2">
           <label className={getLabelClassName("", !isEditing)}>
-            Nombre del coordinador
+            Nombre del coordinador <span className="text-red-600">*</span>
           </label>
           <input
             type="text"
@@ -1046,10 +1234,15 @@ const ProfileSchool = ({
             onChange={handleChange}
             disabled={!isEditing}
             className={getInputClassName(
-              "w-full p-2 border rounded bg-surface",
+              `w-full p-2 border rounded bg-surface ${formErrors.coordinadorName ? "border-red-500" : ""}`,
               !isEditing,
             )}
           />
+          {formErrors.coordinadorName && (
+            <p className="text-red-600 text-sm mt-1">
+              {formErrors.coordinadorName}
+            </p>
+          )}
         </div>
 
         <div>
@@ -1083,7 +1276,7 @@ const ProfileSchool = ({
 
         <div>
           <label className={getLabelClassName("", !isEditing || isUpdate)}>
-            Código DANE
+            Código DANE {!isUpdate && <span className="text-red-600">*</span>}
           </label>
           <input
             type="text"
@@ -1092,7 +1285,7 @@ const ProfileSchool = ({
             onChange={handleChange}
             disabled={!isEditing || isUpdate}
             className={getInputClassName(
-              "w-full p-2 border rounded bg-surface",
+              `w-full p-2 border rounded bg-surface ${formErrors.codDane ? "border-red-500" : ""}`,
               !isEditing || isUpdate,
             )}
             placeholder={
@@ -1101,6 +1294,9 @@ const ProfileSchool = ({
                 : "Ingrese código DANE"
             }
           />
+          {formErrors.codDane && (
+            <p className="text-red-600 text-sm mt-1">{formErrors.codDane}</p>
+          )}
         </div>
 
         <div>
@@ -1110,11 +1306,15 @@ const ProfileSchool = ({
             value={formData.workday}
             onChange={handleChange}
             className={getInputClassName(
-              "w-full p-2 border rounded bg-surface",
+              `w-full p-2 border rounded bg-surface ${formErrors.workday ? "border-red-500" : ""}`,
               !isEditing,
             )}
             disabled={!isEditing}
+            required
           />
+          {formErrors.workday && (
+            <p className="text-red-600 text-sm mt-1">{formErrors.workday}</p>
+          )}
         </div>
 
         <div className="md:col-span-2 mt-2 border-t pt-4">
@@ -1464,7 +1664,9 @@ const ProfileSchool = ({
                       {isEditing ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                            <label>Nombre</label>
+                            <label>
+                              Nombre <span className="text-red-600">*</span>
+                            </label>
                             <input
                               type="text"
                               value={sede?.name_sede ?? ""}
@@ -1475,48 +1677,95 @@ const ProfileSchool = ({
                                   e.target.value,
                                 )
                               }
-                              className="w-full p-2 border rounded bg-surface"
+                              className={`w-full p-2 border rounded bg-surface ${
+                                formErrors.sede?.[index]?.name_sede
+                                  ? "border-red-500"
+                                  : ""
+                              }`}
                             />
+                            {formErrors.sede?.[index]?.name_sede && (
+                              <p className="text-red-600 text-sm mt-1">
+                                {formErrors.sede[index].name_sede}
+                              </p>
+                            )}
                           </div>
 
                           <div>
-                            <label>Teléfono</label>
+                            <label>
+                              Teléfono <span className="text-red-600">*</span>
+                            </label>
                             <input
                               type="text"
                               value={sede?.phone ?? ""}
                               onChange={(e) =>
                                 updateSedeField(index, "phone", e.target.value)
                               }
-                              className="w-full p-2 border rounded bg-surface"
+                              className={`w-full p-2 border rounded bg-surface ${
+                                formErrors.sede?.[index]?.phone
+                                  ? "border-red-500"
+                                  : ""
+                              }`}
                             />
+                            {formErrors.sede?.[index]?.phone && (
+                              <p className="text-red-600 text-sm mt-1">
+                                {formErrors.sede[index].phone}
+                              </p>
+                            )}
                           </div>
 
                           <div className="md:col-span-2">
-                            <label>Dirección</label>
+                            <label>
+                              Dirección <span className="text-red-600">*</span>
+                            </label>
                             <input
                               type="text"
                               value={sede?.adress ?? ""}
                               onChange={(e) =>
                                 updateSedeField(index, "adress", e.target.value)
                               }
-                              className="w-full p-2 border rounded bg-surface"
+                              className={`w-full p-2 border rounded bg-surface ${
+                                formErrors.sede?.[index]?.adress
+                                  ? "border-red-500"
+                                  : ""
+                              }`}
                             />
+                            {formErrors.sede?.[index]?.adress && (
+                              <p className="text-red-600 text-sm mt-1">
+                                {formErrors.sede[index].adress}
+                              </p>
+                            )}
                           </div>
 
-                          <JourneySelect
-                            label="Jornada"
-                            name="jornada"
-                            value={sede?.jornada ?? ""}
-                            filterValue={
-                              String(formData.workday) !== "3"
-                                ? String(formData.workday)
-                                : "3"
-                            }
-                            onChange={(e) =>
-                              updateSedeField(index, "jornada", e.target.value)
-                            }
-                            className="w-full p-2 border rounded bg-surface"
-                          />
+                          <div>
+                            <JourneySelect
+                              label="Jornada"
+                              name="jornada"
+                              value={sede?.jornada ?? ""}
+                              filterValue={
+                                String(formData.workday) !== "3"
+                                  ? String(formData.workday)
+                                  : "3"
+                              }
+                              onChange={(e) =>
+                                updateSedeField(
+                                  index,
+                                  "jornada",
+                                  e.target.value,
+                                )
+                              }
+                              className={`w-full p-2 border rounded bg-surface ${
+                                formErrors.sede?.[index]?.jornada
+                                  ? "border-red-500"
+                                  : ""
+                              }`}
+                              required
+                            />
+                            {formErrors.sede?.[index]?.jornada && (
+                              <p className="text-red-600 text-sm mt-1">
+                                {formErrors.sede[index].jornada}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -27,7 +27,7 @@ const Sidebar = () => {
   const displayName = String(userName ?? "").trim();
   return (
     <div
-      className={`fixed left-0 top-0  z-50 h-screen grid grid-rows-12 border rounded-r-4xl bg-primary transition-all duration-300 ease-in-out${
+      className={`fixed left-0 top-0  z-50 h-screen grid grid-rows-12 border rounded-r-2xl bg-primary transition-all duration-300 ease-in-out${
         isOpen
           ? " w-4/5 sm:w-3/6 md:w-2/5 lg:w-1/3 xl:w-3/12 2xl:w-2/12 bg-primary"
           : "w-15"
@@ -35,7 +35,7 @@ const Sidebar = () => {
     >
       <div className="row-span-3">
         <div
-          className="flex justify-end py-3 px-4 cursor-pointer"
+          className="flex justify-end py-3 px-6 cursor-pointer"
           onClick={toggleIsOpen}
         >
           {isOpen ? (
@@ -53,7 +53,7 @@ const Sidebar = () => {
               }
               size={"logo"}
             />
-            <div className="text-surface font-bold text-lg">
+            <div className="text-surface font-bold text-sm">
               {nameSchool || "NEXUS"}
             </div>
             <div className="text-surface text-sm">{nameSede || "Software"}</div>
@@ -70,11 +70,11 @@ const Sidebar = () => {
                 <Link
                   key={id}
                   to={item.link}
-                  className="flex flex-row px-4 py-2 items-center gap-2 hover:bg-secondary rounded"
+                  className="flex flex-row px-4 py-1 items-center gap-2 hover:bg-secondary rounded"
                 >
                   <IconComponent className="text-surface text-2xl" />
                   {isOpen ? (
-                    <li className=" px-2 hover:bg-secondary rounded text-xl text-surface">
+                    <li className=" px-2 hover:bg-secondary rounded text-lg text-surface">
                       {item.option}
                     </li>
                   ) : null}
@@ -97,101 +97,128 @@ const Sidebar = () => {
           >
             <LucideIcons.FileText className="text-surface text-2xl" />
             {isOpen ? (
-              <li className="px-2 hover:bg-secondary rounded text-xl text-surface">
+              <li className="px-2 hover:bg-secondary rounded text-lg   text-surface">
                 Boletín (PDF)
               </li>
             ) : null}
           </button>
 
           {/* Manage Teacher */}
-          <Link
+          {/* <Link
             to="/dashboard/manageTeacher"
             className="flex flex-row px-4 py-2 items-center gap-2 hover:bg-secondary rounded"
           >
             <LucideIcons.Users className="text-surface text-2xl" />
             {isOpen ? (
-              <li className="px-2 hover:bg-secondary rounded text-xl text-surface">
+              <li className="px-2 hover:bg-secondary rounded text-lg    text-surface">
                 Gestionar Docentes
               </li>
             ) : null}
-          </Link>
+          </Link> */}
 
           {/* Manage Logro (nuevo) */}
-          <Link
+          {/* <Link
             to="/dashboard/manageLogro"
             className="flex flex-row px-4 py-2 items-center gap-2 hover:bg-secondary rounded"
           >
             <LucideIcons.Award className="text-surface text-2xl" />
             {isOpen ? (
-              <li className="px-2 hover:bg-secondary rounded text-xl text-surface">
+              <li className="px-2 hover:bg-secondary rounded text-lg text-surface">
                 Gestionar Logros
               </li>
             ) : null}
-          </Link>
+          </Link> */}
 
           {/* Manage Student */}
-          <Link
+          {/* <Link
             to="/dashboard/manageStudent"
             className="flex flex-row px-4 py-2 items-center gap-2 hover:bg-secondary rounded"
           >
             <LucideIcons.GraduationCap className="text-surface text-2xl" />
             {isOpen ? (
-              <li className="px-2 hover:bg-secondary rounded text-xl text-surface">
+              <li className="px-2 hover:bg-secondary rounded text-lg text-surface">
                 Gestionar Estudiantes
               </li>
             ) : null}
-          </Link>
+          </Link> */}
+
+          {/* Manage Asignature (static link, not backend-driven) */}
+          {/* <Link
+            to="/dashboard/manageAsignature"
+            className="flex flex-row px-4 py-2 items-center gap-2 hover:bg-secondary rounded"
+          >
+            <LucideIcons.BookOpen className="text-surface text-2xl" />
+            {isOpen ? (
+              <li className="px-2 hover:bg-secondary rounded text-lg text-surface">
+                Gestionar Asignaturas
+              </li>
+            ) : null}
+          </Link> */}
+
+          {/* Manage Grade (static link, not backend-driven) */}
+          {/* <Link
+            to="/dashboard/manageGrade"
+            className="flex flex-row px-4 py-2 items-center gap-2 hover:bg-secondary rounded"
+          >
+            <LucideIcons.GraduationCap className="text-surface text-2xl" />
+            {isOpen ? (
+              <li className="px-2 hover:bg-secondary rounded text-lg text-surface">
+                Gestionar Grados
+              </li>
+            ) : null}
+          </Link> */}
 
           {/* Manage School */}
-          <Link
-            to="/dashboard/manageSchool"
+          {/* <Link
+            to="/dashboard/manageSchools"
             className="flex flex-row px-4 py-2 items-center gap-2 hover:bg-secondary rounded"
           >
             <LucideIcons.Home className="text-surface text-2xl" />
             {isOpen ? (
-              <li className="px-2 hover:bg-secondary rounded text-xl text-surface">
+              <li className="px-2 hover:bg-secondary rounded text-lg text-surface">
                 Gestionar Instituciones
               </li>
             ) : null}
-          </Link>
+          </Link> */}
 
           {/* Manage Sedes */}
-          <Link
+          {/* <Link
             to="/dashboard/manageSedes"
             className="flex flex-row px-4 py-2 items-center gap-2 hover:bg-secondary rounded"
           >
             <LucideIcons.Building2 className="text-surface text-2xl" />
             {isOpen ? (
-              <li className="px-2 hover:bg-secondary rounded text-xl text-surface">
+              <li className="px-2 hover:bg-secondary rounded text-lg text-surface">
                 Gestionar Sedes
               </li>
             ) : null}
-          </Link>
+          </Link> */}
         </ul>
       </div>
       <div className="flex flex-col items-center row-span-2 justify-center py-6 ">
         <div className="flex flex-col items-center ">
           <User className="text-surface text-2xl" />
           {isOpen ? (
-            <div className="flex flex-col">
-              {displayName ? (
-                <h2 className="text-surface font-bold text-lg text-center">
-                  {(() => {
-                    const words = displayName.split(" ");
-                    if (words.length >= 4) {
-                      return (
-                        <>
-                          <div>{words.slice(0, 2).join(" ")}</div>
-                          <div>{words.slice(2).join(" ")}</div>
-                        </>
-                      );
-                    }
-                    return displayName;
-                  })()}
-                </h2>
-              ) : null}
-              <div className="text-surface text-sm text-center">{nameRole}</div>
-            </div>
+            // <div className="flex flex-col">
+            //   {displayName ? (
+            //     <h2 className="text-surface font-bold text-lg text-center">
+            //       {(() => {
+            //         const words = displayName.split(" ");
+            //         if (words.length >= 4) {
+            //           return (
+            //             <>
+            //               <div>{words.slice(0, 2).join(" ")}</div>
+            //               <div>{words.slice(2).join(" ")}</div>
+            //             </>
+            //           );
+            //         }
+            //         return displayName;
+            //       })()}
+            //     </h2>
+            //   ) : null}
+
+            // </div>
+            <div className="text-surface text-sm text-center">{nameRole}</div>
           ) : null}
         </div>
         <button

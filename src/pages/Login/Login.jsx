@@ -10,13 +10,17 @@ const Login = () => {
     email: "",
     infokey: "",
   });
-  const { login, loading, error } = useAuth();
+  const { login, loading, error, token } = useAuth();
   const navigate = useNavigate();
 
-  // Limpiar localStorage al entrar a la página de login
   useEffect(() => {
+    if (token) {
+      navigate("/dashboard/home");
+      return;
+    }
+    // Limpiar localStorage al entrar a la página de login (solo si no hay token)
     localStorage.clear();
-  }, []);
+  }, [token, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

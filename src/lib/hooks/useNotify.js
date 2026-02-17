@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useNotification } from "../context/NotificationContext";
 
 /**
@@ -21,14 +22,18 @@ import { useNotification } from "../context/NotificationContext";
 export const useNotify = () => {
   const { addNotification } = useNotification();
 
-  return {
-    error: (message, duration = 5000) =>
-      addNotification(message, "error", duration),
-    success: (message, duration = 3000) =>
-      addNotification(message, "success", duration),
-    warning: (message, duration = 4000) =>
-      addNotification(message, "warning", duration),
-    info: (message, duration = 3000) =>
-      addNotification(message, "info", duration),
-  };
+  // Memoizar el objeto retornado para evitar recrearlo en cada render
+  return useMemo(
+    () => ({
+      error: (message, duration = 5000) =>
+        addNotification(message, "error", duration),
+      success: (message, duration = 3000) =>
+        addNotification(message, "success", duration),
+      warning: (message, duration = 4000) =>
+        addNotification(message, "warning", duration),
+      info: (message, duration = 3000) =>
+        addNotification(message, "info", duration),
+    }),
+    [addNotification],
+  );
 };

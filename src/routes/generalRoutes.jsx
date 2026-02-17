@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "../pages/Login/Login";
+import RequireAuth from "../components/RequireAuth";
 import DashboardTemplate from "../components/templates/DashboardTemplate";
 import DashHome from "../pages/Dashboard/Home";
 import Reports from "../pages/Dashboard/Reports";
@@ -23,6 +24,8 @@ import ManageStudent from "../pages/Student/ManageStudent";
 import ManageSchools from "../pages/School/ManageSchools";
 import ProfileSchool from "../pages/School/ProfileSchool";
 import ManageSedes from "../pages/School/ManageSedes";
+import ManageAsignature from "../pages/School/ManageAsignature";
+import ManageGrade from "../pages/School/ManageGrade";
 const GeneralRoutes = () => {
   return (
     <div id="body" className="w-full h-screen flex flex-col ">
@@ -30,9 +33,14 @@ const GeneralRoutes = () => {
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
-          {/* Ruta directa para compatibilidad con enlaces absolutos */}
-          <Route path="/dashboard/manageSchools" element={<ManageSchools />} />
-          <Route path="dashboard" element={<DashboardTemplate />}>
+          <Route
+            path="dashboard"
+            element={
+              <RequireAuth>
+                <DashboardTemplate />
+              </RequireAuth>
+            }
+          >
             <Route path="home" element={<DashHome />} />
             <Route path="registerUser" element={<RegisterUser />} />
             <Route path="studentSchool" element={<AllStudent />} />
@@ -56,8 +64,10 @@ const GeneralRoutes = () => {
             <Route path="manageTeacher" element={<ManageTeacher />} />
             <Route path="manageLogro" element={<ManageLogro />} />
             <Route path="manageStudent" element={<ManageStudent />} />
-            <Route path="manageSchool" element={<ManageSchools />} />
+            <Route path="manageSchools" element={<ManageSchools />} />
             <Route path="manageSedes" element={<ManageSedes />} />
+            <Route path="manageAsignature" element={<ManageAsignature />} />
+            <Route path="manageGrade" element={<ManageGrade />} />
           </Route>
         </Routes>
       </div>

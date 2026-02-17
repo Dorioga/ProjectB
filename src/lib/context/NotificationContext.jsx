@@ -27,7 +27,7 @@ export const NotificationProvider = ({ children }) => {
 
       return id;
     },
-    []
+    [],
   );
 
   const removeNotification = useCallback((id) => {
@@ -38,14 +38,27 @@ export const NotificationProvider = ({ children }) => {
     setNotifications([]);
   }, []);
 
-  // Suscribirse a eventos del ApiClient
+  // Suscribirse a eventos del ApiClient — suscripción estable en mount (evita re-suscribir)
   useEffect(() => {
     const unsubscribe = eventBus.on((message, type) => {
-      addNotification(message, type);
+      // Añadir notificación directamente para evitar dependencia en `addNotification`
+      const id = Date.now() + Math.random();
+      const notification = { id, message, type };
+
+      setNotifications((prev) => [...prev, notification]);
+
+      // auto-clear después del timeout por defecto (5s)
+      const t = setTimeout(() => {
+        setNotifications((prev) => prev.filter((n) => n.id !== id));
+      }, 5000);
+
+      // No necesitamos limpiar `t` aquí (se limpia al remover la notificación),
+      // pero guardarlo sería necesario si quisiéramos cancelar timeouts al unmount.
+      void t;
     });
 
     return unsubscribe;
-  }, [addNotification]);
+  }, []);
 
   return (
     <NotificationContext.Provider
@@ -65,7 +78,7 @@ export const useNotification = () => {
   const context = useContext(NotificationContext);
   if (!context) {
     throw new Error(
-      "useNotification debe usarse dentro de un NotificationProvider"
+      "useNotification debe usarse dentro de un NotificationProvider",
     );
   }
   return context;

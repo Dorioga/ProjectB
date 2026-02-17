@@ -33,9 +33,7 @@ export async function registerStudent(payload) {
  * @param {Object} options - Opciones adicionales
  * @returns {Promise<Object>} Respuesta del servidor
  */
-export async function uploadStudentsExcel(file, options = {}) {
-  const { fieldName = "file", params, data, onUploadProgress } = options;
-
+export async function uploadStudentsExcel(file) {
   if (!file) {
     throw new Error("Debes enviar un archivo Excel.");
   }
@@ -44,20 +42,10 @@ export async function uploadStudentsExcel(file, options = {}) {
   const fileName = file?.name || "students.xlsx";
   formData.append("archivo", file, fileName);
 
-  if (data && typeof data === "object") {
-    for (const [key, value] of Object.entries(data)) {
-      if (value === undefined || value === null) continue;
-      formData.append(key, String(value));
-    }
-  }
-
-  const res = await ApiClient.instance.post("/upload/students/file", formData, {
-    params,
-    onUploadProgress,
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-
+  const res = await ApiClient.instance.post("/upload/students/file", formData);
+  console.log("StudentService - uploadStudentsExcel llamado con file:", res);
   const responseData = res;
+
   console.log("StudentService - uploadStudentsExcel:", responseData);
 
   // Validación suave del payload: devolvemos data o data.data.

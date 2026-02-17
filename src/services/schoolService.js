@@ -262,8 +262,73 @@ export async function getSedeAsignature(payload) {
 
   throw new Error("Respuesta inesperada de sedeasignature.");
 }
+
 /**
- * Obtiene datos de la sede.
+ * Actualiza una asignatura en una sede.
+ *
+ * Endpoint esperado: PATCH /assignment/:sedeId/asignature/:asignaturaId
+ * @param {string|number} sedeId - Identificador de la sede
+ * @param {string|number} asignaturaId - Identificador de la asignatura
+ * @param {Object} payload - Campos a actualizar
+ * @returns {Promise<Object>} Respuesta del servidor
+ */
+export async function updateAssignature(sedeId, asignaturaId, payload) {
+  if (!sedeId) throw new Error("sedeId es requerido para updateAssignature");
+  if (!asignaturaId)
+    throw new Error("asignaturaId es requerido para updateAssignature");
+  if (!payload || typeof payload !== "object")
+    throw new Error("payload debe ser un objeto.");
+  console.log(
+    "SchoolService - updateAssignature payload:",
+    payload,
+    sedeId,
+    asignaturaId,
+  );
+  const res = await ApiClient.instance.patch(
+    `/assignment/${sedeId}/asignature/${asignaturaId}`,
+    payload,
+  );
+
+  const data = res;
+  console.log("SchoolService - updateAssignature:", data);
+
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de updateAssignature.");
+}
+
+/**
+ * Actualiza un grado en una sede.
+ *
+ * Endpoint esperado: PATCH /grade/:idSede/grado/:gradoId
+ * @param {string|number} idSede - Identificador de la sede
+ * @param {string|number} gradoId - Identificador del grado
+ * @param {Object} payload - Campos a actualizar
+ * @returns {Promise<Object>} Respuesta del servidor
+ */
+export async function updateGrado(idSede, gradoId, payload) {
+  if (!idSede) throw new Error("idSede es requerido para updateGrado");
+  if (!gradoId) throw new Error("gradoId es requerido para updateGrado");
+  if (!payload || typeof payload !== "object")
+    throw new Error("payload debe ser un objeto.");
+
+  const res = await ApiClient.instance.patch(
+    `/grade/${idSede}/grado/${gradoId}`,
+    payload,
+  );
+
+  const data = res;
+  console.log("SchoolService - updateGrado:", data);
+
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de updateGrado.");
+}
+
+/**
+ * Obtiene datos de la sede."
  *
  * Endpoint esperado: POST /sede/data
  * @param {Object} payload - Datos para filtrar la información de la sede

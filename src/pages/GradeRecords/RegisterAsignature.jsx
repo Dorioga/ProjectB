@@ -7,7 +7,7 @@ import useData from "../../lib/hooks/useData";
 import { useNotify } from "../../lib/hooks/useNotify";
 import tourRegisterAsignature from "../../tour/tourRegisterAsignature";
 
-const RegisterAsignature = () => {
+const RegisterAsignature = ({ onSuccess }) => {
   const {
     registerAsignature,
     getGradeSede,
@@ -230,6 +230,11 @@ const RegisterAsignature = () => {
         sedeId: "",
         grades_scholar: [],
       });
+
+      // Llamar callback de éxito si existe
+      if (typeof onSuccess === "function") {
+        onSuccess();
+      }
     } catch (err) {
       console.error("Error al registrar asignatura:", err);
       notify.error(

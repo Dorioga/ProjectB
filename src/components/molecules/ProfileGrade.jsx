@@ -1,0 +1,229 @@
+import { useState, useEffect } from "react";
+import SimpleButton from "../atoms/SimpleButton";
+import JourneySelect from "../atoms/JourneySelect";
+
+const ProfileGrade = ({ data, onSave, initialEditing = false }) => {
+  const safeData = data || {};
+  const [isEditing, setIsEditing] = useState(Boolean(initialEditing));
+  const [isSaving, setIsSaving] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  const [form, setForm] = useState({
+    nombre_grado: safeData.nombre_grado || safeData.name_grade || "",
+    idWorkDay:
+      safeData.idWorkDay ??
+      safeData.id_workday ??
+      safeData.fk_workday ??
+      safeData.workday ??
+      "",
+    grupo: safeData.grupo || safeData.name_group || "",
+    estado: safeData.estado || "",
+  });
+
+  useEffect(() => {
+    setIsEditing(Boolean(initialEditing));
+  }, [initialEditing]);
+
+  useEffect(() => {
+    const d = data || {};
+    setForm({
+      nombre_grado: d.nombre_grado || d.name_grade || "",
+      idWorkDay: d.idWorkDay ?? d.id_workday ?? d.fk_workday ?? d.workday ?? "",
+      grupo: d.grupo || d.name_group || "",
+      estado: d.estado || "",
+    });
+    setErrors({});
+  }, [data]);
+
+  const validateForm = (showErrors = true) => {
+    const next = {};
+    if (!form.nombre_grado || !String(form.nombre_grado).trim()) {
+      next.nombre_grado = "El nombre del grado es obligatorio.";
+    }
+    if (!form.idWorkDay && form.idWorkDay !== 0) {
+      next.idWorkDay = "La jornada es obligatoria.";
+    }
+    if (!form.grupo || !String(form.grupo).trim()) {
+      next.grupo = "El grupo es obligatorio.";
+    }
+    if (!form.estado || !String(form.estado).trim()) {
+      next.estado = "El estado es obligatorio.";
+    }
+    if (showErrors) setErrors(next);
+    return Object.keys(next).length === 0;
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => {
+      if (!prev || !prev[name]) return prev;
+      const next = { ...prev };
+      delete next[name];
+      return next;
+    });
+  };
+
+  const handleToggleEdit = async () => {
+    if (isEditing) {
+      const ok = validateForm(true);
+      if (!ok) return;
+
+      if (typeof onSave === "function") {
+        setIsSaving(true);
+        try {
+          const payload = {
+            nombre_grado: String(form.nombre_grado || "").trim(),
+            idWorkDay: Number(form.idWorkDay),
+            grupo: String(form.grupo || "").trim(),
+            estado: form.estado || "",
+          };
+          await onSave(payload);
+          setIsEditing(false);
+          setErrors({});
+        } catch (err) {
+          console.error("ProfileGrade - save error:", err);
+          throw err;
+        } finally {
+          setIsSaving(false);
+        }
+      } else {
+        setIsEditing(false);
+      }
+    } else {
+      setIsEditing(true);
+    }
+  };
+
+  return (
+    <div className="w-full flex flex-col gap-4">
+      <div className="flex justify-end">
+        <div className="w-40">
+          <SimpleButton
+            onClick={handleToggleEdit}
+            msj={isSaving ? "Guardando..." : isEditing ? "Guardar" : "Editar"}
+            icon={isEditing ? "Save" : "Pencil"}
+            bg={isEditing ? "bg-accent" : "bg-secondary"}
+            text="text-surface"
+            disabled={isSaving}
+          />
+        </div>
+      </div>
+
+      {/* Datos de solo lectura (no editables) */}
+      {(safeData.id_grado || safeData.id) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-3 bg-gray-50 rounded border">
+          {(safeData.id_grado || safeData.id) && (
+            <div>
+              <span className="font-semibold text-sm text-gray-500">
+                ID Grado
+              </span>
+              <p className="mt-1 text-base">
+                {safeData.id_grado ?? safeData.id}
+              </p>
+            </div>
+          )}
+          {safeData.workday_name && (
+            <div>
+              <span className="font-semibold text-sm text-gray-500">
+                Jornada
+              </span>
+              <p className="mt-1 text-base">{safeData.workday_name}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Nombre del grado */}
+        <div>
+          <label className="font-semibold">Nombre del Grado</label>
+          <input
+            name="nombre_grado"
+            value={form.nombre_grado}
+            onChange={handleChange}
+            className={`w-full p-2 border rounded bg-surface ${
+              isEditing && !isSaving
+                ? "ring-2 ring-accent/30"
+                : "opacity-80 text-gray-700"
+            }`}
+            disabled={!isEditing || isSaving}
+            placeholder="Ej: 6°"
+          />
+          {errors.nombre_grado && (
+            <div className="text-sm text-red-600 mt-1">
+              {errors.nombre_grado}
+            </div>
+          )}
+        </div>
+
+        {/* Grupo */}
+        <div>
+          <label className="font-semibold">Grupo</label>
+          <input
+            name="grupo"
+            value={form.grupo}
+            onChange={handleChange}
+            className={`w-full p-2 border rounded bg-surface ${
+              isEditing && !isSaving
+                ? "ring-2 ring-accent/30"
+                : "opacity-80 text-gray-700"
+            }`}
+            disabled={!isEditing || isSaving}
+            placeholder="Ej: A"
+          />
+          {errors.grupo && (
+            <div className="text-sm text-red-600 mt-1">{errors.grupo}</div>
+          )}
+        </div>
+
+        {/* Jornada */}
+        <div>
+          <label className="font-semibold">Jornada</label>
+          <JourneySelect
+            name="idWorkDay"
+            value={String(form.idWorkDay ?? "")}
+            onChange={(e) =>
+              setForm((prev) => ({ ...prev, idWorkDay: e.target.value }))
+            }
+            className={`w-full p-2 border rounded bg-surface ${
+              isEditing && !isSaving
+                ? "ring-2 ring-accent/30"
+                : "opacity-80 text-gray-700"
+            }`}
+            disabled={!isEditing || isSaving}
+            includeAmbas={false}
+          />
+          {errors.idWorkDay && (
+            <div className="text-sm text-red-600 mt-1">{errors.idWorkDay}</div>
+          )}
+        </div>
+
+        {/* Estado */}
+        <div>
+          <label className="font-semibold">Estado</label>
+          <select
+            name="estado"
+            value={form.estado}
+            onChange={handleChange}
+            className={`w-full p-2 border rounded bg-surface ${
+              isEditing && !isSaving
+                ? "ring-2 ring-accent/30"
+                : "opacity-80 text-gray-700"
+            }`}
+            disabled={!isEditing || isSaving}
+          >
+            <option value="">Selecciona estado</option>
+            <option value="Activo">Activo</option>
+            <option value="Inactivo">Inactivo</option>
+          </select>
+          {errors.estado && (
+            <div className="text-sm text-red-600 mt-1">{errors.estado}</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ProfileGrade;

@@ -14,7 +14,7 @@ import tourRegisterTeacher from "../../tour/tourRegisterTeacher";
 
 const RegisterTeacher = ({ onSuccess }) => {
   const { sedes, reloadSedes } = useSchool();
-  const { registerTeacher, loadingTeachers: teacherLoading } = useTeacher();
+  const { addTeacher, loadingTeachers: teacherLoading } = useTeacher();
   const { institutionSedes } = useData();
   const { students, loading: studentsLoading, reload } = useStudent();
   const [formData, setFormData] = useState({
@@ -111,6 +111,7 @@ const RegisterTeacher = ({ onSuccess }) => {
   };
 
   const handleSubmit = async (e) => {
+    console.log("Iniciando proceso de registro de docente...");
     e.preventDefault();
     setSubmitOk(false);
 
@@ -167,7 +168,7 @@ const RegisterTeacher = ({ onSuccess }) => {
     console.log(payload);
 
     try {
-      const result = await registerTeacher(payload);
+      const result = await addTeacher(payload);
       console.log("Docente registrado exitosamente:", result);
       setSubmitOk(true);
 

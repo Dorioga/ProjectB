@@ -58,14 +58,6 @@ export function TeacherProvider({ children }) {
     }
   }, []);
 
-  // Mantener compatibilidad con el nombre antiguo `registerTeacher`
-  const registerTeacher = useCallback(
-    async (payload) => {
-      return addTeacher(payload);
-    },
-    [addTeacher],
-  );
-
   const editTeacher = useCallback(async (teacherId, personId, payload) => {
     setLoadingTeachers(true);
     setErrorTeachers(null);

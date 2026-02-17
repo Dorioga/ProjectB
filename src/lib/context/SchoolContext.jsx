@@ -140,9 +140,9 @@ export function SchoolProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
+      console.log("SchoolContext - addSchool payload:", payload);
       const created = await schoolService.createSchool(payload);
       setSchools((s) => [created, ...s]);
-
       // Emitir notificación de éxito
       eventBus.emit("¡Institución registrada exitosamente!", "success");
 
@@ -274,6 +274,22 @@ export function SchoolProvider({ children }) {
     }
   }, []);
 
+  const updateGrado = useCallback(async (idSede, gradoId, payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await schoolService.updateGrado(idSede, gradoId, payload);
+      // Emitir notificación de éxito
+      eventBus.emit("¡Grado actualizado exitosamente!", "success");
+      return result;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const registerAsignature = useCallback(async (payload) => {
     setLoading(true);
     setError(null);
@@ -307,6 +323,29 @@ export function SchoolProvider({ children }) {
       setLoading(false);
     }
   }, []);
+
+  const updateAssignature = useCallback(
+    async (sedeId, asignaturaId, payload) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await schoolService.updateAssignature(
+          sedeId,
+          asignaturaId,
+          payload,
+        );
+        // Emitir notificación de éxito
+        eventBus.emit("¡Asignatura actualizada exitosamente!", "success");
+        return result;
+      } catch (err) {
+        setError(err);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   const getDataSede = useCallback(async (payload) => {
     setLoading(true);
@@ -451,9 +490,11 @@ export function SchoolProvider({ children }) {
       updateInstitution,
       removeSchool,
       registerGrade,
+      updateGrado,
       getGradeSede,
       registerAsignature,
       getSedeAsignature,
+      updateAssignature,
       getDataSede,
       getDataSchool,
       updateSede,
@@ -491,9 +532,11 @@ export function SchoolProvider({ children }) {
       updateInstitution,
       removeSchool,
       registerGrade,
+      updateGrado,
       getGradeSede,
       registerAsignature,
       getSedeAsignature,
+      updateAssignature,
       getDataSede,
       getDataSchool,
       updateSede,

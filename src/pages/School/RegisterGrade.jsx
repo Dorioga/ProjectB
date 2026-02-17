@@ -6,7 +6,7 @@ import useSchool from "../../lib/hooks/useSchool";
 import useData from "../../lib/hooks/useData";
 import tourRegisterGrade from "../../tour/tourRegisterGrade";
 
-const RegisterGrade = () => {
+const RegisterGrade = ({ onSuccess }) => {
   const { journeys, loadingJourneys, registerGrade, loading } = useSchool();
   const { institutionSedes } = useData();
 
@@ -150,6 +150,8 @@ const RegisterGrade = () => {
     // Llamar al servicio para registrar el grado
     try {
       await registerGrade(dataToSubmit);
+
+      if (typeof onSuccess === "function") onSuccess();
 
       // Limpiar formulario después de éxito
       setTimeout(() => {
