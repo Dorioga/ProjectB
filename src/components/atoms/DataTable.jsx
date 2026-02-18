@@ -22,6 +22,8 @@ const DataTable = ({
   showDownloadButtons = true,
   // optional: function (row) => string | string
   rowClassName,
+  // optional default page size for pagination (defaults to 20)
+  pageSize = 20,
 }) => {
   const [sorting, setSorting] = useState([]);
   const [globalFilter, setGlobalFilter] = useState("");
@@ -69,7 +71,7 @@ const DataTable = ({
     },
     initialState: {
       pagination: {
-        pageSize: 20, // <-- AQUÍ: establece la cantidad por defecto
+        pageSize: Number(pageSize) || 20, // default page size (overridable via prop)
       },
     },
     onSortingChange: setSorting,

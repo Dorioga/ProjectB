@@ -161,10 +161,12 @@ const RegisterStudentRecords = () => {
       idSede &&
       nameSede
     ) {
-      return [{ id: idSede, name: nameSede }];
+      return [
+        { id: idSede, name: nameSede, fk_institucion: idInstitution ?? null },
+      ];
     }
     return null;
-  }, [rol, idSede, nameSede, teacherSedes]);
+  }, [rol, idSede, nameSede, teacherSedes, idInstitution]);
 
   const canShowStudents = Boolean(
     sedeSelected &&
@@ -175,6 +177,18 @@ const RegisterStudentRecords = () => {
     journey &&
     asignatureCode,
   );
+
+  // Derivar fk_institucion igual que en ManageLogro: preferir fk de la sede del docente, si existe
+  const fkInstitucion = useMemo(() => {
+    if (
+      (String(rol).toLowerCase() === "docente" || String(rol) === "7") &&
+      Array.isArray(teacherSedeData) &&
+      teacherSedeData.length > 0
+    ) {
+      return teacherSedeData[0]?.fk_institucion ?? null;
+    }
+    return idInstitution ? Number(idInstitution) : null;
+  }, [rol, teacherSedeData, idInstitution]);
 
   // Si existe idDocente, cargar sedes desde el servicio y mapear a {id, name}
   // Mejoras: esperar a que haya token y evitar llamadas duplicadas (deduplicación por idDocente)
@@ -226,6 +240,8 @@ const RegisterStudentRecords = () => {
             id: String(s?.id ?? s?.id_sede ?? "").trim(),
             name: String(s?.name ?? s?.nombre ?? s?.nombre_sede ?? "").trim(),
             fk_workday: s?.fk_workday ?? s?.fkWorkday ?? undefined,
+            fk_institucion:
+              s?.fk_institucion ?? s?.fkInstitution ?? s?.id_institucion ?? undefined,
           }));
         return mapped;
       })();
@@ -710,7 +726,7 @@ const RegisterStudentRecords = () => {
 
       try {
         const payload = {
-          ...(idInstitution ? { fk_institucion: Number(idInstitution) } : {}),
+          ...(fkInstitucion ? { fk_institucion: Number(fkInstitucion) } : {}),
           ...(asignatureSelected
             ? { fk_asignatura: Number(asignatureSelected) }
             : {}),
@@ -737,7 +753,7 @@ const RegisterStudentRecords = () => {
     },
     [
       getAllLogros,
-      idInstitution,
+      fkInstitucion,
       asignatureSelected,
       gradeSelected,
       periodSelected,
@@ -849,6 +865,7 @@ const RegisterStudentRecords = () => {
         const insertPayload = normalizeNumericInPayload({
           fk_grado: Number(gradeSelected),
           fk_sede: Number(sedeSelected),
+          ...(fkInstitucion ? { fk_institucion: Number(fkInstitucion) } : {}),
           fk_beca: Number(fk_beca),
           note_student: insertArray,
           ...(recoveryNote && String(recoveryNote).trim() !== ""
@@ -862,6 +879,7 @@ const RegisterStudentRecords = () => {
         const updatePayload = normalizeNumericInPayload({
           fk_grado: Number(gradeSelected),
           fk_sede: Number(sedeSelected),
+          ...(fkInstitucion ? { fk_institucion: Number(fkInstitucion) } : {}),
           fk_beca: Number(fk_beca),
           note_student: updateArray,
           ...(recoveryNote && String(recoveryNote).trim() !== ""
@@ -1231,7 +1249,7 @@ const RegisterStudentRecords = () => {
   }, [filteredStudents]);
 
   return (
-    <div className="border p-6 rounded bg-bg h-full gap-4 flex flex-col">
+    <div className=" p-6  h-full gap-4 flex flex-col">
       <h2 className="font-bold text-2xl">Registrar Notas Estudiantes</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -1416,6 +1434,7 @@ const RegisterStudentRecords = () => {
                 columns={tableColumns}
                 fileName="registro_notas_estudiantes"
                 showDownloadButtons={false}
+                pageSize={50}
               />
             </div>
 
