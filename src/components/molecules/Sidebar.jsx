@@ -83,7 +83,7 @@ const Sidebar = () => {
             })}
 
           {/* Botón de prueba: Generar Boletín */}
-          <button
+          {/* <button
             type="button"
             className="w-full flex flex-row px-4 py-2 items-center gap-2 hover:bg-secondary rounded"
             onClick={async () => {
@@ -101,7 +101,7 @@ const Sidebar = () => {
                 Boletín (PDF)
               </li>
             ) : null}
-          </button>
+          </button> */}
 
           {/* Manage Teacher */}
           {/* <Link

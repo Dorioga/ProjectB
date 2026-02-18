@@ -64,7 +64,7 @@ const Reports = () => {
   };
 
   return (
-    <div className="border p-6 rounded bg-bg h-full gap-6 flex flex-col">
+    <div className=" p-6  h-full gap-4 flex flex-col">
       <div>
         <h2 className="text-xl font-bold mb-4">Generador de reportes</h2>
         <div className="max-w-sm">

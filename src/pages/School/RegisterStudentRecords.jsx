@@ -43,9 +43,11 @@ const RegisterStudentRecords = () => {
     getStudentNotes,
     saveAssignmentNotes,
     updateAssignmentNote,
+    getLogroType,
+    getAllLogros,
   } = useTeacher();
   const { institutionSedes } = useData();
-  const { idSede, nameSede, rol, idDocente, token } = useAuth();
+  const { idSede, nameSede, rol, idDocente, token, idInstitution } = useAuth();
   const notify = useNotify();
 
   // Detectar si el usuario es docente
@@ -75,6 +77,14 @@ const RegisterStudentRecords = () => {
   const [commentsById, setCommentsById] = useState({});
   const [recoveryNotesById, setRecoveryNotesById] = useState({});
 
+  // --- Logros (para comentarios): tipos y lista filtrada por tipo (por fila) ---
+  const [tipoLogroOptions, setTipoLogroOptions] = useState([]);
+  const [loadingTipoLogroOptions, setLoadingTipoLogroOptions] = useState(false);
+  const [tipoByStudent, setTipoByStudent] = useState({}); // { studentKey: tipoId }
+  const [logrosOptionsByStudent, setLogrosOptionsByStudent] = useState({}); // { studentKey: [ {id, descripcion} ] }
+  const [loadingLogrosByStudent, setLoadingLogrosByStudent] = useState({});
+  const [selectedLogroByStudent, setSelectedLogroByStudent] = useState({});
+
   // === Refs para estado mutable en celdas (evitar pérdida de foco por recreación de columnas) ===
   const recordValuesByStudentRef = useRef(recordValuesByStudent);
   const commentsByIdRef = useRef(commentsById);
@@ -86,6 +96,12 @@ const RegisterStudentRecords = () => {
   const handleAddRef = useRef(null);
   const handleEditRef = useRef(null);
 
+  // Logros refs (para selects por fila)
+  const tipoByStudentRef = useRef(tipoByStudent);
+  const logrosOptionsByStudentRef = useRef(logrosOptionsByStudent);
+  const loadingLogrosByStudentRef = useRef(loadingLogrosByStudent);
+  const selectedLogroByStudentRef = useRef(selectedLogroByStudent);
+
   // Sincronizar refs en cada render
   recordValuesByStudentRef.current = recordValuesByStudent;
   commentsByIdRef.current = commentsById;
@@ -94,6 +110,12 @@ const RegisterStudentRecords = () => {
   rowLoadingByIdRef.current = rowLoadingById;
   rowSavedByIdRef.current = rowSavedById;
   loadingDataRef.current = loadingData;
+
+  // Logros refs
+  tipoByStudentRef.current = tipoByStudent;
+  logrosOptionsByStudentRef.current = logrosOptionsByStudent;
+  loadingLogrosByStudentRef.current = loadingLogrosByStudent;
+  selectedLogroByStudentRef.current = selectedLogroByStudent;
 
   // SedEs del docente (obtenidas vía getTeacherSede)
   const [teacherSedes, setTeacherSedes] = useState([]);
@@ -285,6 +307,29 @@ const RegisterStudentRecords = () => {
   useEffect(() => {
     setAsignatureCode(asignatureSelected);
   }, [asignatureSelected]);
+
+  // --- Cargar tipos de logro (para selects de comentarios) ---
+  useEffect(() => {
+    let mounted = true;
+    const loadTipos = async () => {
+      setLoadingTipoLogroOptions(true);
+      try {
+        if (!getLogroType) return;
+        const res = await getLogroType();
+        const data = Array.isArray(res) ? res : (res?.data ?? []);
+        if (mounted) setTipoLogroOptions(data);
+      } catch (err) {
+        console.error("RegisterStudentRecords - getLogroType error:", err);
+        if (mounted) setTipoLogroOptions([]);
+      } finally {
+        if (mounted) setLoadingTipoLogroOptions(false);
+      }
+    };
+    loadTipos();
+    return () => {
+      mounted = false;
+    };
+  }, [getLogroType]);
 
   const reloadOnceRef = useRef(false);
 
@@ -651,6 +696,63 @@ const RegisterStudentRecords = () => {
     }));
   }, []);
 
+  // --- Handlers para selects de logros en la columna "Comentarios" ---
+  const handleTipoSelectForStudent = useCallback(
+    async (studentKey, tipoId) => {
+      setTipoByStudent((prev) => ({ ...prev, [studentKey]: tipoId }));
+      // limpiar logros y comentario previos
+      setLogrosOptionsByStudent((prev) => ({ ...prev, [studentKey]: [] }));
+      setSelectedLogroByStudent((prev) => ({ ...prev, [studentKey]: "" }));
+      setCommentsById((prev) => ({ ...prev, [studentKey]: "" }));
+
+      if (!tipoId) return;
+      setLoadingLogrosByStudent((prev) => ({ ...prev, [studentKey]: true }));
+
+      try {
+        const payload = {
+          ...(idInstitution ? { fk_institucion: Number(idInstitution) } : {}),
+          ...(asignatureSelected
+            ? { fk_asignatura: Number(asignatureSelected) }
+            : {}),
+          ...(gradeSelected ? { fk_grado: Number(gradeSelected) } : {}),
+          ...(periodSelected ? { fk_periodo: Number(periodSelected) } : {}),
+          fk_tipo_logro: Number(tipoId),
+        };
+        const res = await getAllLogros(payload);
+        const list = Array.isArray(res) ? res : (res?.data ?? []);
+        const mapped = (Array.isArray(list) ? list : []).map((l) => ({
+          id: l.id_logro ?? l.id,
+          descripcion: l.descripcion ?? l.description ?? l.nombre ?? "",
+        }));
+        setLogrosOptionsByStudent((prev) => ({
+          ...prev,
+          [studentKey]: mapped,
+        }));
+      } catch (err) {
+        console.error("RegisterStudentRecords - getAllLogros error:", err);
+        notify.error("No fue posible cargar logros para el tipo seleccionado.");
+      } finally {
+        setLoadingLogrosByStudent((prev) => ({ ...prev, [studentKey]: false }));
+      }
+    },
+    [
+      getAllLogros,
+      idInstitution,
+      asignatureSelected,
+      gradeSelected,
+      periodSelected,
+      notify,
+    ],
+  );
+
+  const handleLogroSelectForStudent = useCallback((studentKey, logroId) => {
+    const options = logrosOptionsByStudentRef.current?.[studentKey] ?? [];
+    const chosen = options.find((o) => String(o.id) === String(logroId));
+    const text = chosen?.descripcion ?? "";
+    setSelectedLogroByStudent((prev) => ({ ...prev, [studentKey]: logroId }));
+    setCommentsById((prev) => ({ ...prev, [studentKey]: text }));
+  }, []);
+
   /**
    * Guarda notas para UNA sola fila (estudiante).
    * - Construye payload con fk_grado, fk_sede, fk_beca y note_student[]
@@ -667,8 +769,11 @@ const RegisterStudentRecords = () => {
       finalInfo,
       values,
     });
-    const noteStudentArray = [];
-    const updateNoteStudentArray = [];
+    // Separar notas en dos grupos según si el servidor ya tiene un registro (meta) o no:
+    // - insertArray: notas SIN valor del servidor → invocar saveAssignmentNotes (INSERT)
+    // - updateArray: notas CON valor del servidor → invocar updateAssignmentNote (UPDATE)
+    const insertArray = [];
+    const updateArray = [];
 
     recordsList.forEach((record) => {
       const recordName = String(
@@ -680,60 +785,50 @@ const RegisterStudentRecords = () => {
         : `name:${recordName}`;
       const noteValue = values?.[recordKey] ?? values?.[recordName];
 
-      if (noteValue && String(noteValue).trim() !== "") {
-        const percent = Number(record?.porcentaje ?? record?.porcentual) || 0;
-        const noteNum = Number(noteValue);
-        let notePercentageFinal = round2(noteNum * (percent / 100));
-        // Si la fila está completa, note_percentage_final debe tomar el valor total final
-        if (finalInfo.isComplete) {
-          notePercentageFinal = finalInfo.final;
-        }
+      if (!noteValue || String(noteValue).trim() === "") return;
 
-        const item = {
-          fk_student: Number(
-            student?.id_estudiante ?? student?.id ?? student?.id_student,
-          ),
-          fk_note: record?.id_nota ? Number(record.id_nota) : undefined,
-          value_note: noteNum,
-          goal_student: comment || "",
-          // Enviar la contribución de esta nota según su porcentaje de la columna
-          // o el valor final si la fila está completa
-          note_percentage_final: notePercentageFinal,
-        };
+      const percent = Number(record?.porcentaje ?? record?.porcentual) || 0;
+      const noteNum = Number(noteValue);
+      let notePercentageFinal = round2(noteNum * (percent / 100));
+      if (finalInfo.isComplete) {
+        notePercentageFinal = finalInfo.final;
+      }
 
-        // Si la fila está completa, incluir final_note (suma ponderada total)
-        if (finalInfo.isComplete) {
-          item.final_note = finalInfo.final;
-        }
+      const fk_student = Number(
+        student?.id_estudiante ?? student?.id ?? student?.id_student,
+      );
+      const fk_note = record?.id_nota ? Number(record.id_nota) : undefined;
 
-        noteStudentArray.push(item);
+      // ¿El servidor ya tenía un registro para esta nota?
+      const meta = noteMetaByStudent?.[studentKey]?.[recordKey];
+      const hasServerRecord = Boolean(meta?.id_estudiante_nota);
 
-        // --- Construir item para update (/assignment_note) con campos solicitados ---
-        const meta = noteMetaByStudent?.[studentKey]?.[recordKey];
+      if (hasServerRecord) {
+        // UPDATE: nota que ya existe en el servidor
         const updateItem = {
-          // Añadir id_estudiante_nota si existe
-          ...(meta && meta.id_estudiante_nota
-            ? { id_estudiante_nota: meta.id_estudiante_nota }
-            : {}),
-          fk_student: Number(
-            student?.id_estudiante ?? student?.id ?? student?.id_student,
-          ),
-          fk_note: record?.id_nota ? Number(record.id_nota) : undefined,
+          id_estudiante_nota: meta.id_estudiante_nota,
+          fk_student,
+          fk_note,
           value_note: noteNum,
-          // nota_periodo_porcentual: contribución de esta nota en el periodo
           nota_periodo_porcentual: notePercentageFinal,
         };
-
-        // Si la fila está completa, incluir nota_final
-        if (finalInfo.isComplete) {
-          updateItem.nota_final = finalInfo.final;
-        }
-
-        updateNoteStudentArray.push(updateItem);
+        if (finalInfo.isComplete) updateItem.nota_final = finalInfo.final;
+        updateArray.push(updateItem);
+      } else {
+        // INSERT: nota nueva que aún no tiene registro en el servidor
+        const insertItem = {
+          fk_student,
+          fk_note,
+          value_note: noteNum,
+          goal_student: comment || "",
+          note_percentage_final: notePercentageFinal,
+        };
+        if (finalInfo.isComplete) insertItem.final_note = finalInfo.final;
+        insertArray.push(insertItem);
       }
     });
 
-    if (noteStudentArray.length === 0) {
+    if (insertArray.length === 0 && updateArray.length === 0) {
       notify.info("No hay notas para guardar en esta fila.");
       return;
     }
@@ -744,82 +839,62 @@ const RegisterStudentRecords = () => {
       ? (becaIdMap[student.state_beca] ?? 1)
       : (student?.fk_beca ?? 1);
 
-    const payload = {
-      fk_grado: Number(gradeSelected),
-      fk_sede: Number(sedeSelected),
-      fk_beca: Number(fk_beca),
-      note_student: noteStudentArray,
-    };
-
-    // Agregar nota de recuperación si existe
-    if (recoveryNote && String(recoveryNote).trim() !== "") {
-      payload.recovery_note = Number(recoveryNote);
-    }
-
-    const isUpdateMode = Boolean(
-      rowInitialValuesById?.[studentKey] &&
-      Object.keys(rowInitialValuesById[studentKey] || {}).length > 0,
-    );
-
     try {
-      // Indicador por fila en lugar de global para este guardado
       setRowLoadingById((prev) => ({ ...prev, [studentKey]: true }));
 
-      if (isUpdateMode) {
-        // Construir payload con esquema solicitado para update (/assignment_note)
-        const payloadUpdate = {
+      // Ejecutar INSERT y UPDATE en paralelo solo si cada array tiene elementos
+      const ops = [];
+
+      if (insertArray.length > 0) {
+        const insertPayload = normalizeNumericInPayload({
           fk_grado: Number(gradeSelected),
           fk_sede: Number(sedeSelected),
           fk_beca: Number(fk_beca),
-          note_student: updateNoteStudentArray,
-        };
-
-        // Normalizar numéricos (coma -> punto) antes de enviar
-        const normalizedUpdate = normalizeNumericInPayload(payloadUpdate);
-        await updateAssignmentNote(normalizedUpdate);
-
-        // Recargar datos de la tabla
-        await loadStudentsAndNotes();
-
-        // Actualizar snapshot inicial para permitir revertir (ya recargado pero mantenemos coherencia local)
-        setRowInitialValuesById((prev) => ({
-          ...prev,
-          [studentKey]: { ...(values || {}) },
-        }));
-        setRowEditById((prev) => ({ ...prev, [studentKey]: false }));
-
-        setRowSavedById((prev) => ({ ...prev, [studentKey]: true }));
-        notify.success(`Notas actualizadas para ${getStudentName(student)}`);
-
-        // Quitar el check luego de 3s
-        setTimeout(() => {
-          setRowSavedById((prev) => ({ ...prev, [studentKey]: false }));
-        }, 3000);
-      } else {
-        // Normalizar numéricos (coma -> punto) antes de enviar
-        const normalizedPayload = normalizeNumericInPayload(payload);
-        await saveAssignmentNotes(normalizedPayload);
-
-        // Recargar datos de la tabla
-        await loadStudentsAndNotes();
-
-        // Marcar fila como guardada y actualizar snapshot inicial para permitir revertir si se edita y cancela
-        setRowSavedById((prev) => ({ ...prev, [studentKey]: true }));
-        setRowInitialValuesById((prev) => ({
-          ...prev,
-          [studentKey]: { ...(values || {}) },
-        }));
-        setRowEditById((prev) => ({ ...prev, [studentKey]: false }));
-
-        notify.success(
-          `Notas guardadas para ${getStudentName(student)}${action ? ` (${action})` : ""}`,
-        );
-
-        // Quitar el check luego de 3s
-        setTimeout(() => {
-          setRowSavedById((prev) => ({ ...prev, [studentKey]: false }));
-        }, 3000);
+          note_student: insertArray,
+          ...(recoveryNote && String(recoveryNote).trim() !== ""
+            ? { recovery_note: Number(recoveryNote) }
+            : {}),
+        });
+        ops.push(saveAssignmentNotes(insertPayload));
       }
+
+      if (updateArray.length > 0) {
+        const updatePayload = normalizeNumericInPayload({
+          fk_grado: Number(gradeSelected),
+          fk_sede: Number(sedeSelected),
+          fk_beca: Number(fk_beca),
+          note_student: updateArray,
+          ...(recoveryNote && String(recoveryNote).trim() !== ""
+            ? { recovery_note: Number(recoveryNote) }
+            : {}),
+        });
+        ops.push(updateAssignmentNote(updatePayload));
+      }
+
+      await Promise.all(ops);
+
+      // Recargar datos de la tabla
+      await loadStudentsAndNotes();
+
+      setRowInitialValuesById((prev) => ({
+        ...prev,
+        [studentKey]: { ...(values || {}) },
+      }));
+      setRowEditById((prev) => ({ ...prev, [studentKey]: false }));
+      setRowSavedById((prev) => ({ ...prev, [studentKey]: true }));
+
+      const modeLabel =
+        insertArray.length > 0 && updateArray.length > 0
+          ? `${insertArray.length} registradas, ${updateArray.length} actualizadas`
+          : insertArray.length > 0
+            ? "registradas"
+            : "actualizadas";
+
+      notify.success(`Notas ${modeLabel} para ${getStudentName(student)}`);
+
+      setTimeout(() => {
+        setRowSavedById((prev) => ({ ...prev, [studentKey]: false }));
+      }, 3000);
     } catch (error) {
       console.error("Error guardando notas por fila:", error);
       notify.error("Error al guardar notas");
@@ -1011,7 +1086,7 @@ const RegisterStudentRecords = () => {
       },
     });
 
-    // Columna de comentarios
+    // Columna de comentarios (ahora: tipo de logro + logro filtrado)
     columns.push({
       accessorKey: "comments",
       header: (
@@ -1022,17 +1097,66 @@ const RegisterStudentRecords = () => {
       cell: ({ row }) => {
         const student = row.original;
         const studentKey = getStudentKey(student);
+
         const comment = commentsByIdRef.current?.[studentKey] ?? "";
+        const tipoValue = tipoByStudentRef.current?.[studentKey] ?? "";
+        const logroOptions =
+          logrosOptionsByStudentRef.current?.[studentKey] ?? [];
+        const selectedLogro =
+          selectedLogroByStudentRef.current?.[studentKey] ?? "";
+        const loadingLogros = Boolean(
+          loadingLogrosByStudentRef.current?.[studentKey],
+        );
 
         return (
-          <div className="p-2">
+          <div className="p-2 flex flex-col gap-2">
             <select
-              value={comment}
-              onChange={(e) => handleCommentChange(studentKey, e.target.value)}
+              value={tipoValue}
+              onChange={(e) =>
+                handleTipoSelectForStudent(studentKey, e.target.value)
+              }
               className="w-full min-w-[200px] p-2 border rounded bg-surface text-sm"
-              disabled={loadingDataRef.current}
+              disabled={loadingDataRef.current || loadingTipoLogroOptions}
             >
-              <option value="">-- Selecciona --</option>
+              <option value="">
+                {loadingTipoLogroOptions
+                  ? "Cargando..."
+                  : "-- Tipo de logro --"}
+              </option>
+              {Array.isArray(tipoLogroOptions) &&
+                tipoLogroOptions.map((t) => (
+                  <option
+                    key={t.id_type_logro ?? t.id}
+                    value={t.id_type_logro ?? t.id}
+                  >
+                    {t.nombre_tipo_logro || t.nombre || t.name}
+                  </option>
+                ))}
+            </select>
+
+            <select
+              value={selectedLogro}
+              onChange={(e) =>
+                handleLogroSelectForStudent(studentKey, e.target.value)
+              }
+              className="w-full min-w-[200px] p-2 border rounded bg-surface text-sm"
+              disabled={
+                loadingDataRef.current ||
+                loadingLogros ||
+                !(Array.isArray(logroOptions) && logroOptions.length > 0)
+              }
+            >
+              <option value="">
+                {loadingLogros
+                  ? "Cargando logros..."
+                  : "-- Selecciona logro --"}
+              </option>
+              {Array.isArray(logroOptions) &&
+                logroOptions.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.descripcion}
+                  </option>
+                ))}
             </select>
           </div>
         );

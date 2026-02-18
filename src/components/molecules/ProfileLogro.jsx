@@ -11,10 +11,9 @@ import useAuth from "../../lib/hooks/useAuth";
 import useData from "../../lib/hooks/useData";
 import useSchool from "../../lib/hooks/useSchool";
 
-const ProfileLogro = ({ onSubmit, onClose }) => {
+const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave }) => {
   const { idInstitution, idSede, nameSede, idDocente, token, rol } = useAuth();
   const { institutionSedes, loadInstitutionSedes } = useData();
-  console.log("ProfileLogro - idInstitution:", institutionSedes);
   const {
     getLogroType,
     getTeacherSede,
@@ -23,6 +22,8 @@ const ProfileLogro = ({ onSubmit, onClose }) => {
     getTeacherSedes,
   } = useTeacher();
   const { getGradeSede } = useSchool();
+
+  // Si se pasó initialValues, inicializar campos con los valores de la fila (modo edición)
 
   // Select states (replicando la lógica de RegisterStudentRecords)
   const [sedeSelected, setSedeSelected] = useState("");
@@ -326,6 +327,35 @@ const ProfileLogro = ({ onSubmit, onClose }) => {
     };
   }, [getLogroType]);
 
+  // Si vienen valores iniciales (editar), poblar los campos del formulario
+  useEffect(() => {
+    if (!initialValues) return;
+    try {
+      const iv = initialValues || {};
+      if (iv.fk_sede || iv.id_sede || iv.idSede) {
+        setSedeSelected(String(iv.fk_sede ?? iv.id_sede ?? iv.idSede ?? ""));
+      }
+      if (iv.fk_grado || iv.id_grado || iv.idGrade) {
+        setGrade(String(iv.fk_grado ?? iv.id_grado ?? iv.idGrade ?? ""));
+      }
+      if (iv.fk_asignatura || iv.id_asignatura || iv.idAsignatura) {
+        setAsignature(
+          String(iv.fk_asignatura ?? iv.id_asignatura ?? iv.idAsignatura ?? ""),
+        );
+      }
+      if (iv.fk_periodo || iv.id_periodo || iv.periodo) {
+        setPeriod(String(iv.fk_periodo ?? iv.id_periodo ?? iv.periodo ?? ""));
+      }
+      if (iv.fk_tipo_logro || iv.fkTipoLogro) {
+        setTipoLogro(String(iv.fk_tipo_logro ?? iv.fkTipoLogro ?? ""));
+      }
+      if (iv.descripcion) setDescripcion(String(iv.descripcion));
+    } catch (err) {
+      // ignore malformed initialValues
+      console.warn("ProfileLogro - invalid initialValues:", err);
+    }
+  }, [initialValues]);
+
   const handleSearch = async () => {
     if (!descripcionIsValid) {
       notify.error("La descripción es obligatoria.");
@@ -333,7 +363,7 @@ const ProfileLogro = ({ onSubmit, onClose }) => {
     }
 
     const teacherFkInstitution =
-      isDocente && Array.isArray(teacherSedeData) && teacherSedeData.length > 0
+      isDocente && Array.isArray(teacherSedeData) && teacherSedes.length > 0
         ? (teacherSedeData[0]?.fk_institucion ?? null)
         : null;
 
@@ -350,6 +380,33 @@ const ProfileLogro = ({ onSubmit, onClose }) => {
           ? Number(idInstitution)
           : null,
     };
+
+    // Si estamos en modo edición (initialValues) y nos pasaron onSave, llamar a onSave
+    if (initialValues && typeof onSave === "function") {
+      try {
+        const logroId =
+          initialValues.id_logro ?? initialValues.id ?? initialValues.idLogro;
+        const institucionFk =
+          initialValues.fk_institucion ??
+          initialValues.fk_institute ??
+          idInstitution;
+
+        // payload para update: { descripcion, estado, fk_tipo_logro }
+        const updatePayload = {
+          descripcion: descripcion.trim(),
+          estado:
+            initialValues.estado_logro ?? initialValues.estado ?? "Activo",
+          fk_tipo_logro: tipoLogro ? Number(tipoLogro) : null,
+        };
+
+        await onSave(logroId, institucionFk, updatePayload);
+        if (onClose) onClose();
+      } catch (err) {
+        notify.error(err?.message || "Error al actualizar logro");
+        throw err;
+      }
+      return;
+    }
 
     if (onSubmit) await onSubmit(payload);
   };
@@ -522,7 +579,7 @@ const ProfileLogro = ({ onSubmit, onClose }) => {
           text="text-gray-700"
         />
         <SimpleButton
-          msj="Agregar logros"
+          msj={initialValues ? "Guardar cambios" : "Agregar logros"}
           onClick={handleSearch}
           bg="bg-primary"
           text="text-surface"

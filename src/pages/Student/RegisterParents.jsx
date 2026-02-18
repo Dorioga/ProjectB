@@ -48,7 +48,7 @@ const RegisterParents = () => {
   };
 
   return (
-    <div className="border p-6 rounded bg-bg h-full gap-4 flex flex-col">
+    <div className=" p-6  h-full gap-4 flex flex-col">
       <h2 className="text-xl font-semibold mb-4">Registrar acudiente</h2>
       <form
         onSubmit={handleSubmit}

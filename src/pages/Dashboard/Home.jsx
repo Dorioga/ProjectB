@@ -70,7 +70,7 @@ const DashHome = () => {
   }, [filteredStudents]);
 
   return (
-    <div className="h-full gap-6 flex flex-col text-text overflow-auto">
+    <div className=" p-6  h-full gap-4 flex flex-col">
       {/* --- Encabezado con selector de jornada --- */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Panel principal</h1>

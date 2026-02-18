@@ -265,6 +265,7 @@ export async function updateAssignmentNote(payload) {
   if (!payload || typeof payload !== "object") {
     throw new Error("payload debe ser un objeto.");
   }
+  console.log("teacherService - updateAssignmentNote payload:", payload);
 
   try {
     const res = await ApiClient.instance.patch("/assignment_note", payload);
@@ -317,6 +318,33 @@ export async function getAllLogros(payload) {
     return data;
   } catch (error) {
     console.error("teacherService - getAllLogros error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Actualiza un logro existente
+ * Endpoint esperado: PATCH /logro/:logroId/institucion/:institucionFk
+ * @param {number|string} logroId - id del logro a actualizar
+ * @param {number|string} institucionFk - fk de la institución
+ * @param {Object} payload - { descripcion, estado, fk_tipo_logro }
+ */
+export async function updateLogro(logroId, institucionFk, payload) {
+  if (!logroId) throw new Error("updateLogro requiere logroId");
+  if (!institucionFk) throw new Error("updateLogro requiere institucionFk");
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto para updateLogro.");
+  }
+
+  try {
+    const res = await ApiClient.instance.patch(
+      `/logro/${logroId}/institucion/${institucionFk}`,
+      payload,
+    );
+    const data = res;
+    return data;
+  } catch (error) {
+    console.error("teacherService - updateLogro error:", error);
     throw error;
   }
 }

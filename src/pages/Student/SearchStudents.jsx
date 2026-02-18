@@ -179,7 +179,7 @@ const SearchStudents = () => {
   };
 
   return (
-    <div className="border p-6 rounded bg-bg h-full gap-4 flex flex-col">
+    <div className=" p-6  h-full gap-4 flex flex-col">
       <h1 className="text-2xl font-bold mb-4">Buscar estudiantes</h1>
       <div className="flex flex-row items-center justify-start gap-4 w-1/2">
         <h2 className="text-lg font-semibold">Cargar datos de archivos</h2>

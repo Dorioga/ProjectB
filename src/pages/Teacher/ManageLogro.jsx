@@ -22,6 +22,7 @@ const ManageLogro = () => {
     getTeacherSede,
     getTeacherGrades,
     getTeacherSubjects,
+    updateLogro,
   } = useTeacher();
   const { idInstitution, idSede, nameSede, idDocente, token, rol } = useAuth();
   const { institutionSedes, loadInstitutionSedes } = useData();
@@ -39,6 +40,8 @@ const ManageLogro = () => {
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [selectedLogro, setSelectedLogro] = useState(null);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -274,6 +277,26 @@ const ManageLogro = () => {
         return new Date(d).toLocaleDateString("es-CO");
       },
     },
+    {
+      id: "actions",
+      header: "Acciones",
+      cell: ({ row }) => (
+        <div className="w-full h-full flex items-stretch gap-2 p-2">
+          <SimpleButton
+            className="h-full"
+            onClick={() => {
+              setSelectedLogro(row.original);
+              setIsEditOpen(true);
+            }}
+            icon="Pencil"
+            bg="bg-secondary"
+            text="text-surface"
+            noRounded={false}
+            msjtooltip="Editar logro"
+          />
+        </div>
+      ),
+    },
   ];
 
   return (
@@ -454,6 +477,72 @@ const ManageLogro = () => {
         <ProfileLogro
           onClose={() => setIsModalOpen(false)}
           onSubmit={handleSearch}
+        />
+      </Modal>
+
+      {/* Modal editar logro (abre ProfileLogro con datos de la fila) */}
+      <Modal
+        isOpen={isEditOpen}
+        onClose={() => {
+          setIsEditOpen(false);
+          setSelectedLogro(null);
+        }}
+        title="Editar logro"
+        size="7xl"
+      >
+        <ProfileLogro
+          initialValues={selectedLogro}
+          onClose={() => {
+            setIsEditOpen(false);
+            setSelectedLogro(null);
+          }}
+          onSave={async (logroId, institucionFk, payload) => {
+            try {
+              setLoading(true);
+              const res = await updateLogro(logroId, institucionFk, payload);
+              const updated = Array.isArray(res) ? res : (res?.data ?? res);
+
+              // Si los filtros actuales están completos, refrescar la consulta completa
+              if (asignature && grade && period && tipoLogro && fkInstitucion) {
+                try {
+                  const p = {
+                    fk_institucion: Number(fkInstitucion),
+                    fk_asignatura: Number(asignature),
+                    fk_grado: Number(grade),
+                    fk_periodo: Number(period),
+                    fk_tipo_logro: Number(tipoLogro),
+                  };
+                  const list = await getAllLogrosRef.current(p);
+                  const data = Array.isArray(list)
+                    ? list
+                    : (list?.data ?? list);
+                  setResults(data);
+                } catch (err) {
+                  console.warn(
+                    "ManageLogro - refresh after update failed:",
+                    err,
+                  );
+                }
+              } else {
+                // Reemplazar la fila editada en `results` si existe
+                setResults((prev) =>
+                  (prev || []).map((r) =>
+                    Number(r?.id_logro) === Number(logroId) ? updated || r : r,
+                  ),
+                );
+              }
+
+              notify.success("Logro actualizado");
+              setIsEditOpen(false);
+              setSelectedLogro(null);
+            } catch (err) {
+              console.error("ManageLogro - updateLogro error:", err);
+              notify.error(err?.message || "Error al actualizar logro");
+              throw err;
+            } finally {
+              setLoading(false);
+            }
+          }}
         />
       </Modal>
     </div>

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { sha256 } from "js-sha256";
 import Loader from "../../components/atoms/Loader";
 import SimpleButton from "../../components/atoms/SimpleButton";
+import tourRegisterUser from "../../tour/tourRegisterUser";
 import RoleSelector from "../../components/molecules/RoleSelector";
 import TypeDocumentSelector from "../../components/molecules/TypeDocumentSelector";
 import InstitutionSelector from "../../components/molecules/InstitutionSelector";
@@ -189,8 +190,20 @@ const RegisterUser = () => {
   };
 
   return (
-    <div className="border p-6 rounded bg-bg h-full gap-4 flex flex-col">
-      <h2 className="font-bold text-2xl">Registrar Usuario</h2>
+    <div className=" p-6  h-full gap-4 flex flex-col">
+      <div className="w-full grid grid-cols-5 justify-between items-center  p-2 rounded-t-lg">
+        <h2 className="col-span-4 font-bold text-2xl">Registrar Usuario</h2>
+        <SimpleButton
+          type="button"
+          onClick={tourRegisterUser}
+          icon="HelpCircle"
+          msjtooltip="Iniciar tutorial"
+          noRounded={false}
+          bg="bg-primary"
+          text="text-surface"
+          className="w-auto px-3 py-1.5"
+        />
+      </div>
 
       <form
         onSubmit={handleSubmit}
@@ -209,15 +222,17 @@ const RegisterUser = () => {
 
         <div className="md:col-span-3 font-bold">Información personal</div>
 
-        <TypeDocumentSelector
-          name="identificationtype"
-          value={formData.identificationtype}
-          onChange={handleChange}
-          placeholder="Selecciona un tipo"
-          disabled={loadingRegisterUser}
-        />
+        <div id="tour-doctype">
+          <TypeDocumentSelector
+            name="identificationtype"
+            value={formData.identificationtype}
+            onChange={handleChange}
+            placeholder="Selecciona un tipo"
+            disabled={loadingRegisterUser}
+          />
+        </div>
 
-        <div>
+        <div id="tour-identification">
           <label>N.º de identificación</label>
           <input
             type="text"
@@ -234,7 +249,7 @@ const RegisterUser = () => {
           ) : null}
         </div>
 
-        <div>
+        <div id="tour-telephone">
           <label>Teléfono</label>
           <input
             type="tel"
@@ -249,7 +264,7 @@ const RegisterUser = () => {
           ) : null}
         </div>
 
-        <div>
+        <div id="tour-email">
           <label>Correo</label>
           <input
             type="email"
@@ -264,7 +279,7 @@ const RegisterUser = () => {
           ) : null}
         </div>
 
-        <div>
+        <div id="tour-firstname">
           <label>Primer nombre</label>
           <input
             type="text"
@@ -279,7 +294,7 @@ const RegisterUser = () => {
           ) : null}
         </div>
 
-        <div>
+        <div id="tour-secondname">
           <label>Segundo nombre</label>
           <input
             type="text"
@@ -296,7 +311,7 @@ const RegisterUser = () => {
           ) : null}
         </div>
 
-        <div>
+        <div id="tour-firstlastname">
           <label>Primer apellido</label>
           <input
             type="text"
@@ -313,7 +328,7 @@ const RegisterUser = () => {
           ) : null}
         </div>
 
-        <div>
+        <div id="tour-secondlastname">
           <label>Segundo apellido</label>
           <input
             type="text"
@@ -330,9 +345,11 @@ const RegisterUser = () => {
           ) : null}
         </div>
 
-        <div className="md:col-span-3 font-bold mt-4">Acceso</div>
+        <div id="tour-contact-info" className="md:col-span-3 font-bold mt-4">
+          Acceso
+        </div>
 
-        <div>
+        <div id="tour-password">
           <label>Contraseña</label>
           <input
             type="password"
@@ -347,7 +364,7 @@ const RegisterUser = () => {
           ) : null}
         </div>
 
-        <div>
+        <div id="tour-role">
           <RoleSelector
             name="role"
             value={formData.role}
@@ -358,18 +375,23 @@ const RegisterUser = () => {
         </div>
 
         {![".2", "3", "4"].includes(rol) && (
-          <InstitutionSelector
-            name="idInstitution"
-            label="Institución"
-            value={formData.idInstitution}
-            onChange={handleChange}
-            placeholder="Selecciona una institución"
-            className="w-full p-2 border rounded bg-surface"
-            disabled={loadingRegisterUser}
-          />
+          <div id="tour-institution">
+            <InstitutionSelector
+              name="idInstitution"
+              label="Institución"
+              value={formData.idInstitution}
+              onChange={handleChange}
+              placeholder="Selecciona una institución"
+              className="w-full p-2 border rounded bg-surface"
+              disabled={loadingRegisterUser}
+            />
+          </div>
         )}
 
-        <div className="md:col-span-3 mt-4 flex justify-center">
+        <div
+          id="tour-submit"
+          className="md:col-span-3 mt-4 flex justify-center"
+        >
           <div className="w-full md:w-1/2">
             <SimpleButton
               msj={loadingRegisterUser ? "Registrando..." : "Registrar usuario"}

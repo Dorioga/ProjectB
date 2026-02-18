@@ -236,6 +236,29 @@ export function TeacherProvider({ children }) {
     }
   }, []);
 
+  // Actualiza un logro existente
+  const updateLogro = useCallback(
+    async (logroId, institucionFk, payload = {}) => {
+      setLoadingTeachers(true);
+      setErrorTeachers(null);
+      try {
+        const res = await teacherService.updateLogro(
+          logroId,
+          institucionFk,
+          payload,
+        );
+        eventBus.emit("¡Logro actualizado exitosamente!", "success");
+        return res;
+      } catch (err) {
+        setErrorTeachers(err);
+        throw err;
+      } finally {
+        setLoadingTeachers(false);
+      }
+    },
+    [],
+  );
+
   const saveAssignmentNotes = useCallback(async (payload = {}) => {
     setLoadingTeachers(true);
     setErrorTeachers(null);
@@ -329,6 +352,7 @@ export function TeacherProvider({ children }) {
       getLogroType,
       getLogroInstitution,
       getAllLogros,
+      updateLogro,
       // Asistencia
       registerAssistance,
     }),
