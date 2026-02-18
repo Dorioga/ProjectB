@@ -241,7 +241,10 @@ const RegisterStudentRecords = () => {
             name: String(s?.name ?? s?.nombre ?? s?.nombre_sede ?? "").trim(),
             fk_workday: s?.fk_workday ?? s?.fkWorkday ?? undefined,
             fk_institucion:
-              s?.fk_institucion ?? s?.fkInstitution ?? s?.id_institucion ?? undefined,
+              s?.fk_institucion ??
+              s?.fkInstitution ??
+              s?.id_institucion ??
+              undefined,
           }));
         return mapped;
       })();
