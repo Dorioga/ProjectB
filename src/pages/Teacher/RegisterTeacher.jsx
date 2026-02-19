@@ -32,6 +32,9 @@ const RegisterTeacher = ({ onSuccess }) => {
     fecha_nacimiento: "",
     direccion: "",
     asignature: [],
+    // Representante de curso (boolean) y lista de grados donde es director
+    representante_curso: false,
+    director_curso: [],
   });
 
   // El componente AsignatureGrades gestiona su estado interno y la carga de grados.
@@ -155,12 +158,19 @@ const RegisterTeacher = ({ onSuccess }) => {
       email: formData.email,
       password: formData.password ? sha256(String(formData.password)) : "",
       direccion: formData.direccion || "",
-      asignature: formData.asignature.map((asig) => ({
+      representante_curso: !!formData.representante_curso,
+      // director_curso: array de grades marcados como director
+      director_curso: Array.isArray(formData.director_curso)
+        ? formData.director_curso.map((id) => ({ idgrade: Number(id) }))
+        : [],
+      asignature: (formData.asignature || []).map((asig) => ({
         idAsignature: parseInt(asig.idAsignature, 10),
-        grades: asig.grades.map((gradeId) => ({
-          idgrade: parseInt(gradeId, 10),
-        })),
+        grades: (asig.grades || []).map((g) => {
+          const gid = typeof g === "object" ? (g.idgrade ?? g.id ?? g) : g;
+          return { idgrade: Number(gid) };
+        }),
       })),
+
     };
 
     // Mostrar en consola qué se va a enviar
@@ -187,6 +197,9 @@ const RegisterTeacher = ({ onSuccess }) => {
         email: "",
         password: "",
         direccion: "",
+        // representante de curso
+        representante_curso: false,
+        director_curso: [],
         asignature: [],
       });
 
@@ -373,8 +386,96 @@ const RegisterTeacher = ({ onSuccess }) => {
             workday={formData.workday}
             asignatures={formData.asignature}
             onAdd={handleAddAsignature}
-            onRemove={handleRemoveAsignature}
+            onRemove={(index) => {
+              // remover asignatura y limpiar director_curso si corresponde
+              setFormData((prev) => {
+                const newAsign = (prev.asignature || []).filter((_, i) => i !== index);
+                // obtener ids de grados restantes
+                const remainingGradeIds = new Set(
+                  newAsign.flatMap((a) =>
+                    (Array.isArray(a.grades) ? a.grades : []).map((gr) =>
+                      typeof gr === "object" ? String(gr.idgrade ?? gr.id ?? "") : String(gr),
+                    ),
+                  ),
+                );
+                return {
+                  ...prev,
+                  asignature: newAsign,
+                  director_curso: (prev.director_curso || []).filter((g) => remainingGradeIds.has(String(g))),
+                };
+              });
+            }}
           />
+        </div>
+
+        {/* Representante de curso + selección de grados (director_curso) */}
+        <div className="md:col-span-3 p-4 bg-bg rounded-lg shadow-md">
+          <label className="text-lg font-medium">Representante de curso</label>
+          <div className="flex items-center gap-3 mt-2">
+            <input
+              type="checkbox"
+              name="representante_curso"
+              checked={!!formData.representante_curso}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  representante_curso: !!e.target.checked,
+                  // si se desmarca limpiar director_curso
+                  director_curso: e.target.checked ? (prev.director_curso || []) : [],
+                }))
+              }
+              className="w-4 h-4"
+            />
+            <span className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${formData.representante_curso ? "bg-green-100 text-green-800 border-green-200" : "bg-yellow-100 text-yellow-800 border-yellow-200"}`}>
+              {formData.representante_curso ? "Sí" : "No"}
+            </span>
+          </div>
+
+          {formData.representante_curso && (
+            <div className="mt-4">
+              <label className="block text-sm font-medium mb-2">Selecciona los grados donde será Director/Representante:</label>
+              {Array.isArray(formData.asignature) && formData.asignature.length > 0 ? (
+                // construir lista única de {id, name} a partir de las asignaturas añadidas
+                (() => {
+                  const entries = [];
+                  formData.asignature.forEach((a) => {
+                    (Array.isArray(a.grades) ? a.grades : []).forEach((g) => {
+                      const id = typeof g === "object" ? String(g.idgrade ?? g.id ?? "") : String(g);
+                      const name = typeof g === "object" ? String(g.nombre_grado ?? g.grado ?? `Grado ${id}`) : `Grado ${g}`;
+                      if (id) entries.push({ id, name });
+                    });
+                  });
+                  const unique = Array.from(new Map(entries.map((x) => [x.id, x])).values());
+                  return (
+                    <div className="grid grid-cols-2 gap-2">
+                      {unique.map((grade) => (
+                        <label key={grade.id} className="flex items-center gap-2 p-2 border rounded bg-surface">
+                          <input
+                            type="checkbox"
+                            checked={(formData.director_curso || []).includes(String(grade.id))}
+                            onChange={(e) =>
+                              setFormData((prev) => {
+                                const current = Array.isArray(prev.director_curso) ? prev.director_curso : [];
+                                return {
+                                  ...prev,
+                                  director_curso: e.target.checked
+                                    ? [...current, String(grade.id)]
+                                    : current.filter((x) => x !== String(grade.id)),
+                                };
+                              })
+                            }
+                          />
+                          <span className="text-sm">{grade.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  );
+                })()
+              ) : (
+                <div className="text-sm text-gray-600">No hay grados asignados a las asignaturas.</div>
+              )}
+            </div>
+          )}
         </div>
 
         {submitOk ? (

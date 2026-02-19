@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
+import Loader from "../atoms/Loader";
 import AsignatureSelector from "./AsignatureSelector";
 import useSchool from "../../lib/hooks/useSchool";
 
@@ -71,10 +72,21 @@ export default function AsignatureGrades({
   const handleAdd = () => {
     if (!tempAsignature || tempGrades.length === 0) return;
 
+    // Convertir los grades seleccionados (ids) a objetos con id y nombre para que el padre tenga el mapeo
+    const gradesWithNames = (Array.isArray(tempGrades) ? tempGrades : []).map((gId) => {
+      const found = (availableAsignatureGrades || []).find(
+        (gr) => String(gr?.id_grado ?? gr?.id) === String(gId),
+      );
+      return {
+        idgrade: String(gId),
+        nombre_grado: found?.grado ?? found?.nombre_grado ?? String(gId),
+      };
+    });
+
     const newAsign = {
       idAsignature: tempAsignature,
       nameAsignature: tempAsignatureName,
-      grades: tempGrades,
+      grades: gradesWithNames,
     };
 
     if (typeof onAdd === "function") onAdd(newAsign);
@@ -119,9 +131,7 @@ export default function AsignatureGrades({
                 Selecciona primero una sede y jornada.
               </div>
             ) : loading ? (
-              <div className="text-sm text-gray-600 mt-2">
-                Cargando grados...
-              </div>
+              <Loader message="Cargando grados..." size={56} />
             ) : availableAsignatureGrades.length === 0 ? (
               <div className="text-sm text-gray-600 mt-2">
                 No hay grados disponibles para esta asignatura.

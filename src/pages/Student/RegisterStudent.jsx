@@ -37,6 +37,10 @@ const RegisterStudent = ({ onSuccess }) => {
     nui: "",
     per_id: "",
     fk_beca: "",
+    // PIAR
+    cuenta_piar: false,
+    link_piar: null,
+    // documentos
     link_identificacion: null,
     link_habeas: null,
   });
@@ -110,6 +114,9 @@ const RegisterStudent = ({ onSuccess }) => {
         fk_beca: formData.fk_beca ? Number(formData.fk_beca) : "",
         link_identificacion: formData.link_identificacion || "",
         link_habeas: formData.link_habeas || "",
+        // PIAR
+        cuenta_piar: !!formData.cuenta_piar,
+        link_piar: formData.link_piar || "",
       };
 
       // Mostrar el payload antes de enviar
@@ -150,6 +157,9 @@ const RegisterStudent = ({ onSuccess }) => {
         nui: "",
         per_id: "",
         fk_beca: "",
+        // PIAR
+        cuenta_piar: false,
+        link_piar: null,
         link_identificacion: null,
         link_habeas: null,
       });
@@ -361,15 +371,71 @@ const RegisterStudent = ({ onSuccess }) => {
         </div>
         <div>
           <label>Foto del estudiante</label>
-          <FileChooser name="photo_link" onChange={handleChange} />
+          <FileChooser
+            onChange={(file) =>
+              setFormData((prev) => ({ ...prev, photo_link: file }))
+            }
+          />
         </div>
         <div>
           <label>Documento de identificación</label>
-          <FileChooser name="link_identificacion" onChange={handleChange} />
+          <FileChooser
+            onChange={(file) =>
+              setFormData((prev) => ({ ...prev, link_identificacion: file }))
+            }
+          />
         </div>
         <div>
           <label>Habeas Data</label>
-          <FileChooser name="link_habeas" onChange={handleChange} />
+          <FileChooser
+            onChange={(file) =>
+              setFormData((prev) => ({ ...prev, link_habeas: file }))
+            }
+          />
+        </div>
+
+        {/* PIAR: checkbox + FileChooser (.xlsx/.xls) */}
+        <div>
+          <label>Cuenta con PIAR</label>
+          <div className="flex items-center gap-3 mt-2">
+            <input
+              type="checkbox"
+              name="cuenta_piar"
+              checked={!!formData.cuenta_piar}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  cuenta_piar: !!e.target.checked,
+                }))
+              }
+              className="w-4 h-4"
+            />
+            <span
+              className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
+                formData.cuenta_piar
+                  ? "bg-green-100 text-green-800 border-green-200"
+                  : "bg-yellow-100 text-yellow-800 border-yellow-200"
+              }`}
+            >
+              {formData.cuenta_piar ? "Sí" : "No"}
+            </span>
+          </div>
+
+          {formData.cuenta_piar && (
+            <div className="mt-3">
+              <FileChooser
+                accept=".xlsx,.xls"
+                onChange={(file) =>
+                  setFormData((prev) => ({ ...prev, link_piar: file }))
+                }
+                label={
+                  formData.link_piar
+                    ? formData.link_piar.name
+                    : "Cargar (.xlsx)"
+                }
+              />
+            </div>
+          )}
         </div>
 
         <div className="md:col-span-3 mt-4 flex flex-col items-center gap-4">

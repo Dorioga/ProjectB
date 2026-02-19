@@ -12,6 +12,7 @@ import useTeacher from "../../lib/hooks/useTeacher";
 import useAuth from "../../lib/hooks/useAuth";
 import useData from "../../lib/hooks/useData";
 import useSchool from "../../lib/hooks/useSchool";
+import Loader from "../../components/atoms/Loader";
 import { useNotify } from "../../lib/hooks/useNotify";
 
 const ManageLogro = () => {
@@ -263,10 +264,10 @@ const ManageLogro = () => {
   const columns = [
     { accessorKey: "id_logro", header: "ID" },
     { accessorKey: "descripcion", header: "Descripción" },
-    { accessorKey: "fk_asignatura", header: "Asignatura" },
-    { accessorKey: "fk_grado", header: "Grado" },
+    { accessorKey: "nombre_asignatura", header: "Asignatura" },
+    { accessorKey: "grado", header: "Grado" },
     { accessorKey: "fk_periodo", header: "Periodo" },
-    { accessorKey: "fk_tipo_logro", header: "Tipo logro" },
+    { accessorKey: "nombre_tipo", header: "Tipo logro" },
     { accessorKey: "estado_logro", header: "Estado" },
     {
       accessorKey: "fecha_creacion",
@@ -458,7 +459,7 @@ const ManageLogro = () => {
       {/* DataTable con resultados */}
       <div className="flex-1 mt-4">
         {loading ? (
-          <div className="text-sm text-gray-600">Cargando resultados...</div>
+          <Loader message="Cargando resultados..." size={96} />
         ) : (
           <DataTable
             data={results || []}

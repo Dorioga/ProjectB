@@ -8,10 +8,7 @@ import useSchool from "../../lib/hooks/useSchool";
 import useTeacher from "../../lib/hooks/useTeacher";
 import useData from "../../lib/hooks/useData";
 import AsignatureGrades from "./AsignatureGrades";
-import {
-  mapJourneyToOptionValue,
-  buildGroupsWithAssignments,
-} from "../../utils/teacherUtils";
+import { buildGroupsWithAssignments } from "../../utils/teacherUtils";
 
 const ProfileTeacher = ({
   data = {},
@@ -39,19 +36,21 @@ const ProfileTeacher = ({
     fk_journey: data.fk_journey || data.fk_jornada || "",
     fk_jornada: data.fk_jornada || data.fk_journey || "",
     nombre_jornada: data.nombre_jornada || data.nombre_jornada || "",
+    // Representante de curso
+    representante_curso:
+      data.representante_curso ?? data.is_representative ?? false,
   });
 
-  const [estado, setEstado] = useState(data.estado || "");
-  const [newAsignatures, setNewAsignatures] = useState([]);
-  const [showAsignatureGrades, setShowAsignatureGrades] = useState(false);
-  const [newSede, setNewSede] = useState([]);
-  const [showSedeAsignatures, setShowSedeAsignatures] = useState({});
+  // Estados/refs necesarios (faltaban y provocaban ReferenceError)
+  const originalRef = useRef({});
   const [activeRowKeys, setActiveRowKeys] = useState(new Set());
-  const originalRef = useRef({ form: null, estado: null });
-
-  // Confirm modal for changing current sede (it will deactivate checkboxes)
-  const [confirmChangeSedeOpen, setConfirmChangeSedeOpen] = useState(false);
+  const [estado, setEstado] = useState(data.estado || "");
   const [pendingSedeChange, setPendingSedeChange] = useState(null);
+  const [confirmChangeSedeOpen, setConfirmChangeSedeOpen] = useState(false);
+  const [newAsignatures, setNewAsignatures] = useState([]);
+  const [newSede, setNewSede] = useState([]);
+  const [showAsignatureGrades, setShowAsignatureGrades] = useState(false);
+  const [showSedeAsignatures, setShowSedeAsignatures] = useState({});
 
   const handleCurrentSedeChange = (e) => {
     const val = e.target.value;
@@ -281,6 +280,19 @@ const ProfileTeacher = ({
     return names;
   }, [subjectStatusMap]);
 
+  // Director de grupo: parsear CSV recibido en `data.director_of_grade` (o compatibilidad `director_of_grades`)
+  // Normalizamos a minúsculas para comparaciones case-insensitive
+  const directorGroupSet = useMemo(() => {
+    const raw = data?.director_of_grade ?? data?.director_of_grades ?? "";
+    if (!raw) return new Set();
+    return new Set(
+      String(raw)
+        .split(",")
+        .map((s) => String(s).trim().toLowerCase())
+        .filter(Boolean),
+    );
+  }, [data?.director_of_grade, data?.director_of_grades]);
+
   // Toggle una fila individual
   const handleToggleRow = (idx) => {
     const key = rowKeys[idx];
@@ -455,6 +467,8 @@ const ProfileTeacher = ({
         ),
         direccion: data.direccion || data.address || "",
         identification: data.identification || data.numero_identificacion || "",
+        representante_curso:
+          data.representante_curso ?? data.is_representative ?? false,
       },
     );
     setEstado(orig.estado || data.estado || "");
@@ -552,6 +566,7 @@ const ProfileTeacher = ({
       birth_date: parseDateToISO(form.fecha_nacimiento),
       workday: form.fk_journey ? Number(form.fk_journey) : null,
       address: form.direccion,
+      representante_curso: !!form.representante_curso,
       status: estado,
       asignatures,
       grades,
@@ -609,9 +624,10 @@ const ProfileTeacher = ({
             : []
           ).map((a) => ({
             idAsignature_new: Number(a.idAsignature),
-            grades_new: (Array.isArray(a.grades) ? a.grades : []).map((g) => ({
-              idgrade_new: Number(g),
-            })),
+            grades_new: (Array.isArray(a.grades) ? a.grades : []).map((g) => {
+              const gid = typeof g === "object" ? (g.idgrade ?? g.id ?? g) : g;
+              return { idgrade_new: Number(gid) };
+            }),
           })),
         };
 
@@ -653,9 +669,10 @@ const ProfileTeacher = ({
       fk_teacher: form.id_docente ? Number(form.id_docente) : null,
       asignature_new: newAsignatures.map((a) => ({
         idAsignature_new: Number(a.idAsignature),
-        grades_new: (Array.isArray(a.grades) ? a.grades : []).map((g) => ({
-          idgrade_new: Number(g),
-        })),
+        grades_new: (Array.isArray(a.grades) ? a.grades : []).map((g) => {
+          const gid = typeof g === "object" ? (g.idgrade ?? g.id ?? g) : g;
+          return { idgrade_new: Number(gid) };
+        }),
       })),
     };
 
@@ -811,6 +828,30 @@ const ProfileTeacher = ({
             className={`w-full p-2 border rounded ${isEditing ? "bg-white border-gray-300" : "bg-gray-50 border-transparent text-gray-600 cursor-not-allowed"}`}
             disabled={!isEditing}
           />
+        </div>
+
+        <div>
+          <label className="font-semibold">Representante de curso</label>
+          <div className="flex items-center gap-3 mt-2">
+            <input
+              type="checkbox"
+              name="representante_curso"
+              checked={!!form.representante_curso}
+              disabled={!isEditing}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  representante_curso: !!e.target.checked,
+                }))
+              }
+              className="w-4 h-4"
+            />
+            <span
+              className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${form.representante_curso ? "bg-green-100 text-green-800 border-green-200" : "bg-yellow-100 text-yellow-800 border-yellow-200"}`}
+            >
+              {form.representante_curso ? "Sí" : "No"}
+            </span>
+          </div>
         </div>
         {/* 3) Estado */}
         <div>
@@ -989,6 +1030,7 @@ const ProfileTeacher = ({
                   <th className="px-3 py-2">Asignatura</th>
                   <th className="px-3 py-2">Grado</th>
                   <th className="px-3 py-2">Grupo</th>
+                  <th className="px-3 py-2">Director de grupo</th>
                 </tr>
               </thead>
               <tbody>
@@ -1017,6 +1059,20 @@ const ProfileTeacher = ({
                     </td>
                     <td className="px-3 py-2">{row.grado || "—"}</td>
                     <td className="px-3 py-2">{row.grupo || "—"}</td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="checkbox"
+                        checked={directorGroupSet.has(
+                          String(row.grupo || "")
+                            .trim()
+                            .toLowerCase(),
+                        )}
+                        readOnly
+                        disabled
+                        className="w-4 h-4 mx-auto"
+                        aria-label={`Director de grupo: ${row.grupo || "sin grupo"}`}
+                      />
+                    </td>
                   </tr>
                 ))}
               </tbody>

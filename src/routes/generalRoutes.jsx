@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "../pages/Login/Login";
+import ForgotPassword from "../pages/Login/ForgotPassword";
 import RequireAuth from "../components/RequireAuth";
 import DashboardTemplate from "../components/templates/DashboardTemplate";
 import DashHome from "../pages/Dashboard/Home";
@@ -33,6 +34,7 @@ const GeneralRoutes = () => {
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route
             path="dashboard"
             element={

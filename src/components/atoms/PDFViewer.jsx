@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Loader from "./Loader";
 
 const PDFViewer = ({ pdfUrl }) => {
   const [loading, setLoading] = useState(true);
@@ -24,11 +25,7 @@ const PDFViewer = ({ pdfUrl }) => {
 
   return (
     <div className="w-full h-full relative">
-      {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        </div>
-      )}
+      {loading && <Loader message="Cargando documento..." size={56} />}
 
       {error && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100">

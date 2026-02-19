@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import SimpleButton from "../../components/atoms/SimpleButton";
+import Loader from "../../components/atoms/Loader";
 import useStudent from "../../lib/hooks/useStudent";
 import { handleNumericInput } from "../../utils/formatUtils";
 import ProfileStudent from "../../components/molecules/ProfileStudent";
@@ -111,11 +112,7 @@ const SingleStudent = () => {
       </div>
 
       {/* Mostrar loading */}
-      {loading && (
-        <div className="text-center py-4">
-          <p className="text-gray-600">Buscando estudiante…</p>
-        </div>
-      )}
+      {loading && <Loader message="Buscando estudiante..." size={56} />}
 
       {/* Mostrar error */}
       {error && !loading && (

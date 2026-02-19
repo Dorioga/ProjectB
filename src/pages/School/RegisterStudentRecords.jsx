@@ -19,6 +19,7 @@ import useSchool from "../../lib/hooks/useSchool";
 import useTeacher from "../../lib/hooks/useTeacher";
 import useData from "../../lib/hooks/useData";
 import useAuth from "../../lib/hooks/useAuth";
+import tourRegisterStudentRecords from "../../tour/tourRegisterStudentRecords";
 import { useNotify } from "../../lib/hooks/useNotify";
 import { asignatureResponse } from "../../services/DataExamples/asignatureResponse";
 import { studentsResponse } from "../../services/DataExamples/studentsResponse";
@@ -967,7 +968,22 @@ const RegisterStudentRecords = () => {
   const tableColumns = useMemo(() => {
     const columns = [
       {
-        accessorKey: "studentInfo",
+        id: "studentInfo",
+        // accessorFn retorna texto plano para que búsqueda y exportación Excel funcionen
+        accessorFn: (student) =>
+          [
+            getStudentName(student),
+            String(
+              student?.id_estudiante ??
+                student?.id_student ??
+                student?.identification ??
+                "",
+            ),
+            student?.grado ?? student?.grade_scholar ?? "",
+          ]
+            .filter(Boolean)
+            .join(" "),
+        meta: { exportHeader: "Estudiante" },
         header: (
           <div className="lowercase first-letter:uppercase">Estudiante</div>
         ),
@@ -996,6 +1012,11 @@ const RegisterStudentRecords = () => {
 
       columns.push({
         id: recordKey,
+        meta: {
+          exportHeader: recordName
+            ? `${recordName}${Number.isFinite(porcentual) ? ` (${porcentual}%)` : ""}`
+            : String(r?.id_nota),
+        },
         header: (
           <div>
             <div className="lowercase first-letter:uppercase">
@@ -1031,7 +1052,7 @@ const RegisterStudentRecords = () => {
                   )
                 }
                 onBlur={() => clampAndFormatNoteValue(studentKey, recordKey)}
-                className="w-full p-2 border rounded bg-surface text-center"
+                className="w-full p-2 border rounded bg-surface text-center tour-grade-input"
                 placeholder="0.00"
                 disabled={loadingDataRef.current || editing === false}
               />
@@ -1044,6 +1065,7 @@ const RegisterStudentRecords = () => {
     // Columna de nota final
     columns.push({
       accessorKey: "final",
+      meta: { exportHeader: "Nota Final" },
       header: <div className="lowercase first-letter:uppercase">Final</div>,
       cell: ({ row }) => {
         const student = row.original;
@@ -1074,6 +1096,7 @@ const RegisterStudentRecords = () => {
     // Columna de nota de recuperación
     columns.push({
       accessorKey: "recovery",
+      meta: { exportHeader: "Recuperación" },
       header: (
         <div className="lowercase first-letter:uppercase">Recuperación</div>
       ),
@@ -1110,6 +1133,7 @@ const RegisterStudentRecords = () => {
     // Columna de comentarios (ahora: tipo de logro + logro filtrado)
     columns.push({
       accessorKey: "comments",
+      meta: { exportHeader: "Comentarios del docente" },
       header: (
         <div className="lowercase first-letter:uppercase">
           Comentarios del docente
@@ -1136,7 +1160,7 @@ const RegisterStudentRecords = () => {
               onChange={(e) =>
                 handleTipoSelectForStudent(studentKey, e.target.value)
               }
-              className="w-full min-w-[200px] p-2 border rounded bg-surface text-sm"
+              className="w-full min-w-[200px] p-2 border rounded bg-surface text-sm tour-tipo-logro"
               disabled={loadingDataRef.current || loadingTipoLogroOptions}
             >
               <option value="">
@@ -1160,7 +1184,7 @@ const RegisterStudentRecords = () => {
               onChange={(e) =>
                 handleLogroSelectForStudent(studentKey, e.target.value)
               }
-              className="w-full min-w-[200px] p-2 border rounded bg-surface text-sm"
+              className="w-full min-w-[200px] p-2 border rounded bg-surface text-sm tour-select-logro"
               disabled={
                 loadingDataRef.current ||
                 loadingLogros ||
@@ -1212,7 +1236,7 @@ const RegisterStudentRecords = () => {
                   text="text-surface"
                   msjtooltip="Guardar"
                   tooltip={true}
-                  className={`w-10 h-10 p-2 ${rowLoading ? "animate-spin" : ""}`}
+                  className={`w-10 h-10 p-2 ${rowLoading ? "animate-spin" : ""} tour-save-row`}
                   disabled={rowLoading || loadingDataRef.current}
                 />
               </div>
@@ -1227,7 +1251,7 @@ const RegisterStudentRecords = () => {
                 text="text-surface"
                 msjtooltip={editing ? "Cancelar" : "Editar"}
                 tooltip={true}
-                className={`w-10 h-10 p-2 ${editing ? "" : ""}`}
+                className={`w-10 h-10 p-2 tour-edit-row ${editing ? "" : ""}`}
                 disabled={rowLoading || loadingDataRef.current}
               />
             </div>
@@ -1253,9 +1277,35 @@ const RegisterStudentRecords = () => {
 
   return (
     <div className=" p-6  h-full gap-4 flex flex-col">
-      <h2 className="font-bold text-2xl">Registrar Notas Estudiantes</h2>
+      {/* Global loader for row / data operations */}
+      {(loadingDataRef.current ||
+        Object.values(rowLoadingByIdRef.current || {}).some(Boolean)) && (
+        <Loader
+          message={loadingDataRef.current ? "Cargando..." : "Procesando..."}
+          size={56}
+        />
+      )}
 
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-5 items-center justify-between">
+        <h2 className="col-span-4 text-2xl font-bold">
+          Registrar Notas Estudiantes
+        </h2>
+        <SimpleButton
+          type="button"
+          onClick={tourRegisterStudentRecords}
+          icon="HelpCircle"
+          msjtooltip="Iniciar tutorial"
+          noRounded={false}
+          bg="bg-accent"
+          text="text-surface"
+          className="w-auto px-3 py-1.5"
+        />
+      </div>
+
+      <div
+        id="tour-filters-students"
+        className="grid grid-cols-1 md:grid-cols-5 gap-4"
+      >
         <SedeSelect
           value={sedeSelected}
           onChange={handleSedeChange}
@@ -1418,7 +1468,7 @@ const RegisterStudentRecords = () => {
         ) : (
           <div className="bg-surface border rounded">
             <div className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-              <div className="text-sm opacity-80">
+              <div id="tour-students-count" className="text-sm opacity-80">
                 Estudiantes:{" "}
                 <span className="font-medium">{filteredStudents.length}</span>
                 {recordsList.length > 0 ? (
@@ -1431,7 +1481,7 @@ const RegisterStudentRecords = () => {
               </div>
             </div>
 
-            <div className="px-4">
+            <div id="tour-students-table" className="px-4">
               <DataTable
                 data={tableData}
                 columns={tableColumns}

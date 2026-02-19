@@ -3,6 +3,7 @@ import DataTable from "../../components/atoms/DataTable";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import Modal from "../../components/atoms/Modal";
 import ProfileSchool from "./ProfileSchool";
+import Loader from "../../components/atoms/Loader";
 import useSchool from "../../lib/hooks/useSchool";
 import { alertsResponse } from "../../services/DataExamples/alertsResponse";
 import tourManageSchools from "../../tour/tourManageSchools";
@@ -159,18 +160,9 @@ const ManageSchools = () => {
           fileName="Export_Institutions"
           mode={"School"}
           showDownloadButtons={false}
+          loading={isFetching}
+          loaderMessage="Cargando instituciones..."
         />
-
-        {isFetching && (
-          <div className="absolute inset-0 flex items-center justify-center bg-surface/60 z-10">
-            <div className="text-center py-8 bg-transparent">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2" />
-              <div className="text-sm font-medium text-primary">
-                Cargando instituciones...
-              </div>
-            </div>
-          </div>
-        )}
 
         {fetchError && (
           <div className="mt-4 text-center text-red-600">
@@ -200,16 +192,7 @@ const ManageSchools = () => {
           size="4xl"
         >
           <div className="relative">
-            {profileLoading && (
-              <div className="absolute inset-0 bg-surface/70 z-20 flex items-center justify-center">
-                <div className="text-center py-8 bg-transparent">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2" />
-                  <div className="text-sm font-medium text-primary">
-                    Cargando datos...
-                  </div>
-                </div>
-              </div>
-            )}
+            {profileLoading && <Loader message="Cargando datos..." size={56} />}
 
             {profileError && (
               <div className="mb-3 text-sm text-red-600">

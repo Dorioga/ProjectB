@@ -11,6 +11,7 @@ import {
 import * as XLSX from "xlsx";
 import { FileUp } from "lucide-react";
 import SimpleButton from "./SimpleButton";
+import Loader from "./Loader";
 import DocumentModal from "../molecules/DocumentModal";
 
 const DataTable = ({
@@ -24,6 +25,10 @@ const DataTable = ({
   rowClassName,
   // optional default page size for pagination (defaults to 20)
   pageSize = 20,
+  // Loader support
+  loading = false,
+  loaderMessage = "Cargando...",
+  loaderSize = 96,
 }) => {
   const [sorting, setSorting] = useState([]);
   const [globalFilter, setGlobalFilter] = useState("");
@@ -54,6 +59,14 @@ const DataTable = ({
           value = row.original[column.accessorKey];
         }
 
+        // Ignorar valores que sean objetos (JSX, React elements, etc.)
+        if (
+          value !== null &&
+          value !== undefined &&
+          typeof value === "object"
+        ) {
+          return "";
+        }
         return value != null ? String(value).toLowerCase() : "";
       })
       .join(" ");
@@ -106,8 +119,12 @@ const DataTable = ({
         // Ignorar la columna de acciones
         if (column.id === "actions") return;
 
-        const columnId = column.accessorKey || column.id;
-        const header = column.header;
+        // Extraer el texto del header (puede ser JSX o string)
+        const header =
+          column.meta?.exportHeader ??
+          (typeof column.header === "string"
+            ? column.header
+            : (column.accessorKey ?? column.id ?? "columna"));
 
         // Obtener el valor usando accessorFn si existe, sino usar accessorKey
         let value;
@@ -117,7 +134,16 @@ const DataTable = ({
           value = row.original[column.accessorKey];
         }
 
-        rowData[header] = value;
+        // Si el valor es un objeto (JSX, React element, etc.) dejarlo vacío
+        if (
+          value !== null &&
+          value !== undefined &&
+          typeof value === "object"
+        ) {
+          value = "";
+        }
+
+        rowData[header] = value ?? "";
       });
 
       return rowData;
@@ -139,6 +165,8 @@ const DataTable = ({
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Loader modal (se usa el Loader global que ya es un modal) */}
+      {loading ? <Loader message={loaderMessage} size={loaderSize} /> : null}
       <div
         className={` grid w-full  gap-2  ${
           mode !== null ? "grid-cols-7 " : "grid-cols-1"

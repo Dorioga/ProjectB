@@ -378,7 +378,7 @@ const RegisterRecords = () => {
   };
 
   return (
-    <div className="border p-6 rounded bg-bg h-full gap-4 flex flex-col">
+    <div className="p-6 h-full gap-4 flex flex-col">
       <div className="grid grid-cols-5 items-center justify-between">
         <h2 className="col-span-4 text-2xl font-bold">Registrar Notas</h2>
         <SimpleButton
@@ -395,7 +395,7 @@ const RegisterRecords = () => {
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div
           id="tour-filters"
-          className="grid grid-cols-1 md:grid-cols-4 gap-4"
+          className="grid grid-cols-1 md:grid-cols-5 gap-4"
         >
           <SedeSelect
             value={sedeSelected}
@@ -409,42 +409,46 @@ const RegisterRecords = () => {
           {/* Orden para Docentes: Sede -> Grado -> Asignatura -> Jornada */}
           {isTeacher ? (
             <>
-              <GradeSelector
-                name="grade"
-                label="Grado"
-                labelClassName="text-lg font-semibold"
-                value={gradeSelected}
-                onChange={handleGradeChangeTeacher}
-                className="w-full p-2 border rounded bg-surface"
-                sedeId={sedeSelected}
-                workdayId={workdaySelected}
-                customFetchMethod={getTeacherGrades}
-                additionalParams={teacherGradesParams}
-                disabled={!sedeSelected}
-              />
-              <AsignatureSelector
-                name="asignature"
-                label="Asignatura"
-                labelClassName="text-lg font-semibold"
-                value={asignatureSelected}
-                onChange={(e) => setAsignatureSelected(e.target.value)}
-                className="w-full p-2 border rounded bg-surface"
-                sedeId={sedeSelected}
-                workdayId={workdaySelected}
-                customFetchMethod={getTeacherSubjects}
-                additionalParams={teacherSubjectsParams}
-                onJourneyDetected={(journey) => {
-                  console.log(
-                    "RegisterRecords - Jornada detectada de asignatura:",
-                    journey,
-                  );
-                  if (journey && journey.id) {
-                    setWorkdaySelected(String(journey.id));
-                    setDetectedJourney(journey);
-                  }
-                }}
-                disabled={!gradeSelected}
-              />
+              <div id="tour-grade">
+                <GradeSelector
+                  name="grade"
+                  label="Grado"
+                  labelClassName="text-lg font-semibold"
+                  value={gradeSelected}
+                  onChange={handleGradeChangeTeacher}
+                  className="w-full p-2 border rounded bg-surface"
+                  sedeId={sedeSelected}
+                  workdayId={workdaySelected}
+                  customFetchMethod={getTeacherGrades}
+                  additionalParams={teacherGradesParams}
+                  disabled={!sedeSelected}
+                />
+              </div>
+              <div id="tour-asignature">
+                <AsignatureSelector
+                  name="asignature"
+                  label="Asignatura"
+                  labelClassName="text-lg font-semibold"
+                  value={asignatureSelected}
+                  onChange={(e) => setAsignatureSelected(e.target.value)}
+                  className="w-full p-2 border rounded bg-surface"
+                  sedeId={sedeSelected}
+                  workdayId={workdaySelected}
+                  customFetchMethod={getTeacherSubjects}
+                  additionalParams={teacherSubjectsParams}
+                  onJourneyDetected={(journey) => {
+                    console.log(
+                      "RegisterRecords - Jornada detectada de asignatura:",
+                      journey,
+                    );
+                    if (journey && journey.id) {
+                      setWorkdaySelected(String(journey.id));
+                      setDetectedJourney(journey);
+                    }
+                  }}
+                  disabled={!gradeSelected}
+                />
+              </div>
               <JourneySelect
                 name="workday"
                 label="Jornada"
@@ -477,28 +481,32 @@ const RegisterRecords = () => {
                 includeAmbas={false}
                 disabled={!sedeSelected}
               />
-              <AsignatureSelector
-                name="asignature"
-                label="Asignatura"
-                labelClassName="text-lg font-semibold"
-                value={asignatureSelected}
-                onChange={handleAsignatureChangeNonTeacher}
-                className="w-full p-2 border rounded bg-surface"
-                sedeId={sedeSelected}
-                workdayId={workdaySelected}
-                disabled={!workdaySelected}
-              />
-              <GradeSelector
-                name="grade"
-                label="Grado"
-                labelClassName="text-lg font-semibold"
-                value={gradeSelected}
-                onChange={(e) => setGradeSelected(e.target.value)}
-                className="w-full p-2 border rounded bg-surface"
-                sedeId={sedeSelected}
-                workdayId={workdaySelected}
-                disabled={!asignatureSelected}
-              />
+              <div id="tour-asignature">
+                <AsignatureSelector
+                  name="asignature"
+                  label="Asignatura"
+                  labelClassName="text-lg font-semibold"
+                  value={asignatureSelected}
+                  onChange={handleAsignatureChangeNonTeacher}
+                  className="w-full p-2 border rounded bg-surface"
+                  sedeId={sedeSelected}
+                  workdayId={workdaySelected}
+                  disabled={!workdaySelected}
+                />
+              </div>
+              <div id="tour-grade">
+                <GradeSelector
+                  name="grade"
+                  label="Grado"
+                  labelClassName="text-lg font-semibold"
+                  value={gradeSelected}
+                  onChange={(e) => setGradeSelected(e.target.value)}
+                  className="w-full p-2 border rounded bg-surface"
+                  sedeId={sedeSelected}
+                  workdayId={workdaySelected}
+                  disabled={!asignatureSelected}
+                />
+              </div>
             </>
           )}
 
@@ -512,7 +520,7 @@ const RegisterRecords = () => {
             autoLoad={true}
           />
 
-          <div id="tour-num-records">
+          <div id="tour-num-records" className="col-span-2 ">
             <label className="text-lg font-semibold">
               ¿Cuántas notas deseas registrar?
             </label>
@@ -559,7 +567,7 @@ const RegisterRecords = () => {
                   <label className="text-sm font-semibold">Nombre</label>
                   <input
                     type="text"
-                    className="w-full p-2 border rounded bg-surface"
+                    className="w-full p-2 border rounded bg-surface tour-note-name"
                     value={rec?.name ?? ""}
                     onChange={(e) =>
                       handleRecordChange(idx, "name", e.target.value)
@@ -577,7 +585,7 @@ const RegisterRecords = () => {
                       type="number"
                       step="0.01"
                       min={0}
-                      className="w-full p-2 border rounded bg-surface"
+                      className="w-full p-2 border rounded bg-surface tour-note-porcentual"
                       value={rec?.porcentual ?? 0}
                       onChange={(e) =>
                         handlePorcentualChange(idx, e.target.value)
@@ -586,6 +594,7 @@ const RegisterRecords = () => {
                     <label className="flex items-center gap-1 text-xs opacity-80 select-none">
                       <input
                         type="checkbox"
+                        className="tour-note-lock"
                         checked={Boolean(rec?.locked)}
                         onChange={() => togglePorcentualLock(idx)}
                       />
@@ -598,7 +607,7 @@ const RegisterRecords = () => {
                   <label className="text-sm font-semibold">Logros</label>
                   <input
                     type="text"
-                    className="w-full p-2 border rounded bg-surface"
+                    className="w-full p-2 border rounded bg-surface tour-note-goal"
                     value={rec?.goal ?? ""}
                     onChange={(e) =>
                       handleRecordChange(idx, "goal", e.target.value)

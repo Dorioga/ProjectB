@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Loader from "../../components/atoms/Loader";
 import useAuth from "../../lib/hooks/useAuth";
+import { institutionAbbreviation } from "../../utils/formatUtils";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import logoColor from "../../assets/img/LogoColor.png";
 import { School } from "lucide-react";
@@ -10,7 +11,7 @@ const Login = () => {
     email: "",
     infokey: "",
   });
-  const { login, loading, error, token } = useAuth();
+  const { login, loading, error, token, nameSchool } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,6 +22,20 @@ const Login = () => {
     // Limpiar localStorage al entrar a la página de login (solo si no hay token)
     localStorage.clear();
   }, [token, navigate]);
+
+  // Forzar título en la pestaña cuando estamos en la pantalla de login
+  useEffect(() => {
+    try {
+      const abbr = nameSchool
+        ? institutionAbbreviation(String(nameSchool))
+        : "";
+      document.title = abbr ? `Nexus — ${abbr}` : "Nexus";
+    } catch (err) {
+      console.warn("Login: error setting document.title", err);
+      document.title = "Nexus";
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nameSchool]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -37,17 +52,35 @@ const Login = () => {
     }
   };
   return (
-    <div className="w-full grid grid-cols-1 lg:grid-cols-2 h-full bg-primary">
-      <div className=" hidden lg:flex lg:items-center lg:justify-center"></div>
-      <div className="w-full  flex items-center justify-center p-4 ">
-        <div className="flex flex-col gap-4 w-3/4 bg-surface bg-opacity-50 p-6 rounded-xl shadow-lg">
-          <div className="text-center">
-            <img src={logoColor} alt="Logo" className="mx-auto w-50 h-auto " />
-            <h2 className="text-primary font-bold text-4xl">Bienvenido</h2>
-            <h3 className="text-primary font-bold text-3xl">Inicie sesión</h3>
+    <div className="w-full grid grid-cols-1 lg:grid-cols-2 ">
+      <div className=" hidden lg:flex lg:flex-col lg:items-center lg:justify-center  ">
+        <img
+          src={logoColor}
+          alt="Logo"
+          className="mx-auto w-3/5 h-auto row-span-3 "
+        />
+        <div className="text-center row-span-2">
+          <p className="text-xl px-4">
+            <span className="block  text-xl font-semibold text-primary">
+              te conecta con el aprendizaje y facilita la gestión educativa en
+              un solo lugar
+            </span>
+          </p>
+        </div>
+      </div>
+      <div className="w-full  flex items-center justify-center p-4 bg-primary">
+        <div className="flex flex-col gap-4 w-3/4  p-6 rounded-xl">
+          <div className="flex flex-col text-center gap-6">
+            <h2 className="text-secondary font-bold text-6xl">Bienvenido</h2>
+            <h3 className="text-surface font-semibold text-4xl">
+              Iniciar sesión
+            </h3>
           </div>
           <div className="flex flex-col  justify-between gap-1">
-            <label htmlFor="email" className="text-primary   text-xl font-bold">
+            <label
+              htmlFor="email"
+              className="text-surface   text-2xl font-bold"
+            >
               Usuario
             </label>
             <input
@@ -56,11 +89,14 @@ const Login = () => {
               value={formData.email}
               onChange={handleChange}
               placeholder="Usuario"
-              className="bg-surface px-2 py-1 rounded-md"
+              className="bg-surface px-2 py-1 rounded-md text-2xl"
             />
           </div>
           <div className="flex flex-col justify-between gap-1">
-            <label htmlFor="infokey" className="text-primary text-xl font-bold">
+            <label
+              htmlFor="infokey"
+              className="text-surface text-2xl font-bold"
+            >
               Contraseña
             </label>
             <input
@@ -69,8 +105,17 @@ const Login = () => {
               value={formData.infokey}
               onChange={handleChange}
               placeholder="Contraseña"
-              className="bg-surface px-2 py-1 rounded-md"
+              className="bg-surface px-2 py-1 rounded-md text-2xl"
             />
+          </div>
+          <div className="flex justify-end">
+            <button
+              type="button"
+              className="text-2xl text-primary hover:underline"
+              onClick={() => navigate("/forgot-password")}
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
           </div>
           <div className="flex flex-col justify-between pt-2">
             <SimpleButton
@@ -80,6 +125,7 @@ const Login = () => {
               bg={"bg-secondary"}
               text={"text-surface"}
               hover={"hover:bg-secondary/80"}
+              textSize="text-3xl"
             />
             {loading && <Loader />}
             {!loading && error && (

@@ -39,23 +39,35 @@ export function mapTeacherRowsToProcessed(rawData, teacherRow = {}) {
         ? [String(teacherRow.nombre_grado).trim()]
         : [],
       grupos: teacherRow?.grupo ? [String(teacherRow.grupo).trim()] : [],
+      // preservar director_of_grade si viene en teacherRow (compatibilidad)
+      director_of_grade: teacherRow?.director_of_grade || teacherRow?.director_of_grades || "",
       estado: teacherRow?.estado || "",
     };
   }
 
   const base = rows[0] || {};
 
-  // Construir subjects - agrupar por asignatura y coleccionar sus grupos usando Map/Set para evitar búsquedas O(n)
-  const subjectsMap = new Map();
-  const gradosSet = new Set();
-  const gruposSet = new Set();
-  const assignments = []; // plano: una entrada por fila (grado/grupo/asignatura)
-
+  // helper: parse CSV-like fields (trim + filter)
   const splitCSV = (val) =>
     String(val ?? "")
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
+
+  // Extraer y unificar valores de `director_of_grade` desde todas las filas (CSV -> Set)
+  const directorSet = new Set();
+  for (const r of rows) {
+    const rawDirector = r?.director_of_grade ?? r?.director_of_grades ?? "";
+    if (!rawDirector) continue;
+    splitCSV(rawDirector).forEach((d) => directorSet.add(String(d).trim()));
+  }
+  const director_of_grade = Array.from(directorSet).join(", ");
+
+  // Construir subjects - agrupar por asignatura y coleccionar sus grupos usando Map/Set para evitar búsquedas O(n)
+  const subjectsMap = new Map();
+  const gradosSet = new Set();
+  const gruposSet = new Set();
+  const assignments = []; // plano: una entrada por fila (grado/grupo/asignatura)
 
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i];
@@ -210,6 +222,8 @@ export function mapTeacherRowsToProcessed(rawData, teacherRow = {}) {
     fk_journey: base.fk_jornada ?? null,
     nombre_jornada: base.nombre_jornada || base.nombre_jornada_estudiante || "",
     id_sede: base.id_sede ?? null,
+    // consolidated director_of_grade (CSV) gathered from rows
+    director_of_grade: director_of_grade || base.director_of_grade || teacherRow?.director_of_grade || "",
     subjects: uniqueSubjects,
     assignments: assignments, // plano (grado/grupo/asignatura por fila)
     estado: rows[0]?.estado ?? teacherRow?.estado ?? "",

@@ -163,6 +163,77 @@ export function isNumeric(str) {
 }
 
 /**
+ * Genera una abreviatura/acrónimo a partir del nombre de una institución.
+ * Ejemplos: "Institución Educativa San Martín" -> "IESM" (o hasta 4 letras)
+ * - Elimina palabras vacías comunes (de, del, la, el, y, etc.)
+ * - Toma la primera letra de cada palabra y escala a mayúsculas
+ * - Si hay una sola palabra, devuelve las primeras N letras
+ * @param {string} name
+ * @param {number} maxLength (por defecto 4)
+ * @returns {string}
+ */
+export function institutionAbbreviation(name, maxLength = 6) {
+  if (!name || typeof name !== "string") return "";
+  const stopWords = new Set([
+    "de",
+    "del",
+    "la",
+    "las",
+    "el",
+    "los",
+    "y",
+    "e",
+    "para",
+    "por",
+    "en",
+    "the",
+    "of",
+    "&",
+  ]);
+
+  // Normalizar: eliminar caracteres no alfanuméricos salvo espacios, dividir por espacios
+  const cleaned = name
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!cleaned) return "";
+
+  let words = cleaned
+    .split(" ")
+    .map((w) => w.trim())
+    .filter(Boolean)
+    .filter((w) => !stopWords.has(w.toLowerCase()));
+
+  // Si al filtrar quedan 0 palabras, volver a la lista original
+  if (words.length === 0) {
+    words = cleaned
+      .split(" ")
+      .map((w) => w.trim())
+      .filter(Boolean);
+  }
+
+  if (words.length === 1) {
+    const single = words[0].replace(/[^\p{L}\p{N}]/gu, "");
+    return single.slice(0, maxLength).toUpperCase();
+  }
+
+  // Tomar la primera letra de cada palabra y formar el acrónimo
+  let abbr = words
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
+  if (abbr.length > maxLength) abbr = abbr.slice(0, maxLength);
+
+  // Si quedó corto, rellenar con letras siguientes de las palabras concatenadas
+  if (abbr.length < maxLength) {
+    const all = words.join("").replace(/[^\p{L}\p{N}]/gu, "");
+    abbr = (abbr + all).slice(0, maxLength).toUpperCase();
+  }
+
+  return abbr;
+}
+
+/**
  * Formatea un número de teléfono (p. ej.: 3001234567 -> 300 123 4567)
  * @param {string} phone
  * @returns {string}

@@ -11,6 +11,8 @@ import useSchool from "../../lib/hooks/useSchool";
 import useTeacher from "../../lib/hooks/useTeacher";
 import useData from "../../lib/hooks/useData";
 import useAuth from "../../lib/hooks/useAuth";
+import Loader from "../../components/atoms/Loader";
+import tourRegisterAssistance from "../../tour/tourRegisterAssistance";
 import { useNotify } from "../../lib/hooks/useNotify";
 import { asignatureResponse } from "../../services/DataExamples/asignatureResponse";
 import { studentsResponse } from "../../services/DataExamples/studentsResponse";
@@ -460,10 +462,38 @@ const RegisterAssistance = () => {
   };
 
   return (
-    <div className="border p-6 rounded bg-bg h-full gap-4 flex flex-col">
-      <h2 className="font-bold text-2xl">Registrar Asistencia</h2>
+    <div className="p-6 h-full gap-4 flex flex-col">
+      {/* Global loader when any row or data is loading */}
+      {(Object.values(rowLoadingById || {}).some(Boolean) ||
+        loadingData ||
+        loadingTeacherSedes) && (
+        <Loader
+          message={
+            Object.values(rowLoadingById || {}).some(Boolean)
+              ? "Guardando..."
+              : "Cargando..."
+          }
+          size={56}
+        />
+      )}
+      <div className="grid grid-cols-5 items-center justify-between">
+        <h2 className="col-span-4 text-2xl font-bold">Registrar Asistencia</h2>
+        <SimpleButton
+          type="button"
+          onClick={tourRegisterAssistance}
+          icon="HelpCircle"
+          msjtooltip="Iniciar tutorial"
+          noRounded={false}
+          bg="bg-accent"
+          text="text-surface"
+          className="w-auto px-3 py-1.5"
+        />
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div
+        id="tour-filters-assistance"
+        className="grid grid-cols-1 md:grid-cols-5 gap-4"
+      >
         <SedeSelect
           value={sedeSelected}
           onChange={handleSedeChange}
@@ -476,100 +506,114 @@ const RegisterAssistance = () => {
         {/* Orden para Docentes: Sede -> Grado -> Asignatura -> Jornada */}
         {isTeacher ? (
           <>
-            <GradeSelector
-              name="grade"
-              label="Curso"
-              labelClassName="text-lg font-semibold"
-              value={grade}
-              onChange={handleGradeChangeTeacher}
-              className="w-full p-2 border rounded bg-surface"
-              sedeId={sedeSelected}
-              workdayId={journey}
-              customFetchMethod={getTeacherGrades}
-              additionalParams={teacherGradesParams}
-              disabled={!sedeSelected}
-            />
-            <AsignatureSelector
-              name="asignature"
-              label="Asignatura"
-              labelClassName="text-lg font-semibold"
-              value={asignatureCode}
-              onChange={(e) => setAsignatureCode(e.target.value)}
-              className="w-full p-2 border rounded bg-surface"
-              sedeId={sedeSelected}
-              workdayId={journey}
-              customFetchMethod={getTeacherSubjects}
-              additionalParams={teacherSubjectsParams}
-              onJourneyDetected={(journeyObj) => {
-                if (journeyObj && journeyObj.id) {
-                  setJourney(String(journeyObj.id));
-                  setDetectedJourney(journeyObj);
-                }
-              }}
-              disabled={!grade}
-            />
-            <JourneySelect
-              name="workday"
-              label="Jornada"
-              labelClassName="text-lg font-semibold"
-              value={journey}
-              onChange={(e) => setJourney(e.target.value)}
-              className="w-full p-2 border rounded bg-surface"
-              filterValue={sedeWorkday}
-              includeAmbas={false}
-              subjectJourney={detectedJourney}
-              useTeacherSubjects={!Boolean(asignatureCode) && Boolean(grade)}
-              sedeId={sedeSelected}
-              idTeacher={idDocente}
-              lockByAsignature={true}
-            />
+            <div id="tour-grade-assistance">
+              <GradeSelector
+                name="grade"
+                label="Curso"
+                labelClassName="text-lg font-semibold"
+                value={grade}
+                onChange={handleGradeChangeTeacher}
+                className="w-full p-2 border rounded bg-surface"
+                sedeId={sedeSelected}
+                workdayId={journey}
+                customFetchMethod={getTeacherGrades}
+                additionalParams={teacherGradesParams}
+                disabled={!sedeSelected}
+              />
+            </div>
+            <div id="tour-asignature-assistance">
+              <AsignatureSelector
+                name="asignature"
+                label="Asignatura"
+                labelClassName="text-lg font-semibold"
+                value={asignatureCode}
+                onChange={(e) => setAsignatureCode(e.target.value)}
+                className="w-full p-2 border rounded bg-surface"
+                sedeId={sedeSelected}
+                workdayId={journey}
+                customFetchMethod={getTeacherSubjects}
+                additionalParams={teacherSubjectsParams}
+                onJourneyDetected={(journeyObj) => {
+                  if (journeyObj && journeyObj.id) {
+                    setJourney(String(journeyObj.id));
+                    setDetectedJourney(journeyObj);
+                  }
+                }}
+                disabled={!grade}
+              />
+            </div>
+            <div id="tour-journey-assistance">
+              <JourneySelect
+                name="workday"
+                label="Jornada"
+                labelClassName="text-lg font-semibold"
+                value={journey}
+                onChange={(e) => setJourney(e.target.value)}
+                className="w-full p-2 border rounded bg-surface"
+                filterValue={sedeWorkday}
+                includeAmbas={false}
+                subjectJourney={detectedJourney}
+                useTeacherSubjects={!Boolean(asignatureCode) && Boolean(grade)}
+                sedeId={sedeSelected}
+                idTeacher={idDocente}
+                lockByAsignature={true}
+              />
+            </div>
           </>
         ) : (
           /* Orden para No Docentes: Sede -> Jornada -> Asignatura -> Grado */
           <>
-            <JourneySelect
-              name="workday"
-              label="Jornada"
-              labelClassName="text-lg font-semibold"
-              value={journey}
-              onChange={handleJourneyChangeNonTeacher}
-              className="w-full p-2 border rounded bg-surface"
-              filterValue={sedeWorkday}
-              includeAmbas={false}
-              disabled={!sedeSelected}
-            />
-            <AsignatureSelector
-              name="asignature"
-              label="Asignatura"
-              labelClassName="text-lg font-semibold"
-              value={asignatureCode}
-              onChange={handleAsignatureChangeNonTeacher}
-              className="w-full p-2 border rounded bg-surface"
-              sedeId={sedeSelected}
-              workdayId={journey}
-              disabled={!journey}
-            />
-            <GradeSelector
-              name="grade"
-              label="Curso"
-              labelClassName="text-lg font-semibold"
-              value={grade}
-              onChange={(e) => setGrade(e.target.value)}
-              className="w-full p-2 border rounded bg-surface"
-              sedeId={sedeSelected}
-              workdayId={journey}
-              disabled={!asignatureCode}
-            />
+            <div id="tour-journey-assistance">
+              <JourneySelect
+                name="workday"
+                label="Jornada"
+                labelClassName="text-lg font-semibold"
+                value={journey}
+                onChange={handleJourneyChangeNonTeacher}
+                className="w-full p-2 border rounded bg-surface"
+                filterValue={sedeWorkday}
+                includeAmbas={false}
+                disabled={!sedeSelected}
+              />
+            </div>
+            <div id="tour-asignature-assistance">
+              <AsignatureSelector
+                name="asignature"
+                label="Asignatura"
+                labelClassName="text-lg font-semibold"
+                value={asignatureCode}
+                onChange={handleAsignatureChangeNonTeacher}
+                className="w-full p-2 border rounded bg-surface"
+                sedeId={sedeSelected}
+                workdayId={journey}
+                disabled={!journey}
+              />
+            </div>
+            <div id="tour-grade-assistance">
+              <GradeSelector
+                name="grade"
+                label="Curso"
+                labelClassName="text-lg font-semibold"
+                value={grade}
+                onChange={(e) => setGrade(e.target.value)}
+                className="w-full p-2 border rounded bg-surface"
+                sedeId={sedeSelected}
+                workdayId={journey}
+                disabled={!asignatureCode}
+              />
+            </div>
           </>
         )}
-        <PeriodSelector
-          name="period"
-          label="Período"
-          labelClassName="text-lg font-semibold"
-          value={period}
-          onChange={(e) => setPeriod(e.target.value)}
-          className="w-full p-2 border rounded bg-surface"
-        />
+        <div id="tour-period-assistance">
+          <PeriodSelector
+            name="period"
+            label="Período"
+            labelClassName="text-lg font-semibold"
+            value={period}
+            onChange={(e) => setPeriod(e.target.value)}
+            className="w-full p-2 border rounded bg-surface"
+          />
+        </div>
       </div>
 
       <div className="flex flex-col gap-4">
@@ -587,7 +631,7 @@ const RegisterAssistance = () => {
             className="bg-surface border rounded"
           >
             <div className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-              <div className="text-sm opacity-80">
+              <div id="tour-assistance-count" className="text-sm opacity-80">
                 Estudiantes:{" "}
                 <span className="font-medium">
                   {studentsFromService.length}
@@ -596,7 +640,7 @@ const RegisterAssistance = () => {
               </div>
             </div>
 
-            <div className="p-4">
+            <div id="tour-assistance-table" className="p-4">
               <DataTable
                 data={(studentsFromService || []).map((s) => ({
                   id: getStudentKey(s),
@@ -625,7 +669,7 @@ const RegisterAssistance = () => {
                       return (
                         <input
                           type="checkbox"
-                          className="w-5 h-5 mx-auto"
+                          className="w-5 h-5 mx-auto tour-present-checkbox"
                           checked={attendance === "PRESENTE"}
                           onChange={handleToggleAttendance(key, "PRESENTE")}
                         />
@@ -672,7 +716,7 @@ const RegisterAssistance = () => {
                                   : "Guardar asistencia"
                               }
                               tooltip={true}
-                              className={`w-10 h-10 p-2 ${rowLoading ? "animate-spin" : ""}`}
+                              className={`w-10 h-10 p-2 ${rowLoading ? "animate-spin" : ""} tour-save-assistance-row`}
                               disabled={rowLoading}
                             />
                           </div>

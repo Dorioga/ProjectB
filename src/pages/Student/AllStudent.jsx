@@ -174,6 +174,8 @@ const AllStudent = () => {
         columns={columns}
         fileName="Export_Student"
         mode="Student"
+        loading={loading}
+        loaderMessage="Cargando estudiantes..."
       />
 
       <StudentModal

@@ -52,6 +52,25 @@ export async function logout() {
   return ApiClient.post("/auth/logout");
 }
 
+/**
+ * Solicita al backend el envío de un enlace para restablecer la contraseña.
+ * En modo DEV simula la respuesta para poder probar la UI.
+ */
+export async function forgotPassword(payload) {
+  const email = payload?.email || payload;
+  if (!email) {
+    throw new Error("El correo es obligatorio");
+  }
+  if (import.meta.env.DEV) {
+    return Promise.resolve({
+      ok: true,
+      message: "Enlace de restablecimiento simulado (DEV)",
+    });
+  }
+  const res = await ApiClient.instance.post("/auth/forgot-password", { email });
+  return res;
+}
+
 export async function getProfile() {
   if (import.meta.env.DEV) {
     // Devuelve la información pública de loginResponse como "perfil".

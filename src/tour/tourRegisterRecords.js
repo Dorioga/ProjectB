@@ -24,6 +24,26 @@ const tourRegisterRecords = () => {
         },
       },
       {
+        element: "#tour-grade",
+        popover: {
+          title: "Selector de grado",
+          description:
+            "Selecciona el grado para filtrar las asignaturas disponibles.",
+          side: "bottom",
+          align: "start",
+        },
+      },
+      {
+        element: "#tour-asignature",
+        popover: {
+          title: "Selector de asignatura",
+          description:
+            "Selecciona la asignatura para la cual crearás las notas.",
+          side: "bottom",
+          align: "start",
+        },
+      },
+      {
         element: "#tour-num-records",
         popover: {
           title: "Cantidad de notas",
@@ -51,6 +71,46 @@ const tourRegisterRecords = () => {
             "Aquí aparecerán las notas a registrar. Para cada una podrás asignar un nombre, porcentaje y logros. Puedes fijar el porcentaje de una nota para que no se redistribuya automáticamente.",
           side: "top",
           align: "start",
+        },
+      },
+      {
+        element: ".tour-note-name",
+        popover: {
+          title: "Nombre de la nota",
+          description:
+            "Asigna un nombre descriptivo (ej. Parcial 1) para identificar la nota.",
+          side: "right",
+          align: "center",
+        },
+      },
+      {
+        element: ".tour-note-porcentual",
+        popover: {
+          title: "Porcentual",
+          description:
+            "Define qué porcentaje del período representa esta nota.",
+          side: "right",
+          align: "center",
+        },
+      },
+      {
+        element: ".tour-note-lock",
+        popover: {
+          title: "Fijar porcentaje",
+          description:
+            "Marca 'Fijar' para evitar que el porcentaje se redistribuya automáticamente.",
+          side: "right",
+          align: "center",
+        },
+      },
+      {
+        element: ".tour-note-goal",
+        popover: {
+          title: "Logros",
+          description:
+            "Agrega los logros asociados a esta nota para que aparezcan en los reportes.",
+          side: "right",
+          align: "center",
         },
       },
       {

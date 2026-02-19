@@ -3,6 +3,8 @@ import * as LucideIcons from "lucide-react";
 const SimpleButton = ({
   msj = null,
   msjtooltip = null,
+  // `textSize` permite pasar clases de Tailwind para el tamaño del texto (p. ej. "text-2xl", "text-8xl")
+  textSize = "",
   onClick,
   icon,
   bg,
@@ -38,7 +40,9 @@ const SimpleButton = ({
       {icon && <IconComponent />}
 
       {/* Si tooltipEnabled no renderizamos el texto dentro del botón y mostramos tooltip en hover */}
-      {!tooltipEnabled && msj ? <p className="pl-2">{msj}</p> : null}
+      {!tooltipEnabled && msj ? (
+        <p className={`pl-2 ${textSize}`}>{msj}</p>
+      ) : null}
 
       {tooltipEnabled && tooltipText ? (
         <div

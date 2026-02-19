@@ -111,6 +111,14 @@ const ManageTeacher = () => {
           processed = mapTeacherRowsToProcessed(rawData, teacher);
         }
 
+        // If processed doesn't include director_of_grade but the table row has it, preserve it
+        if (!processed?.director_of_grade && teacher?.director_of_grade) {
+          processed = {
+            ...processed,
+            director_of_grade: teacher.director_of_grade,
+          };
+        }
+
         setSelectedTeacher(teacher);
         setSelectedTeacherForModal(processed);
         setInitialEditing(Boolean(editing));
@@ -164,27 +172,20 @@ const ManageTeacher = () => {
       },
 
       {
-        accessorKey: "grados",
+        accessorKey: "grado_grupo",
         header: "Grados Asignados",
         meta: {
           hideOnLG: true,
         },
-      },
-      {
-        accessorKey: "grupos",
-        header: "Grupos Asignados",
-        meta: {
-          hideOnLG: true,
-        },
         cell: ({ row }) => {
-          const val = row.original.grupos ?? row.original.grupo ?? "";
+          const val = row.original.grado_grupo ?? row.original.grupo ?? "";
           const parts = String(val || "")
             .split(",")
             .map((p) => p.trim())
             .filter(Boolean);
           if (parts.length === 0) return null;
           return (
-            <div className="grid grid-cols-4 items-start gap-1">
+            <div className="grid grid-cols-3 items-start gap-1 p-2">
               {parts.map((p, i) => (
                 <div key={i} className="text-left text-sm">
                   - {p}
@@ -217,6 +218,13 @@ const ManageTeacher = () => {
               ))}
             </div>
           );
+        },
+      },
+      {
+        accessorKey: "director_of_grade",
+        header: "Director de grado",
+        meta: {
+          hideOnLG: true,
         },
       },
 
@@ -276,20 +284,13 @@ const ManageTeacher = () => {
           fileName="Export_Teachers"
           mode="Teacher"
           showDownloadButtons={false}
+          loading={isTableLoading || isFetching}
+          loaderMessage={
+            isFetching
+              ? "Cargando datos del docente..."
+              : "Cargando docentes..."
+          }
         />
-
-        {(isTableLoading || isFetching) && (
-          <div className="absolute inset-0 flex items-center justify-center bg-surface/60 z-10">
-            <div className="text-center py-8 bg-transparent">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2" />
-              <div className="text-sm font-medium text-primary">
-                {isFetching
-                  ? "Cargando datos del docente..."
-                  : "Cargando docentes..."}
-              </div>
-            </div>
-          </div>
-        )}
 
         {fetchError && (
           <div className="mt-4 text-center text-red-600">

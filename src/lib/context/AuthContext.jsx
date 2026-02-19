@@ -10,6 +10,7 @@ import { setAuthToken } from "../../services/ApiClient";
 import { useNavigate } from "react-router-dom";
 import { getMenuRol } from "../../services/dataService";
 import { applyCustomColors, resetTheme } from "../../utils/themeManager";
+import { institutionAbbreviation } from "../../utils/formatUtils";
 
 export const AuthContext = createContext(null);
 
@@ -185,6 +186,19 @@ export function AuthProvider({ children }) {
       applyCustomColors(colorPrincipal, colorSecundario);
     }
   }, [colorPrincipal, colorSecundario]);
+
+  // Mantener el título del sitio como "Nexus — ABBR" (fallback a "Nexus")
+  useEffect(() => {
+    try {
+      const abbr = nameSchool
+        ? institutionAbbreviation(String(nameSchool))
+        : "";
+      document.title = abbr ? `Nexus — ${abbr}` : "Nexus";
+    } catch (err) {
+      // No bloquear por errores de DOM
+      console.warn("AuthContext: error setting document.title", err);
+    }
+  }, [nameSchool]);
 
   const login = async (credentials) => {
     setLoading(true);
