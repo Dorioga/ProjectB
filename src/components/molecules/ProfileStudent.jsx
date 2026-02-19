@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import PreviewIMG from "../atoms/PreviewIMG";
+import PeriodSelector from "../atoms/PeriodSelector";
 import SimpleButton from "../atoms/SimpleButton";
 import FileChooser from "../atoms/FileChooser";
 import CameraModal from "./CameraModal";
 import ExcuseModal from "./ExcuseModal";
-import HabeasDataModal from "./HabeasDataFormatModal.jsx";
 import PDFViewerModal from "./PDFViewerModal.jsx";
 import { formatDateToDisplay } from "../../utils/formatUtils";
 
@@ -25,13 +25,11 @@ const ProfileStudent = ({
 
   const [isOpenCamera, setIsOpenCamera] = useState(false);
   const [isOpenExcuse, setIsOpenExcuse] = useState(false);
-  const [isOpenHabeasDataFormat, setIsOpenHabeasDataFormat] = useState(false);
   const [isOpenDocument, setIsOpenDocument] = useState(false);
-  const [habeasDataMode, setHabeasDataMode] = useState("view");
   const [documentSelected, setDocumentSelected] = useState({
     file: null,
     name: "",
-  }); // Estado para el modo de Habeas Data
+  });
 
   // Estados para manejar archivos y previews
   const [photoFile, setPhotoFile] = useState(null);
@@ -39,7 +37,6 @@ const ProfileStudent = ({
     data.link_foto || data.url_photo,
   );
   const [documentFiles, setDocumentFiles] = useState({
-    habeas_data: null,
     id_Student: null,
     id_Acudiente: null,
     piar: null,
@@ -55,6 +52,8 @@ const ProfileStudent = ({
     second_name: data?.segundo_nombre || data?.second_name || "",
     first_lastname: data?.primer_apellido || data?.first_lastname || "",
     second_lastname: data?.segundo_apellido || data?.second_lastname || "",
+    // Periodo de ingreso (editable)
+    periodo_ingreso: data?.periodo_ingreso || data?.fk_periodo_ingreso || "",
   });
 
   // Selectores para sede y jornada
@@ -121,12 +120,18 @@ const ProfileStudent = ({
       process_id: processIdMap[editedData.state_process] || "2",
       gender: data.genero || data.genre || "",
       photo_link: photoPreview || data.link_foto || data.url_photo || "",
-      habeas_link: data.auDoc_habeas || data.link_habeas || "",
       identification_link:
         data.auDoc_idEstudiante || data.link_identificacion || "",
       nui: data.nui || "",
       per_id: data.per_id || "",
       fk_beca: becaIdMap[editedData.state_beca] ?? 1,
+      // Periodo de ingreso
+      periodo_ingreso: editedData.periodo_ingreso || data.periodo_ingreso || "",
+      fk_periodo_ingreso: editedData.periodo_ingreso
+        ? Number(editedData.periodo_ingreso)
+        : data.fk_periodo_ingreso
+          ? Number(data.fk_periodo_ingreso)
+          : null,
       // PIAR
       cuenta_piar: hasPiar,
     };
@@ -135,11 +140,6 @@ const ProfileStudent = ({
     if (photoFile) {
       // La foto se subirá y se actualizará el photo_link
       updatedData.photo_link = photoPreview;
-    }
-
-    if (documentFiles.habeas_data) {
-      // El documento se subirá y se actualizará el habeas_link
-      updatedData.habeas_link = ""; // Se actualizará después de subir
     }
 
     if (documentFiles.id_Student) {
@@ -205,16 +205,6 @@ const ProfileStudent = ({
       <div className="w-11/12 flex flex-col gap-4">
         <div className="w-full flex justify-end">
           <div className="grid grid-cols-2 gap-2">
-            <SimpleButton
-              onClick={() => {
-                setHabeasDataMode("create");
-                setIsOpenHabeasDataFormat(true);
-              }}
-              msj={"Habeas Data"}
-              bg={"bg-primary"}
-              icon={"Download"}
-              text={"text-surface"}
-            />
             <SimpleButton
               onClick={toggleEditing}
               msj={isEditing ? "Guardar" : "Editar"}
@@ -343,6 +333,29 @@ const ProfileStudent = ({
             <label className="text-lg font-medium">Grupo:</label>
             <p>{data.grupo || data.group_grade}</p>
           </div>
+
+          <div className="flex flex-row gap-4 items-center">
+            <label className="text-lg font-medium">Periodo de ingreso:</label>
+            {isEditing ? (
+              <PeriodSelector
+                name="periodo_ingreso"
+                label={false}
+                value={editedData.periodo_ingreso}
+                onChange={(e) =>
+                  handleStateChange("periodo_ingreso", e.target.value)
+                }
+                className="w-full p-2 border rounded bg-surface"
+              />
+            ) : (
+              <p>
+                {data.nombre_periodo ||
+                  data.periodo_ingreso ||
+                  data.fk_periodo_ingreso ||
+                  "No registrado"}
+              </p>
+            )}
+          </div>
+
           <div className="flex flex-row gap-4 items-center">
             <label className="text-lg font-medium">Jornada:</label>
             <p>{data.nombre_jornada_estudiante}</p>
@@ -521,68 +534,7 @@ const ProfileStudent = ({
         </div>
         <div className="p-4 bg-bg rounded-lg shadow-md flex flex-col gap-2">
           <h2 className="text-2xl font-semibold pb-4">Documentos Auditoria</h2>
-          <div
-            className={`w-full grid grid-cols-1  gap-4 items-center ${
-              documentFiles.habeas_data ? "grid-cols-5" : "grid-cols-3"
-            }`}
-          >
-            <label className="text-lg font-medium">Habeas Data:</label>
-            <span
-              className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
-                data.auDoc_habeas || data.link_habeas
-                  ? "bg-green-100 text-green-800 border-green-200 "
-                  : "bg-yellow-100 text-yellow-800 border-yellow-200 "
-              }`}
-            >
-              {String(data?.auDoc_habeas || "").includes("https://") ||
-              data?.link_habeas
-                ? "Cargado"
-                : "No cargado"}
-            </span>
 
-            {isEditing ? (
-              <div
-                className={`flex  ${
-                  documentFiles.habeas_data ? "col-span-3" : "col-span-1"
-                }`}
-              >
-                <FileChooser
-                  onChange={(file) => handleDocumentChange("habeas_data", file)}
-                  accept=".pdf"
-                  label={
-                    documentFiles.habeas_data
-                      ? documentFiles.habeas_data.name
-                      : "Cargar archivo"
-                  }
-                />
-              </div>
-            ) : String(data?.auDoc_habeas || "").includes("https://") ||
-              data?.link_habeas ? (
-              <SimpleButton
-                onClick={() => {
-                  setIsOpenDocument(true);
-                  setDocumentSelected({
-                    file: data.auDoc_habeas || data.link_habeas,
-                    name: "Documento Habeas Data",
-                  });
-                }}
-                msj="Ver documento"
-                bg="bg-accent"
-                icon="View"
-                text="text-surface"
-              />
-            ) : (
-              <FileChooser
-                onChange={(file) => handleDocumentChange("habeas_data", file)}
-                accept=".pdf"
-                label={
-                  documentFiles.habeas_data
-                    ? documentFiles.habeas_data.name
-                    : "Cargar archivo"
-                }
-              />
-            )}
-          </div>
           <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-4 items-center">
             <label className="text-lg font-medium">Ficha de matrícula:</label>
             <span
@@ -817,12 +769,7 @@ const ProfileStudent = ({
         mode={isEditing ? "upload" : "view"}
         onSubmit={handleExcuseSubmit}
       />
-      <HabeasDataModal
-        idEstudiante={data.numero_identificacion || data.identification}
-        isOpen={isOpenHabeasDataFormat}
-        onClose={() => setIsOpenHabeasDataFormat(false)}
-        mode={habeasDataMode}
-      />
+
       <PDFViewerModal
         isOpen={isOpenDocument}
         onClose={() => setIsOpenDocument(false)}

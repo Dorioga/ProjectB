@@ -8,6 +8,7 @@ import JourneySelect from "../../components/atoms/JourneySelect";
 import BecaSelector from "../../components/atoms/BecaSelector";
 import GradeSelector from "../../components/atoms/GradeSelector";
 import TypeDocumentSelector from "../../components/molecules/TypeDocumentSelector";
+import PeriodSelector from "../../components/atoms/PeriodSelector";
 import useStudent from "../../lib/hooks/useStudent";
 import useData from "../../lib/hooks/useData";
 import { useNotify } from "../../lib/hooks/useNotify";
@@ -37,12 +38,13 @@ const RegisterStudent = ({ onSuccess }) => {
     nui: "",
     per_id: "",
     fk_beca: "",
+    // Periodo de ingreso
+    periodo_ingreso: "",
     // PIAR
     cuenta_piar: false,
     link_piar: null,
     // documentos
     link_identificacion: null,
-    link_habeas: null,
   });
 
   // Obtener fk_workday de la sede seleccionada para filtrar jornadas
@@ -112,8 +114,12 @@ const RegisterStudent = ({ onSuccess }) => {
         nui: formData.nui || "",
         per_id: formData.per_id || "",
         fk_beca: formData.fk_beca ? Number(formData.fk_beca) : "",
+        // Periodo de ingreso
+        periodo_ingreso: formData.periodo_ingreso || "",
+        fk_periodo_ingreso: formData.periodo_ingreso
+          ? Number(formData.periodo_ingreso)
+          : "",
         link_identificacion: formData.link_identificacion || "",
-        link_habeas: formData.link_habeas || "",
         // PIAR
         cuenta_piar: !!formData.cuenta_piar,
         link_piar: formData.link_piar || "",
@@ -157,11 +163,12 @@ const RegisterStudent = ({ onSuccess }) => {
         nui: "",
         per_id: "",
         fk_beca: "",
+        // Periodo de ingreso
+        periodo_ingreso: "",
         // PIAR
         cuenta_piar: false,
         link_piar: null,
         link_identificacion: null,
-        link_habeas: null,
       });
 
       // Notificar al componente padre (si fue pasado)
@@ -355,6 +362,13 @@ const RegisterStudent = ({ onSuccess }) => {
           onChange={handleChange}
           placeholder="Selecciona una beca"
         />
+        <PeriodSelector
+          name="periodo_ingreso"
+          label="Periodo de ingreso"
+          value={formData.periodo_ingreso}
+          onChange={handleChange}
+          placeholder="Selecciona un período"
+        />
         <div>
           <label>PER ID</label>
           <input
@@ -382,14 +396,6 @@ const RegisterStudent = ({ onSuccess }) => {
           <FileChooser
             onChange={(file) =>
               setFormData((prev) => ({ ...prev, link_identificacion: file }))
-            }
-          />
-        </div>
-        <div>
-          <label>Habeas Data</label>
-          <FileChooser
-            onChange={(file) =>
-              setFormData((prev) => ({ ...prev, link_habeas: file }))
             }
           />
         </div>

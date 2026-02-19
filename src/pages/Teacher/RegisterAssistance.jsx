@@ -40,6 +40,8 @@ const RegisterAssistance = () => {
   const [grade, setGrade] = useState("");
   const [group, setGroup] = useState("");
   const [attendanceByStudent, setAttendanceByStudent] = useState({});
+  // Modo edición para permitir cambiar los checkboxes de asistencia
+  const [isEditMode, setIsEditMode] = useState(false);
 
   const [studentsFromService, setStudentsFromService] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
@@ -200,14 +202,15 @@ const RegisterAssistance = () => {
 
   const selectedCount = useMemo(() => {
     const values = Object.values(attendanceByStudent ?? {});
-    return values.filter((v) => String(v ?? "").trim() !== "").length;
+    // Contar únicamente los marcados como PRESENTE
+    return values.filter((v) => String(v ?? "").trim() === "PRESENTE").length;
   }, [attendanceByStudent]);
 
   const handleSubmitAll = async (e) => {
     e.preventDefault();
     const rows = (studentsFromService || []).map((student) => {
       const studentKey = getStudentKey(student);
-      const attendance = attendanceByStudent?.[studentKey] ?? "";
+      // Forzar PRESENTE en el payload (checkbox siempre seleccionado)
       return {
         fk_estudiante:
           Number(
@@ -216,7 +219,11 @@ const RegisterAssistance = () => {
         fk_asignatura: Number(asignatureCode) || null,
         fk_grado: Number(grade) || null,
         fk_periodo: Number(period) || null,
-        presente: String(attendance === "PRESENTE" ? "Si" : "No"),
+        presente: String(
+          (attendanceByStudent?.[studentKey] ?? "PRESENTE") === "PRESENTE"
+            ? "Si"
+            : "No",
+        ),
         fk_sede: Number(sedeSelected) || null,
       };
     });
@@ -266,7 +273,8 @@ const RegisterAssistance = () => {
         const initial = {};
         (list || []).forEach((s) => {
           const key = getStudentKey(s);
-          initial[key] = attendanceByStudent[key] || "";
+          // Por defecto marcar PRESENTE si no hay valor previo
+          initial[key] = attendanceByStudent[key] ?? "PRESENTE";
         });
         if (mounted)
           setAttendanceByStudent((prev) => ({ ...initial, ...prev }));
@@ -638,6 +646,31 @@ const RegisterAssistance = () => {
                 </span>{" "}
                 · Marcados: <span className="font-medium">{selectedCount}</span>
               </div>
+
+              <div className="flex gap-2">
+                <SimpleButton
+                  type="button"
+                  onClick={() => setIsEditMode((s) => !s)}
+                  icon={isEditMode ? "X" : "Edit"}
+                  bg={isEditMode ? "bg-amber-600" : "bg-accent"}
+                  text="text-surface"
+                  msj={
+                    isEditMode ? "Cancelar Asistencia" : "Activar Asistencia"
+                  }
+                  className="px-3 py-1.5 tour-edit-toggle"
+                />
+
+                {isEditMode && (
+                  <SimpleButton
+                    type="submit"
+                    icon="Save"
+                    bg="bg-green-600"
+                    text="text-surface"
+                    msj="Guardar asistencias"
+                    className="px-3 py-1.5"
+                  />
+                )}
+              </div>
             </div>
 
             <div id="tour-assistance-table" className="p-4">
@@ -669,58 +702,22 @@ const RegisterAssistance = () => {
                       return (
                         <input
                           type="checkbox"
-                          className="w-5 h-5 mx-auto tour-present-checkbox"
-                          checked={attendance === "PRESENTE"}
-                          onChange={handleToggleAttendance(key, "PRESENTE")}
+                          className="w-5 h-5 m-2  mx-auto tour-present-checkbox"
+                          checked={
+                            isEditMode ? attendance === "PRESENTE" : true
+                          }
+                          onChange={
+                            isEditMode
+                              ? handleToggleAttendance(key, "PRESENTE")
+                              : undefined
+                          }
+                          disabled={!isEditMode}
+                          aria-label={
+                            isEditMode
+                              ? "Editar presencia"
+                              : "Presente (siempre seleccionado)"
+                          }
                         />
-                      );
-                    },
-                  },
-                  {
-                    id: "actions",
-                    header: "Acciones",
-                    cell: ({ row }) => {
-                      const key = row.original.id;
-                      // buscar el objeto estudiante original si está disponible
-                      const student = (studentsFromService || []).find(
-                        (s) => String(getStudentKey(s)) === String(key),
-                      ) || { id_student: key };
-
-                      const rowLoading = Boolean(rowLoadingById?.[key]);
-                      const rowSaved = Boolean(rowSavedById?.[key]);
-
-                      return (
-                        <div className="flex justify-center p-2 gap-2">
-                          <div className="w-10">
-                            <SimpleButton
-                              type="button"
-                              onClick={() => saveRow(student)}
-                              icon={
-                                rowLoading
-                                  ? "Loader2"
-                                  : rowSaved
-                                    ? "Check"
-                                    : "Save"
-                              }
-                              bg={
-                                rowLoading
-                                  ? "bg-gray-400"
-                                  : rowSaved
-                                    ? "bg-green-700"
-                                    : "bg-green-600"
-                              }
-                              text="text-surface"
-                              msjtooltip={
-                                rowLoading
-                                  ? "Guardando..."
-                                  : "Guardar asistencia"
-                              }
-                              tooltip={true}
-                              className={`w-10 h-10 p-2 ${rowLoading ? "animate-spin" : ""} tour-save-assistance-row`}
-                              disabled={rowLoading}
-                            />
-                          </div>
-                        </div>
                       );
                     },
                   },

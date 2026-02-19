@@ -102,6 +102,9 @@ const RegisterStudentRecords = () => {
   const logrosOptionsByStudentRef = useRef(logrosOptionsByStudent);
   const loadingLogrosByStudentRef = useRef(loadingLogrosByStudent);
   const selectedLogroByStudentRef = useRef(selectedLogroByStudent);
+  // Refs para el estado de tipos de logro (evitan dependencias en useCallback)
+  const tipoLogroOptionsRef = useRef(tipoLogroOptions);
+  const loadingTipoLogroOptionsRef = useRef(loadingTipoLogroOptions);
 
   // Sincronizar refs en cada render
   recordValuesByStudentRef.current = recordValuesByStudent;
@@ -117,6 +120,8 @@ const RegisterStudentRecords = () => {
   logrosOptionsByStudentRef.current = logrosOptionsByStudent;
   loadingLogrosByStudentRef.current = loadingLogrosByStudent;
   selectedLogroByStudentRef.current = selectedLogroByStudent;
+  tipoLogroOptionsRef.current = tipoLogroOptions;
+  loadingTipoLogroOptionsRef.current = loadingTipoLogroOptions;
 
   // SedEs del docente (obtenidas vía getTeacherSede)
   const [teacherSedes, setTeacherSedes] = useState([]);
@@ -328,28 +333,69 @@ const RegisterStudentRecords = () => {
     setAsignatureCode(asignatureSelected);
   }, [asignatureSelected]);
 
-  // --- Cargar tipos de logro (para selects de comentarios) ---
-  useEffect(() => {
-    let mounted = true;
-    const loadTipos = async () => {
+  // --- Lazy-load tipos de logro (solo cuando una fila está en modo edición y sus notas están completas) ---
+  // Los refs se usan para las guardas internas y así la función no se recrea
+  // cada vez que cambia el estado de carga (evita bucles de recreación).
+  const loadTipoLogroOptions = useCallback(
+    async (force = false) => {
+      // si no es forzado y ya tenemos opciones retornamos (leemos ref, no estado)
+      if (
+        !force &&
+        Array.isArray(tipoLogroOptionsRef.current) &&
+        tipoLogroOptionsRef.current.length > 0
+      )
+        return;
+      // evitar llamadas concurrentes (leemos ref, no estado)
+      if (loadingTipoLogroOptionsRef.current) return;
+
       setLoadingTipoLogroOptions(true);
       try {
-        if (!getLogroType) return;
+        if (!getLogroType) {
+          console.warn("loadTipoLogroOptions - getLogroType no disponible");
+          return;
+        }
         const res = await getLogroType();
         const data = Array.isArray(res) ? res : (res?.data ?? []);
-        if (mounted) setTipoLogroOptions(data);
+        setTipoLogroOptions(data);
       } catch (err) {
         console.error("RegisterStudentRecords - getLogroType error:", err);
-        if (mounted) setTipoLogroOptions([]);
+        setTipoLogroOptions([]);
+        notify.error("No fue posible cargar tipos de logro.");
       } finally {
-        if (mounted) setLoadingTipoLogroOptions(false);
+        setLoadingTipoLogroOptions(false);
       }
-    };
-    loadTipos();
-    return () => {
-      mounted = false;
-    };
-  }, [getLogroType]);
+    },
+    // tipoLogroOptions y loadingTipoLogroOptions se leen vía refs, no deps
+    [getLogroType, notify],
+  );
+
+  // Vigilar filas en modo edición y cargar tipos sólo cuando haya al menos
+  // una fila editable cuya calculadora de notas indique `isComplete === true`.
+  // Los estados de carga se leen a través de refs para no ser deps del effect.
+  useEffect(() => {
+    if (
+      Array.isArray(tipoLogroOptionsRef.current) &&
+      tipoLogroOptionsRef.current.length > 0
+    )
+      return;
+    if (loadingTipoLogroOptionsRef.current) return;
+
+    const editingKeys = Object.keys(rowEditById || {}).filter(
+      (k) => rowEditById?.[k],
+    );
+    if (editingKeys.length === 0) return;
+
+    for (const key of editingKeys) {
+      const values = recordValuesByStudent?.[key] ?? {};
+      const finalInfo = computeFinalRecord(values);
+      if (finalInfo && finalInfo.isComplete) {
+        loadTipoLogroOptions().catch((err) =>
+          console.warn("loadTipoLogroOptions failed:", err),
+        );
+        break;
+      }
+    }
+  }, [rowEditById, recordValuesByStudent, loadTipoLogroOptions]);
 
   const reloadOnceRef = useRef(false);
 
@@ -451,6 +497,12 @@ const RegisterStudentRecords = () => {
           ? res.value
           : (res.value?.data ?? []);
 
+        // temporales para comentarios/tipo/logro/opciones por estudiante
+        const commentsForStudent = commentsById || {};
+        const tipoForStudent = {};
+        const logroForStudent = selectedLogroByStudent || {};
+        const logroOptionsForStudent = {};
+
         data.forEach((n) => {
           const name = String(
             n?.nombre_nota ?? n?.name ?? n?.nombre ?? "",
@@ -484,7 +536,71 @@ const RegisterStudentRecords = () => {
               id_estudiante_nota: Number(studentNoteId),
             };
           }
+
+          // Extraer comentario / goal si viene en la respuesta (prefiere first non-empty)
+          const noteComment =
+            n?.goal_student ??
+            n?.goalStudent ??
+            n?.goal ??
+            n?.comentario ??
+            n?.comentario_docente ??
+            null;
+          if (noteComment && !commentsForStudent[studentKey]) {
+            commentsForStudent[studentKey] = String(noteComment);
+          }
+
+          // Extraer fk_tipo_logro (primer select) y id_logro (segundo select) si vienen
+          const noteTipo =
+            n?.fk_tipo_logro ?? n?.fkTipoLogro ?? n?.fk_type_logro ?? null;
+          const noteLogro =
+            n?.id_logro ?? n?.idLogro ?? n?.fk_logro ?? n?.fkLogro ?? null;
+          const noteLogroDesc =
+            n?.descripcion_logro ??
+            n?.descripcion ??
+            n?.desc_logro ??
+            n?.descripcion_logro_estudiante ??
+            null;
+
+          if (noteTipo && !tipoForStudent[studentKey]) {
+            tipoForStudent[studentKey] = String(noteTipo);
+          }
+
+          if (noteLogro && !logroForStudent[studentKey]) {
+            logroForStudent[studentKey] = String(noteLogro);
+          }
+
+          if (noteLogro && noteLogroDesc) {
+            logroOptionsForStudent[studentKey] =
+              logroOptionsForStudent[studentKey] || [];
+            // evitar duplicados
+            if (
+              !logroOptionsForStudent[studentKey].some(
+                (o) => String(o.id) === String(noteLogro),
+              )
+            ) {
+              logroOptionsForStudent[studentKey].push({
+                id: noteLogro,
+                descripcion: String(noteLogroDesc),
+              });
+            }
+          }
         });
+
+        // Asignar maps extraídos (si hubo datos)
+        if (Object.keys(commentsForStudent).length > 0)
+          setCommentsById((prev) => ({ ...prev, ...commentsForStudent }));
+        if (Object.keys(tipoForStudent).length > 0)
+          setTipoByStudent((prev) => ({ ...prev, ...tipoForStudent }));
+        if (Object.keys(logroForStudent).length > 0)
+          setSelectedLogroByStudent((prev) => ({
+            ...prev,
+            ...logroForStudent,
+          }));
+        if (Object.keys(logroOptionsForStudent).length > 0)
+          setLogrosOptionsByStudent((prev) => ({
+            ...prev,
+            ...logroOptionsForStudent,
+          }));
       });
 
       const consolidatedNotes = Array.from(notesMap.values());
@@ -773,6 +889,62 @@ const RegisterStudentRecords = () => {
     setCommentsById((prev) => ({ ...prev, [studentKey]: text }));
   }, []);
 
+  // Cargar opciones de `logro` para una fila concreta sin limpiar selección previa.
+  const loadLogrosOptionsForStudent = useCallback(
+    async (studentKey, tipoId, { preserveSelection = true } = {}) => {
+      if (!tipoId) return;
+      // si ya están y no forzamos, no volver a cargarlas
+      const existing = logrosOptionsByStudentRef.current?.[studentKey];
+      if (preserveSelection && Array.isArray(existing) && existing.length > 0)
+        return;
+
+      setLoadingLogrosByStudent((prev) => ({ ...prev, [studentKey]: true }));
+      try {
+        const payload = {
+          ...(fkInstitucion ? { fk_institucion: Number(fkInstitucion) } : {}),
+          ...(asignatureSelected
+            ? { fk_asignatura: Number(asignatureSelected) }
+            : {}),
+          ...(gradeSelected ? { fk_grado: Number(gradeSelected) } : {}),
+          ...(periodSelected ? { fk_periodo: Number(periodSelected) } : {}),
+          fk_tipo_logro: Number(tipoId),
+        };
+        const res = await getAllLogros(payload);
+        const list = Array.isArray(res) ? res : (res?.data ?? []);
+        const mapped = (Array.isArray(list) ? list : []).map((l) => ({
+          id: l.id_logro ?? l.id,
+          descripcion: l.descripcion ?? l.description ?? l.nombre ?? "",
+        }));
+
+        setLogrosOptionsByStudent((prev) => ({
+          ...prev,
+          [studentKey]: mapped,
+        }));
+
+        // Si no preservamos selección, limpiar selección y comentario (igual que handleTipoSelect)
+        if (!preserveSelection) {
+          setSelectedLogroByStudent((prev) => ({ ...prev, [studentKey]: "" }));
+          setCommentsById((prev) => ({ ...prev, [studentKey]: "" }));
+        }
+      } catch (err) {
+        console.error(
+          "RegisterStudentRecords - getAllLogros error (on edit):",
+          err,
+        );
+        // no notificamos al usuario aquí para no ser intrusivos; usar console
+      } finally {
+        setLoadingLogrosByStudent((prev) => ({ ...prev, [studentKey]: false }));
+      }
+    },
+    [
+      getAllLogros,
+      fkInstitucion,
+      asignatureSelected,
+      gradeSelected,
+      periodSelected,
+    ],
+  );
+
   /**
    * Guarda notas para UNA sola fila (estudiante).
    * - Construye payload con fk_grado, fk_sede, fk_beca y note_student[]
@@ -783,6 +955,18 @@ const RegisterStudentRecords = () => {
     const values = recordValuesByStudent?.[studentKey] ?? {};
     const comment = commentsById?.[studentKey] ?? "";
     const recoveryNote = recoveryNotesById?.[studentKey] ?? "";
+
+    // id seleccionado del select "logro" (segundo select de comentarios)
+    const selectedLogro =
+      selectedLogroByStudentRef.current?.[studentKey] ??
+      selectedLogroByStudent?.[studentKey] ??
+      "";
+
+    // id seleccionado del primer select (tipo de logro)
+    const selectedTipo =
+      tipoByStudentRef.current?.[studentKey] ??
+      tipoByStudent?.[studentKey] ??
+      "";
 
     const finalInfo = computeFinalRecord(values);
     console.debug("saveStudentNotes - computed finalInfo", {
@@ -831,6 +1015,7 @@ const RegisterStudentRecords = () => {
           fk_note,
           value_note: noteNum,
           nota_periodo_porcentual: notePercentageFinal,
+          ...(selectedLogro ? { id_logro: Number(selectedLogro) } : {}),
         };
         if (finalInfo.isComplete) updateItem.nota_final = finalInfo.final;
         updateArray.push(updateItem);
@@ -842,6 +1027,7 @@ const RegisterStudentRecords = () => {
           value_note: noteNum,
           goal_student: comment || "",
           note_percentage_final: notePercentageFinal,
+          ...(selectedLogro ? { id_logro: Number(selectedLogro) } : {}),
         };
         if (finalInfo.isComplete) insertItem.final_note = finalInfo.final;
         insertArray.push(insertItem);
@@ -871,6 +1057,8 @@ const RegisterStudentRecords = () => {
           fk_sede: Number(sedeSelected),
           ...(fkInstitucion ? { fk_institucion: Number(fkInstitucion) } : {}),
           fk_beca: Number(fk_beca),
+          ...(selectedTipo ? { fk_tipo_logro: Number(selectedTipo) } : {}),
+          ...(selectedLogro ? { id_logro: Number(selectedLogro) } : {}),
           note_student: insertArray,
           ...(recoveryNote && String(recoveryNote).trim() !== ""
             ? { recovery_note: Number(recoveryNote) }
@@ -885,6 +1073,8 @@ const RegisterStudentRecords = () => {
           fk_sede: Number(sedeSelected),
           ...(fkInstitucion ? { fk_institucion: Number(fkInstitucion) } : {}),
           fk_beca: Number(fk_beca),
+          ...(selectedTipo ? { fk_tipo_logro: Number(selectedTipo) } : {}),
+          ...(selectedLogro ? { id_logro: Number(selectedLogro) } : {}),
           note_student: updateArray,
           ...(recoveryNote && String(recoveryNote).trim() !== ""
             ? { recovery_note: Number(recoveryNote) }
@@ -955,9 +1145,44 @@ const RegisterStudentRecords = () => {
       } else {
         // Habilitar edición de la fila
         setRowEditById((prev) => ({ ...prev, [studentKey]: true }));
+
+        // Siempre solicitar al servicio los tipos cuando se entra en modo edición
+        // (asegura datos frescos para el select `Tipo de logro`).
+        loadTipoLogroOptions(true)
+          .catch((err) =>
+            console.warn("loadTipoLogroOptions failed on edit:", err),
+          )
+          .finally(() => {
+            // Si ya existe un `tipo` para este estudiante, cargar también sus `logros`
+            const existingTipo =
+              tipoByStudentRef.current?.[studentKey] ??
+              tipoByStudent?.[studentKey];
+            const existingLogros =
+              logrosOptionsByStudentRef.current?.[studentKey] ?? [];
+
+            if (
+              existingTipo &&
+              (!Array.isArray(existingLogros) || existingLogros.length === 0)
+            ) {
+              loadLogrosOptionsForStudent(studentKey, existingTipo, {
+                preserveSelection: true,
+              }).catch((err) =>
+                console.warn(
+                  "loadLogrosOptionsForStudent failed on edit:",
+                  err,
+                ),
+              );
+            }
+          });
       }
     },
-    [rowEditById, rowInitialValuesById, notify],
+    [
+      rowEditById,
+      rowInitialValuesById,
+      notify,
+      loadTipoLogroOptions,
+      loadLogrosOptionsForStudent,
+    ],
   );
 
   // Mantener refs de handlers actualizados para las celdas
@@ -1142,7 +1367,6 @@ const RegisterStudentRecords = () => {
       cell: ({ row }) => {
         const student = row.original;
         const studentKey = getStudentKey(student);
-
         const comment = commentsByIdRef.current?.[studentKey] ?? "";
         const tipoValue = tipoByStudentRef.current?.[studentKey] ?? "";
         const logroOptions =
@@ -1153,6 +1377,45 @@ const RegisterStudentRecords = () => {
           loadingLogrosByStudentRef.current?.[studentKey],
         );
 
+        // Detectar si la fila está en modo edición
+        const editing = rowEditByIdRef.current?.[studentKey] !== false;
+
+        // Comprobar si todas las notas del estudiante están presentes (finalInfo.isComplete)
+        const studentValuesForCheck =
+          recordValuesByStudentRef.current?.[studentKey] ?? {};
+        const finalInfoForRow = computeFinalRecord(studentValuesForCheck);
+        const selectsEnabled = Boolean(editing && finalInfoForRow?.isComplete);
+
+        // MODO LECTURA: mostrar texto (comentario o logro) en lugar de los selects
+        if (!editing) {
+          const logroText = (
+            Array.isArray(logroOptions)
+              ? logroOptions.find((l) => String(l.id) === String(selectedLogro))
+              : null
+          )?.descripcion;
+
+          const display =
+            comment ||
+            logroText ||
+            (selectedLogro ? String(selectedLogro) : "-");
+
+          return (
+            <div className="p-2 text-sm text-gray-700 wrap-break-words">
+              {display}
+            </div>
+          );
+        }
+
+        // Si estamos en modo edición pero NO hay todas las notas, no renderizar los selects
+        if (!selectsEnabled) {
+          return (
+            <div className="p-2 text-sm text-gray-600">
+              Completa todas las notas para habilitar Tipo/Logro
+            </div>
+          );
+        }
+
+        // MODO EDICIÓN + todas las notas completas: mostrar selects para tipo + logro
         return (
           <div className="p-2 flex flex-col gap-2">
             <select
@@ -1161,15 +1424,27 @@ const RegisterStudentRecords = () => {
                 handleTipoSelectForStudent(studentKey, e.target.value)
               }
               className="w-full min-w-[200px] p-2 border rounded bg-surface text-sm tour-tipo-logro"
-              disabled={loadingDataRef.current || loadingTipoLogroOptions}
+              disabled={
+                loadingDataRef.current || loadingTipoLogroOptionsRef.current
+              }
             >
               <option value="">
-                {loadingTipoLogroOptions
+                {loadingTipoLogroOptionsRef.current
                   ? "Cargando..."
                   : "-- Tipo de logro --"}
               </option>
-              {Array.isArray(tipoLogroOptions) &&
-                tipoLogroOptions.map((t) => (
+
+              {/* Si no hay tipos y no está cargando, mostrar mensaje para el usuario */}
+              {!loadingTipoLogroOptionsRef.current &&
+                (!Array.isArray(tipoLogroOptionsRef.current) ||
+                  tipoLogroOptionsRef.current.length === 0) && (
+                  <option value="" disabled>
+                    Sin tipos disponibles
+                  </option>
+                )}
+
+              {Array.isArray(tipoLogroOptionsRef.current) &&
+                tipoLogroOptionsRef.current.map((t) => (
                   <option
                     key={t.id_type_logro ?? t.id}
                     value={t.id_type_logro ?? t.id}
@@ -1268,6 +1543,9 @@ const RegisterStudentRecords = () => {
     handleCommentChange,
     handleRecoveryNoteChange,
     sanitizeGradeInput,
+    // Forzar re-registro de columnas cuando tipos de logro carguen
+    // (cell renderer lee refs, pero el useMemo debe reejecutarse para reflejar cambios)
+    tipoLogroOptions,
   ]);
 
   // Preparar los datos para DataTable

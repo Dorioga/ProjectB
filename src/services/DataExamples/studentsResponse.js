@@ -16,7 +16,6 @@
     genre: "FEMENINO",
     birthday: "2017-11-24",
     state: "Registrado",
-    habeas_data: "Si",
     state_bd: "Cargado",
     fecha_in_re: "2025-07-20T00:00:00.000Z",
     url_photo:
@@ -29,7 +28,6 @@
     state_second: "Ausente",
     state_beca: "Activo",
     state_process: "Conforme",
-    auDoc_habeas: "",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
     auDoc_idAcudiente: "https://example.com/documents/id_acudiente.pdf",
     auDoc_idEstudiante: "https://example.com/documents/id_estudiante.pdf",
@@ -52,7 +50,6 @@
     genre: "MASCULINO",
     birthday: "2017-04-19",
     state: "Registrado",
-    habeas_data: "Si",
     state_bd: "Cargado",
     fecha_in_re: "2025-07-20T00:00:00.000Z",
     url_photo:
@@ -87,7 +84,6 @@
     genre: "MASCULINO",
     birthday: "2017-05-26",
     state: "Registrado",
-    habeas_data: "Si",
     state_bd: "Cargado",
     fecha_in_re: "2025-07-20T00:00:00.000Z",
     url_photo:
@@ -100,7 +96,6 @@
     state_second: "Ausente",
     state_beca: "Activo",
     state_process: "No Excusa",
-    auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
     auDoc_idAcudiente: "https://example.com/documents/id_acudiente.pdf",
     auDoc_idEstudiante: "https://example.com/documents/id_estudiante.pdf",
@@ -122,7 +117,6 @@
     genre: "MASCULINO",
     birthday: "2018-09-28",
     state: "Registrado",
-    habeas_data: "Si",
     state_bd: "Cargado",
     fecha_in_re: "2025-07-20T00:00:00.000Z",
     url_photo:
@@ -135,7 +129,6 @@
     state_second: "Ausente",
     state_beca: "Retirado",
     state_process: "Retirado",
-    auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
     auDoc_idAcudiente: "https://example.com/documents/id_acudiente.pdf",
     auDoc_idEstudiante: "https://example.com/documents/id_estudiante.pdf",
@@ -157,7 +150,6 @@
     genre: "MASCULINO",
     birthday: "2018-10-23",
     state: "Registrado",
-    habeas_data: "Si",
     state_bd: "Cargado",
     fecha_in_re: "2025-07-20T00:00:00.000Z",
     url_photo:
@@ -170,7 +162,6 @@
     state_second: "Ausente",
     state_beca: "Activo",
     state_process: "Conforme",
-    auDoc_habeas: "",
     auDoc_matricula: "",
     auDoc_idAcudiente: "",
     auDoc_idEstudiante: "",
@@ -192,7 +183,6 @@
     genre: "MASCULINO",
     birthday: "2018-08-29",
     state: "Registrado",
-    habeas_data: "Si",
     state_bd: "Cargado",
     fecha_in_re: "2025-07-20T00:00:00.000Z",
     url_photo:
@@ -228,7 +218,6 @@
     genre: "MASCULINO",
     birthday: "2017-11-08",
     state: "Registrado",
-    habeas_data: "Si",
     state_bd: "Cargado",
     fecha_in_re: "2025-07-20T00:00:00.000Z",
     url_photo:
@@ -242,7 +231,6 @@
     state_beca: "Activo",
     state_process: "Conforme",
 
-    auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
     auDoc_idAcudiente: "https://example.com/documents/id_acudiente.pdf",
     auDoc_idEstudiante: "https://example.com/documents/id_estudiante.pdf",
@@ -264,7 +252,6 @@
     genre: "MASCULINO",
     birthday: "2018-05-04",
     state: "Registrado",
-    habeas_data: "Si",
     state_bd: "Cargado",
     fecha_in_re: "2025-07-20T00:00:00.000Z",
     url_photo:
@@ -278,7 +265,6 @@
     state_beca: "Activo",
     state_process: "Conforme",
 
-    auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
     auDoc_idAcudiente: "https://example.com/documents/id_acudiente.pdf",
     auDoc_idEstudiante: "https://example.com/documents/id_estudiante.pdf",
@@ -300,7 +286,6 @@
     genre: "MASCULINO",
     birthday: "2019-06-21",
     state: "Registrado",
-    habeas_data: "Si",
     state_bd: "Cargado",
     fecha_in_re: "2025-07-20T00:00:00.000Z",
     url_photo:
@@ -314,7 +299,6 @@
     state_beca: "Activo",
     state_process: "Conforme",
 
-    auDoc_habeas: "https://example.com/documents/habeas_data.pdf",
     auDoc_matricula: "https://example.com/documents/matricula.pdf",
     auDoc_idAcudiente: "https://example.com/documents/id_acudiente.pdf",
     auDoc_idEstudiante: "https://example.com/documents/id_estudiante.pdf",

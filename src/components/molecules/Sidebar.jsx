@@ -47,10 +47,7 @@ const Sidebar = () => {
         {isOpen && (
           <div className="flex flex-col items-center justify-center text-center gap-2 p-4 transition-all duration-300 ease-in-out">
             <PreviewIMG
-              path={
-                imgSchool ||
-                "https://i.pinimg.com/736x/2d/5f/10/2d5f106e7866848b4bf3b0673904a143.jpg"
-              }
+              path={imgSchool || "/LogoGuadalupe.png"}
               size={"logo"}
             />
             <div className="text-surface font-bold text-sm">

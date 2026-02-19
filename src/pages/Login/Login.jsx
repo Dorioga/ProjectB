@@ -111,7 +111,7 @@ const Login = () => {
           <div className="flex justify-end">
             <button
               type="button"
-              className="text-2xl text-primary hover:underline"
+              className="text-2xl text-surface hover:underline"
               onClick={() => navigate("/forgot-password")}
             >
               ¿Olvidaste tu contraseña?
