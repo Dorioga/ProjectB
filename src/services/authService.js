@@ -46,10 +46,10 @@ export async function login(credentials) {
 }
 
 export async function logout() {
-  if (import.meta.env.DEV) {
-    return Promise.resolve({ ok: true });
-  }
-  return ApiClient.post("/auth/logout");
+  // Logout handled client-side only (no network call). Backend should
+  // invalidate tokens if necessary — implement server-side endpoint if
+  // you want a server-side logout.
+  return Promise.resolve({ ok: true });
 }
 
 /**

@@ -49,6 +49,7 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (res) => {
     const data = res.data;
+    const config = res?.config || {};
 
     // ✅ Validar que el código de respuesta sea "OK"
     if (data && typeof data === "object" && "code" in data) {
@@ -60,8 +61,10 @@ apiClient.interceptors.response.use(
           data.msg ||
           `Error: Código de respuesta ${data.code}`;
 
-        // Emitir evento para notificación global
-        eventBus.emit(errorMessage, "error");
+        // Emitir evento para notificación global (omitido si request marca `silent`)
+        if (!config.silent) {
+          eventBus.emit(errorMessage, "error");
+        }
 
         const error = new Error(errorMessage);
         error.status = res.status;
@@ -75,6 +78,7 @@ apiClient.interceptors.response.use(
   },
   (error) => {
     const res = error.response;
+    const config = error?.config || {};
 
     // Manejar errores de autenticación (token inválido/expirado)
     if (res?.status === 401 || res?.data?.code === "UN001") {
@@ -94,8 +98,10 @@ apiClient.interceptors.response.use(
       error.message ||
       "Error de la API";
 
-    // Emitir evento para notificación global
-    eventBus.emit(errorMessage, "error");
+    // Emitir evento para notificación global (omitido si request marca `silent`)
+    if (!config.silent) {
+      eventBus.emit(errorMessage, "error");
+    }
 
     const err = new Error(errorMessage);
     err.status = res?.status;

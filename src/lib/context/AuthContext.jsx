@@ -283,7 +283,7 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     setLoading(true);
     try {
-      await authService.logout().catch(() => {});
+      // await authService.logout().catch(() => {});
     } finally {
       setUserId(null);
       setUserName(null);
