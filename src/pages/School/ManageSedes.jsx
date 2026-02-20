@@ -181,7 +181,7 @@ const ManageSedes = () => {
               className="h-full"
               onClick={() => handleViewSede(row.original)}
               icon="Eye"
-              bg="bg-primary"
+              bg="bg-secondary"
               text="text-surface"
               noRounded={false}
               msjtooltip="Ver detalles"
@@ -211,7 +211,7 @@ const ManageSedes = () => {
             onClick={() => setIsAddOpen(true)}
             msj="Agregar sede"
             icon="Plus"
-            bg="bg-accent"
+            bg="bg-secondary"
             text="text-surface"
             noRounded={false}
           />

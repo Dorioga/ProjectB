@@ -204,6 +204,27 @@ export async function getStudentNotes(payload) {
 }
 
 /**
+ * Obtiene todos los estudiantes asignados al docente
+ * Endpoint esperado: POST /teacher/students
+ */
+export async function getAllStudentTeacher(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+  try {
+    const res = await ApiClient.instance.post("/teacher/students", payload);
+    const data = res;
+    console.log("teacherService - getAllStudentTeacher payload:", payload);
+    if (data && typeof data === "object" && "data" in data) return data.data;
+    if (data !== undefined && data !== null) return data;
+    throw new Error("Respuesta inesperada de teacher/students.");
+  } catch (error) {
+    console.error("teacherService - getAllStudentTeacher error:", error);
+    throw error;
+  }
+}
+
+/**
  * Obtiene los tipos de logro
  * Endpoint esperado: GET /type_logro
  */

@@ -177,6 +177,21 @@ export function TeacherProvider({ children }) {
     }
   }, []);
 
+  // Obtener todos los estudiantes asignados al docente
+  const getAllStudentTeacher = useCallback(async (payload = {}) => {
+    setLoadingTeachers(true);
+    setErrorTeachers(null);
+    try {
+      const res = await teacherService.getAllStudentTeacher(payload);
+      return res;
+    } catch (err) {
+      setErrorTeachers(err);
+      throw err;
+    } finally {
+      setLoadingTeachers(false);
+    }
+  }, []);
+
   // Registrar asistencia de estudiante(s)
   const registerAssistance = useCallback(async (payload = {}) => {
     setLoadingTeachers(true);
@@ -355,6 +370,8 @@ export function TeacherProvider({ children }) {
       updateLogro,
       // Asistencia
       registerAssistance,
+      // estudiantes docente
+      getAllStudentTeacher,
     }),
     [
       teachers,
@@ -381,6 +398,8 @@ export function TeacherProvider({ children }) {
       getLogroInstitution,
       getAllLogros,
       registerAssistance,
+      getAllStudentTeacher,
+      getAllStudentTeacher,
     ],
   );
 

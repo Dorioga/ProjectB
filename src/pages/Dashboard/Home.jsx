@@ -12,13 +12,17 @@ import {
 import useStudent from "../../lib/hooks/useStudent";
 import useSchool from "../../lib/hooks/useSchool";
 import useAuth from "../../lib/hooks/useAuth";
+import useTeacher from "../../lib/hooks/useTeacher";
 import { getCurrentTheme } from "../../utils/themeManager";
 import Loader from "../../components/atoms/Loader";
 
 const DashHome = () => {
   const { reload } = useStudent();
   const { fetchAllStudents } = useSchool();
-  const { idInstitution } = useAuth();
+  const { idInstitution, rol, idDocente } = useAuth();
+  const { getAllStudentTeacher } = useTeacher();
+
+  const isTeacher = Boolean(idDocente); // antiguo patrón usado en otros componentes
 
   const [allStudents, setAllStudents] = useState([]);
   const [isLoadingAllStudents, setIsLoadingAllStudents] = useState(false);
@@ -35,15 +39,25 @@ const DashHome = () => {
     reload();
 
     const loadAll = async () => {
-      if (!idInstitution) return;
       setIsLoadingAllStudents(true);
       try {
-        const res = await fetchAllStudents({ institucion: idInstitution });
-        const arr = Array.isArray(res) ? res : (res?.data ?? []);
+        let arr = [];
+
+        if (isTeacher && idDocente) {
+          // cuando el usuario es docente pedimos solo sus estudiantes
+          const payload = { idTeacher: Number(idDocente) };
+          const res = await getAllStudentTeacher(payload);
+          arr = Array.isArray(res) ? res : (res?.data ?? []);
+          console.log("Home - getAllStudentTeacher response:", arr);
+        } else if (idInstitution) {
+          const res = await fetchAllStudents({ institucion: idInstitution });
+          arr = Array.isArray(res) ? res : (res?.data ?? []);
+          console.log("Home - fetchAllStudents response:", arr);
+        }
+
         setAllStudents(arr);
-        console.log("Home - fetchAllStudents response:", arr);
       } catch (err) {
-        console.error("Home - fetchAllStudents error:", err);
+        console.error("Home - error loading students:", err);
         // fallback: dejar allStudents como []
       } finally {
         setIsLoadingAllStudents(false);
@@ -51,7 +65,14 @@ const DashHome = () => {
     };
 
     loadAll();
-  }, [reload, fetchAllStudents, idInstitution]);
+  }, [
+    reload,
+    fetchAllStudents,
+    idInstitution,
+    isTeacher,
+    idDocente,
+    getAllStudentTeacher,
+  ]);
 
   // Fuente de datos para la UI: preferimos `allStudents` (fetchAllStudents); si está vacío, usar lista vacía
   const sourceStudents = useMemo(() => {
@@ -261,7 +282,9 @@ const DashHome = () => {
 
   return (
     <div className=" p-6  h-full gap-4 flex flex-col">
-      {isLoadingAllStudents && <Loader message="Cargando estudiantes..." size={96} />}
+      {isLoadingAllStudents && (
+        <Loader message="Cargando estudiantes..." size={96} />
+      )}
       {/* --- Encabezado con selector de jornada --- */}
       <div className="grid grid-cols-5 justify-between items-center gap-4">
         <h1 className="text-2xl font-bold col-span-2">Panel principal</h1>
@@ -272,7 +295,7 @@ const DashHome = () => {
             <select
               value={selectedSede}
               onChange={(e) => setSelectedSede(e.target.value)}
-              className="w-full p-2 border rounded bg-input"
+              className="w-full p-2 border rounded-lg bg-input"
             >
               <option value="">Todas las sedes</option>
               {sedesFromStudents.map((s) => (
@@ -291,7 +314,7 @@ const DashHome = () => {
                 const val = e.target.value;
                 setSelectedJourney(val || "todas");
               }}
-              className="w-full p-2 border rounded bg-input"
+              className="w-full p-2 border rounded-lg bg-input"
             >
               <option value="">Todas</option>
               {jornadas.map((j) => (
@@ -310,7 +333,7 @@ const DashHome = () => {
                 setSelectedGrade(e.target.value);
                 setSelectedGroup("");
               }}
-              className="w-full p-2 border rounded bg-input"
+              className="w-full p-2 border rounded-lg bg-input"
             >
               <option value="">Todos</option>
               {gradesFromStudents.map((g) => (
@@ -326,7 +349,7 @@ const DashHome = () => {
             <select
               value={selectedGroup}
               onChange={(e) => setSelectedGroup(e.target.value)}
-              className="w-full p-2 border rounded bg-input"
+              className="w-full p-2 border rounded-lg bg-input"
             >
               <option value="">Todos</option>
               {groupsFromStudents.map((gr) => (
@@ -342,7 +365,7 @@ const DashHome = () => {
             <select
               value={selectedBeca}
               onChange={(e) => setSelectedBeca(e.target.value)}
-              className="w-full p-2 border rounded bg-input"
+              className="w-full p-2 border rounded-lg bg-input"
             >
               <option value="">Todos</option>
               {becaStatuses.map((b) => (
@@ -363,7 +386,7 @@ const DashHome = () => {
                 setSelectedGroup("");
                 setSelectedBeca("");
               }}
-              className="p-2 w-full rounded bg-primary text-surface border"
+              className="p-2 w-full rounded-lg bg-secondary text-surface border"
             >
               Limpiar filtros
             </button>
@@ -423,8 +446,8 @@ const DashHome = () => {
         <div className="bg-background p-6 rounded-lg shadow">
           <h3 className="font-semibold mb-4">Resumen por grado</h3>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-primary text-surface">
+            <table className="w-full text-sm rounded-lg ">
+              <thead className="bg-secondary text-surface rounded-lg">
                 <tr>
                   <th className="p-2 text-left">Grado</th>
                   {selectedJourney === "todas" && (
@@ -487,12 +510,12 @@ export default DashHome;
 // --- Componentes del Dashboard ---
 
 const StatCard = ({ title, value, icon }) => (
-  <div className="bg-background p-4 rounded-lg shadow">
-    <div className="flex items-center">
+  <div className="bg-background p-4 rounded-lg shadow bg-secondary">
+    <div className="flex items-center ">
       {icon && <div className="mr-4 text-blue-500">{icon}</div>}
-      <div>
-        <p className="text-sm text-text-secondary">{title}</p>
-        <p className="text-2xl font-bold">{value}</p>
+      <div className="text-center w-full">
+        <p className="text-sm text-surface">{title}</p>
+        <p className="text-2xl font-bold text-surface">{value}</p>
       </div>
     </div>
   </div>

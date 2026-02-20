@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import useAuth from "../../lib/hooks/useAuth";
 import { Link } from "react-router-dom";
 import { User, LogOut } from "lucide-react";
@@ -18,25 +18,50 @@ const Sidebar = () => {
     logout,
     isOpen,
     toggleSidebar,
+    closeSidebar,
   } = useAuth();
 
-  const toggleIsOpen = () => {
-    toggleSidebar();
-  };
+  // showContent se activa DESPUÉS de que termina la animación de apertura (300ms)
+  // y se desactiva inmediatamente al cerrar para ocultar el contenido al instante
+  const [showContent, setShowContent] = useState(isOpen);
+
+  useEffect(() => {
+    let timer;
+    if (isOpen) {
+      timer = setTimeout(() => setShowContent(true), 300);
+    } else {
+      setShowContent(false);
+    }
+    return () => clearTimeout(timer);
+  }, [isOpen]);
+
+  // Colapsar automáticamente en pantallas pequeñas (< 768px = md)
+  useEffect(() => {
+    const BREAKPOINT = 1300;
+    const handleResize = () => {
+      if (window.innerWidth < BREAKPOINT) {
+        closeSidebar();
+      }
+    };
+    // Verificar al montar
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [closeSidebar]);
 
   const displayName = String(userName ?? "").trim();
   return (
     <div
-      className={`fixed left-0 top-0  z-50 h-screen grid grid-rows-12 border rounded-r-2xl bg-primary transition-all duration-300 ease-in-out${
-        isOpen
-          ? " w-4/5 sm:w-3/6 md:w-2/5 lg:w-1/3 xl:w-3/12 2xl:w-2/12 bg-primary"
-          : "w-15"
-      }`}
+      className="fixed left-0 top-0 z-50 h-screen grid grid-rows-12 border rounded-r-2xl bg-primary overflow-hidden"
+      style={{
+        width: isOpen ? "300px" : "70px",
+        transition: "width 300ms ease-in-out",
+      }}
     >
       <div className="row-span-3">
         <div
           className="flex justify-end py-3 px-6 cursor-pointer"
-          onClick={toggleIsOpen}
+          onClick={toggleSidebar}
         >
           {isOpen ? (
             <LucideIcons.PanelRightOpen className="text-surface" />
@@ -44,7 +69,7 @@ const Sidebar = () => {
             <LucideIcons.PanelLeftOpen className="text-surface" />
           )}
         </div>
-        {isOpen && (
+        {showContent && (
           <div className="flex flex-col items-center justify-center text-center gap-2 p-4 transition-all duration-300 ease-in-out">
             <PreviewIMG
               path={imgSchool || "/LogoGuadalupe.png"}
@@ -57,164 +82,37 @@ const Sidebar = () => {
           </div>
         )}
       </div>
-      <div className="row-span-7 flex flex-col justify-start xl:justify-center 2xl:justify-start overflow-y-auto px-2">
+      <div className="row-span-7 flex flex-col justify-start overflow-y-auto ">
         <ul className="">
           {menu &&
             Array.isArray(menu) &&
             menu.map((item, id) => {
               const IconComponent = LucideIcons[item.icon] || LucideIcons.User;
               return (
-                <Link
+                <li
                   key={id}
-                  to={item.link}
-                  className="flex flex-row px-4 py-1 items-center gap-2 hover:bg-secondary rounded"
+                  className="rounded-lg  hover:bg-secondary cursor-pointer w-full px-2"
                 >
-                  <IconComponent className="text-surface text-2xl" />
-                  {isOpen ? (
-                    <li className=" px-2 hover:bg-secondary rounded text-lg text-surface">
-                      {item.option}
-                    </li>
-                  ) : null}
-                </Link>
+                  <Link
+                    to={item.link}
+                    className="flex w-full flex-row px-4 py-1 items-center gap-2"
+                  >
+                    <IconComponent className="text-surface hover:text-primary text-2xl" />
+                    {showContent && (
+                      <span className="px-2 text-lg text-surface">
+                        {item.option}
+                      </span>
+                    )}
+                  </Link>
+                </li>
               );
             })}
-
-          {/* Botón de prueba: Generar Boletín */}
-          {/* <button
-            type="button"
-            className="w-full flex flex-row px-4 py-2 items-center gap-2 hover:bg-secondary rounded"
-            onClick={async () => {
-              try {
-                await PdfReportCard(reportCardResponse);
-              } catch (err) {
-                console.error(err);
-                alert("No fue posible generar el boletín.");
-              }
-            }}
-          >
-            <LucideIcons.FileText className="text-surface text-2xl" />
-            {isOpen ? (
-              <li className="px-2 hover:bg-secondary rounded text-lg   text-surface">
-                Boletín (PDF)
-              </li>
-            ) : null}
-          </button> */}
-
-          {/* Manage Teacher */}
-          {/* <Link
-            to="/dashboard/manageTeacher"
-            className="flex flex-row px-4 py-2 items-center gap-2 hover:bg-secondary rounded"
-          >
-            <LucideIcons.Users className="text-surface text-2xl" />
-            {isOpen ? (
-              <li className="px-2 hover:bg-secondary rounded text-lg    text-surface">
-                Gestionar Docentes
-              </li>
-            ) : null}
-          </Link> */}
-
-          {/* Manage Logro (nuevo) */}
-          {/* <Link
-            to="/dashboard/manageLogro"
-            className="flex flex-row px-4 py-2 items-center gap-2 hover:bg-secondary rounded"
-          >
-            <LucideIcons.Award className="text-surface text-2xl" />
-            {isOpen ? (
-              <li className="px-2 hover:bg-secondary rounded text-lg text-surface">
-                Gestionar Logros
-              </li>
-            ) : null}
-          </Link> */}
-
-          {/* Manage Student */}
-          {/* <Link
-            to="/dashboard/manageStudent"
-            className="flex flex-row px-4 py-2 items-center gap-2 hover:bg-secondary rounded"
-          >
-            <LucideIcons.GraduationCap className="text-surface text-2xl" />
-            {isOpen ? (
-              <li className="px-2 hover:bg-secondary rounded text-lg text-surface">
-                Gestionar Estudiantes
-              </li>
-            ) : null}
-          </Link> */}
-
-          {/* Manage Asignature (static link, not backend-driven) */}
-          {/* <Link
-            to="/dashboard/manageAsignature"
-            className="flex flex-row px-4 py-2 items-center gap-2 hover:bg-secondary rounded"
-          >
-            <LucideIcons.BookOpen className="text-surface text-2xl" />
-            {isOpen ? (
-              <li className="px-2 hover:bg-secondary rounded text-lg text-surface">
-                Gestionar Asignaturas
-              </li>
-            ) : null}
-          </Link> */}
-
-          {/* Manage Grade (static link, not backend-driven) */}
-          {/* <Link
-            to="/dashboard/manageGrade"
-            className="flex flex-row px-4 py-2 items-center gap-2 hover:bg-secondary rounded"
-          >
-            <LucideIcons.GraduationCap className="text-surface text-2xl" />
-            {isOpen ? (
-              <li className="px-2 hover:bg-secondary rounded text-lg text-surface">
-                Gestionar Grados
-              </li>
-            ) : null}
-          </Link> */}
-
-          {/* Manage School */}
-          {/* <Link
-            to="/dashboard/manageSchools"
-            className="flex flex-row px-4 py-2 items-center gap-2 hover:bg-secondary rounded"
-          >
-            <LucideIcons.Home className="text-surface text-2xl" />
-            {isOpen ? (
-              <li className="px-2 hover:bg-secondary rounded text-lg text-surface">
-                Gestionar Instituciones
-              </li>
-            ) : null}
-          </Link> */}
-
-          {/* Manage Sedes */}
-          {/* <Link
-            to="/dashboard/manageSedes"
-            className="flex flex-row px-4 py-2 items-center gap-2 hover:bg-secondary rounded"
-          >
-            <LucideIcons.Building2 className="text-surface text-2xl" />
-            {isOpen ? (
-              <li className="px-2 hover:bg-secondary rounded text-lg text-surface">
-                Gestionar Sedes
-              </li>
-            ) : null}
-          </Link> */}
         </ul>
       </div>
       <div className="flex flex-col items-center row-span-2 justify-center py-6 ">
         <div className="flex flex-col items-center ">
           <User className="text-surface text-2xl" />
-          {isOpen ? (
-            // <div className="flex flex-col">
-            //   {displayName ? (
-            //     <h2 className="text-surface font-bold text-lg text-center">
-            //       {(() => {
-            //         const words = displayName.split(" ");
-            //         if (words.length >= 4) {
-            //           return (
-            //             <>
-            //               <div>{words.slice(0, 2).join(" ")}</div>
-            //               <div>{words.slice(2).join(" ")}</div>
-            //             </>
-            //           );
-            //         }
-            //         return displayName;
-            //       })()}
-            //     </h2>
-            //   ) : null}
-
-            // </div>
+          {showContent ? (
             <div className="text-surface text-sm text-center">{nameRole}</div>
           ) : null}
         </div>
@@ -223,10 +121,10 @@ const Sidebar = () => {
           onClick={logout}
         >
           <LogOut className="text-xl" />
-          {isOpen ? <h2 className="text-lg">Cerrar sesión</h2> : null}
+          {showContent ? <h2 className="text-lg">Cerrar sesión</h2> : null}
         </button>
         <div className="flex flex-row items-center">
-          {isOpen ? (
+          {showContent ? (
             <h2 className="text-surface font-bold text-xl">NEXUS</h2>
           ) : null}
         </div>

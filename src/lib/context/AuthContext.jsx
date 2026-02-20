@@ -6,7 +6,7 @@ import React, {
   useState,
 } from "react";
 import * as authService from "../../services/authService";
-import { setAuthToken } from "../../services/ApiClient";
+import { setAuthToken, eventBus } from "../../services/ApiClient";
 import { useNavigate } from "react-router-dom";
 import { getMenuRol } from "../../services/dataService";
 import { applyCustomColors, resetTheme } from "../../utils/themeManager";
@@ -187,6 +187,35 @@ export function AuthProvider({ children }) {
     }
   }, [colorPrincipal, colorSecundario]);
 
+  // redirigir a login si la sesión expira (evento global desde ApiClient)
+  useEffect(() => {
+    const unsubscribe = eventBus.on((message, type) => {
+      if (type === "auth" && message === "sessionExpired") {
+        // limpiar estado local y redirigir
+        setUserId(null);
+        setUserName(null);
+        setUserEmail(null);
+        setNameSchool(null);
+        setIdInstitution(null);
+        setImgSchool(null);
+        setNameRole(null);
+        setRol(null);
+        setNameSede(null);
+        setIdSede(null);
+        setColorPrincipal(null);
+        setColorSecundario(null);
+        setMenu(null);
+        setIdDocente(null);
+        setIdEstudiante(null);
+        setToken(null);
+        sessionStorage.clear();
+        setAuthToken(null);
+        navigate("/login");
+      }
+    });
+    return unsubscribe;
+  }, [navigate]);
+
   // Mantener el título del sitio como "Nexus — ABBR" (fallback a "Nexus")
   useEffect(() => {
     try {
@@ -331,6 +360,7 @@ export function AuthProvider({ children }) {
       error,
       isOpen,
       toggleSidebar: () => setIsOpen(!isOpen),
+      closeSidebar: () => setIsOpen(false),
       login,
       logout,
       reload: loadProfile,

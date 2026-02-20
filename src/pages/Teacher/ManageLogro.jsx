@@ -308,8 +308,8 @@ const ManageLogro = () => {
           <SimpleButton
             onClick={() => setIsModalOpen(true)}
             msj="Agregar logros"
-            icon="Search"
-            bg="bg-accent"
+            icon="Plus"
+            bg="bg-secondary"
             text="text-surface"
           />
         </div>

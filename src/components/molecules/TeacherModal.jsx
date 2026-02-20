@@ -7,6 +7,7 @@ const TeacherModal = ({
   onClose,
   teacher,
   initialEditing = false,
+  initialTutorial = false,
   onSave,
   onReload,
 }) => {
@@ -27,6 +28,7 @@ const TeacherModal = ({
             : teacher
         }
         initialEditing={initialEditing}
+        initialTutorial={initialTutorial}
         onSave={onSave}
         onClose={onClose}
         onReload={onReload}

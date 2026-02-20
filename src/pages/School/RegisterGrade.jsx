@@ -173,7 +173,7 @@ const RegisterGrade = ({ onSuccess }) => {
           icon="HelpCircle"
           msjtooltip="Iniciar tutorial"
           noRounded={false}
-          bg="bg-accent"
+          bg="bg-info"
           text="text-surface"
           className="w-auto px-3 py-1.5"
         />

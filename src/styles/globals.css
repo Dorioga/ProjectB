@@ -8,7 +8,7 @@ xl — 1280px
 /* Valores por defecto - serán sobrescritos por JS */
 :root {
   --color-primary: #131a27;
-  --color-secondary: #f9932d;
+  --color-secondary: #ff9300;
   --color-accent: #10b981;
   --color-bg: #f4f6f8;
   --color-surface: #ffffff;
@@ -32,6 +32,10 @@ xl — 1280px
   }
 
   .bg-secondary {
+    background-color: var(--color-secondary);
+  }
+  /* support hover variant since Tailwind won't auto-generate it for custom utility */
+  .hover\:bg-secondary:hover {
     background-color: var(--color-secondary);
   }
   .text-secondary {

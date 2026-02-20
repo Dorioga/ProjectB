@@ -1030,7 +1030,7 @@ const ProfileSchool = ({
 
   return (
     <div
-      className={`border p-6 rounded bg-bg h-full gap-4 flex flex-col ${isEditing ? "ring-2 ring-accent" : "opacity-95"}`}
+      className={` p-6   h-full gap-4 flex flex-col ${isEditing ? "ring-2 ring-accent" : "opacity-95"}`}
     >
       <form
         onSubmit={handleSubmit}

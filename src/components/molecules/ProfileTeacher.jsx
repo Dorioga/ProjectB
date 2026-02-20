@@ -9,14 +9,20 @@ import useTeacher from "../../lib/hooks/useTeacher";
 import useData from "../../lib/hooks/useData";
 import AsignatureGrades from "./AsignatureGrades";
 import { buildGroupsWithAssignments } from "../../utils/teacherUtils";
+import { required, isEmail, isText } from "../../utils/validationUtils";
+import { useNotify } from "../../lib/hooks/useNotify";
+import tourProfileTeacher from "../../tour/tourProfileTeacher";
 
 const ProfileTeacher = ({
   data = {},
   onSave,
   initialEditing = false,
+  initialTutorial = false,
   onClose,
   onReload,
+  mode = "modal", // "modal" | "page"  — controla qué elementos se muestran
 }) => {
+  const isPageMode = mode === "page";
   console.log("ProfileTeacher data:", data);
   const [isEditing, setIsEditing] = useState(Boolean(initialEditing));
   const [form, setForm] = useState({
@@ -43,6 +49,11 @@ const ProfileTeacher = ({
 
   // Estados/refs necesarios (faltaban y provocaban ReferenceError)
   const originalRef = useRef({});
+
+  // Estado para errores de validación e indicador de guardado
+  const [formErrors, setFormErrors] = useState({});
+  const [isSaving, setIsSaving] = useState(false);
+  const notify = useNotify();
   const [activeRowKeys, setActiveRowKeys] = useState(new Set());
   const [estado, setEstado] = useState(data.estado || "");
   const [pendingSedeChange, setPendingSedeChange] = useState(null);
@@ -51,6 +62,9 @@ const ProfileTeacher = ({
   const [newSede, setNewSede] = useState([]);
   const [showAsignatureGrades, setShowAsignatureGrades] = useState(false);
   const [showSedeAsignatures, setShowSedeAsignatures] = useState({});
+
+  // Modo tutorial local: activa resaltado en tiempo real para campos obligatorios
+  const [isTourMode, setIsTourMode] = useState(Boolean(initialTutorial));
 
   const handleCurrentSedeChange = (e) => {
     const val = e.target.value;
@@ -302,6 +316,13 @@ const ProfileTeacher = ({
       else next.add(key);
       return next;
     });
+    // limpiar posible error de asignaturas
+    setFormErrors((prev) => {
+      if (!prev || !prev.asignatures) return prev;
+      const next = { ...prev };
+      delete next.asignatures;
+      return next;
+    });
   };
 
   // Toggle todas las filas de una asignatura
@@ -319,6 +340,13 @@ const ProfileTeacher = ({
       }
       return next;
     });
+    // limpiar posible error de asignaturas
+    setFormErrors((prev) => {
+      if (!prev || !prev.asignatures) return prev;
+      const next = { ...prev };
+      delete next.asignatures;
+      return next;
+    });
   };
 
   // Toggle todas las filas
@@ -326,11 +354,48 @@ const ProfileTeacher = ({
     setActiveRowKeys((prev) =>
       prev.size === rowKeys.length ? new Set() : new Set(rowKeys),
     );
+    // limpiar posible error de asignaturas
+    setFormErrors((prev) => {
+      if (!prev || !prev.asignatures) return prev;
+      const next = { ...prev };
+      delete next.asignatures;
+      return next;
+    });
   };
 
   useEffect(() => {
     setIsEditing(Boolean(initialEditing));
   }, [initialEditing]);
+
+  // Si se recibe initialTutorial=true, iniciar tour automáticamente cuando el componente esté montado
+  useEffect(() => {
+    if (!initialTutorial) return;
+    // pequeño retraso para asegurar que el DOM esté listo
+    const t = setTimeout(() => {
+      setIsTourMode(true);
+      tourProfileTeacher({ isPageMode });
+      const checkDriverVisible = () =>
+        !!document.querySelector(
+          ".driver-popover, .driver-overlay, .driver-container, .driver",
+        );
+
+      const observer = new MutationObserver(() => {
+        if (!checkDriverVisible()) {
+          setIsTourMode(false);
+          observer.disconnect();
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+      setTimeout(
+        () => {
+          setIsTourMode(false);
+          observer.disconnect();
+        },
+        3 * 60 * 1000,
+      );
+    }, 250);
+    return () => clearTimeout(t);
+  }, [initialTutorial]);
 
   useEffect(() => {
     const initialForm = {
@@ -365,6 +430,13 @@ const ProfileTeacher = ({
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    // limpiar error del campo al modificarlo
+    setFormErrors((prev) => {
+      if (!prev || !prev[name]) return prev;
+      const next = { ...prev };
+      delete next[name];
+      return next;
+    });
   };
 
   const handleEstadoChange = (e) => {
@@ -498,6 +570,72 @@ const ProfileTeacher = ({
     return formChanged || estadoChanged || rowsChanged;
   }, [form, estado, activeRowKeys]);
 
+  const validateForm = (showErrors = true) => {
+    const next = {};
+
+    const rFirst = required(
+      form.first_name,
+      "El primer nombre es obligatorio.",
+    );
+    if (!rFirst.valid) next.first_name = rFirst.msg;
+    else {
+      const t = isText(
+        form.first_name,
+        "El primer nombre sólo puede contener letras y espacios.",
+      );
+      if (!t.valid) next.first_name = t.msg;
+    }
+
+    const rLast = required(
+      form.first_lastname,
+      "El primer apellido es obligatorio.",
+    );
+    if (!rLast.valid) next.first_lastname = rLast.msg;
+
+    const rId = required(
+      form.identification,
+      "El número de identificación es obligatorio.",
+    );
+    if (!rId.valid) next.identification = rId.msg;
+
+    const rEmailReq = required(form.email, "El correo es obligatorio.");
+    if (!rEmailReq.valid) next.email = rEmailReq.msg;
+    else {
+      const rEmail = isEmail(form.email, "Correo inválido");
+      if (!rEmail.valid) next.email = rEmail.msg;
+    }
+
+    // En modo page el docente no gestiona asignaturas desde su propio perfil,
+    // por lo que se omite esa validación.
+    if (!isPageMode && uniqueSubjects.length > 0) {
+      if (!activeSubjectNames || activeSubjectNames.length === 0) {
+        next.asignatures = "Debe seleccionar al menos una asignatura activa.";
+      }
+    }
+
+    if (showErrors) setFormErrors(next);
+    return { valid: Object.keys(next).length === 0, errors: next };
+  };
+
+  // Indica si el formulario actual es válido (sin mostrar errores)
+  const canSave = useMemo(() => {
+    const { valid } = validateForm(false);
+    return valid;
+  }, [form, activeRowKeys, uniqueSubjects, estado, isSaving, isPageMode]);
+
+  // Lista legible de campos faltantes para mostrar en mensaje/tooltip
+  const missingFields = useMemo(() => {
+    const { errors } = validateForm(false);
+    const map = {
+      first_name: "Primer nombre",
+      first_lastname: "Primer apellido",
+      identification: "Identificación",
+      email: "Correo",
+      asignatures: "Asignaturas",
+    };
+    return Object.keys(errors || {}).map((k) => map[k] || k);
+  }, [form, activeRowKeys, uniqueSubjects, estado, isPageMode]);
+
   const handleSave = async () => {
     if (!isDirty) {
       // Si no hay cambios, salir del modo edición
@@ -505,6 +643,17 @@ const ProfileTeacher = ({
       setIsEditing(false);
       return;
     }
+
+    // Validar antes de construir el payload
+    const { valid, errors } = validateForm(true);
+    if (!valid) {
+      // mostrar primer error y detener
+      const firstMsg =
+        Object.values(errors)[0] || "Corrige los campos del formulario.";
+      notify.error(firstMsg);
+      return;
+    }
+
     // Derivar asignaturas activas desde las filas seleccionadas
     const activeSubjects = new Set();
     const activeGradeIds = new Set();
@@ -573,8 +722,9 @@ const ProfileTeacher = ({
     };
     console.log("Saving with payload:", payload);
 
-    if (typeof onSave === "function") {
-      try {
+    setIsSaving(true);
+    try {
+      if (typeof onSave === "function") {
         const teacherId = form.id_docente ?? data.id_docente ?? data.id ?? null;
         const personId = form.per_id ?? data.per_id ?? data.id_persona ?? null;
         await onSave(teacherId, personId, payload);
@@ -585,18 +735,20 @@ const ProfileTeacher = ({
           activeRowKeys: new Set(activeRowKeys),
         };
         setIsEditing(false);
-      } catch (err) {
-        console.error("Error al guardar docente:", err);
-        // Mantener en modo edición para que el usuario lo corrija
+      } else {
+        // Si no hay callback, igual actualizar snapshot y salir
+        originalRef.current = {
+          form: { ...form },
+          estado,
+          activeRowKeys: new Set(activeRowKeys),
+        };
+        setIsEditing(false);
       }
-    } else {
-      // Si no hay callback, igual actualizar snapshot y salir
-      originalRef.current = {
-        form: { ...form },
-        estado,
-        activeRowKeys: new Set(activeRowKeys),
-      };
-      setIsEditing(false);
+    } catch (err) {
+      console.error("Error al guardar docente:", err);
+      // Mantener en modo edición para que el usuario lo corrija
+    } finally {
+      setIsSaving(false);
     }
   };
   const handleRegisterSede = async () => {
@@ -706,39 +858,118 @@ const ProfileTeacher = ({
               ID: {form.id_docente}
             </span>
           ) : null}
-          <span
-            className={`text-xs font-medium px-2 py-1 rounded ${isEditing ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}`}
-          >
-            {isEditing ? "Modo edición" : "Solo lectura"}
-          </span>
+          {!isPageMode && (
+            <span
+              className={`text-xs font-medium px-2 py-1 rounded ${isEditing ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}`}
+            >
+              {isEditing ? "Modo edición" : "Solo lectura"}
+            </span>
+          )}
+          {!isPageMode && (
+            <div className="ml-4 text-sm text-gray-600">
+              Campos con <span className="text-red-500">*</span> obligatorios
+            </div>
+          )}
         </div>
-        <SimpleButton
-          onClick={async () => {
-            if (isEditing) {
-              // Save and exit edit mode
-              await handleSave();
-            } else {
-              setIsEditing(true);
-            }
-          }}
-          msj={isEditing ? "Guardar" : "Editar"}
-          icon={isEditing ? "Save" : "Pencil"}
-          bg={isEditing ? "bg-accent" : "bg-secondary"}
-          text="text-surface"
-        />
+        <div className="flex items-center gap-2">
+          <SimpleButton
+            type="button"
+            onClick={() => {
+              const startProfileTour = () => {
+                setIsTourMode(true);
+                // arrancar tour
+                tourProfileTeacher({ isPageMode });
+
+                // observar la llegada/retirada del overlay de driver.js para desactivar modo tour
+                const checkDriverVisible = () =>
+                  !!document.querySelector(
+                    ".driver-popover, .driver-overlay, .driver-container, .driver",
+                  );
+
+                const observer = new MutationObserver(() => {
+                  if (!checkDriverVisible()) {
+                    setIsTourMode(false);
+                    observer.disconnect();
+                  }
+                });
+
+                observer.observe(document.body, {
+                  childList: true,
+                  subtree: true,
+                });
+
+                // fallback: desactivar tour después de 3 minutos
+                setTimeout(
+                  () => {
+                    setIsTourMode(false);
+                    observer.disconnect();
+                  },
+                  3 * 60 * 1000,
+                );
+              };
+
+              startProfileTour();
+            }}
+            icon="HelpCircle"
+            msjtooltip="Iniciar tutorial"
+            noRounded={false}
+            bg="bg-info"
+            text="text-surface"
+            className="w-auto px-3 py-1.5"
+          />
+        </div>
+        {!isPageMode && (
+          <div id="tour-profile-save">
+            <SimpleButton
+              onClick={async () => {
+                if (isEditing) {
+                  // Save and exit edit mode
+                  await handleSave();
+                } else {
+                  setIsEditing(true);
+                }
+              }}
+              msj={isEditing ? "Guardar" : "Editar"}
+              msjtooltip={
+                isEditing && !canSave && missingFields.length > 0
+                  ? `Faltan: ${missingFields.join(", ")}`
+                  : undefined
+              }
+              tooltip={isEditing && !canSave && missingFields.length > 0}
+              icon={isEditing ? "Save" : "Pencil"}
+              bg={isEditing ? "bg-accent" : "bg-secondary"}
+              text="text-surface"
+              disabled={isSaving || (isEditing && !canSave)}
+            />
+          </div>
+        )}
+        {isEditing && !canSave && missingFields.length > 0 && (
+          <div className="ml-4 text-sm text-red-600">
+            Faltan: {missingFields.join(", ")}
+          </div>
+        )}
       </div>
 
       {/* 1) Información básica */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="font-semibold">Primer nombre</label>
+          <label className="font-semibold">
+            Primer nombre{" "}
+            {!isPageMode && <span className="text-red-500 ml-1">*</span>}
+          </label>
           <input
+            id="tour-profile-firstname"
             name="first_name"
             value={form.first_name}
             onChange={handleChange}
-            className={`w-full p-2 border rounded ${isEditing ? "bg-white border-gray-300" : "bg-gray-50 border-transparent text-gray-600 cursor-not-allowed"}`}
+            className={`w-full p-2 border rounded ${isEditing ? "bg-white border-gray-300" : "bg-gray-50 border-transparent text-gray-600 cursor-not-allowed"} ${formErrors.first_name ? "border-red-500" : ""} ${isTourMode && !String(form.first_name).trim() ? "border-red-500 ring-2 ring-red-100" : ""}`}
             disabled={!isEditing}
           />
+          {formErrors.first_name && (
+            <div className="text-sm text-red-600 mt-1">
+              {formErrors.first_name}
+            </div>
+          )}
         </div>
 
         <div>
@@ -753,14 +984,23 @@ const ProfileTeacher = ({
         </div>
 
         <div>
-          <label className="font-semibold">Primer apellido</label>
+          <label className="font-semibold">
+            Primer apellido{" "}
+            {!isPageMode && <span className="text-red-500 ml-1">*</span>}
+          </label>
           <input
+            id="tour-profile-firstlastname"
             name="first_lastname"
             value={form.first_lastname}
             onChange={handleChange}
-            className={`w-full p-2 border rounded ${isEditing ? "bg-white border-gray-300" : "bg-gray-50 border-transparent text-gray-600 cursor-not-allowed"}`}
+            className={`w-full p-2 border rounded ${isEditing ? "bg-white border-gray-300" : "bg-gray-50 border-transparent text-gray-600 cursor-not-allowed"} ${formErrors.first_lastname ? "border-red-500" : ""} ${isTourMode && !String(form.first_lastname).trim() ? "border-red-500 ring-2 ring-red-100" : ""}`}
             disabled={!isEditing}
           />
+          {formErrors.first_lastname && (
+            <div className="text-sm text-red-600 mt-1">
+              {formErrors.first_lastname}
+            </div>
+          )}
         </div>
 
         <div>
@@ -786,25 +1026,40 @@ const ProfileTeacher = ({
         </div>
 
         <div>
-          <label className="font-semibold">Correo</label>
+          <label className="font-semibold">
+            Correo {!isPageMode && <span className="text-red-500 ml-1">*</span>}
+          </label>
           <input
+            id="tour-profile-email"
             name="email"
             value={form.email}
             onChange={handleChange}
-            className={`w-full p-2 border rounded ${isEditing ? "bg-white border-gray-300" : "bg-gray-50 border-transparent text-gray-600 cursor-not-allowed"}`}
+            className={`w-full p-2 border rounded ${isEditing ? "bg-white border-gray-300" : "bg-gray-50 border-transparent text-gray-600 cursor-not-allowed"} ${formErrors.email ? "border-red-500" : ""} ${isTourMode && !String(form.email).trim() ? "border-red-500 ring-2 ring-red-100" : ""}`}
             disabled={!isEditing}
           />
+          {formErrors.email && (
+            <div className="text-sm text-red-600 mt-1">{formErrors.email}</div>
+          )}
         </div>
 
         <div>
-          <label className="font-semibold">Identificación</label>
+          <label className="font-semibold">
+            Identificación{" "}
+            {!isPageMode && <span className="text-red-500 ml-1">*</span>}
+          </label>
           <input
+            id="tour-profile-identification"
             name="identification"
             value={form.identification}
             onChange={handleChange}
-            className={`w-full p-2 border rounded ${isEditing ? "bg-white border-gray-300" : "bg-gray-50 border-transparent text-gray-600 cursor-not-allowed"}`}
+            className={`w-full p-2 border rounded ${isEditing ? "bg-white border-gray-300" : "bg-gray-50 border-transparent text-gray-600 cursor-not-allowed"} ${formErrors.identification ? "border-red-500" : ""} ${isTourMode && !String(form.identification).trim() ? "border-red-500 ring-2 ring-red-100" : ""}`}
             disabled={!isEditing}
           />
+          {formErrors.identification && (
+            <div className="text-sm text-red-600 mt-1">
+              {formErrors.identification}
+            </div>
+          )}
         </div>
 
         <div>
@@ -875,13 +1130,40 @@ const ProfileTeacher = ({
           </div>
           {isEditing ? (
             <>
-              <SedeSelect
-                name="id_sede"
-                value={form.id_sede || ""}
-                onChange={handleCurrentSedeChange}
-                placeholder="Selecciona una sede"
-                label="Nueva Sede"
-              />
+              <div id="tour-profile-sede">
+                <SedeSelect
+                  name="id_sede"
+                  value={form.id_sede || ""}
+                  onChange={handleCurrentSedeChange}
+                  placeholder="Selecciona una sede"
+                  label="Nueva Sede"
+                />
+              </div>
+
+              <div id="tour-profile-workday" className="mt-2">
+                <JourneySelect
+                  name="fk_journey"
+                  value={form.fk_journey || ""}
+                  filterValue={getSedeWorkday(form.id_sede) || ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const found = Array.isArray(journeys)
+                      ? journeys.find(
+                          (opt) => String(opt.value) === String(val),
+                        )
+                      : null;
+                    setForm((prev) => ({
+                      ...prev,
+                      fk_journey: val,
+                      nombre_jornada: found
+                        ? String(found.label)
+                        : prev.nombre_jornada || "",
+                    }));
+                  }}
+                  disabled={!form.id_sede}
+                  label="Nueva Jornada"
+                />
+              </div>
 
               <Modal
                 isOpen={confirmChangeSedeOpen}
@@ -947,8 +1229,14 @@ const ProfileTeacher = ({
 
       {/* 2a) Asignaturas del docente con checkbox */}
       {isEditing && (
-        <div className="border rounded bg-surface p-4">
-          <h3 className="font-bold mb-3">Asignaturas del Docente</h3>
+        <div
+          id="tour-profile-asignatures"
+          className={`border rounded bg-surface p-4 ${isTourMode && uniqueSubjects.length > 0 && activeSubjectNames.length === 0 ? "border-red-500 ring-2 ring-red-100" : ""}`}
+        >
+          <h3 className="font-bold mb-3">
+            Asignaturas del Docente{" "}
+            {!isPageMode && <span className="text-red-500 ml-1">*</span>}
+          </h3>
           {uniqueSubjects.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {uniqueSubjects.map((subject) => (
@@ -986,6 +1274,11 @@ const ProfileTeacher = ({
               No hay asignaturas registradas para este docente.
             </p>
           )}
+          {formErrors.asignatures && (
+            <div className="text-sm text-red-600 mt-2">
+              {formErrors.asignatures}
+            </div>
+          )}
           {activeSubjectNames.length > 0 && (
             <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded">
               <p className="text-sm font-semibold text-blue-800">
@@ -1004,7 +1297,10 @@ const ProfileTeacher = ({
       <div className=" rounded bg-surface flex flex-col gap-4 ">
         <h3 className="p-2 font-bold">Asignaturas/Grupos</h3>
         {assignmentRows.length > 0 ? (
-          <div className="overflow-x-auto border">
+          <div
+            id="tour-profile-assignments-table"
+            className="overflow-x-auto border"
+          >
             <table className="w-full text-left text-sm">
               <thead className="bg-primary ">
                 <tr className="text-xs text-surface text-center">
@@ -1069,7 +1365,7 @@ const ProfileTeacher = ({
                         )}
                         readOnly
                         disabled
-                        className="w-4 h-4 mx-auto"
+                        className="w-4 h-4 mx-auto tour-director-checkbox"
                         aria-label={`Director de grupo: ${row.grupo || "sin grupo"}`}
                       />
                     </td>
@@ -1088,17 +1384,19 @@ const ProfileTeacher = ({
         {isEditing && (
           <div className="p-4 border">
             <div className="">
-              <SimpleButton
-                onClick={() => setShowAsignatureGrades((prev) => !prev)}
-                msj={
-                  showAsignatureGrades
-                    ? "Ocultar asignaturas"
-                    : "Agregar asignaturas"
-                }
-                icon={showAsignatureGrades ? "Minus" : "Plus"}
-                bg="bg-accent"
-                text="text-surface"
-              />
+              <div id="tour-profile-toggle-asignatures">
+                <SimpleButton
+                  onClick={() => setShowAsignatureGrades((prev) => !prev)}
+                  msj={
+                    showAsignatureGrades
+                      ? "Ocultar asignaturas"
+                      : "Agregar asignaturas"
+                  }
+                  icon={showAsignatureGrades ? "Minus" : "Plus"}
+                  bg="bg-accent"
+                  text="text-surface"
+                />
+              </div>
             </div>
             {showAsignatureGrades && (
               <div className="mt-3 flex flex-col gap-4">
@@ -1109,13 +1407,15 @@ const ProfileTeacher = ({
                   onAdd={handleAddAsignature}
                   onRemove={handleRemoveAsignature}
                 />
-                <SimpleButton
-                  onClick={handleRegisterAsignature}
-                  msj="Registrar Asignaturas"
-                  icon="Save"
-                  bg="bg-accent"
-                  text="text-surface"
-                />
+                <div id="tour-profile-register-asignature">
+                  <SimpleButton
+                    onClick={handleRegisterAsignature}
+                    msj="Registrar Asignaturas"
+                    icon="Save"
+                    bg="bg-accent"
+                    text="text-surface"
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -1127,7 +1427,7 @@ const ProfileTeacher = ({
         <div className="border rounded bg-surface p-4">
           <div className="flex items-center justify-between mb-3">
             <h4 className="font-semibold">Asignar docente a nueva sede</h4>
-            <div className="w-48">
+            <div className="w-48" id="tour-profile-add-sede">
               <SimpleButton
                 onClick={addNewSede}
                 msj="Agregar sede"
@@ -1212,13 +1512,15 @@ const ProfileTeacher = ({
                   </div>
                 </div>
               ))}
-              <SimpleButton
-                onClick={handleRegisterSede}
-                msj="Registrar Sedes"
-                icon="Save"
-                bg="bg-accent"
-                text="text-surface"
-              />
+              <div id="tour-profile-register-sede">
+                <SimpleButton
+                  onClick={handleRegisterSede}
+                  msj="Registrar Sedes"
+                  icon="Save"
+                  bg="bg-accent"
+                  text="text-surface"
+                />
+              </div>
             </div>
           ) : (
             <p className="text-sm text-gray-500">
@@ -1230,12 +1532,14 @@ const ProfileTeacher = ({
 
       {/* 5) Botones */}
       <div className="flex gap-3 justify-end">
-        <SimpleButton
-          msj="Cancelar"
-          bg="bg-error"
-          text="text-surface"
-          onClick={handleCancel}
-        />
+        {!isPageMode && (
+          <SimpleButton
+            msj="Cancelar"
+            bg="bg-error"
+            text="text-surface"
+            onClick={handleCancel}
+          />
+        )}
       </div>
     </div>
   );

@@ -199,7 +199,7 @@ const RegisterUser = () => {
           icon="HelpCircle"
           msjtooltip="Iniciar tutorial"
           noRounded={false}
-          bg="bg-primary"
+          bg="bg-info"
           text="text-surface"
           className="w-auto px-3 py-1.5"
         />

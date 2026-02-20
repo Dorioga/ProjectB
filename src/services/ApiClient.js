@@ -89,6 +89,13 @@ apiClient.interceptors.response.use(
       } catch (e) {
         console.warn("No se pudo limpiar el localStorage:", e);
       }
+      // además avisar a cualquier escucha que la sesión caducó
+      // notificar a quienes quieran manejar la expiración y mostrar mensaje
+      eventBus.emit("sessionExpired", "auth");
+      eventBus.emit(
+        "Tu sesión ha expirado. Por favor inicia sesión de nuevo.",
+        "error",
+      );
     }
 
     const errorMessage =

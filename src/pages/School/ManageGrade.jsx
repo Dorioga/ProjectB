@@ -171,7 +171,7 @@ const ManageGrade = () => {
           onClick={() => setIsAddOpen(true)}
           msj="Agregar grado"
           icon="Plus"
-          bg="bg-accent"
+          bg="bg-secondary"
           text="text-surface"
           noRounded={false}
         />

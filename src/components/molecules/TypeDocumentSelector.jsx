@@ -10,6 +10,8 @@ const TypeDocumentSelector = ({
   placeholder = "Selecciona un tipo",
   className = "w-full p-2 border rounded bg-surface",
   disabled = false,
+  // Marca visual de campo obligatorio
+  required = false,
   // Permite pasar data manualmente; si no, se toma del DataContext.
   data,
   // Legacy: para compatibilidad con la firma anterior.
@@ -62,7 +64,10 @@ const TypeDocumentSelector = ({
 
   return (
     <div>
-      <label className={labelClassName}>{label}</label>
+      <label className={labelClassName}>
+        {label}
+        {required ? <span className="text-red-500 ml-1">*</span> : null}
+      </label>
       <select
         name={name}
         value={value}

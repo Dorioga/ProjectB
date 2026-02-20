@@ -23,10 +23,11 @@ import RegisterStudentRecords from "../pages/School/RegisterStudentRecords";
 import ManageTeacher from "../pages/Teacher/ManageTeacher";
 import ManageStudent from "../pages/Student/ManageStudent";
 import ManageSchools from "../pages/School/ManageSchools";
-import ProfileSchool from "../pages/School/ProfileSchool";
+import ProfileSchoolPage from "../pages/School/ProfileSchoolPage";
 import ManageSedes from "../pages/School/ManageSedes";
 import ManageAsignature from "../pages/School/ManageAsignature";
 import ManageGrade from "../pages/School/ManageGrade";
+import ProfileTeacherPage from "../pages/Teacher/ProfileTeacherPage";
 const GeneralRoutes = () => {
   return (
     <div id="body" className="w-full h-screen flex flex-col ">
@@ -54,6 +55,10 @@ const GeneralRoutes = () => {
 
             <Route path="reports" element={<Reports />} />
             <Route path="auditory" element={<Auditory />} />
+
+            <Route path="profileSchool" element={<ProfileSchoolPage />} />
+            <Route path="profileTeacher" element={<ProfileTeacherPage />} />
+
             <Route path="registerAsignature" element={<RegisterAsignature />} />
             <Route path="registerRecords" element={<RegisterRecords />} />
             <Route path="registerTeacher" element={<RegisterTeacher />} />
@@ -63,6 +68,7 @@ const GeneralRoutes = () => {
               path="registerStudentRecords"
               element={<RegisterStudentRecords />}
             />
+
             <Route path="manageTeacher" element={<ManageTeacher />} />
             <Route path="manageLogro" element={<ManageLogro />} />
             <Route path="manageStudent" element={<ManageStudent />} />

@@ -1,7 +1,17 @@
-import React, { useState } from "react";
+import React, { useEffect, useId, useState } from "react";
 
 const ColorSelector = ({ color, setColor }) => {
-  let [colorSelected, setColorSelected] = useState(color);
+  const id = useId();
+  const [colorSelected, setColorSelected] = useState(color || "#000000");
+
+  // Sincronizar estado interno cuando el prop cambie (componente controlado)
+  useEffect(() => {
+    if (typeof color === "string" && color !== colorSelected) {
+      setColorSelected(color);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [color]);
+
   const handleColorChange = (event) => {
     setColorSelected(event.target.value);
     setColor(event.target.value);
@@ -10,11 +20,11 @@ const ColorSelector = ({ color, setColor }) => {
   return (
     <div className="flex flex-row gap-4 col-span-4 items-center">
       {/* Label accesible para el selector de color */}
-      <label htmlFor="color-input" className="sr-only">
+      <label htmlFor={`color-input-${id}`} className="sr-only">
         Selector de color
       </label>
       <input
-        id="color-input"
+        id={`color-input-${id}`}
         type="color"
         value={colorSelected}
         onChange={handleColorChange}

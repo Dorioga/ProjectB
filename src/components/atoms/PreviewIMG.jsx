@@ -11,7 +11,7 @@ const PreviewIMG = ({ path, size }) => {
   let aspectRatioClass = "";
 
   if (size === "logo") {
-    imgSizeClass = "w-20 h-20";
+    imgSizeClass = "w-30 h-30";
     aspectRatioClass = "aspect-square"; // 1:1
   } else if (size === "carnet") {
     imgSizeClass = "w-65 h-65";

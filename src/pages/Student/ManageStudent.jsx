@@ -173,7 +173,7 @@ const ManageStudent = () => {
               className="h-full"
               onClick={() => handleViewProfile(row.original)}
               icon="UserSearch"
-              bg="bg-primary"
+              bg="bg-secondary"
               text="text-surface"
               noRounded={false}
               msjtooltip="Ver perfil"
@@ -196,21 +196,20 @@ const ManageStudent = () => {
 
   return (
     <div className=" p-6  h-full gap-4 flex flex-col">
-      <div className="w-full flex justify-between items-center bg-primary text-surface p-3 rounded-t-lg">
-        <h2 className="text-2xl font-bold">Datos de Estudiantes</h2>
-        <div className="flex gap-2">
+      <div className="w-full grid grid-cols-7 items-center bg-primary text-surface p-3 rounded-t-lg">
+        <h2 className="text-2xl col-span-5 font-bold">Datos de Estudiantes</h2>
+        <div className="grid grid-cols-2 gap-2 w-full col-span-2">
           <SimpleButton
             onClick={() => setIsAddOpen(true)}
             msj="Agregar estudiante"
             icon="Plus"
-            bg="bg-accent"
+            bg="bg-secondary"
             text="text-surface"
             noRounded={false}
           />
-
           <SimpleButton
             onClick={() => setIsBulkOpen(true)}
-            msj="Carga masiva de estudiantes"
+            msj="Carga masiva "
             icon="Upload"
             bg="bg-secondary"
             text="text-surface"

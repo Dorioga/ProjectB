@@ -100,7 +100,7 @@ const ManageSchools = () => {
               className="h-full"
               onClick={() => handleView(row.original)}
               icon="UserSearch"
-              bg="bg-primary"
+              bg="bg-secondary"
               text="text-surface"
               noRounded={false}
               msjtooltip="Ver"
@@ -135,7 +135,7 @@ const ManageSchools = () => {
             icon="HelpCircle"
             msjtooltip="Iniciar tutorial"
             noRounded={false}
-            bg="bg-accent"
+            bg="bg-info"
             text="text-surface"
             className="w-auto px-3 py-1.5"
           />
@@ -146,7 +146,7 @@ const ManageSchools = () => {
             onClick={() => setIsAddOpen(true)}
             msj="Agregar institución"
             icon="Plus"
-            bg="bg-accent"
+            bg="bg-secondary"
             text="text-surface"
           />
         </div>

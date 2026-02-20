@@ -237,7 +237,7 @@ const ManageTeacher = () => {
               className="h-full"
               onClick={() => handleViewProfile(row.original)}
               icon="UserSearch"
-              bg="bg-primary"
+              bg="bg-secondary"
               text="text-surface"
               noRounded={false}
               msjtooltip="Ver perfil"
@@ -267,7 +267,7 @@ const ManageTeacher = () => {
             onClick={() => setIsAddOpen(true)}
             msj="Agregar docente"
             icon="Plus"
-            bg="bg-accent"
+            bg="bg-secondary"
             text="text-surface"
             noRounded={false}
             disabled={isTableLoading}

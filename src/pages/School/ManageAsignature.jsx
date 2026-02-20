@@ -203,7 +203,7 @@ const ManageAsignature = () => {
           onClick={() => setIsAddOpen(true)}
           msj="Agregar asignatura"
           icon="Plus"
-          bg="bg-accent"
+          bg="bg-secondary"
           text="text-surface"
           noRounded={false}
         />
