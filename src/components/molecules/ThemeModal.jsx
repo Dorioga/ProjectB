@@ -45,7 +45,8 @@ const ThemeModal = ({
       const currentTheme = getCurrentTheme();
       setThemeSnapshot(currentTheme);
       const initial = {
-        mainColor: color?.mainColor || currentTheme["color-primary"] || "#131a27",
+        mainColor:
+          color?.mainColor || currentTheme["color-primary"] || "#131a27",
         secondaryColor:
           color?.secondaryColor || currentTheme["color-secondary"] || "#ff9300",
       };
