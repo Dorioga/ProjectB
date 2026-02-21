@@ -7,7 +7,6 @@ import AsignatureGrades from "../../components/molecules/AsignatureGrades";
 import useSchool from "../../lib/hooks/useSchool";
 import useTeacher from "../../lib/hooks/useTeacher";
 import useStudent from "../../lib/hooks/useStudent";
-import { sha256 } from "js-sha256";
 import useData from "../../lib/hooks/useData";
 import { useNotify } from "../../lib/hooks/useNotify";
 import { minLength, matchesPattern } from "../../utils/validationUtils";
@@ -244,7 +243,7 @@ const RegisterTeacher = ({ onSuccess }) => {
       fecha_nacimiento: formData.fecha_nacimiento || "",
       telephone: formData.telephone || "",
       email: formData.email,
-      password: formData.password ? sha256(String(formData.password)) : "",
+      password: formData.password,
       direccion: formData.direccion || "",
       representante_curso: !!formData.representante_curso,
       // director_curso: array de grades marcados como director

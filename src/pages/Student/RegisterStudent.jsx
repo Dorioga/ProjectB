@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { sha256 } from "js-sha256";
 import FileChooser from "../../components/atoms/FileChooser";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import ProgressPage from "../../components/atoms/progressPage";
@@ -142,7 +141,7 @@ const RegisterStudent = ({ onSuccess }) => {
           ? Number(formData.identificationtype)
           : "",
         sede: formData.sede ? Number(formData.sede) : "",
-        password: formData.password ? sha256(formData.password) : "",
+        password: formData.password,
         workday: formData.workday ? Number(formData.workday) : "",
         fk_grade: formData.fk_grade ? Number(formData.fk_grade) : "",
         fecha_nacimiento: formData.fecha_nacimiento || "",
