@@ -6,6 +6,7 @@ import SimpleButton from "../../components/atoms/SimpleButton";
 import Modal from "../../components/atoms/Modal";
 import RegisterStudent from "./RegisterStudent";
 import UploadStudentExcel from "./UploadStudentExcel";
+import UploadStudentPDF from "./UploadStudentPDF";
 import StudentModal from "../../components/molecules/StudentModal";
 import useStudent from "../../lib/hooks/useStudent";
 import { useNotify } from "../../lib/hooks/useNotify";
@@ -21,6 +22,7 @@ const ManageStudent = () => {
   const [fetchError, setFetchError] = useState(null);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isBulkOpen, setIsBulkOpen] = useState(false);
+  const [isBulkPdfOpen, setIsBulkPdfOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [initialEditing, setInitialEditing] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
@@ -126,8 +128,8 @@ const ManageStudent = () => {
   const columns = useMemo(
     () => [
       {
-        accessorKey: "id_estudiante",
-        header: "ID Estudiante",
+        accessorKey: "numero_identificacion",
+        header: "N° identificación",
         meta: {
           hideOnSM: true,
         },
@@ -197,8 +199,8 @@ const ManageStudent = () => {
   return (
     <div className=" p-6  h-full gap-4 flex flex-col">
       <div className="w-full grid grid-cols-7 items-center bg-primary text-surface p-3 rounded-t-lg">
-        <h2 className="text-2xl col-span-5 font-bold">Datos de Estudiantes</h2>
-        <div className="grid grid-cols-2 gap-2 w-full col-span-2">
+        <h2 className="text-2xl col-span-4 font-bold">Datos de Estudiantes</h2>
+        <div className="grid grid-cols-3 gap-2 w-full col-span-3">
           <SimpleButton
             onClick={() => setIsAddOpen(true)}
             msj="Agregar estudiante"
@@ -211,6 +213,14 @@ const ManageStudent = () => {
             onClick={() => setIsBulkOpen(true)}
             msj="Carga masiva "
             icon="Upload"
+            bg="bg-secondary"
+            text="text-surface"
+            noRounded={false}
+          />
+          <SimpleButton
+            onClick={() => setIsBulkPdfOpen(true)}
+            msj="Subir PDF(s)"
+            icon="FileText"
             bg="bg-secondary"
             text="text-surface"
             noRounded={false}
@@ -258,6 +268,21 @@ const ManageStudent = () => {
           <UploadStudentExcel
             onSuccess={() => {
               setIsBulkOpen(false);
+              fetchStudentsData();
+            }}
+          />
+        </Modal>
+
+        <Modal
+          isOpen={isBulkPdfOpen}
+          onClose={() => setIsBulkPdfOpen(false)}
+          title="Subir PDF(s)"
+          size="4xl"
+        >
+          <UploadStudentPDF
+            onSuccess={() => {
+              setIsBulkPdfOpen(false);
+              // si los PDFs afectan listado, recargar
               fetchStudentsData();
             }}
           />

@@ -58,7 +58,7 @@ const Sidebar = () => {
         transition: "width 300ms ease-in-out",
       }}
     >
-      <div className="row-span-3">
+      <div className="row-span-4">
         <div
           className="flex justify-end py-3 px-6 cursor-pointer"
           onClick={toggleSidebar}
@@ -109,7 +109,7 @@ const Sidebar = () => {
             })}
         </ul>
       </div>
-      <div className="flex flex-col items-center row-span-2 justify-center py-6 ">
+      <div className="flex flex-col items-center row-span-1 justify-center py-6 ">
         <div className="flex flex-col items-center ">
           <User className="text-surface text-2xl" />
           {showContent ? (

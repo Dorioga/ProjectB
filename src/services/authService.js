@@ -71,11 +71,31 @@ export async function forgotPassword(payload) {
   return res;
 }
 
-export async function getProfile() {
-  if (import.meta.env.DEV) {
-    // Devuelve la información pública de loginResponse como "perfil".
-    const { token, name, id_person, school_name, img_logo } = loginResponse;
-    return { token, name, id_person, school_name, img_logo };
+// -----------------------------------------------------------------------------
+// Nuevos endpoints según solicitud del usuario
+// -----------------------------------------------------------------------------
+
+/**
+ * Envía un payload al endpoint /values_access_data
+ * @param {Object} payload - Cualquier información que deba enviarse.
+ * @returns {Promise} Respuesta del servidor.
+ */
+export async function valuesAccessData(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Payload inválido para valuesAccessData");
   }
-  return ApiClient.get("/auth/me");
+  // El interceptor de ApiClient ya devuelve res.data en la mayoría de los casos.
+  return ApiClient.instance.post("/values_access_data", payload);
+}
+
+/**
+ * Envía un payload al endpoint /access_data
+ * @param {Object} payload - Cualquier información que deba enviarse.
+ * @returns {Promise} Respuesta del servidor.
+ */
+export async function accessData(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Payload inválido para accessData");
+  }
+  return ApiClient.instance.post("/access_data", payload);
 }

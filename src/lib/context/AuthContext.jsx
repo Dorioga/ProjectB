@@ -75,12 +75,21 @@ export function AuthProvider({ children }) {
   const [idEstudiante, setIdEstudiante] = useState(() =>
     loadFromStorage("idEstudiante"),
   );
+  const [idPersona, setIdPersona] = useState(() =>
+    loadFromStorage("idPersona"),
+  );
+
   const [token, setToken] = useState(
     () => localStorage.getItem("token") || null,
   );
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Estado del modal de términos y condiciones
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  // Almacena el rol pendiente para cargar el menú después de aceptar términos
+  const pendingRolRef = React.useRef(null);
 
   // Maneja el estado de la barra lateral
   const [isOpen, setIsOpen] = useState(true);
@@ -121,6 +130,7 @@ export function AuthProvider({ children }) {
       setMenu(null);
       setIdDocente(null);
       setIdEstudiante(null);
+      setIdPersona(null);
       setToken(null);
       sessionStorage.clear();
       setAuthToken(null);
@@ -147,7 +157,7 @@ export function AuthProvider({ children }) {
     saveToStorage("menu", menu);
     saveToStorage("idDocente", idDocente);
     saveToStorage("idEstudiante", idEstudiante);
-
+    saveToStorage("idPersona", idPersona);
     if (token) {
       localStorage.setItem("token", token);
       setAuthToken(token);
@@ -171,6 +181,7 @@ export function AuthProvider({ children }) {
     menu,
     idDocente,
     idEstudiante,
+    idPersona,
     token,
   ]);
 
@@ -207,6 +218,7 @@ export function AuthProvider({ children }) {
         setMenu(null);
         setIdDocente(null);
         setIdEstudiante(null);
+        setIdPersona(null);
         setToken(null);
         sessionStorage.clear();
         setAuthToken(null);
@@ -271,10 +283,57 @@ export function AuthProvider({ children }) {
       setColorSecundario(data?.color_secundario ?? null);
       setIdDocente(data?.id_docente ?? null);
       setIdEstudiante(data?.id_estudiante ?? null);
-
-      // Aplicar colores personalizados al tema si existen (solo si no son null)
+      setIdPersona(
+        data?.id_persona ?? data?.idPersona ?? data?.id_persona ?? null,
+      );
       if (data?.color_principal || data?.color_secundario) {
         applyCustomColors(data?.color_principal, data?.color_secundario);
+      }
+
+      // Para roles 5 y 6: verificar aceptación de términos ANTES de cargar el menú
+      const rolValue = data?.rol;
+      const needsTermsCheck =
+        String(rolValue) === "5" || String(rolValue) === "6";
+
+      if (needsTermsCheck) {
+        try {
+          console.log(
+            "AuthContext - Verificando aceptación de términos para rol",
+            data.id_persona,
+          );
+          const termsRes = await authService.valuesAccessData({
+            idPersona: data?.id_persona,
+          });
+          console.log("AuthContext - Respuesta de términos:", termsRes);
+          if (termsRes?.code === "ERROR") {
+            // Guardar el rol para cargar el menú después de aceptar
+            pendingRolRef.current = rolValue;
+            setShowTermsModal(true);
+            // Retornar sin cargar el menú ni navegar: Login.jsx se encarga de esperar
+            return {
+              token: t,
+              idPersona: data?.id_persona ?? null,
+              name: data?.name ?? null,
+              email: data?.email ?? null,
+              rol: rolValue ?? null,
+              name_rol: data?.name_rol ?? null,
+              pendingTerms: true,
+            };
+          }
+        } catch {
+          // Error de red → mostrar modal por seguridad
+          pendingRolRef.current = rolValue;
+          setShowTermsModal(true);
+          return {
+            token: t,
+            id: data?.id ?? null,
+            name: data?.name ?? null,
+            email: data?.email ?? null,
+            rol: rolValue ?? null,
+            name_rol: data?.name_rol ?? null,
+            pendingTerms: true,
+          };
+        }
       }
 
       // Cargar menú por rol al iniciar sesión.
@@ -338,6 +397,53 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // --- Nuevos métodos del servicio que se exponen en el contexto ------------
+
+  /**
+   * Se invoca cuando el usuario cierra el modal de términos tras aceptarlos.
+   * Carga el menú que quedó pendiente y navega al dashboard.
+   */
+  const closeTermsModal = async () => {
+    const rolValue = pendingRolRef.current;
+    if (rolValue) {
+      const fd = new FormData();
+      fd.append("id_rol", String(rolValue));
+      fd.append("rol", String(rolValue));
+      try {
+        const menuRes = await getMenuRol(fd);
+        setMenu(menuRes);
+      } catch {
+        setMenu([]);
+      }
+      pendingRolRef.current = null;
+    }
+    setShowTermsModal(false);
+    // Navegar solo aquí: este método solo se invoca al pulsar "Continuar"
+    navigate("/dashboard/home");
+  };
+
+  /** Cierra el modal sin navegar ni cargar menú (botón ✕ / backdrop). */
+  const dismissTermsModal = () => {
+    setShowTermsModal(false);
+  };
+  const valuesAccessData = async (payload) => {
+    setLoading(true);
+    try {
+      return await authService.valuesAccessData(payload);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const accessData = async (payload) => {
+    setLoading(true);
+    try {
+      return await authService.accessData(payload);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value = useMemo(
     () => ({
       userId,
@@ -359,10 +465,15 @@ export function AuthProvider({ children }) {
       loading,
       error,
       isOpen,
+      showTermsModal,
+      closeTermsModal,
+      dismissTermsModal,
       toggleSidebar: () => setIsOpen(!isOpen),
       closeSidebar: () => setIsOpen(false),
       login,
       logout,
+      valuesAccessData,
+      accessData,
       reload: loadProfile,
     }),
     [
@@ -385,6 +496,9 @@ export function AuthProvider({ children }) {
       loading,
       error,
       isOpen,
+      showTermsModal,
+      closeTermsModal,
+      dismissTermsModal,
       login,
       logout,
       loadProfile,

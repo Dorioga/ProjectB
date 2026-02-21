@@ -13,6 +13,7 @@ import useStudent from "../../lib/hooks/useStudent";
 import useData from "../../lib/hooks/useData";
 import { useNotify } from "../../lib/hooks/useNotify";
 import Loader from "../../components/atoms/Loader";
+import { upload } from "../../services/uploadService";
 
 const RegisterStudent = ({ onSuccess }) => {
   const { registerStudent, loading } = useStudent();
@@ -91,7 +92,44 @@ const RegisterStudent = ({ onSuccess }) => {
     e.preventDefault();
 
     try {
-      // Construir el payload como objeto JSON
+      // ── PASO 1: construir el FormData con los archivos y enviarlo ──────────
+      const form = new FormData();
+      form.append("cedulaEstudiante", formData.link_identificacion);
+      form.append("soporteExcel", formData.link_piar);
+      form.append("identificacion", formData.identification);
+
+      const res = await upload(form, "estudiantes");
+
+      // ── PASO 2: validar que el servidor respondió correctamente ────────────
+      if (!res || res.status !== 200 || !Array.isArray(res.data)) {
+        throw new Error("Error en la subida de archivos");
+      }
+
+      // ── PASO 3: extraer las URLs del response y actualizar el estado ───────
+      // Usamos variables locales para el payload porque setFormData es
+      // asíncrono: el estado no se refleja hasta el siguiente render.
+      let idDocUrl = "";
+      let piarUrl = "";
+
+      res.data.forEach((entry) => {
+        const fileInfo = entry.files && entry.files[0];
+        const url = fileInfo ? fileInfo.folder : "";
+
+        if (entry.field === "soporteExcel") {
+          piarUrl = "yes";
+        } else if (entry.field === "cedulaEstudiante") {
+          idDocUrl = "yes";
+        }
+      });
+
+      // Verificar que al menos una URL se haya recibido antes de continuar
+      if (!idDocUrl && !piarUrl) {
+        throw new Error("No se recibieron URLs de los archivos subidos");
+      }
+
+      // ── PASO 4: construir el payload con las URLs ya resueltas ─────────────
+      // Se usan las variables locales (idDocUrl, piarUrl) y no formData,
+      // porque el estado aún no se actualizó en este ciclo de render.
       const payload = {
         first_name: formData.first_name || "",
         second_name: formData.second_name || "",
@@ -119,13 +157,11 @@ const RegisterStudent = ({ onSuccess }) => {
         fk_periodo_ingreso: formData.periodo_ingreso
           ? Number(formData.periodo_ingreso)
           : "",
-        link_identificacion: formData.link_identificacion || "",
-        // PIAR
-        cuenta_piar: !!formData.cuenta_piar,
-        link_piar: formData.link_piar || "",
+        link_identificacion: "",
+        link_identificacion_validado: idDocUrl || "",
+        link_piar: piarUrl || "",
       };
 
-      // Mostrar el payload antes de enviar
       console.log("=== Payload a enviar ===");
       console.log(JSON.stringify(payload, null, 2));
       console.log("========================");
@@ -380,70 +416,74 @@ const RegisterStudent = ({ onSuccess }) => {
           />
         </div>
 
-        <div className="md:col-span-3 font-bold mt-4">
+        <div className="md:col-span-3 font-bold mt-4 grid grid-cols-2 gap-4">
           Documentos y archivos
         </div>
-        <div>
+        <div className="grid grid-cols-2 w-full col-span-3">
+          {/* <div>
           <label>Foto del estudiante</label>
           <FileChooser
             onChange={(file) =>
               setFormData((prev) => ({ ...prev, photo_link: file }))
             }
+            accept={".pdf"}
           />
-        </div>
-        <div>
-          <label>Documento de identificación</label>
-          <FileChooser
-            onChange={(file) =>
-              setFormData((prev) => ({ ...prev, link_identificacion: file }))
-            }
-          />
-        </div>
-
-        {/* PIAR: checkbox + FileChooser (.xlsx/.xls) */}
-        <div>
-          <label>Cuenta con PIAR</label>
-          <div className="flex items-center gap-3 mt-2">
-            <input
-              type="checkbox"
-              name="cuenta_piar"
-              checked={!!formData.cuenta_piar}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  cuenta_piar: !!e.target.checked,
-                }))
+        </div> */}
+          <div className="flex flex-col justify-center items-center">
+            <label>Documento de identificación</label>
+            <FileChooser
+              onChange={(file) =>
+                setFormData((prev) => ({ ...prev, link_identificacion: file }))
               }
-              className="w-4 h-4"
+              accept={".pdf"}
             />
-            <span
-              className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
-                formData.cuenta_piar
-                  ? "bg-green-100 text-green-800 border-green-200"
-                  : "bg-yellow-100 text-yellow-800 border-yellow-200"
-              }`}
-            >
-              {formData.cuenta_piar ? "Sí" : "No"}
-            </span>
           </div>
 
-          {formData.cuenta_piar && (
-            <div className="mt-3">
-              <FileChooser
-                accept=".xlsx,.xls"
-                onChange={(file) =>
-                  setFormData((prev) => ({ ...prev, link_piar: file }))
-                }
-                label={
-                  formData.link_piar
-                    ? formData.link_piar.name
-                    : "Cargar (.xlsx)"
-                }
-              />
+          {/* PIAR: checkbox + FileChooser (.xlsx/.xls) */}
+          <div className="grid grid-cols-2">
+            <div className=" flex flex-col gap-3  text-center">
+              <label>Cuenta con PIAR</label>
+              <div className="flex flex-row gap-2 items-center justify-center">
+                <input
+                  type="checkbox"
+                  name="cuenta_piar"
+                  checked={!!formData.cuenta_piar}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      cuenta_piar: !!e.target.checked,
+                    }))
+                  }
+                  className="w-4 h-4"
+                />
+                <span
+                  className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
+                    formData.cuenta_piar
+                      ? "bg-green-100 text-green-800 border-green-200"
+                      : "bg-yellow-100 text-yellow-800 border-yellow-200"
+                  }`}
+                >
+                  {formData.cuenta_piar ? "Sí" : "No"}
+                </span>
+              </div>
             </div>
-          )}
+            {formData.cuenta_piar && (
+              <div className="mt-3">
+                <FileChooser
+                  accept=".xlsx,.xls"
+                  onChange={(file) =>
+                    setFormData((prev) => ({ ...prev, link_piar: file }))
+                  }
+                  label={
+                    formData.link_piar
+                      ? formData.link_piar.name
+                      : "Cargar (.xlsx)"
+                  }
+                />
+              </div>
+            )}
+          </div>
         </div>
-
         <div className="md:col-span-3 mt-4 flex flex-col items-center gap-4">
           {loading && <Loader message="Registrando estudiante..." />}
 

@@ -12,6 +12,7 @@ import RegisterParents from "../pages/Student/RegisterParents";
 import SingleStudent from "../pages/Student/SingleStudent";
 import SearchStudents from "../pages/Student/SearchStudents";
 import UploadStudentExcel from "../pages/Student/UploadStudentExcel";
+import UploadStudentPDF from "../pages/Student/UploadStudentPDF";
 import Auditory from "../pages/Dashboard/Auditory";
 import RegisterAsignature from "../pages/GradeRecords/RegisterAsignature";
 import RegisterRecords from "../pages/GradeRecords/RegisterRecords";
@@ -52,6 +53,7 @@ const GeneralRoutes = () => {
             <Route path="registerStudent" element={<RegisterStudent />} />
             <Route path="registerParents" element={<RegisterParents />} />
             <Route path="uploadStudentExcel" element={<UploadStudentExcel />} />
+            <Route path="uploadStudentPDF" element={<UploadStudentPDF />} />
 
             <Route path="reports" element={<Reports />} />
             <Route path="auditory" element={<Auditory />} />

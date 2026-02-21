@@ -16,10 +16,37 @@ const FileChooser = ({
   const handleFileChange = (event) => {
     const files = event.target.files;
     if (files.length > 0) {
-      const fileArray = Array.from(files);
+      let fileArray = Array.from(files);
+
+      // Si se especificó accept, filtramos también en el cliente para
+      // evitar que un usuario renombre un fichero o use un OS que ignore
+      // el atributo `accept` en el selector.
+      if (accept) {
+        const allowed = accept
+          .split(",")
+          .map((a) => a.trim().toLowerCase())
+          .filter(Boolean);
+
+        fileArray = fileArray.filter((file) => {
+          const name = file.name.toLowerCase();
+          const type = file.type.toLowerCase();
+
+          return allowed.some((rule) => {
+            if (rule.startsWith(".")) {
+              return name.endsWith(rule);
+            }
+            if (rule.includes("/")) {
+              return type === rule;
+            }
+            // por seguridad también coincidir por extensión sin punto
+            return name.endsWith(`.${rule}`);
+          });
+        });
+      }
+
       setSelectedFiles(fileArray);
       if (onChange) {
-        onChange(multiple ? fileArray : files[0]);
+        onChange(multiple ? fileArray : fileArray[0] || null);
       }
     }
   };
