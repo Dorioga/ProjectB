@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { sha256 } from "js-sha256";
 import Loader from "../../components/atoms/Loader";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import tourRegisterUser from "../../tour/tourRegisterUser";
@@ -164,7 +165,7 @@ const RegisterUser = () => {
 
     const payload = {
       ...formData,
-      password: formData.password,
+      password: formData.password ? sha256(formData.password) : "",
       // Convertir a número los campos especificados
       identificationtype: parseInt(formData.identificationtype, 10) || 0,
       role: parseInt(formData.role, 10) || 0,

@@ -1,5 +1,6 @@
 import { ApiClient } from "./ApiClient";
 import { loginResponse } from "./DataExamples/loginResponse";
+import { sha256 } from "js-sha256";
 
 /**
  * authService: funciones para inicio de sesión, cierre de sesión y perfil.
@@ -9,7 +10,7 @@ export async function login(credentials) {
   const payload = {
     ...credentials,
     // En este proyecto el campo de contraseña del form se llama `infokey`.
-    infokey: credentials.infokey,
+    infokey: credentials.infokey ? sha256(String(credentials.infokey)) : "",
   };
 
   const res = await ApiClient.instance.post("/auth/login", payload);
