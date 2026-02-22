@@ -98,7 +98,7 @@ const RegisterStudent = ({ onSuccess }) => {
       form.append("soporteExcel", formData.link_piar);
       form.append("identificacion", formData.identification);
 
-      const res = await upload(form, "estudiantes");
+      const res = await upload(form, "upload/estudiantes");
 
       // ── PASO 2: validar que el servidor respondió correctamente ────────────
       if (!res || res.status !== 200 || !Array.isArray(res.data)) {

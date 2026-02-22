@@ -99,3 +99,16 @@ export async function accessData(payload) {
   }
   return ApiClient.instance.post("/access_data", payload);
 }
+
+/**
+ * Registra la firma del usuario en el backend.
+ * Se usa en TermsModal cuando el rol es 5.
+ * @param {Object} payload - Debe incluir al menos idPersona y signature (base64).
+ * @returns {Promise} Respuesta del servidor.
+ */
+export async function registerSignature(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Payload inválido para registerSignature");
+  }
+  return ApiClient.instance.post("/uploadfirma/acudientes", payload);
+}

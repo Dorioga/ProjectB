@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import Modal from "../atoms/Modal";
 import SimpleButton from "../atoms/SimpleButton";
 import Loader from "../atoms/Loader";
 import useAuth from "../../lib/hooks/useAuth";
+import SignatureCanvas from "react-signature-canvas";
 
 /**
  * Modal encargado de mostrar los términos y condiciones y la política de datos.
@@ -13,34 +14,89 @@ import useAuth from "../../lib/hooks/useAuth";
 const TermsModal = ({ isOpen, onClose, onAccept }) => {
   const [checked, setChecked] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { accessData } = useAuth();
+  const [signatureData, setSignatureData] = useState("");
+  const [signatureSaved, setSignatureSaved] = useState(false);
+  const [savingSig, setSavingSig] = useState(false);
 
-  const handleAccept = async () => {
-    let idPersona = localStorage.getItem("idPersona");
-    if (!idPersona) {
-      console.warn("TermsModal: no hay idPersona en localStorage");
-      return;
-    }
-    // limpiar posibles comillas y convertir a número
-    idPersona = idPersona.replace(/['"\\]/g, "");
-    const idNum = parseInt(idPersona, 10);
-    if (Number.isNaN(idNum)) {
-      console.warn("TermsModal: idPersona no es un número válido", idPersona);
-      return;
-    }
-    setLoading(true);
+  const sigCanvas = useRef(null);
+
+  const {
+    accessData,
+    rol,
+    registerSignature,
+    idPersona,
+    numero_identificacion,
+  } = useAuth();
+
+  const isRole5 = String(rol) === "5";
+
+  const parseIdPersona = (val) => {
     try {
-      let res = await accessData({ fk_perona: idNum });
-      console.log("TermsModal - Respuesta de accessData:", res);
+      return parseInt(JSON.parse(val), 10);
+    } catch {
+      return parseInt(String(val).replace(/['"/\\]/g, ""), 10);
+    }
+  };
+
+  /* ── Handlers de firma ───────────────────────────────────────── */
+  const handleSignatureEnd = useCallback(() => {
+    const data = sigCanvas.current?.toDataURL("image/png") ?? "";
+    setSignatureData(data);
+  }, []);
+
+  const handleClearSignature = useCallback(() => {
+    sigCanvas.current?.clear();
+    setSignatureData("");
+    setSignatureSaved(false);
+  }, []);
+
+  const handleCancelSignature = useCallback(() => {
+    sigCanvas.current?.clear();
+    setSignatureData("");
+    setSignatureSaved(false);
+    setChecked(false);
+  }, []);
+
+  const handleSaveSignature = useCallback(async () => {
+    if (!signatureData || !numero_identificacion) return;
+    setSavingSig(true);
+    try {
+      await registerSignature({
+        identificacion: numero_identificacion,
+        imageBase64: signatureData,
+      });
+      setSignatureSaved(true);
+    } catch (err) {
+      console.error("Error guardando firma:", err);
+    } finally {
+      setSavingSig(false);
+    }
+  }, [signatureData, numero_identificacion, registerSignature]);
+
+  /* ── Handler principal ───────────────────────────────────────── */
+  const handleAccept = useCallback(async () => {
+    if (isRole5 && !signatureSaved) return;
+    setLoading(true);
+    let idPersona = parseIdPersona(localStorage.getItem("idPersona"));
+    console.log("Enviando aceptación de términos para idPersona:", idPersona);
+    try {
+      await accessData({ fk_perona: idPersona, numero_identificacion });
       localStorage.setItem("termsAccepted", "true");
-      // Usar onAccept si existe; si no, onClose como fallback
       (onAccept ?? onClose)();
     } catch (err) {
       console.error("Error enviando aceptación de términos:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [
+    isRole5,
+    signatureSaved,
+    idPersona,
+    numero_identificacion,
+    accessData,
+    onAccept,
+    onClose,
+  ]);
 
   return (
     <Modal
@@ -92,16 +148,67 @@ const TermsModal = ({ isOpen, onClose, onAccept }) => {
             Tratamiento de Datos Personales.
           </label>
         </div>
-        {!localStorage.getItem("userId") && (
-          <p className="text-xs text-error">
-            Debe iniciar sesión para poder aceptar y continuar.
-          </p>
+        {/* signature canvas for role 5 */}
+        {isRole5 && checked && (
+          <div className="space-y-2">
+            {/* option to save signature to server */}
+            <SignatureCanvas
+              ref={sigCanvas}
+              penColor="black"
+              canvasProps={{ className: "signature-canvas border w-full h-32" }}
+              onEnd={handleSignatureEnd}
+            />
+            <div className="flex gap-2">
+              <SimpleButton
+                msj="Limpiar"
+                onClick={handleClearSignature}
+                bg="bg-gray-300"
+                text="text-black"
+                hover="hover:bg-gray-400"
+              />
+              <div className="relative inline-block">
+                <SimpleButton
+                  msj="Guardar firma"
+                  onClick={handleSaveSignature}
+                  disabled={!signatureData || savingSig}
+                  bg="bg-secondary"
+                  text="text-surface"
+                  hover="hover:bg-secondary/80"
+                />
+                {savingSig && (
+                  <span className="absolute right-0 top-0">
+                    <Loader />
+                  </span>
+                )}
+              </div>
+              <SimpleButton
+                msj="Cancelar"
+                onClick={handleCancelSignature}
+                bg="bg-red-500"
+                text="text-surface"
+                hover="hover:bg-red-600"
+              />
+            </div>
+            {isRole5 && !signatureData && (
+              <p className="text-xs text-error">
+                Debe dibujar su firma para poder continuar.
+              </p>
+            )}
+            {isRole5 && signatureData && !signatureSaved && (
+              <p className="text-xs text-warning">
+                Después de dibujar la firma, pulse{" "}
+                <strong>Guardar firma</strong> para habilitar el botón
+                Continuar.
+              </p>
+            )}
+          </div>
         )}
+
         <div className="flex items-center gap-4">
           <SimpleButton
             msj="Continuar"
             onClick={handleAccept}
-            disabled={!checked || loading || !localStorage.getItem("userId")}
+            disabled={!checked || loading || (isRole5 && !signatureSaved)}
             bg="bg-secondary"
             text="text-surface"
             hover="hover:bg-secondary/80"

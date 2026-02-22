@@ -42,7 +42,7 @@ export async function upload(payload, name) {
   const body = payload; // lo enviamos tal cual
   console.log("Iniciando upload con payload:", body, "y nombre:", name);
   // Usar URL completa para que el servicio siempre apunte al host fijo
-  const endpoint = "https://nexusplataforma.com/api/upload/" + name;
+  const endpoint = "https://nexusplataforma.com/api/" + name;
 
   const res = await ApiClient.instance.post(endpoint, body, {
     headers: {

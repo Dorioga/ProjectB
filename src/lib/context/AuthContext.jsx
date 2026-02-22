@@ -79,9 +79,14 @@ export function AuthProvider({ children }) {
     loadFromStorage("idPersona"),
   );
 
+  // número de identificación (cedula, etc.) del usuario
+  // no se persiste en localStorage, solo se mantiene en memoria
+  const [numero_identificacion, setNumeroIdentificacion] = useState(null);
+
   const [token, setToken] = useState(
     () => localStorage.getItem("token") || null,
   );
+
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -113,6 +118,7 @@ export function AuthProvider({ children }) {
       setUserEmail(data?.email ?? null);
       setNameRole(data?.name_rol ?? null);
       setRol(data?.rol ?? null);
+      setNumeroIdentificacion(data?.numero_identificacion ?? null);
     } catch (err) {
       // Limpiar todo en caso de error
       setUserId(null);
@@ -158,6 +164,7 @@ export function AuthProvider({ children }) {
     saveToStorage("idDocente", idDocente);
     saveToStorage("idEstudiante", idEstudiante);
     saveToStorage("idPersona", idPersona);
+    // numero_identificacion intentionally not stored
     if (token) {
       localStorage.setItem("token", token);
       setAuthToken(token);
@@ -283,9 +290,11 @@ export function AuthProvider({ children }) {
       setColorSecundario(data?.color_secundario ?? null);
       setIdDocente(data?.id_docente ?? null);
       setIdEstudiante(data?.id_estudiante ?? null);
+      setNumeroIdentificacion(data?.numero_identificacion ?? null);
       setIdPersona(
         data?.id_persona ?? data?.idPersona ?? data?.id_persona ?? null,
       );
+
       if (data?.color_principal || data?.color_secundario) {
         applyCustomColors(data?.color_principal, data?.color_secundario);
       }
@@ -443,6 +452,14 @@ export function AuthProvider({ children }) {
       setLoading(false);
     }
   };
+  const registerSignature = async (payload) => {
+    setLoading(true);
+    try {
+      return await authService.registerSignature(payload);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const value = useMemo(
     () => ({
@@ -462,6 +479,8 @@ export function AuthProvider({ children }) {
       colorSecundario,
       idDocente,
       idEstudiante,
+      numero_identificacion,
+      setNumeroIdentificacion,
       loading,
       error,
       isOpen,
@@ -474,6 +493,7 @@ export function AuthProvider({ children }) {
       logout,
       valuesAccessData,
       accessData,
+      registerSignature,
       reload: loadProfile,
     }),
     [
@@ -493,6 +513,8 @@ export function AuthProvider({ children }) {
       colorSecundario,
       idDocente,
       idEstudiante,
+      numero_identificacion,
+      setNumeroIdentificacion,
       loading,
       error,
       isOpen,

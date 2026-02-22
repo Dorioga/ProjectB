@@ -18,7 +18,10 @@ import { upload } from "../../services/uploadService";
  *     directorio dinámico.
  *   - <code>onSuccess</code> (function): callback opcional tras subida exitosa.
  */
-const UploadStudentPDF = ({ folder = "estudiantes", onSuccess } = {}) => {
+const UploadStudentPDF = ({
+  folder = "uploads/estudiantes",
+  onSuccess,
+} = {}) => {
   const [files, setFiles] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState(null);
