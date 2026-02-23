@@ -274,7 +274,10 @@ export function AuthProvider({ children }) {
         setAuthToken(t);
         console.log("AuthContext - Token guardado en localStorage");
       }
-
+      console.log(
+        "AuthContext - Cargando datos del usuario en el contexto...",
+        data,
+      );
       // Guardar todas las variables individuales
       setUserId(data?.id ?? null);
       setUserName(data?.name ?? null);
@@ -291,9 +294,7 @@ export function AuthProvider({ children }) {
       setIdDocente(data?.id_docente ?? null);
       setIdEstudiante(data?.id_estudiante ?? null);
       setNumeroIdentificacion(data?.numero_identificacion ?? null);
-      setIdPersona(
-        data?.id_persona ?? data?.idPersona ?? data?.id_persona ?? null,
-      );
+      setIdPersona(data?.id_persona ?? null);
 
       if (data?.color_principal || data?.color_secundario) {
         applyCustomColors(data?.color_principal, data?.color_secundario);
@@ -461,6 +462,15 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const recoveryPassword = async (payload) => {
+    setLoading(true);
+    try {
+      return await authService.recoveryPassword(payload);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value = useMemo(
     () => ({
       userId,
@@ -479,6 +489,7 @@ export function AuthProvider({ children }) {
       colorSecundario,
       idDocente,
       idEstudiante,
+      idPersona,
       numero_identificacion,
       setNumeroIdentificacion,
       loading,
@@ -494,6 +505,7 @@ export function AuthProvider({ children }) {
       valuesAccessData,
       accessData,
       registerSignature,
+      recoveryPassword,
       reload: loadProfile,
     }),
     [
@@ -513,6 +525,7 @@ export function AuthProvider({ children }) {
       colorSecundario,
       idDocente,
       idEstudiante,
+      idPersona,
       numero_identificacion,
       setNumeroIdentificacion,
       loading,

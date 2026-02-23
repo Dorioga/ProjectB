@@ -1,8 +1,8 @@
 import React from "react";
-import Modal from "../atoms/Modal"; // Ajusta la ruta según tu estructura
-import RegisterParents from "../../pages/Student/RegisterParents"; // Ajusta la ruta según tu estructura
+import Modal from "../atoms/Modal";
+import RegisterParents from "../../pages/Student/RegisterParents";
 
-const RegisterParentsModal = ({ isOpen, onClose }) => {
+const RegisterParentsModal = ({ isOpen, onClose, fkEstudiante }) => {
   return (
     <Modal
       isOpen={isOpen}
@@ -10,7 +10,7 @@ const RegisterParentsModal = ({ isOpen, onClose }) => {
       title="Registrar acudiente"
       size="xl"
     >
-      <RegisterParents />
+      <RegisterParents fkEstudiante={fkEstudiante} onSuccess={onClose} />
     </Modal>
   );
 };

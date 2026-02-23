@@ -134,6 +134,7 @@ export const ApiClient = {
     apiClient.get(path, { params, ...config }),
   post: (path, data, config = {}) => apiClient.post(path, data, config),
   put: (path, data, config = {}) => apiClient.put(path, data, config),
+  patch: (path, data, config = {}) => apiClient.patch(path, data, config),
   del: (path, config = {}) => apiClient.delete(path, config),
 };
 

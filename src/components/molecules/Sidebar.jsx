@@ -6,6 +6,7 @@ import * as LucideIcons from "lucide-react";
 import PreviewIMG from "../atoms/PreviewIMG";
 import PdfReportCard from "./PdfReportCard";
 import reportCardResponse from "../../services/DataExamples/reportCardResponse";
+import ChangePasswordModal from "./ChangePasswordModal";
 const Sidebar = () => {
   const {
     userName,
@@ -24,6 +25,7 @@ const Sidebar = () => {
   // showContent se activa DESPUÉS de que termina la animación de apertura (300ms)
   // y se desactiva inmediatamente al cerrar para ocultar el contenido al instante
   const [showContent, setShowContent] = useState(isOpen);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
   useEffect(() => {
     let timer;
@@ -110,12 +112,17 @@ const Sidebar = () => {
         </ul>
       </div>
       <div className="flex flex-col items-center row-span-1 justify-center py-6 ">
-        <div className="flex flex-col items-center ">
+        <button
+          type="button"
+          title="Cambiar contraseña"
+          onClick={() => setChangePasswordOpen(true)}
+          className="flex flex-col items-center cursor-pointer rounded-lg px-2 py-1 hover:bg-secondary/40 transition-colors"
+        >
           <User className="text-surface text-2xl" />
           {showContent ? (
             <div className="text-surface text-sm text-center">{nameRole}</div>
           ) : null}
-        </div>
+        </button>
         <button
           className="flex flex-row items-center gap-2 px-4 py-2 rounded-md  hover:bg-error hover:text-surface text-error transition-colors duration-200 font-semibold cursor-pointer"
           onClick={logout}
@@ -129,6 +136,10 @@ const Sidebar = () => {
           ) : null}
         </div>
       </div>
+      <ChangePasswordModal
+        isOpen={changePasswordOpen}
+        onClose={() => setChangePasswordOpen(false)}
+      />
     </div>
   );
 };

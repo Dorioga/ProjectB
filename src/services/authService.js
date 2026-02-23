@@ -112,3 +112,30 @@ export async function registerSignature(payload) {
   }
   return ApiClient.instance.post("/uploadfirma/acudientes", payload);
 }
+
+/**
+ * Solicita la recuperación de contraseña según el rol del usuario.
+ * POST /recoverypassword
+ * @param {Object} payload - { email?, lastName?, identificationNumber?, idRol }
+ * @returns {Promise} Respuesta del servidor.
+ */
+export async function recoveryPassword(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Payload inválido para recoveryPassword");
+  }
+  return ApiClient.instance.post("/recoverypassword", payload);
+}
+
+/**
+ * Actualiza la contraseña del usuario autenticado.
+ * PATCH /user/:userId
+ * @param {string|number} personaId - ID de la persona.
+ * @param {string} nuevaContrasena - Nueva contraseña en texto plano (se hashea con sha256).
+ * @returns {Promise} Respuesta del servidor.
+ */
+export async function updatePassword(userId, nuevaContrasena) {
+  if (!userId) throw new Error("userId es requerido");
+  if (!nuevaContrasena) throw new Error("La nueva contraseña es requerida");
+  const payload = { contrasena: sha256(String(nuevaContrasena)) };
+  return ApiClient.patch(`/user/${userId}`, payload);
+}

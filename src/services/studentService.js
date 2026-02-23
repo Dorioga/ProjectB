@@ -200,3 +200,21 @@ export async function getRandomStudents(count = 5) {
   }
   return arr.slice(0, n);
 }
+
+/**
+ * Registra un acudiente/guardian de un estudiante.
+ *
+ * Endpoint: POST /guardian
+ * @param {Object} payload - Datos del acudiente.
+ * @returns {Promise<Object>} Respuesta del servidor.
+ */
+export async function registerGuardian(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+  const res = await ApiClient.post("/guardian", payload);
+  const data = res;
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+  throw new Error("Respuesta inesperada de registerGuardian.");
+}
