@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { sha256 } from "js-sha256";
 import FileChooser from "../../components/atoms/FileChooser";
 import SimpleButton from "../../components/atoms/SimpleButton";
-import ProgressPage from "../../components/atoms/progressPage";
 import SedeSelect from "../../components/atoms/SedeSelect";
 import JourneySelect from "../../components/atoms/JourneySelect";
 import BecaSelector from "../../components/atoms/BecaSelector";
@@ -19,6 +18,7 @@ const RegisterStudent = ({ onSuccess }) => {
   const { registerStudent, loading } = useStudent();
   const { institutionSedes } = useData();
   const notify = useNotify();
+  const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
     first_name: "",
     second_name: "",
@@ -86,10 +86,39 @@ const RegisterStudent = ({ onSuccess }) => {
       ...prev,
       [name]: type === "file" ? files[0] : value,
     }));
+    setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const newErrors = {};
+    if (!formData.identificationtype)
+      newErrors.identificationtype = "Selecciona un tipo de documento.";
+    if (!formData.identification.trim())
+      newErrors.identification = "El número de identificación es requerido.";
+    if (!formData.first_name.trim())
+      newErrors.first_name = "El primer nombre es requerido.";
+    if (!formData.first_lastname.trim())
+      newErrors.first_lastname = "El primer apellido es requerido.";
+    if (!formData.gender) newErrors.gender = "El género es requerido.";
+    if (!formData.fecha_nacimiento)
+      newErrors.fecha_nacimiento = "La fecha de nacimiento es requerida.";
+    if (!formData.telephone.trim())
+      newErrors.telephone = "El teléfono es requerido.";
+    if (!formData.email.trim()) newErrors.email = "El email es requerido.";
+    if (!formData.password.trim())
+      newErrors.password = "La contraseña es requerida.";
+    if (!formData.sede) newErrors.sede = "La sede es requerida.";
+    if (!formData.workday) newErrors.workday = "La jornada es requerida.";
+    if (!formData.fk_grade) newErrors.fk_grade = "El grado es requerido.";
+    if (!formData.link_identificacion)
+      newErrors.link_identificacion =
+        "El documento de identificación es requerido.";
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
 
     try {
       // ── PASO 1: construir el FormData con los archivos y enviarlo ──────────
@@ -206,6 +235,7 @@ const RegisterStudent = ({ onSuccess }) => {
         link_piar: null,
         link_identificacion: null,
       });
+      setErrors({});
 
       // Notificar al componente padre (si fue pasado)
       if (typeof onSuccess === "function") {
@@ -232,15 +262,28 @@ const RegisterStudent = ({ onSuccess }) => {
       >
         {/* -- Campos del formulario -- */}
         <div className="md:col-span-3 font-bold">Información personal</div>
-        <TypeDocumentSelector
-          name="identificationtype"
-          label="Tipo de documento"
-          value={formData.identificationtype}
-          onChange={handleChange}
-          placeholder="Selecciona un tipo de documento"
-        />
         <div>
-          <label>N.º de identificación</label>
+          <TypeDocumentSelector
+            name="identificationtype"
+            label={
+              <>
+                Tipo de documento <span className="text-error">*</span>
+              </>
+            }
+            value={formData.identificationtype}
+            onChange={handleChange}
+            placeholder="Selecciona un tipo de documento"
+          />
+          {errors.identificationtype && (
+            <p className="text-xs text-error mt-1">
+              {errors.identificationtype}
+            </p>
+          )}
+        </div>
+        <div>
+          <label>
+            N.º de identificación <span className="text-error">*</span>
+          </label>
           <input
             type="text"
             name="identification"
@@ -248,6 +291,9 @@ const RegisterStudent = ({ onSuccess }) => {
             onChange={handleChange}
             className="w-full p-2 border rounded bg-surface"
           />
+          {errors.identification && (
+            <p className="text-xs text-error mt-1">{errors.identification}</p>
+          )}
         </div>
         <div>
           <label>NUI</label>
@@ -260,7 +306,9 @@ const RegisterStudent = ({ onSuccess }) => {
           />
         </div>
         <div>
-          <label>Primer nombre</label>
+          <label>
+            Primer nombre <span className="text-error">*</span>
+          </label>
           <input
             type="text"
             name="first_name"
@@ -268,6 +316,9 @@ const RegisterStudent = ({ onSuccess }) => {
             onChange={handleChange}
             className="w-full p-2 border rounded bg-surface"
           />
+          {errors.first_name && (
+            <p className="text-xs text-error mt-1">{errors.first_name}</p>
+          )}
         </div>
         <div>
           <label>Segundo nombre</label>
@@ -280,7 +331,9 @@ const RegisterStudent = ({ onSuccess }) => {
           />
         </div>
         <div>
-          <label>Primer apellido</label>
+          <label>
+            Primer apellido <span className="text-error">*</span>
+          </label>
           <input
             type="text"
             name="first_lastname"
@@ -288,6 +341,9 @@ const RegisterStudent = ({ onSuccess }) => {
             onChange={handleChange}
             className="w-full p-2 border rounded bg-surface"
           />
+          {errors.first_lastname && (
+            <p className="text-xs text-error mt-1">{errors.first_lastname}</p>
+          )}
         </div>
         <div>
           <label>Segundo apellido</label>
@@ -300,7 +356,9 @@ const RegisterStudent = ({ onSuccess }) => {
           />
         </div>
         <div>
-          <label>Género</label>
+          <label>
+            Género <span className="text-error">*</span>
+          </label>
           <select
             name="gender"
             value={formData.gender}
@@ -311,9 +369,14 @@ const RegisterStudent = ({ onSuccess }) => {
             <option value="Masculino">Masculino</option>
             <option value="Femenino">Femenino</option>
           </select>
+          {errors.gender && (
+            <p className="text-xs text-error mt-1">{errors.gender}</p>
+          )}
         </div>
         <div>
-          <label>Fecha de nacimiento</label>
+          <label>
+            Fecha de nacimiento <span className="text-error">*</span>
+          </label>
           <input
             type="date"
             name="fecha_nacimiento"
@@ -321,9 +384,14 @@ const RegisterStudent = ({ onSuccess }) => {
             onChange={handleChange}
             className="w-full p-2 border rounded bg-surface"
           />
+          {errors.fecha_nacimiento && (
+            <p className="text-xs text-error mt-1">{errors.fecha_nacimiento}</p>
+          )}
         </div>
         <div>
-          <label>Teléfono</label>
+          <label>
+            Teléfono <span className="text-error">*</span>
+          </label>
           <input
             type="tel"
             name="telephone"
@@ -331,9 +399,14 @@ const RegisterStudent = ({ onSuccess }) => {
             onChange={handleChange}
             className="w-full p-2 border rounded bg-surface"
           />
+          {errors.telephone && (
+            <p className="text-xs text-error mt-1">{errors.telephone}</p>
+          )}
         </div>
         <div>
-          <label>Email</label>
+          <label>
+            Email <span className="text-error">*</span>
+          </label>
           <input
             type="email"
             name="email"
@@ -341,6 +414,9 @@ const RegisterStudent = ({ onSuccess }) => {
             onChange={handleChange}
             className="w-full p-2 border rounded bg-surface"
           />
+          {errors.email && (
+            <p className="text-xs text-error mt-1">{errors.email}</p>
+          )}
         </div>
         <div>
           <label>Dirección</label>
@@ -353,7 +429,9 @@ const RegisterStudent = ({ onSuccess }) => {
           />
         </div>
         <div>
-          <label>Contraseña</label>
+          <label>
+            Contraseña <span className="text-error">*</span>
+          </label>
           <input
             type="password"
             name="password"
@@ -361,36 +439,66 @@ const RegisterStudent = ({ onSuccess }) => {
             onChange={handleChange}
             className="w-full p-2 border rounded bg-surface"
           />
+          {errors.password && (
+            <p className="text-xs text-error mt-1">{errors.password}</p>
+          )}
         </div>
 
         <div className="md:col-span-3 font-bold mt-4">
           Información académica
         </div>
-        <SedeSelect
-          name="sede"
-          label="Sede"
-          value={formData.sede}
-          onChange={handleChange}
-          placeholder="Selecciona una sede"
-        />
-        <JourneySelect
-          name="workday"
-          label="Jornada"
-          value={formData.workday}
-          filterValue={sedeWorkday}
-          onChange={handleChange}
-          placeholder="Selecciona una jornada"
-          includeAmbas={false}
-        />
-        <GradeSelector
-          name="fk_grade"
-          label="Grado"
-          value={formData.fk_grade}
-          onChange={handleChange}
-          sedeId={formData.sede}
-          workdayId={formData.workday}
-          placeholder="Selecciona un grado"
-        />
+        <div>
+          <SedeSelect
+            name="sede"
+            label={
+              <>
+                Sede <span className="text-error">*</span>
+              </>
+            }
+            value={formData.sede}
+            onChange={handleChange}
+            placeholder="Selecciona una sede"
+          />
+          {errors.sede && (
+            <p className="text-xs text-error mt-1">{errors.sede}</p>
+          )}
+        </div>
+        <div>
+          <JourneySelect
+            name="workday"
+            label={
+              <>
+                Jornada <span className="text-error">*</span>
+              </>
+            }
+            value={formData.workday}
+            filterValue={sedeWorkday}
+            onChange={handleChange}
+            placeholder="Selecciona una jornada"
+            includeAmbas={false}
+          />
+          {errors.workday && (
+            <p className="text-xs text-error mt-1">{errors.workday}</p>
+          )}
+        </div>
+        <div>
+          <GradeSelector
+            name="fk_grade"
+            label={
+              <>
+                Grado <span className="text-error">*</span>
+              </>
+            }
+            value={formData.fk_grade}
+            onChange={handleChange}
+            sedeId={formData.sede}
+            workdayId={formData.workday}
+            placeholder="Selecciona un grado"
+          />
+          {errors.fk_grade && (
+            <p className="text-xs text-error mt-1">{errors.fk_grade}</p>
+          )}
+        </div>
         <BecaSelector
           name="fk_beca"
           label="Beca"
@@ -430,13 +538,21 @@ const RegisterStudent = ({ onSuccess }) => {
           />
         </div> */}
           <div className="flex flex-col justify-center items-center">
-            <label>Documento de identificación</label>
+            <label>
+              Documento de identificación <span className="text-error">*</span>
+            </label>
             <FileChooser
-              onChange={(file) =>
-                setFormData((prev) => ({ ...prev, link_identificacion: file }))
-              }
+              onChange={(file) => {
+                setFormData((prev) => ({ ...prev, link_identificacion: file }));
+                setErrors((prev) => ({ ...prev, link_identificacion: "" }));
+              }}
               accept={".pdf"}
             />
+            {errors.link_identificacion && (
+              <p className="text-xs text-error mt-1">
+                {errors.link_identificacion}
+              </p>
+            )}
           </div>
 
           {/* PIAR: checkbox + FileChooser (.xlsx/.xls) */}
@@ -491,13 +607,12 @@ const RegisterStudent = ({ onSuccess }) => {
             <SimpleButton
               msj="Registrar estudiante"
               text={"text-surface"}
-              bg={"bg-accent"}
+              bg={"bg-secondary"}
               icon={"Save"}
             />
           )}
         </div>
       </form>
-      <ProgressPage />
     </div>
   );
 };

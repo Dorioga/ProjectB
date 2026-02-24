@@ -1522,7 +1522,7 @@ const RegisterStudentRecords = () => {
                 type="button"
                 onClick={() => handleEditRef.current?.(student)}
                 icon={editing ? "X" : "Edit"}
-                bg={editing ? "bg-yellow-600" : "bg-blue-600"}
+                bg={editing ? "bg-error" : "bg-secondary"}
                 text="text-surface"
                 msjtooltip={editing ? "Cancelar" : "Editar"}
                 tooltip={true}

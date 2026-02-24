@@ -652,7 +652,7 @@ const RegisterAssistance = () => {
                   type="button"
                   onClick={() => setIsEditMode((s) => !s)}
                   icon={isEditMode ? "X" : "Edit"}
-                  bg={isEditMode ? "bg-amber-600" : "bg-accent"}
+                  bg={isEditMode ? "bg-error" : "bg-secondary"}
                   text="text-surface"
                   msj={
                     isEditMode ? "Cancelar Asistencia" : "Activar Asistencia"
@@ -664,7 +664,7 @@ const RegisterAssistance = () => {
                   <SimpleButton
                     type="submit"
                     icon="Save"
-                    bg="bg-green-600"
+                    bg="bg-accent"
                     text="text-surface"
                     msj="Guardar asistencias"
                     className="px-3 py-1.5"

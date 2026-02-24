@@ -54,13 +54,13 @@ const Sidebar = () => {
   const displayName = String(userName ?? "").trim();
   return (
     <div
-      className="fixed left-0 top-0 z-50 h-screen grid grid-rows-12 border rounded-r-2xl bg-primary overflow-hidden"
+      className="fixed left-0 top-0 z-50 h-screen grid grid-rows-10 border rounded-r-2xl bg-primary overflow-hidden"
       style={{
         width: isOpen ? "300px" : "70px",
         transition: "width 300ms ease-in-out",
       }}
     >
-      <div className="row-span-4">
+      <div className="row-span-3">
         <div
           className="flex justify-end py-3 px-6 cursor-pointer"
           onClick={toggleSidebar}
@@ -84,7 +84,7 @@ const Sidebar = () => {
           </div>
         )}
       </div>
-      <div className="row-span-7 flex flex-col justify-start overflow-y-auto ">
+      <div className="row-span-5 flex flex-col justify-start overflow-y-auto ">
         <ul className="">
           {menu &&
             Array.isArray(menu) &&
@@ -111,7 +111,7 @@ const Sidebar = () => {
             })}
         </ul>
       </div>
-      <div className="flex flex-col items-center row-span-1 justify-center py-6 ">
+      <div className="flex flex-col items-center row-span-2 justify-center  ">
         <button
           type="button"
           title="Cambiar contraseña"

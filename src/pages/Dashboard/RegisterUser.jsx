@@ -396,7 +396,7 @@ const RegisterUser = () => {
             <SimpleButton
               msj={loadingRegisterUser ? "Registrando..." : "Registrar usuario"}
               text={"text-surface"}
-              bg={"bg-accent"}
+              bg={"bg-secondary"}
               icon={"Save"}
               disabled={
                 loadingRegisterUser || Object.values(formErrors).some(Boolean)

@@ -1,6 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
-import ProgressPage from "../../components/atoms/progressPage";
 import FileChooser from "../../components/atoms/FileChooser";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import ThemeModal from "../../components/molecules/ThemeModal";
@@ -1050,7 +1049,7 @@ const ProfileSchool = ({
             onClick={toggleEditing}
             msj={isEditing ? "Guardar" : "Editar"}
             icon={isEditing ? "Save" : "Pencil"}
-            bg={isEditing ? "bg-accent" : "bg-secondary"}
+            bg={isEditing ? "bg-secondary" : "bg-warning"}
             text={"text-surface"}
           />
         </div>
@@ -1269,7 +1268,7 @@ const ProfileSchool = ({
             msj={"Modificar tema"}
             icon={"Pencil"}
             text={"text-surface"}
-            bg={"bg-accent"}
+            bg={"bg-secondary"}
             disabled={!isEditing}
           />
         </div>
@@ -1334,7 +1333,7 @@ const ProfileSchool = ({
                           msj={"Agregar estado"}
                           icon={"Plus"}
                           text={"text-surface"}
-                          bg={"bg-accent"}
+                          bg={"bg-secondary"}
                         />
                       </div>
                     </div>
@@ -1516,7 +1515,7 @@ const ProfileSchool = ({
                             msj={"Agregar estado"}
                             icon={"Plus"}
                             text={"text-surface"}
-                            bg={"bg-accent"}
+                            bg={"bg-secondary"}
                           />
                         </div>
 
@@ -1631,7 +1630,7 @@ const ProfileSchool = ({
                       msj={"Agregar sede"}
                       icon={"Plus"}
                       text={"text-surface"}
-                      bg={"bg-accent"}
+                      bg={"bg-secondary"}
                     />
                   </div>
                 </div>
@@ -1805,18 +1804,14 @@ const ProfileSchool = ({
               msj={loading ? "Procesando..." : primaryButtonLabel}
               icon={loading ? "Loader" : "Save"}
               text={"text-surface"}
-              bg={loading ? "bg-gray-400" : "bg-accent"}
+              bg={loading ? "bg-gray-400" : "bg-secondary"}
               disabled={loading || (scaleErrors && scaleErrors.length > 0)}
             />
           </div>
         )}
       </form>
 
-      {!isUpdate ? (
-        <div className="mt-4 border-t pt-4">
-          <ProgressPage />
-        </div>
-      ) : null}
+      {!isUpdate ? <div className="mt-4 border-t pt-4"></div> : null}
 
       <ThemeModal
         isOpen={isThemeModalOpen}

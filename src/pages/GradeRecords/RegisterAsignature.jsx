@@ -29,6 +29,7 @@ const RegisterAsignature = ({ onSuccess }) => {
   const labelClassName = "text-lg font-semibold";
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState({});
   const [availableGrades, setAvailableGrades] = useState([]);
   const [loadingGrades, setLoadingGrades] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState({});
@@ -174,34 +175,30 @@ const RegisterAsignature = ({ onSuccess }) => {
       ...prev,
       [name]: value,
     }));
+    setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!String(formData.name ?? "").trim()) {
-      notify.error("El nombre de la asignatura es obligatorio.");
-      return;
-    }
-    if (!String(formData.code ?? "").trim()) {
-      notify.error("El código de la asignatura es obligatorio.");
-      return;
-    }
-    if (!formData.sedeId) {
-      notify.error("Selecciona una sede.");
-      return;
-    }
-    if (!formData.jornada) {
-      notify.error("Selecciona una jornada.");
-      return;
-    }
+    const newErrors = {};
+    if (!String(formData.name ?? "").trim())
+      newErrors.name = "El nombre de la asignatura es obligatorio.";
+    if (!String(formData.code ?? "").trim())
+      newErrors.code = "El código de la asignatura es obligatorio.";
+    if (!formData.sedeId) newErrors.sedeId = "Selecciona una sede.";
+    if (!formData.jornada) newErrors.jornada = "Selecciona una jornada.";
     if (
       !Array.isArray(formData.grades_scholar) ||
       formData.grades_scholar.length === 0
-    ) {
-      notify.error("Selecciona al menos un grado.");
+    )
+      newErrors.grades_scholar = "Selecciona al menos un grado.";
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
+    setErrors({});
 
     setIsSubmitting(true);
     try {
@@ -230,6 +227,7 @@ const RegisterAsignature = ({ onSuccess }) => {
         sedeId: "",
         grades_scholar: [],
       });
+      setErrors({});
 
       // Llamar callback de éxito si existe
       if (typeof onSuccess === "function") {
@@ -246,7 +244,7 @@ const RegisterAsignature = ({ onSuccess }) => {
   };
 
   return (
-    <div className="border p-6 rounded bg-bg h-full gap-4 flex flex-col">
+    <div className="p-6 h-full gap-4 flex flex-col">
       <div className="grid grid-cols-5 items-center justify-between">
         <h2 className="font-bold col-span-4 text-2xl">Registrar Asignatura</h2>
         <SimpleButton
@@ -262,25 +260,41 @@ const RegisterAsignature = ({ onSuccess }) => {
       </div>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div id="tour-name">
-          <label className={labelClassName}>Nombre de la asignatura</label>
+          <label className={labelClassName}>
+            Nombre de la asignatura <span className="text-error">*</span>
+          </label>
           <input
             className={inputClassName}
             type="text"
             placeholder="Ingrese el nombre de la asignatura"
             value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            onChange={(e) => {
+              setFormData({ ...formData, name: e.target.value });
+              setErrors((prev) => ({ ...prev, name: "" }));
+            }}
           />
+          {errors.name && (
+            <p className="text-xs text-error mt-1">{errors.name}</p>
+          )}
         </div>
 
         <div id="tour-code">
-          <label className={labelClassName}>Código de la asignatura</label>
+          <label className={labelClassName}>
+            Código de la asignatura <span className="text-error">*</span>
+          </label>
           <input
             className={inputClassName}
             type="text"
             placeholder="Ingrese el código de la asignatura"
             value={formData.code}
-            onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+            onChange={(e) => {
+              setFormData({ ...formData, code: e.target.value });
+              setErrors((prev) => ({ ...prev, code: "" }));
+            }}
           />
+          {errors.code && (
+            <p className="text-xs text-error mt-1">{errors.code}</p>
+          )}
         </div>
 
         <div id="tour-description">
@@ -301,7 +315,15 @@ const RegisterAsignature = ({ onSuccess }) => {
             onChange={handleChange}
             className={inputClassName}
             labelClassName={labelClassName}
+            label={
+              <>
+                Sede <span className="text-error">*</span>
+              </>
+            }
           />
+          {errors.sedeId && (
+            <p className="text-xs text-error mt-1">{errors.sedeId}</p>
+          )}
         </div>
         <div id="tour-jornada">
           <JourneySelect
@@ -311,11 +333,21 @@ const RegisterAsignature = ({ onSuccess }) => {
             includeAmbas={false}
             className={inputClassName}
             labelClassName={labelClassName}
+            label={
+              <>
+                Jornada <span className="text-error">*</span>
+              </>
+            }
           />
+          {errors.jornada && (
+            <p className="text-xs text-error mt-1">{errors.jornada}</p>
+          )}
         </div>
 
         <div id="tour-grades">
-          <div className="text-lg font-semibold">Grados donde se dictará</div>
+          <div className="text-lg font-semibold">
+            Grados donde se dictará <span className="text-error">*</span>
+          </div>
           {!formData.sedeId || !formData.jornada ? (
             <div className="text-sm opacity-80">
               Selecciona primero una sede y jornada.
@@ -451,14 +483,16 @@ const RegisterAsignature = ({ onSuccess }) => {
               </div>
             </>
           )}
+          {errors.grades_scholar && (
+            <p className="text-xs text-error mt-1">{errors.grades_scholar}</p>
+          )}
         </div>
-
         <div id="tour-submit" className="mt-2 flex justify-center">
           <div className="w-full md:w-1/2">
             <SimpleButton
               msj="Registrar asignatura"
               text={"text-surface"}
-              bg={"bg-accent"}
+              bg={"bg-secondary"}
               icon={"Save"}
               disabled={isSubmitting || schoolLoading}
             />

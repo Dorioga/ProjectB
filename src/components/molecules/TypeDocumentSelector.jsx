@@ -4,7 +4,7 @@ import useData from "../../lib/hooks/useData";
 const TypeDocumentSelector = ({
   name = "identification_type",
   label = "Tipo de documento",
-  labelClassName = "",
+  labelClassName = "text-sm font-medium text-on-surface",
   value = "",
   onChange,
   placeholder = "Selecciona un tipo",

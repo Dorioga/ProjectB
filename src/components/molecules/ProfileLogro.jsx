@@ -581,7 +581,7 @@ const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave }) => {
         <SimpleButton
           msj={initialValues ? "Guardar cambios" : "Agregar logros"}
           onClick={handleSearch}
-          bg="bg-primary"
+          bg="bg-secondary"
           text="text-surface"
           disabled={!descripcionIsValid}
         />

@@ -29,6 +29,7 @@ import ManageSedes from "../pages/School/ManageSedes";
 import ManageAsignature from "../pages/School/ManageAsignature";
 import ManageGrade from "../pages/School/ManageGrade";
 import ProfileTeacherPage from "../pages/Teacher/ProfileTeacherPage";
+import ReserveSpot from "../components/templates/ReserveSpot";
 const GeneralRoutes = () => {
   return (
     <div id="body" className="w-full h-screen flex flex-col ">
@@ -52,6 +53,7 @@ const GeneralRoutes = () => {
             <Route path="searchStudents" element={<SearchStudents />} />
             <Route path="registerStudent" element={<RegisterStudent />} />
             <Route path="registerParents" element={<RegisterParents />} />
+            <Route path="reserveSpot" element={<ReserveSpot />} />
             <Route path="uploadStudentExcel" element={<UploadStudentExcel />} />
             <Route path="uploadStudentPDF" element={<UploadStudentPDF />} />
 

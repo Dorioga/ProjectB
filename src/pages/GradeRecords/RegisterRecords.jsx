@@ -667,7 +667,7 @@ const RegisterRecords = () => {
             <SimpleButton
               msj="Registrar notas"
               text={"text-surface"}
-              bg={"bg-accent"}
+              bg={"bg-secondary"}
               icon={"Save"}
               disabled={loadingSchool}
             />
