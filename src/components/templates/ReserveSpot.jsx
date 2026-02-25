@@ -5,14 +5,13 @@ import React, {
   useEffect,
   useMemo,
 } from "react";
+import jsPDF from "jspdf";
 import SignatureCanvas from "react-signature-canvas";
 import SimpleButton from "../atoms/SimpleButton";
 import tourReserveSpot from "../../tour/tourReserveSpot";
 
 import TypeDocumentSelector from "../molecules/TypeDocumentSelector";
 import Loader from "../atoms/Loader";
-import useData from "../../lib/hooks/useData";
-import useAuth from "../../lib/hooks/useAuth";
 import useSchool from "../../lib/hooks/useSchool";
 import { useNotify } from "../../lib/hooks/useNotify";
 
@@ -240,6 +239,25 @@ const ReserveSpot = ({ onSuccess }) => {
   const [savingSig, setSavingSig] = useState(false);
   const sigCanvas = useRef(null);
 
+  // ─── Logo institucional (precargado para el PDF) ───
+  const [logoBase64, setLogoBase64] = useState("");
+  useEffect(() => {
+    fetch("/LogoGuadalupe.png")
+      .then((r) => r.blob())
+      .then(
+        (blob) =>
+          new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+          }),
+      )
+      .then((b64) => setLogoBase64(b64))
+      .catch(() => {
+        /* sin logo si falla la carga */
+      });
+  }, []);
+
   // ─── Handlers genéricos ───
   const handleStudentChange = (e) => {
     const { name, value, type, files } = e.target;
@@ -394,6 +412,285 @@ const ReserveSpot = ({ onSuccess }) => {
       setSavingSig(false);
     }, 300);
   }, [signatureData]);
+
+  // ─── Formulario completo (activa el botón de PDF) ───
+  const isFormComplete = useMemo(() => {
+    const studentOk =
+      student.first_name.trim() &&
+      student.first_lastname.trim() &&
+      student.identification.trim() &&
+      student.identificationtype &&
+      student.departamento &&
+      student.municipio &&
+      student.sede &&
+      student.jornada &&
+      student.grade;
+
+    if (!studentOk || !primaryGuardian || !signatureSaved) return false;
+
+    const guardianData = primaryGuardian === "mother" ? mother : father;
+    return !!(
+      guardianData.first_name.trim() &&
+      guardianData.first_lastname.trim() &&
+      guardianData.telephone.trim() &&
+      guardianData.identification.trim() &&
+      guardianData.identificationtype
+    );
+  }, [student, mother, father, primaryGuardian, signatureSaved]);
+
+  // ─── Helpers para etiquetas de opciones ───
+  const getLabel = useCallback((options, value) => {
+    const opt = options.find((o) => String(o.value) === String(value));
+    return opt ? opt.label : value || "—";
+  }, []);
+
+  // Devuelve "ID - Nombre" para los selects de matrícula
+  const getLabelWithId = useCallback((options, value) => {
+    if (!value) return "—";
+    const opt = options.find((o) => String(o.value) === String(value));
+    return opt ? `${opt.label}` : String(value);
+  }, []);
+
+  // ─── Generar PDF ───
+  const handleGeneratePDF = useCallback(() => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 14;
+    const lh = 5;
+    let y = 20;
+
+    const addSectionHeader = (text) => {
+      if (y > 250) {
+        doc.addPage();
+        y = 20;
+      }
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.setFillColor(41, 98, 160);
+      doc.setTextColor(255, 255, 255);
+      doc.rect(margin, y - 5, pageWidth - margin * 2, lh + 2, "F");
+      doc.text(text, margin + 2, y + 1);
+      doc.setTextColor(40, 40, 40);
+      y += lh + 5;
+    };
+
+    const addRow = (label, value, xOffset = 0) => {
+      if (y > 270) {
+        doc.addPage();
+        y = 20;
+      }
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "bold");
+      doc.text(`${label}:`, margin + xOffset, y);
+      doc.setFont("helvetica", "normal");
+      const maxW = (pageWidth - margin * 2) / 2 - 44;
+      const lines = doc.splitTextToSize(value || "—", maxW);
+      doc.text(lines, margin + xOffset + 44, y);
+      y += lh * lines.length;
+    };
+
+    const addTwoColumns = (pairs) => {
+      const colW = (pageWidth - margin * 2) / 2;
+      let i = 0;
+      while (i < pairs.length) {
+        if (y > 270) {
+          doc.addPage();
+          y = 20;
+        }
+        const rowY = y;
+        const isFullRow = pairs[i][2] === true;
+
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "bold");
+        doc.text(`${pairs[i][0]}:`, margin, rowY);
+        doc.setFont("helvetica", "normal");
+
+        if (isFullRow) {
+          // Ocupa todo el ancho disponible
+          const maxW = pageWidth - margin * 2 - 38;
+          const lines = doc.splitTextToSize(pairs[i][1] || "—", maxW);
+          doc.text(lines, margin + 38, rowY);
+          y += lh * lines.length;
+          i += 1;
+        } else {
+          doc.text(pairs[i][1] || "—", margin + 38, rowY);
+          // columna derecha (si existe y no es full-row)
+          if (pairs[i + 1] && pairs[i + 1][2] !== true) {
+            doc.setFont("helvetica", "bold");
+            doc.text(`${pairs[i + 1][0]}:`, margin + colW, rowY);
+            doc.setFont("helvetica", "normal");
+            doc.text(pairs[i + 1][1] || "—", margin + colW + 38, rowY);
+            i += 2;
+          } else {
+            i += 1;
+          }
+          y += lh;
+        }
+      }
+    };
+
+    // ── Encabezado institucional ──
+    const logoW = 28;
+    const logoH = 28;
+    const textX = margin + logoW + 5; // texto empieza después del logo
+    const textW = pageWidth - textX - margin;
+    const cx = textX + textW / 2; // centro del área de texto
+    const headerStartY = y;
+
+    // Logo a la izquierda
+    if (logoBase64) {
+      doc.addImage(logoBase64, "PNG", margin, headerStartY - 4, logoW, logoH);
+    }
+
+    // Nombre del colegio
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(41, 98, 160);
+    doc.text(getLabelWithId(sedeOptions, student.sede), cx, y, {
+      align: "center",
+    });
+    y += lh;
+
+    // Subtítulo institución
+    doc.setFontSize(8.5);
+    doc.setFont("helvetica", "italic");
+    doc.setTextColor(60, 60, 60);
+    doc.text('Institución Educativa Distrital Ejemplo "La Excelencia"', cx, y, {
+      align: "center",
+    });
+    y += lh;
+
+    // NIT
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.text("Nit. 123.456.789-0", cx, y, { align: "center" });
+    y += lh;
+
+    // Licencia
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(41, 98, 160);
+    doc.text("LICENCIA DE FUNCIONAMIENTO", cx, y, { align: "center" });
+    y += lh;
+
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(60, 60, 60);
+    doc.text("Según Resolución No. 002058  Sep 15 de 2000", cx, y, {
+      align: "center",
+    });
+    y += lh;
+
+    // DANE / Sede / Núcleo
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.5);
+    doc.setTextColor(40, 40, 40);
+    doc.text(
+      "DANE: 308001001382     SEDE: UNICA     NÚCLEO EDUCATIVO: Nº 14 A",
+      cx,
+      y,
+      { align: "center" },
+    );
+    y += lh + 4;
+
+    // Garantiza que y esté debajo del logo antes del título
+    const logoBottom = headerStartY - 4 + logoH + 4;
+    if (y < logoBottom) y = logoBottom;
+
+    // Título del documento (centrado en página completa)
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(41, 98, 160);
+    doc.text("Reserva de cupo", pageWidth / 2, y, { align: "center" });
+    y += lh + 2;
+
+    // Fecha de generación (centrado en página completa)
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100, 100, 100);
+    doc.text(
+      `Generado el ${new Date().toLocaleDateString("es-CO", { dateStyle: "long" })}`,
+      pageWidth / 2,
+      y,
+      { align: "center" },
+    );
+    doc.setTextColor(40, 40, 40);
+    y += lh + 8;
+
+    // ── Estudiante — Información personal ──
+    addSectionHeader("Datos del estudiante — Información personal");
+    addTwoColumns([
+      ["Tipo documento", student.identificationtype || "—"],
+      ["N.º identificación", student.identification],
+      ["NUI", student.nui],
+      ["Primer nombre", student.first_name],
+      ["Segundo nombre", student.second_name],
+      ["Primer apellido", student.first_lastname],
+      ["Segundo apellido", student.second_lastname],
+      ["Género", student.gender],
+      ["Fecha nacimiento", student.fecha_nacimiento],
+      ["Teléfono", student.telephone],
+      ["Email", student.email],
+      ["Dirección", student.direccion],
+    ]);
+    y += 4;
+
+    // ── Estudiante — Información de matrícula ──
+    addSectionHeader("Datos del estudiante — Información de matrícula");
+    addTwoColumns([
+      ["Departamento", getLabelWithId(deptoOptions, student.departamento)],
+      ["Municipio", getLabelWithId(municipioOptions, student.municipio)],
+      ["Sede", getLabelWithId(sedeOptions, student.sede), true],
+      ["Jornada", getLabelWithId(jornadaOptions, student.jornada)],
+      ["Grado", getLabelWithId(gradoOptions, student.grade)],
+    ]);
+    y += 4;
+
+    // ── Acudientes ──
+    const addGuardian = (gData, title, isPrimary) => {
+      addSectionHeader(`${title}${isPrimary ? " — Acudiente principal" : ""}`);
+      addTwoColumns([
+        ["Tipo documento", gData.identificationtype || "—"],
+        ["N.º identificación", gData.identification],
+        ["Primer nombre", gData.first_name],
+        ["Segundo nombre", gData.second_name],
+        ["Primer apellido", gData.first_lastname],
+        ["Segundo apellido", gData.second_lastname],
+        ["Teléfono", gData.telephone],
+        ["Email", gData.email],
+      ]);
+      y += 4;
+    };
+
+    addGuardian(mother, "Acudiente — Madre", primaryGuardian === "mother");
+    addGuardian(father, "Acudiente — Padre", primaryGuardian === "father");
+
+    // ── Firma ──
+    if (y > 200) {
+      doc.addPage();
+      y = 20;
+    }
+    addSectionHeader("Firma del acudiente");
+    if (signatureData) {
+      doc.addImage(signatureData, "PNG", margin, y, 80, 35);
+      y += 42;
+    }
+
+    doc.save("reserva_cupo.pdf");
+  }, [
+    student,
+    mother,
+    father,
+    primaryGuardian,
+    signatureData,
+    deptoOptions,
+    municipioOptions,
+    sedeOptions,
+    jornadaOptions,
+    gradoOptions,
+    getLabel,
+    getLabelWithId,
+    logoBase64,
+  ]);
 
   // ─── Validación ───
   const validate = () => {
@@ -990,18 +1287,33 @@ const ReserveSpot = ({ onSuccess }) => {
           </div>
         </section>
 
-        {/* ═══════════════ BOTÓN DE ENVÍO ═══════════════ */}
-        <div className="flex justify-center">
+        {/* ═══════════════ BOTONES DE ACCIÓN ═══════════════ */}
+        <div className="flex flex-col sm:flex-row justify-center gap-4">
           {!loading && (
-            <div id="tour-rs-submit" className="w-1/2">
-              <SimpleButton
-                msj="Reservar cupo"
-                text="text-surface"
-                bg="bg-secondary"
-                icon="Save"
-                disabled={!signatureSaved}
-              />
-            </div>
+            <>
+              <div id="tour-rs-submit" className="w-full sm:w-1/2">
+                <SimpleButton
+                  msj="Reservar cupo"
+                  text="text-surface"
+                  bg="bg-secondary"
+                  icon="Save"
+                  disabled={!signatureSaved}
+                />
+              </div>
+
+              <div id="tour-rs-pdf" className="w-full sm:w-1/2">
+                <SimpleButton
+                  type="button"
+                  msj="Descargar PDF"
+                  text="text-surface"
+                  bg={isFormComplete ? "bg-green-600" : "bg-gray-400"}
+                  hover={isFormComplete ? "hover:bg-green-700" : ""}
+                  icon="FileText"
+                  disabled={!isFormComplete}
+                  onClick={handleGeneratePDF}
+                />
+              </div>
+            </>
           )}
         </div>
       </form>
