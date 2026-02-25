@@ -32,7 +32,8 @@ export function SchoolProvider({ children }) {
     "https://a.storyblok.com/f/191576/1200x800/b7ad4902a2/signature_maker_after_.webp",
   );
   const [valuesReservations, setValuesReservations] = useState([]);
-  const [loadingValuesReservations, setLoadingValuesReservations] = useState(false);
+  const [loadingValuesReservations, setLoadingValuesReservations] =
+    useState(false);
   const [errorValuesReservations, setErrorValuesReservations] = useState(null);
 
   const journeysLoadedRef = useRef(false);
@@ -113,7 +114,8 @@ export function SchoolProvider({ children }) {
   }, [loadingPeriods]);
 
   const loadValuesReservations = useCallback(async () => {
-    if (valuesReservationsLoadedRef.current || loadingValuesReservations) return;
+    if (valuesReservationsLoadedRef.current || loadingValuesReservations)
+      return;
 
     valuesReservationsLoadedRef.current = true;
     setLoadingValuesReservations(true);

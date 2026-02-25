@@ -1,4 +1,10 @@
-import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import React, {
+  useState,
+  useRef,
+  useCallback,
+  useEffect,
+  useMemo,
+} from "react";
 import SignatureCanvas from "react-signature-canvas";
 import SimpleButton from "../atoms/SimpleButton";
 import tourReserveSpot from "../../tour/tourReserveSpot";
@@ -210,7 +216,11 @@ const GuardianFormSection = ({
 
 const ReserveSpot = ({ onSuccess }) => {
   const notify = useNotify();
-  const { valuesReservations, loadingValuesReservations, loadValuesReservations } = useSchool();
+  const {
+    valuesReservations,
+    loadingValuesReservations,
+    loadValuesReservations,
+  } = useSchool();
 
   // Cargar valores de reservación al montar
   useEffect(() => {
@@ -269,7 +279,10 @@ const ReserveSpot = ({ onSuccess }) => {
     const unique = new Map();
     valuesReservations.forEach((item) => {
       if (!unique.has(item.id_departamento)) {
-        unique.set(item.id_departamento, `Departamento ${item.id_departamento}`);
+        unique.set(
+          item.id_departamento,
+          `Departamento ${item.id_departamento}`,
+        );
       }
     });
     return [...unique.entries()].map(([value, label]) => ({ value, label }));
@@ -281,7 +294,8 @@ const ReserveSpot = ({ onSuccess }) => {
     valuesReservations
       .filter((item) => item.id_departamento === student.departamento)
       .forEach((item) => {
-        if (!unique.has(item.id_municipio)) unique.set(item.id_municipio, item.nombre);
+        if (!unique.has(item.id_municipio))
+          unique.set(item.id_municipio, item.nombre);
       });
     return [...unique.entries()].map(([value, label]) => ({ value, label }));
   }, [valuesReservations, student.departamento]);
@@ -296,7 +310,8 @@ const ReserveSpot = ({ onSuccess }) => {
           item.id_municipio === student.municipio,
       )
       .forEach((item) => {
-        if (!unique.has(item.id_sede)) unique.set(item.id_sede, item.nombre_sede);
+        if (!unique.has(item.id_sede))
+          unique.set(item.id_sede, item.nombre_sede);
       });
     return [...unique.entries()].map(([value, label]) => ({ value, label }));
   }, [valuesReservations, student.departamento, student.municipio]);
@@ -307,7 +322,8 @@ const ReserveSpot = ({ onSuccess }) => {
     valuesReservations
       .filter((item) => item.id_sede === student.sede)
       .forEach((item) => {
-        if (!unique.has(item.fk_jornada)) unique.set(item.fk_jornada, item.nombre_jornada);
+        if (!unique.has(item.fk_jornada))
+          unique.set(item.fk_jornada, item.nombre_jornada);
       });
     const options = [];
     unique.forEach((label, value) => {
@@ -327,7 +343,8 @@ const ReserveSpot = ({ onSuccess }) => {
 
     // Detectar si la jornada seleccionada proviene de una expansión de "Ambas"
     const ambasEntry = valuesReservations.find(
-      (item) => item.id_sede === student.sede && item.nombre_jornada === "Ambas",
+      (item) =>
+        item.id_sede === student.sede && item.nombre_jornada === "Ambas",
     );
     const isFromAmbas =
       ambasEntry && (student.jornada === "1" || student.jornada === "2");
@@ -339,7 +356,8 @@ const ReserveSpot = ({ onSuccess }) => {
         return item.fk_jornada === student.jornada;
       })
       .forEach((item) => {
-        if (!unique.has(item.nombre_grado)) unique.set(item.nombre_grado, item.id_grado);
+        if (!unique.has(item.nombre_grado))
+          unique.set(item.nombre_grado, item.id_grado);
       });
     return [...unique.entries()].map(([label, value]) => ({ value, label }));
   }, [valuesReservations, student.sede, student.jornada]);
@@ -389,7 +407,8 @@ const ReserveSpot = ({ onSuccess }) => {
       e.student_identification = "Obligatorio.";
     if (!student.identificationtype)
       e.student_identificationtype = "Selecciona tipo de documento.";
-    if (!student.departamento) e.student_departamento = "Selecciona un departamento.";
+    if (!student.departamento)
+      e.student_departamento = "Selecciona un departamento.";
     if (!student.municipio) e.student_municipio = "Selecciona un municipio.";
     if (!student.sede) e.student_sede = "Selecciona una sede.";
     if (!student.jornada) e.student_jornada = "Selecciona una jornada.";
@@ -749,10 +768,15 @@ const ReserveSpot = ({ onSuccess }) => {
               <>
                 {/* Departamento */}
                 <div id="tour-rs-student-departamento">
-                  <Field label="Departamento" error={errors.student_departamento}>
+                  <Field
+                    label="Departamento"
+                    error={errors.student_departamento}
+                  >
                     <select
                       value={student.departamento}
-                      onChange={(e) => handleCascadeChange("departamento", e.target.value)}
+                      onChange={(e) =>
+                        handleCascadeChange("departamento", e.target.value)
+                      }
                       className={inputClass}
                     >
                       <option value="">Selecciona departamento</option>
@@ -770,7 +794,9 @@ const ReserveSpot = ({ onSuccess }) => {
                   <Field label="Municipio" error={errors.student_municipio}>
                     <select
                       value={student.municipio}
-                      onChange={(e) => handleCascadeChange("municipio", e.target.value)}
+                      onChange={(e) =>
+                        handleCascadeChange("municipio", e.target.value)
+                      }
                       disabled={!student.departamento}
                       className={inputClass}
                     >
@@ -789,7 +815,9 @@ const ReserveSpot = ({ onSuccess }) => {
                   <Field label="Sede" error={errors.student_sede}>
                     <select
                       value={student.sede}
-                      onChange={(e) => handleCascadeChange("sede", e.target.value)}
+                      onChange={(e) =>
+                        handleCascadeChange("sede", e.target.value)
+                      }
                       disabled={!student.municipio}
                       className={inputClass}
                     >
@@ -808,7 +836,9 @@ const ReserveSpot = ({ onSuccess }) => {
                   <Field label="Jornada" error={errors.student_jornada}>
                     <select
                       value={student.jornada}
-                      onChange={(e) => handleCascadeChange("jornada", e.target.value)}
+                      onChange={(e) =>
+                        handleCascadeChange("jornada", e.target.value)
+                      }
                       disabled={!student.sede}
                       className={inputClass}
                     >
@@ -827,7 +857,9 @@ const ReserveSpot = ({ onSuccess }) => {
                   <Field label="Grado" error={errors.student_grade}>
                     <select
                       value={student.grade}
-                      onChange={(e) => handleCascadeChange("grade", e.target.value)}
+                      onChange={(e) =>
+                        handleCascadeChange("grade", e.target.value)
+                      }
                       disabled={!student.jornada}
                       className={inputClass}
                     >
