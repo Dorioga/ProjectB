@@ -455,6 +455,31 @@ export async function getStudentGrades(payload) {
 
   throw new Error("Respuesta inesperada de student/grades.");
 }
+/**
+ * Obtiene los valores para reservación de cupo (sedes, jornadas, departamentos,
+ * municipios y grados disponibles).
+ *
+ * Endpoint: GET /values/reservations
+ * @returns {Promise<Array>} Array con la información combinada de filtros
+ */
+export async function getValuesReservations() {
+  try {
+    const res = await ApiClient.get("/values/reservations");
+    const data = Array.isArray(res) ? res : (res?.data ?? []);
+
+    console.log("SchoolService - getValuesReservations:", data);
+
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === "object" && Array.isArray(data.data))
+      return data.data;
+
+    throw new Error("Respuesta inesperada de /values/reservations.");
+  } catch (error) {
+    console.error("Error en getValuesReservations:", error);
+    throw error;
+  }
+}
+
 // Use `useTeacher()` / `TeacherContext` or import `teacherService` directly.
 // Use `useTeacher()` / `TeacherContext` or import `teacherService` directly.
 /**

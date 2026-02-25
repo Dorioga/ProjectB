@@ -72,15 +72,17 @@ const Sidebar = () => {
           )}
         </div>
         {showContent && (
-          <div className="flex flex-col items-center justify-center text-center gap-2 p-4 transition-all duration-300 ease-in-out">
+          <div className="flex flex-col items-center justify-center text-center gap-2 px-2 transition-all duration-300 ease-in-out">
             <PreviewIMG
               path={imgSchool || "/LogoGuadalupe.png"}
               size={"logo"}
             />
-            <div className="text-surface font-bold text-sm">
+            <div className="text-surface font-bold text-sm px-2">
               {nameSchool || "NEXUS"}
             </div>
-            <div className="text-surface text-sm">{nameSede || "Software"}</div>
+            <div className="text-surface text-sm px-2">
+              {nameSede || "Software"}
+            </div>
           </div>
         )}
       </div>
@@ -101,7 +103,7 @@ const Sidebar = () => {
                   >
                     <IconComponent className="text-surface hover:text-primary text-2xl" />
                     {showContent && (
-                      <span className="px-2 text-lg text-surface">
+                      <span className="px-2 text-md text-surface">
                         {item.option}
                       </span>
                     )}
@@ -116,9 +118,12 @@ const Sidebar = () => {
           type="button"
           title="Cambiar contraseña"
           onClick={() => setChangePasswordOpen(true)}
-          className="flex flex-col items-center cursor-pointer rounded-lg px-2 py-1 hover:bg-secondary/40 transition-colors"
+          className="flex flex-col items-center cursor-pointer rounded-lg px-2 py-1 hover:bg-secondary/40 transition-colors gap-2"
         >
-          <User className="text-surface text-2xl" />
+          <div className="flex flex-row gap-2">
+            <User className="text-surface text-2xl" />
+            <p className="text-surface">Ver perfil</p>
+          </div>
           {showContent ? (
             <div className="text-surface text-sm text-center">{nameRole}</div>
           ) : null}

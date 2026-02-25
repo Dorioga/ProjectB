@@ -31,9 +31,13 @@ export function SchoolProvider({ children }) {
   const [pathSignature, setPathSignature] = useState(
     "https://a.storyblok.com/f/191576/1200x800/b7ad4902a2/signature_maker_after_.webp",
   );
+  const [valuesReservations, setValuesReservations] = useState([]);
+  const [loadingValuesReservations, setLoadingValuesReservations] = useState(false);
+  const [errorValuesReservations, setErrorValuesReservations] = useState(null);
 
   const journeysLoadedRef = useRef(false);
   const periodsLoadedRef = useRef(false);
+  const valuesReservationsLoadedRef = useRef(false);
 
   const loadSedes = useCallback(async (params = {}) => {
     setLoadingSedes(true);
@@ -107,6 +111,28 @@ export function SchoolProvider({ children }) {
       setLoadingPeriods(false);
     }
   }, [loadingPeriods]);
+
+  const loadValuesReservations = useCallback(async () => {
+    if (valuesReservationsLoadedRef.current || loadingValuesReservations) return;
+
+    valuesReservationsLoadedRef.current = true;
+    setLoadingValuesReservations(true);
+    setErrorValuesReservations(null);
+    try {
+      const data = await schoolService.getValuesReservations();
+      setValuesReservations(Array.isArray(data) ? data : (data?.data ?? []));
+      console.log(
+        `SchoolContext: ${Array.isArray(data) ? data.length : 0} valores de reservación cargados`,
+      );
+    } catch (err) {
+      console.error("Error al cargar valores de reservación:", err);
+      setErrorValuesReservations(err);
+      setValuesReservations([]);
+      valuesReservationsLoadedRef.current = false;
+    } finally {
+      setLoadingValuesReservations(false);
+    }
+  }, [loadingValuesReservations]);
 
   const loadRecords = useCallback(async (params = {}) => {
     setLoadingRecords(true);
@@ -505,9 +531,17 @@ export function SchoolProvider({ children }) {
       pathSignature,
       setPathSignature,
       fetchAllStudents,
+      valuesReservations,
+      loadingValuesReservations,
+      errorValuesReservations,
+      loadValuesReservations,
     }),
     [
       schools,
+      valuesReservations,
+      loadingValuesReservations,
+      errorValuesReservations,
+      loadValuesReservations,
       loading,
       error,
       sedes,

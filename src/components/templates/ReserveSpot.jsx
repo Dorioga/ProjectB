@@ -1,11 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import SignatureCanvas from "react-signature-canvas";
 import SimpleButton from "../atoms/SimpleButton";
-import SedeSelect from "../atoms/SedeSelect";
+import tourReserveSpot from "../../tour/tourReserveSpot";
 
 import TypeDocumentSelector from "../molecules/TypeDocumentSelector";
 import Loader from "../atoms/Loader";
 import useData from "../../lib/hooks/useData";
 import useAuth from "../../lib/hooks/useAuth";
+import useSchool from "../../lib/hooks/useSchool";
 import { useNotify } from "../../lib/hooks/useNotify";
 
 // ───────────────────── Constantes ─────────────────────
@@ -19,16 +21,30 @@ const INITIAL_STUDENT = {
   email: "",
   identification: "",
   identificationtype: "",
+  departamento: "",
+  municipio: "",
   sede: "",
+  jornada: "",
   fecha_nacimiento: "",
   direccion: "",
   gender: "",
   nui: "",
   per_id: "",
-  cuenta_piar: false, // estos pueden quedarse aunque no se muestren
+  grade: "",
 };
 
-const INITIAL_GUARDIAN = {
+const INITIAL_MOTHER = {
+  first_name: "",
+  second_name: "",
+  first_lastname: "",
+  second_lastname: "",
+  telephone: "",
+  email: "",
+  identification: "",
+  identificationtype: "",
+};
+
+const INITIAL_FATHER = {
   first_name: "",
   second_name: "",
   first_lastname: "",
@@ -50,15 +66,169 @@ const Field = ({ label, error, children }) => (
   </div>
 );
 
+// ───────────────────── Sección reutilizable de acudiente ─────────────────────
+
+const GuardianFormSection = ({
+  title,
+  prefix,
+  data,
+  onChange,
+  errors,
+  isPrimary,
+  onPrimaryToggle,
+}) => (
+  <section
+    id={`tour-rs-${prefix}-section`}
+    className="border border-secondary/30 rounded-lg overflow-hidden"
+  >
+    <div className="bg-primary text-surface p-3 flex items-center justify-between">
+      <h3 className="text-xl font-bold">{title}</h3>
+      <label
+        id={`tour-rs-${prefix}-primary`}
+        className="flex items-center gap-2 cursor-pointer select-none"
+      >
+        <input
+          type="checkbox"
+          checked={isPrimary}
+          onChange={onPrimaryToggle}
+          className="w-4 h-4 accent-surface cursor-pointer"
+        />
+        <span className="text-sm font-medium">Acudiente principal</span>
+      </label>
+    </div>
+
+    {isPrimary && (
+      <p className="px-4 pt-2 text-xs font-semibold text-primary">
+        ★ Este es el acudiente principal
+      </p>
+    )}
+
+    <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div id={`tour-rs-${prefix}-doctype`}>
+        <Field error={errors[`${prefix}_identificationtype`]}>
+          <TypeDocumentSelector
+            name="identificationtype"
+            value={data.identificationtype}
+            onChange={onChange}
+            placeholder="Selecciona un tipo"
+            className={inputClass}
+          />
+        </Field>
+      </div>
+
+      <div id={`tour-rs-${prefix}-identification`}>
+        <Field
+          label="N.º de identificación"
+          error={errors[`${prefix}_identification`]}
+        >
+          <input
+            type="text"
+            name="identification"
+            value={data.identification}
+            onChange={onChange}
+            className={inputClass}
+          />
+        </Field>
+      </div>
+
+      <div id={`tour-rs-${prefix}-firstname`}>
+        <Field label="Primer nombre" error={errors[`${prefix}_first_name`]}>
+          <input
+            type="text"
+            name="first_name"
+            value={data.first_name}
+            onChange={onChange}
+            className={inputClass}
+          />
+        </Field>
+      </div>
+
+      <Field label="Segundo nombre" error={errors[`${prefix}_second_name`]}>
+        <input
+          type="text"
+          name="second_name"
+          value={data.second_name}
+          onChange={onChange}
+          className={inputClass}
+        />
+      </Field>
+
+      <div id={`tour-rs-${prefix}-firstlastname`}>
+        <Field
+          label="Primer apellido"
+          error={errors[`${prefix}_first_lastname`]}
+        >
+          <input
+            type="text"
+            name="first_lastname"
+            value={data.first_lastname}
+            onChange={onChange}
+            className={inputClass}
+          />
+        </Field>
+      </div>
+
+      <Field
+        label="Segundo apellido"
+        error={errors[`${prefix}_second_lastname`]}
+      >
+        <input
+          type="text"
+          name="second_lastname"
+          value={data.second_lastname}
+          onChange={onChange}
+          className={inputClass}
+        />
+      </Field>
+
+      <div id={`tour-rs-${prefix}-telephone`}>
+        <Field label="Teléfono" error={errors[`${prefix}_telephone`]}>
+          <input
+            type="tel"
+            name="telephone"
+            value={data.telephone}
+            onChange={onChange}
+            className={inputClass}
+          />
+        </Field>
+      </div>
+
+      <Field label="Correo electrónico" error={errors[`${prefix}_email`]}>
+        <input
+          type="email"
+          name="email"
+          value={data.email}
+          onChange={onChange}
+          className={inputClass}
+        />
+      </Field>
+    </div>
+  </section>
+);
+
 // ───────────────────── Componente principal ─────────────────────
 
 const ReserveSpot = ({ onSuccess }) => {
   const notify = useNotify();
+  const { valuesReservations, loadingValuesReservations, loadValuesReservations } = useSchool();
+
+  // Cargar valores de reservación al montar
+  useEffect(() => {
+    loadValuesReservations();
+  }, [loadValuesReservations]);
 
   const [student, setStudent] = useState(INITIAL_STUDENT);
-  const [guardian, setGuardian] = useState(INITIAL_GUARDIAN);
+  const [mother, setMother] = useState(INITIAL_MOTHER);
+  const [father, setFather] = useState(INITIAL_FATHER);
+  const [primaryGuardian, setPrimaryGuardian] = useState(""); // "mother" | "father"
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+
+  // ─── Firma ───
+  const [signatureData, setSignatureData] = useState("");
+  const [signatureSaved, setSignatureSaved] = useState(false);
+  const [savingSig, setSavingSig] = useState(false);
+  const sigCanvas = useRef(null);
 
   // ─── Handlers genéricos ───
   const handleStudentChange = (e) => {
@@ -70,15 +240,147 @@ const ReserveSpot = ({ onSuccess }) => {
     setErrors((prev) => ({ ...prev, [`student_${name}`]: "" }));
   };
 
-  const handleGuardianChange = (e) => {
+  // ─── Handler en cascada para selects de ubicación/grupo ───
+  const handleCascadeChange = useCallback((field, value) => {
+    setStudent((prev) => {
+      const next = { ...prev, [field]: value };
+      if (field === "departamento") {
+        next.municipio = "";
+        next.sede = "";
+        next.jornada = "";
+        next.grade = "";
+      } else if (field === "municipio") {
+        next.sede = "";
+        next.jornada = "";
+        next.grade = "";
+      } else if (field === "sede") {
+        next.jornada = "";
+        next.grade = "";
+      } else if (field === "jornada") {
+        next.grade = "";
+      }
+      return next;
+    });
+    setErrors((prev) => ({ ...prev, [`student_${field}`]: "" }));
+  }, []);
+
+  // ─── Opciones derivadas (filtros en cascada) ───
+  const deptoOptions = useMemo(() => {
+    const unique = new Map();
+    valuesReservations.forEach((item) => {
+      if (!unique.has(item.id_departamento)) {
+        unique.set(item.id_departamento, `Departamento ${item.id_departamento}`);
+      }
+    });
+    return [...unique.entries()].map(([value, label]) => ({ value, label }));
+  }, [valuesReservations]);
+
+  const municipioOptions = useMemo(() => {
+    if (!student.departamento) return [];
+    const unique = new Map();
+    valuesReservations
+      .filter((item) => item.id_departamento === student.departamento)
+      .forEach((item) => {
+        if (!unique.has(item.id_municipio)) unique.set(item.id_municipio, item.nombre);
+      });
+    return [...unique.entries()].map(([value, label]) => ({ value, label }));
+  }, [valuesReservations, student.departamento]);
+
+  const sedeOptions = useMemo(() => {
+    if (!student.municipio) return [];
+    const unique = new Map();
+    valuesReservations
+      .filter(
+        (item) =>
+          item.id_departamento === student.departamento &&
+          item.id_municipio === student.municipio,
+      )
+      .forEach((item) => {
+        if (!unique.has(item.id_sede)) unique.set(item.id_sede, item.nombre_sede);
+      });
+    return [...unique.entries()].map(([value, label]) => ({ value, label }));
+  }, [valuesReservations, student.departamento, student.municipio]);
+
+  const jornadaOptions = useMemo(() => {
+    if (!student.sede) return [];
+    const unique = new Map();
+    valuesReservations
+      .filter((item) => item.id_sede === student.sede)
+      .forEach((item) => {
+        if (!unique.has(item.fk_jornada)) unique.set(item.fk_jornada, item.nombre_jornada);
+      });
+    const options = [];
+    unique.forEach((label, value) => {
+      if (label === "Ambas") {
+        options.push({ value: "1", label: "Mañana" });
+        options.push({ value: "2", label: "Tarde" });
+      } else {
+        options.push({ value, label });
+      }
+    });
+    return options;
+  }, [valuesReservations, student.sede]);
+
+  const gradoOptions = useMemo(() => {
+    if (!student.sede || !student.jornada) return [];
+    const unique = new Map();
+
+    // Detectar si la jornada seleccionada proviene de una expansión de "Ambas"
+    const ambasEntry = valuesReservations.find(
+      (item) => item.id_sede === student.sede && item.nombre_jornada === "Ambas",
+    );
+    const isFromAmbas =
+      ambasEntry && (student.jornada === "1" || student.jornada === "2");
+
+    valuesReservations
+      .filter((item) => {
+        if (item.id_sede !== student.sede) return false;
+        if (isFromAmbas) return item.fk_jornada === ambasEntry.fk_jornada;
+        return item.fk_jornada === student.jornada;
+      })
+      .forEach((item) => {
+        if (!unique.has(item.nombre_grado)) unique.set(item.nombre_grado, item.id_grado);
+      });
+    return [...unique.entries()].map(([label, value]) => ({ value, label }));
+  }, [valuesReservations, student.sede, student.jornada]);
+
+  const handleMotherChange = (e) => {
     const { name, value } = e.target;
-    setGuardian((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [`guardian_${name}`]: "" }));
+    setMother((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [`mother_${name}`]: "" }));
   };
+
+  const handleFatherChange = (e) => {
+    const { name, value } = e.target;
+    setFather((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [`father_${name}`]: "" }));
+  };
+
+  // ─── Handlers de firma ───
+  const handleSignatureEnd = useCallback(() => {
+    const data = sigCanvas.current?.toDataURL("image/png") ?? "";
+    setSignatureData(data);
+  }, []);
+
+  const handleClearSignature = useCallback(() => {
+    sigCanvas.current?.clear();
+    setSignatureData("");
+    setSignatureSaved(false);
+  }, []);
+
+  const handleSaveSignature = useCallback(() => {
+    if (!signatureData) return;
+    setSavingSig(true);
+    setTimeout(() => {
+      setSignatureSaved(true);
+      setSavingSig(false);
+    }, 300);
+  }, [signatureData]);
 
   // ─── Validación ───
   const validate = () => {
     const e = {};
+
     // Estudiante
     if (!student.first_name.trim()) e.student_first_name = "Obligatorio.";
     if (!student.first_lastname.trim())
@@ -87,17 +389,34 @@ const ReserveSpot = ({ onSuccess }) => {
       e.student_identification = "Obligatorio.";
     if (!student.identificationtype)
       e.student_identificationtype = "Selecciona tipo de documento.";
+    if (!student.departamento) e.student_departamento = "Selecciona un departamento.";
+    if (!student.municipio) e.student_municipio = "Selecciona un municipio.";
     if (!student.sede) e.student_sede = "Selecciona una sede.";
+    if (!student.jornada) e.student_jornada = "Selecciona una jornada.";
+    if (!student.grade) e.student_grade = "Selecciona un grado.";
 
-    // Acudiente
-    if (!guardian.first_name.trim()) e.guardian_first_name = "Obligatorio.";
-    if (!guardian.first_lastname.trim())
-      e.guardian_first_lastname = "Obligatorio.";
-    if (!guardian.telephone.trim()) e.guardian_telephone = "Obligatorio.";
-    if (!guardian.identification.trim())
-      e.guardian_identification = "Obligatorio.";
-    if (!guardian.identificationtype)
-      e.guardian_identificationtype = "Selecciona tipo de documento.";
+    // Acudiente principal obligatorio
+    if (!primaryGuardian)
+      e.primaryGuardian = "Debes marcar quién es el acudiente principal.";
+
+    // Valida los campos requeridos del acudiente principal seleccionado
+    const validatePerson = (person, prefix) => {
+      if (!person.first_name.trim()) e[`${prefix}_first_name`] = "Obligatorio.";
+      if (!person.first_lastname.trim())
+        e[`${prefix}_first_lastname`] = "Obligatorio.";
+      if (!person.telephone.trim()) e[`${prefix}_telephone`] = "Obligatorio.";
+      if (!person.identification.trim())
+        e[`${prefix}_identification`] = "Obligatorio.";
+      if (!person.identificationtype)
+        e[`${prefix}_identificationtype`] = "Selecciona tipo de documento.";
+    };
+
+    if (primaryGuardian === "mother") validatePerson(mother, "mother");
+    if (primaryGuardian === "father") validatePerson(father, "father");
+
+    // Firma
+    if (!signatureSaved)
+      e.signature = "Debe dibujar y guardar la firma del acudiente.";
 
     return e;
   };
@@ -151,18 +470,34 @@ const ReserveSpot = ({ onSuccess }) => {
         fd.append("student_photo", student.photo_link);
       }
 
-      // --- Datos del acudiente (prefijo guardian_) ---
-      fd.append("guardian_first_name", guardian.first_name.trim());
-      fd.append("guardian_second_name", guardian.second_name.trim());
-      fd.append("guardian_first_lastname", guardian.first_lastname.trim());
-      fd.append("guardian_second_lastname", guardian.second_lastname.trim());
-      fd.append("guardian_telephone", guardian.telephone.trim());
-      fd.append("guardian_email", guardian.email.trim());
-      fd.append("guardian_identification", guardian.identification.trim());
+      // --- Datos de la madre (prefijo mother_) ---
+      fd.append("mother_first_name", mother.first_name.trim());
+      fd.append("mother_second_name", mother.second_name.trim());
+      fd.append("mother_first_lastname", mother.first_lastname.trim());
+      fd.append("mother_second_lastname", mother.second_lastname.trim());
+      fd.append("mother_telephone", mother.telephone.trim());
+      fd.append("mother_email", mother.email.trim());
+      fd.append("mother_identification", mother.identification.trim());
       fd.append(
-        "guardian_identificationtype",
-        guardian.identificationtype ? Number(guardian.identificationtype) : "",
+        "mother_identificationtype",
+        mother.identificationtype ? Number(mother.identificationtype) : "",
       );
+
+      // --- Datos del padre (prefijo father_) ---
+      fd.append("father_first_name", father.first_name.trim());
+      fd.append("father_second_name", father.second_name.trim());
+      fd.append("father_first_lastname", father.first_lastname.trim());
+      fd.append("father_second_lastname", father.second_lastname.trim());
+      fd.append("father_telephone", father.telephone.trim());
+      fd.append("father_email", father.email.trim());
+      fd.append("father_identification", father.identification.trim());
+      fd.append(
+        "father_identificationtype",
+        father.identificationtype ? Number(father.identificationtype) : "",
+      );
+
+      // --- Acudiente principal ---
+      fd.append("primary_guardian", primaryGuardian);
 
       // ── Log para depuración ──
       console.log("=== ReserveSpot FormData ===");
@@ -174,6 +509,11 @@ const ReserveSpot = ({ onSuccess }) => {
       // ── Enviar al backend (ajusta la ruta según tu API) ──
       // Ejemplo: await ApiClient.instance.post("/reserve-spot", fd);
       // Por ahora emitimos el FormData mediante onSuccess para que el padre lo procese.
+      // Firma del acudiente
+      if (signatureData) {
+        fd.append("guardian_signature", signatureData);
+      }
+
       if (typeof onSuccess === "function") {
         await onSuccess(fd);
       }
@@ -182,8 +522,13 @@ const ReserveSpot = ({ onSuccess }) => {
 
       // Resetear formularios
       setStudent(INITIAL_STUDENT);
-      setGuardian(INITIAL_GUARDIAN);
+      setMother(INITIAL_MOTHER);
+      setFather(INITIAL_FATHER);
+      setPrimaryGuardian("");
       setErrors({});
+      sigCanvas.current?.clear();
+      setSignatureData("");
+      setSignatureSaved(false);
     } catch (err) {
       console.error("Error en ReserveSpot:", err);
       notify.error(
@@ -198,13 +543,30 @@ const ReserveSpot = ({ onSuccess }) => {
 
   return (
     <div className="p-6 h-full gap-4 flex flex-col">
-      <h2 className="text-2xl font-bold text-on-surface">Reservar cupo</h2>
+      <div className="w-full grid grid-cols-5 justify-between items-center p-2 rounded-t-lg">
+        <h2 className="col-span-4 text-2xl font-bold text-on-surface">
+          Reservar cupo
+        </h2>
+        <SimpleButton
+          type="button"
+          onClick={tourReserveSpot}
+          icon="HelpCircle"
+          msjtooltip="Iniciar tutorial"
+          noRounded={false}
+          bg="bg-info"
+          text="text-surface"
+          className="w-auto px-3 py-1.5"
+        />
+      </div>
 
       {loading && <Loader message="Enviando reserva de cupo…" />}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-8">
         {/* ═══════════════ ZONA 1: ESTUDIANTE ═══════════════ */}
-        <section className="border border-secondary/30 rounded-lg overflow-hidden">
+        <section
+          id="tour-rs-student-section"
+          className="border border-secondary/30 rounded-lg overflow-hidden"
+        >
           <div className="bg-primary text-surface p-3">
             <h3 className="text-xl font-bold">Datos del estudiante</h3>
           </div>
@@ -215,250 +577,399 @@ const ReserveSpot = ({ onSuccess }) => {
               Información personal
             </div>
 
-            <Field error={errors.student_identificationtype}>
-              <TypeDocumentSelector
-                name="identificationtype"
-                value={student.identificationtype}
-                onChange={handleStudentChange}
-                placeholder="Selecciona un tipo"
-                className={inputClass}
-              />
-            </Field>
+            <div id="tour-rs-student-doctype">
+              <Field error={errors.student_identificationtype}>
+                <TypeDocumentSelector
+                  name="identificationtype"
+                  value={student.identificationtype}
+                  onChange={handleStudentChange}
+                  placeholder="Selecciona un tipo"
+                  className={inputClass}
+                />
+              </Field>
+            </div>
 
-            <Field
-              label="N.º de identificación"
-              error={errors.student_identification}
-            >
-              <input
-                type="text"
-                name="identification"
-                value={student.identification}
-                onChange={handleStudentChange}
-                className={inputClass}
-              />
-            </Field>
-
-            <Field label="NUI" error={errors.student_nui}>
-              <input
-                type="text"
-                name="nui"
-                value={student.nui}
-                onChange={handleStudentChange}
-                className={inputClass}
-              />
-            </Field>
-
-            <Field label="Primer nombre" error={errors.student_first_name}>
-              <input
-                type="text"
-                name="first_name"
-                value={student.first_name}
-                onChange={handleStudentChange}
-                className={inputClass}
-              />
-            </Field>
-
-            <Field label="Segundo nombre" error={errors.student_second_name}>
-              <input
-                type="text"
-                name="second_name"
-                value={student.second_name}
-                onChange={handleStudentChange}
-                className={inputClass}
-              />
-            </Field>
-
-            <Field
-              label="Primer apellido"
-              error={errors.student_first_lastname}
-            >
-              <input
-                type="text"
-                name="first_lastname"
-                value={student.first_lastname}
-                onChange={handleStudentChange}
-                className={inputClass}
-              />
-            </Field>
-
-            <Field
-              label="Segundo apellido"
-              error={errors.student_second_lastname}
-            >
-              <input
-                type="text"
-                name="second_lastname"
-                value={student.second_lastname}
-                onChange={handleStudentChange}
-                className={inputClass}
-              />
-            </Field>
-
-            <Field label="Género" error={errors.student_gender}>
-              <select
-                name="gender"
-                value={student.gender}
-                onChange={handleStudentChange}
-                className={inputClass}
+            <div id="tour-rs-student-identification">
+              <Field
+                label="N.º de identificación"
+                error={errors.student_identification}
               >
-                <option value="">Selecciona</option>
-                <option value="Masculino">Masculino</option>
-                <option value="Femenino">Femenino</option>
-              </select>
-            </Field>
+                <input
+                  type="text"
+                  name="identification"
+                  value={student.identification}
+                  onChange={handleStudentChange}
+                  className={inputClass}
+                />
+              </Field>
+            </div>
 
-            <Field
-              label="Fecha de nacimiento"
-              error={errors.student_fecha_nacimiento}
-            >
-              <input
-                type="date"
-                name="fecha_nacimiento"
-                value={student.fecha_nacimiento}
-                onChange={handleStudentChange}
-                className={inputClass}
-              />
-            </Field>
+            <div id="tour-rs-student-nui">
+              <Field label="NUI" error={errors.student_nui}>
+                <input
+                  type="text"
+                  name="nui"
+                  value={student.nui}
+                  onChange={handleStudentChange}
+                  className={inputClass}
+                />
+              </Field>
+            </div>
 
-            <Field label="Teléfono" error={errors.student_telephone}>
-              <input
-                type="tel"
-                name="telephone"
-                value={student.telephone}
-                onChange={handleStudentChange}
-                className={inputClass}
-              />
-            </Field>
+            <div id="tour-rs-student-firstname">
+              <Field label="Primer nombre" error={errors.student_first_name}>
+                <input
+                  type="text"
+                  name="first_name"
+                  value={student.first_name}
+                  onChange={handleStudentChange}
+                  className={inputClass}
+                />
+              </Field>
+            </div>
 
-            <Field label="Email" error={errors.student_email}>
-              <input
-                type="email"
-                name="email"
-                value={student.email}
-                onChange={handleStudentChange}
-                className={inputClass}
-              />
-            </Field>
+            <div id="tour-rs-student-secondname">
+              <Field label="Segundo nombre" error={errors.student_second_name}>
+                <input
+                  type="text"
+                  name="second_name"
+                  value={student.second_name}
+                  onChange={handleStudentChange}
+                  className={inputClass}
+                />
+              </Field>
+            </div>
 
-            <Field label="Dirección" error={errors.student_direccion}>
-              <input
-                type="text"
-                name="direccion"
-                value={student.direccion}
-                onChange={handleStudentChange}
-                className={inputClass}
-              />
-            </Field>
+            <div id="tour-rs-student-firstlastname">
+              <Field
+                label="Primer apellido"
+                error={errors.student_first_lastname}
+              >
+                <input
+                  type="text"
+                  name="first_lastname"
+                  value={student.first_lastname}
+                  onChange={handleStudentChange}
+                  className={inputClass}
+                />
+              </Field>
+            </div>
+
+            <div id="tour-rs-student-secondlastname">
+              <Field
+                label="Segundo apellido"
+                error={errors.student_second_lastname}
+              >
+                <input
+                  type="text"
+                  name="second_lastname"
+                  value={student.second_lastname}
+                  onChange={handleStudentChange}
+                  className={inputClass}
+                />
+              </Field>
+            </div>
+
+            <div id="tour-rs-student-gender">
+              <Field label="Género" error={errors.student_gender}>
+                <select
+                  name="gender"
+                  value={student.gender}
+                  onChange={handleStudentChange}
+                  className={inputClass}
+                >
+                  <option value="">Selecciona</option>
+                  <option value="Masculino">Masculino</option>
+                  <option value="Femenino">Femenino</option>
+                </select>
+              </Field>
+            </div>
+
+            <div id="tour-rs-student-birthdate">
+              <Field
+                label="Fecha de nacimiento"
+                error={errors.student_fecha_nacimiento}
+              >
+                <input
+                  type="date"
+                  name="fecha_nacimiento"
+                  value={student.fecha_nacimiento}
+                  onChange={handleStudentChange}
+                  className={inputClass}
+                />
+              </Field>
+            </div>
+
+            <div id="tour-rs-student-telephone">
+              <Field label="Teléfono" error={errors.student_telephone}>
+                <input
+                  type="tel"
+                  name="telephone"
+                  value={student.telephone}
+                  onChange={handleStudentChange}
+                  className={inputClass}
+                />
+              </Field>
+            </div>
+
+            <div id="tour-rs-student-email">
+              <Field label="Email" error={errors.student_email}>
+                <input
+                  type="email"
+                  name="email"
+                  value={student.email}
+                  onChange={handleStudentChange}
+                  className={inputClass}
+                />
+              </Field>
+            </div>
+
+            <div id="tour-rs-student-address">
+              <Field label="Dirección" error={errors.student_direccion}>
+                <input
+                  type="text"
+                  name="direccion"
+                  value={student.direccion}
+                  onChange={handleStudentChange}
+                  className={inputClass}
+                />
+              </Field>
+            </div>
+
+            {/* ── Información de matrícula ── */}
+            <div className="md:col-span-3 font-bold text-on-surface mt-2">
+              Información de matrícula
+            </div>
+
+            {loadingValuesReservations ? (
+              <div className="md:col-span-3">
+                <Loader message="Cargando opciones…" />
+              </div>
+            ) : (
+              <>
+                {/* Departamento */}
+                <div id="tour-rs-student-departamento">
+                  <Field label="Departamento" error={errors.student_departamento}>
+                    <select
+                      value={student.departamento}
+                      onChange={(e) => handleCascadeChange("departamento", e.target.value)}
+                      className={inputClass}
+                    >
+                      <option value="">Selecciona departamento</option>
+                      {deptoOptions.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                </div>
+
+                {/* Municipio */}
+                <div id="tour-rs-student-municipio">
+                  <Field label="Municipio" error={errors.student_municipio}>
+                    <select
+                      value={student.municipio}
+                      onChange={(e) => handleCascadeChange("municipio", e.target.value)}
+                      disabled={!student.departamento}
+                      className={inputClass}
+                    >
+                      <option value="">Selecciona municipio</option>
+                      {municipioOptions.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                </div>
+
+                {/* Sede */}
+                <div id="tour-rs-student-sede">
+                  <Field label="Sede" error={errors.student_sede}>
+                    <select
+                      value={student.sede}
+                      onChange={(e) => handleCascadeChange("sede", e.target.value)}
+                      disabled={!student.municipio}
+                      className={inputClass}
+                    >
+                      <option value="">Selecciona sede</option>
+                      {sedeOptions.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                </div>
+
+                {/* Jornada */}
+                <div id="tour-rs-student-jornada">
+                  <Field label="Jornada" error={errors.student_jornada}>
+                    <select
+                      value={student.jornada}
+                      onChange={(e) => handleCascadeChange("jornada", e.target.value)}
+                      disabled={!student.sede}
+                      className={inputClass}
+                    >
+                      <option value="">Selecciona jornada</option>
+                      {jornadaOptions.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                </div>
+
+                {/* Grado */}
+                <div id="tour-rs-student-grado">
+                  <Field label="Grado" error={errors.student_grade}>
+                    <select
+                      value={student.grade}
+                      onChange={(e) => handleCascadeChange("grade", e.target.value)}
+                      disabled={!student.jornada}
+                      className={inputClass}
+                    >
+                      <option value="">Selecciona grado</option>
+                      {gradoOptions.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                </div>
+              </>
+            )}
           </div>
         </section>
 
-        {/* ═══════════════ ZONA 2: ACUDIENTE ═══════════════ */}
-        <section className="border border-secondary/30 rounded-lg overflow-hidden">
-          <div className="bg-primary text-surface p-3">
-            <h3 className="text-xl font-bold">Datos del acudiente</h3>
+        {/* ═══════════════ ZONA 2: ACUDIENTES ═══════════════ */}
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-lg font-bold text-on-surface">
+              Datos de los acudientes
+            </h3>
+            <span className="text-sm text-on-surface/60">
+              (Marca quién es el acudiente principal)
+            </span>
           </div>
 
-          <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field error={errors.guardian_identificationtype}>
-              <TypeDocumentSelector
-                name="identificationtype"
-                value={guardian.identificationtype}
-                onChange={handleGuardianChange}
-                placeholder="Selecciona un tipo"
-                className={inputClass}
-              />
-            </Field>
+          {errors.primaryGuardian && (
+            <p className="text-xs text-error">{errors.primaryGuardian}</p>
+          )}
 
-            <Field
-              label="N.º de identificación"
-              error={errors.guardian_identification}
-            >
-              <input
-                type="text"
-                name="identification"
-                value={guardian.identification}
-                onChange={handleGuardianChange}
-                className={inputClass}
-              />
-            </Field>
+          <GuardianFormSection
+            title="Madre"
+            prefix="mother"
+            data={mother}
+            onChange={handleMotherChange}
+            errors={errors}
+            isPrimary={primaryGuardian === "mother"}
+            onPrimaryToggle={() =>
+              setPrimaryGuardian(primaryGuardian === "mother" ? "" : "mother")
+            }
+          />
 
-            <Field label="Primer nombre" error={errors.guardian_first_name}>
-              <input
-                type="text"
-                name="first_name"
-                value={guardian.first_name}
-                onChange={handleGuardianChange}
-                className={inputClass}
-              />
-            </Field>
+          <GuardianFormSection
+            title="Padre"
+            prefix="father"
+            data={father}
+            onChange={handleFatherChange}
+            errors={errors}
+            isPrimary={primaryGuardian === "father"}
+            onPrimaryToggle={() =>
+              setPrimaryGuardian(primaryGuardian === "father" ? "" : "father")
+            }
+          />
+        </div>
 
-            <Field label="Segundo nombre" error={errors.guardian_second_name}>
-              <input
-                type="text"
-                name="second_name"
-                value={guardian.second_name}
-                onChange={handleGuardianChange}
-                className={inputClass}
-              />
-            </Field>
+        {/* ═══════════════ ZONA 3: FIRMA DEL ACUDIENTE ═══════════════ */}
+        <section
+          id="tour-rs-signature-section"
+          className="border border-secondary/30 rounded-lg overflow-hidden"
+        >
+          <div className="bg-primary text-surface p-3">
+            <h3 className="text-xl font-bold">Firma del acudiente</h3>
+          </div>
 
-            <Field
-              label="Primer apellido"
-              error={errors.guardian_first_lastname}
-            >
-              <input
-                type="text"
-                name="first_lastname"
-                value={guardian.first_lastname}
-                onChange={handleGuardianChange}
-                className={inputClass}
-              />
-            </Field>
+          <div className="p-4 space-y-3">
+            <p className="text-sm text-on-surface/70">
+              Por favor dibuje la firma del acudiente en el recuadro a
+              continuación.
+            </p>
 
-            <Field
-              label="Segundo apellido"
-              error={errors.guardian_second_lastname}
-            >
-              <input
-                type="text"
-                name="second_lastname"
-                value={guardian.second_lastname}
-                onChange={handleGuardianChange}
-                className={inputClass}
-              />
-            </Field>
+            <SignatureCanvas
+              ref={sigCanvas}
+              penColor="black"
+              canvasProps={{
+                className: "signature-canvas border w-full h-36 rounded",
+              }}
+              onEnd={handleSignatureEnd}
+            />
 
-            <Field label="Teléfono" error={errors.guardian_telephone}>
-              <input
-                type="tel"
-                name="telephone"
-                value={guardian.telephone}
-                onChange={handleGuardianChange}
-                className={inputClass}
-              />
-            </Field>
+            <div className="grid grid-cols-2 gap-2 flex-wrap">
+              <div>
+                <SimpleButton
+                  msj="Limpiar"
+                  onClick={handleClearSignature}
+                  bg="bg-gray-300"
+                  text="text-black"
+                  hover="hover:bg-gray-400"
+                />
+              </div>
+              <div className="relative inline-block">
+                <SimpleButton
+                  msj="Guardar firma"
+                  onClick={handleSaveSignature}
+                  disabled={!signatureData || savingSig}
+                  bg="bg-secondary"
+                  text="text-surface"
+                  hover="hover:bg-secondary/80"
+                />
+                {savingSig && (
+                  <span className="absolute right-0 top-0">
+                    <Loader />
+                  </span>
+                )}
+              </div>
+            </div>
 
-            <Field label="Correo electrónico" error={errors.guardian_email}>
-              <input
-                type="email"
-                name="email"
-                value={guardian.email}
-                onChange={handleGuardianChange}
-                className={inputClass}
-              />
-            </Field>
+            {!signatureData && (
+              <p className="text-xs text-error">
+                Debe dibujar la firma para poder enviar la reserva.
+              </p>
+            )}
+            {signatureData && !signatureSaved && (
+              <p className="text-xs text-warning">
+                Después de dibujar la firma, pulse{" "}
+                <strong>Guardar firma</strong> para confirmarla.
+              </p>
+            )}
+            {signatureSaved && (
+              <p className="text-xs text-green-600 font-medium">
+                Firma guardada correctamente.
+              </p>
+            )}
+            {errors.signature && (
+              <p className="text-xs text-error">{errors.signature}</p>
+            )}
           </div>
         </section>
 
         {/* ═══════════════ BOTÓN DE ENVÍO ═══════════════ */}
         <div className="flex justify-center">
           {!loading && (
-            <SimpleButton
-              msj="Reservar cupo"
-              text="text-surface"
-              bg="bg-accent"
-              icon="Save"
-            />
+            <div id="tour-rs-submit" className="w-1/2">
+              <SimpleButton
+                msj="Reservar cupo"
+                text="text-surface"
+                bg="bg-secondary"
+                icon="Save"
+                disabled={!signatureSaved}
+              />
+            </div>
           )}
         </div>
       </form>
