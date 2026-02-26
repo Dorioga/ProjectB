@@ -120,7 +120,10 @@ const Sidebar = () => {
       <div className="flex flex-col items-center row-span-2 justify-center  ">
         <div className="flex flex-row items-center">
           {showContent ? (
-            <h2 className="text-surface font-bold text-xl">NEXUS</h2>
+            <PreviewIMG
+              path="https://nexusplataforma.com/storage/logosnexus/1.png"
+              size="logo"
+            />
           ) : null}
         </div>
       </div>

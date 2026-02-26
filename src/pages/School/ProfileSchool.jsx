@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import FileChooser from "../../components/atoms/FileChooser";
 import SimpleButton from "../../components/atoms/SimpleButton";
+import PreviewIMG from "../../components/atoms/PreviewIMG";
 import ThemeModal from "../../components/molecules/ThemeModal";
 import JourneySelect from "../../components/atoms/JourneySelect";
 import DepartmentSelector from "../../components/molecules/DepartmentSelector";
@@ -15,6 +16,7 @@ import {
 } from "../../utils/validationUtils";
 import useSchool from "../../lib/hooks/useSchool";
 import { useNotify } from "../../lib/hooks/useNotify";
+import { upload } from "../../services/uploadService";
 
 // Constantes
 const DEFAULT_PERFORMANCE_SCALE = [
@@ -262,6 +264,15 @@ const validatePerformanceScale = (scaleArray) => {
   };
 };
 
+// Convierte un File/Blob a base64 data URL (igual que ReserveSpot)
+const fileToBase64 = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = (err) => reject(err);
+    reader.readAsDataURL(file);
+  });
+
 // Construye el objeto `sistema_evaluacion` que será enviado en el payload
 const buildSistemaEvaluacion = (evaluationState) => {
   const parseNum = (v) => {
@@ -410,6 +421,9 @@ const ProfileSchool = ({
   const [scaleErrors, setScaleErrors] = useState([]);
   // Errores por fila (índice -> array de mensajes) - eliminado (se usan sólo errores globales en `scaleErrors`)
 
+  // Archivo de logo seleccionado (File object)
+  const [logoFile, setLogoFile] = useState(null);
+
   // Errores de validación del formulario
   const [formErrors, setFormErrors] = useState({});
 
@@ -430,8 +444,8 @@ const ProfileSchool = ({
   const validateForm = useCallback(() => {
     const errors = {};
 
-    // Validar nombre de la institución
-    const nameValidation = compose(required, isText)(formData.name);
+    // Validar nombre de la institución (permite letras, números y espacios)
+    const nameValidation = required(formData.name, "El nombre es obligatorio");
     if (!nameValidation.valid) errors.name = nameValidation.msg;
 
     // Validar municipio
@@ -591,7 +605,76 @@ const ProfileSchool = ({
       }
 
       try {
-        const payload = { ...formData };
+        // ── PASO 0: subir logo si se seleccionó un archivo nuevo ─────────────
+        let logoUploadUrl = formData.logo ?? "";
+        if (logoFile) {
+          try {
+            const base64 = await fileToBase64(logoFile);
+            const logoForm = new FormData();
+            logoForm.append("imageBase64", base64);
+            logoForm.append("folder", "instituciones");
+            logoForm.append("identificacion", String(formData.nit ?? ""));
+
+            console.log("Subiendo logo de institución...");
+            const uploadRes = await upload(
+              logoForm,
+              "uploadfirma/instituciones",
+            );
+            console.log(
+              "Respuesta upload logo (raw):",
+              JSON.stringify(uploadRes),
+            );
+
+            // El ApiClient devuelve directamente res.data (el body JSON del servidor).
+            // Intentar extraer la URL con todos los formatos conocidos:
+            // 1) { status:200, data: [{ field:"imageBase64", files:[{folder:"url"}] }] }
+            // 2) { status:200, data: "url" }
+            // 3) { status:200, data: { url:"..." } | { link:"..." } | { path:"..." } }
+            // 4) Respuesta directamente como string o array
+            const rawData = uploadRes?.data ?? uploadRes;
+
+            if (Array.isArray(rawData)) {
+              // Buscar primero por nombre de campo, luego usar el primer elemento
+              const entry =
+                rawData.find((e) => e?.field === "imageBase64") ?? rawData[0];
+              const candidate =
+                entry?.files?.[0]?.folder ??
+                entry?.files?.[0]?.url ??
+                entry?.files?.[0]?.path ??
+                entry?.folder ??
+                entry?.url ??
+                entry?.link ??
+                entry?.path ??
+                "";
+              if (candidate) logoUploadUrl = candidate;
+            } else if (typeof rawData === "string" && rawData) {
+              logoUploadUrl = rawData;
+            } else if (rawData && typeof rawData === "object") {
+              const candidate =
+                rawData.url ??
+                rawData.link ??
+                rawData.path ??
+                rawData.folder ??
+                "";
+              if (candidate) logoUploadUrl = candidate;
+            }
+
+            if (!logoUploadUrl) {
+              console.warn(
+                "No se pudo extraer URL del logo desde la respuesta.",
+                uploadRes,
+              );
+            }
+          } catch (uploadErr) {
+            console.error("Error al subir el logo:", uploadErr);
+            notify.error(
+              "No se pudo subir el logo. Verifica el archivo e intenta de nuevo.",
+            );
+            return;
+          }
+        }
+
+        const payload = { ...formData, logo: logoUploadUrl };
         let result;
 
         if (isUpdate && schoolId) {
@@ -697,11 +780,15 @@ const ProfileSchool = ({
         }
       } catch (error) {
         console.error("Error al enviar formulario:", error);
+        notify.error(
+          error?.message || "Ocurrió un error al guardar la institución.",
+        );
       }
     },
     [
       evaluation,
       formData,
+      logoFile,
       isUpdate,
       schoolId,
       updateInstitution,
@@ -724,6 +811,10 @@ const ProfileSchool = ({
   const primaryButtonLabel = useMemo(() => {
     return isUpdate ? "Actualizar institución" : "Registrar institución";
   }, [isUpdate]);
+
+  const handleLogoChange = useCallback((file) => {
+    setLogoFile(file || null);
+  }, []);
 
   const handleChange = useCallback((e) => {
     const { name, value, type, files } = e.target;
@@ -1302,15 +1393,23 @@ const ProfileSchool = ({
         <div>
           <label>Logo de la institución</label>
           {isEditing ? (
-            <FileChooser
-              name="logo"
-              onChange={handleChange}
-              className="w-full p-2 border rounded"
-            />
+            <div className="flex flex-col gap-2">
+              <FileChooser
+                name="logo"
+                onChange={handleLogoChange}
+                accept="image/png"
+                label="Seleccionar logo"
+              />
+              {formData.logo && <PreviewIMG path={formData.logo} size="logo" />}
+            </div>
           ) : (
-            <p className="p-2">
-              {formData.logo ? "Archivo cargado" : "No cargado"}
-            </p>
+            <div className="p-2">
+              {formData.logo ? (
+                <PreviewIMG path={formData.logo} size="logo" />
+              ) : (
+                <p>No cargado</p>
+              )}
+            </div>
           )}
         </div>
 

@@ -36,6 +36,12 @@ const FileChooser = ({
               return name.endsWith(rule);
             }
             if (rule.includes("/")) {
+              // Soportar comodines MIME como "image/*", "video/*", etc.
+              const [ruleType, ruleSubtype] = rule.split("/");
+              const [fileType, fileSubtype] = type.split("/");
+              if (ruleSubtype === "*") {
+                return fileType === ruleType;
+              }
               return type === rule;
             }
             // por seguridad también coincidir por extensión sin punto
