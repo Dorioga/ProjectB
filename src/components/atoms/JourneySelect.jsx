@@ -55,10 +55,10 @@ const JourneySelect = ({
 
     // Aplicar filtro por filterValue (cuando viene desde sedesResponse)
     if (normalizedFilterValue) {
-      // Si filterValue es "ambas" (id=3), mostrar solo Mañana (id=1) y Tarde (id=2)
+      // Si filterValue es "ambas" (id=3), mostrar Mañana (1), Tarde (2) y Ambas (3)
       if (normalizedFilterValue === "ambas" || normalizedFilterValue === "3") {
         filtered = filtered.filter(
-          (opt) => opt.value === "1" || opt.value === "2",
+          (opt) => opt.value === "1" || opt.value === "2" || opt.value === "3",
         );
       } else {
         // Buscar coincidencia exacta por value o label

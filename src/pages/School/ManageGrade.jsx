@@ -143,6 +143,11 @@ const ManageGrade = () => {
         meta: { hideOnLG: true },
       },
       {
+        accessorKey: "nombre_jornada",
+        header: "Jornada",
+        meta: { hideOnLG: true },
+      },
+      {
         id: "actions",
         header: "Acciones",
         cell: ({ row }) => (

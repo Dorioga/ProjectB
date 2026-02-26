@@ -307,6 +307,29 @@ const ProfileTeacher = ({
     );
   }, [data?.director_of_grade, data?.director_of_grades]);
 
+  const [localDirectorGroups, setLocalDirectorGroups] = useState(() => {
+    const raw = data?.director_of_grade ?? data?.director_of_grades ?? "";
+    if (!raw) return new Set();
+    return new Set(
+      String(raw)
+        .split(",")
+        .map((s) => String(s).trim().toLowerCase())
+        .filter(Boolean),
+    );
+  });
+
+  const handleToggleDirectorGroup = (grupo) => {
+    const key = String(grupo || "")
+      .trim()
+      .toLowerCase();
+    setLocalDirectorGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
   // Toggle una fila individual
   const handleToggleRow = (idx) => {
     const key = rowKeys[idx];
@@ -545,12 +568,12 @@ const ProfileTeacher = ({
     );
     setEstado(orig.estado || data.estado || "");
     setActiveRowKeys(originalRef.current?.activeRowKeys || new Set(rowKeys));
+    setLocalDirectorGroups(directorGroupSet);
     setNewAsignatures([]);
     setNewSede([]);
     setShowAsignatureGrades(false);
     setShowSedeAsignatures({});
     setIsEditing(false);
-    if (typeof onClose === "function") onClose();
   };
 
   const isDirty = useMemo(() => {
@@ -716,6 +739,7 @@ const ProfileTeacher = ({
       workday: form.fk_journey ? Number(form.fk_journey) : null,
       address: form.direccion,
       representante_curso: !!form.representante_curso,
+      director_of_grade: Array.from(localDirectorGroups).join(","),
       status: estado,
       asignatures,
       grades,
@@ -919,28 +943,24 @@ const ProfileTeacher = ({
           />
         </div>
         {!isPageMode && (
-          <div id="tour-profile-save">
-            <SimpleButton
-              onClick={async () => {
-                if (isEditing) {
-                  // Save and exit edit mode
-                  await handleSave();
-                } else {
-                  setIsEditing(true);
-                }
-              }}
-              msj={isEditing ? "Guardar" : "Editar"}
-              msjtooltip={
-                isEditing && !canSave && missingFields.length > 0
-                  ? `Faltan: ${missingFields.join(", ")}`
-                  : undefined
-              }
-              tooltip={isEditing && !canSave && missingFields.length > 0}
-              icon={isEditing ? "Save" : "Pencil"}
-              bg={isEditing ? "bg-accent" : "bg-secondary"}
-              text="text-surface"
-              disabled={isSaving || (isEditing && !canSave)}
-            />
+          <div className="w-full grid grid-cols-5 col-span-5 gap-4">
+            {" "}
+            <div className="col-span-4"></div>
+            <div id="tour-profile-save">
+              <SimpleButton
+                onClick={() => {
+                  if (isEditing) {
+                    handleCancel();
+                  } else {
+                    setIsEditing(true);
+                  }
+                }}
+                msj={isEditing ? "Cancelar edición" : "Editar"}
+                icon={isEditing ? "X" : "Pencil"}
+                bg={isEditing ? "bg-error" : "bg-secondary"}
+                text="text-surface"
+              />
+            </div>
           </div>
         )}
         {isEditing && !canSave && missingFields.length > 0 && (
@@ -1084,7 +1104,18 @@ const ProfileTeacher = ({
             disabled={!isEditing}
           />
         </div>
-
+        <div>
+          <label className="font-semibold">Estado del docente</label>
+          <select
+            value={estado}
+            onChange={handleEstadoChange}
+            className={`w-full p-2 border rounded ${isEditing ? "bg-white border-gray-300" : "bg-gray-50 border-transparent text-gray-600 cursor-not-allowed"}`}
+            disabled={!isEditing}
+          >
+            <option value="Activo">Activo</option>
+            <option value="Desactivado">Desactivado</option>
+          </select>
+        </div>
         <div>
           <label className="font-semibold">Representante de curso</label>
           <div className="flex items-center gap-3 mt-2">
@@ -1109,18 +1140,6 @@ const ProfileTeacher = ({
           </div>
         </div>
         {/* 3) Estado */}
-        <div>
-          <label className="font-semibold">Estado del docente</label>
-          <select
-            value={estado}
-            onChange={handleEstadoChange}
-            className={`w-full p-2 border rounded ${isEditing ? "bg-white border-gray-300" : "bg-gray-50 border-transparent text-gray-600 cursor-not-allowed"}`}
-            disabled={!isEditing}
-          >
-            <option value="Activo">Activo</option>
-            <option value="Desactivado">Desactivado</option>
-          </select>
-        </div>
       </div>
       <div className="">
         <div className="grid grid-cols-2">
@@ -1137,31 +1156,6 @@ const ProfileTeacher = ({
                   onChange={handleCurrentSedeChange}
                   placeholder="Selecciona una sede"
                   label="Nueva Sede"
-                />
-              </div>
-
-              <div id="tour-profile-workday" className="mt-2">
-                <JourneySelect
-                  name="fk_journey"
-                  value={form.fk_journey || ""}
-                  filterValue={getSedeWorkday(form.id_sede) || ""}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    const found = Array.isArray(journeys)
-                      ? journeys.find(
-                          (opt) => String(opt.value) === String(val),
-                        )
-                      : null;
-                    setForm((prev) => ({
-                      ...prev,
-                      fk_journey: val,
-                      nombre_jornada: found
-                        ? String(found.label)
-                        : prev.nombre_jornada || "",
-                    }));
-                  }}
-                  disabled={!form.id_sede}
-                  label="Nueva Jornada"
                 />
               </div>
 
@@ -1358,13 +1352,14 @@ const ProfileTeacher = ({
                     <td className="px-3 py-2">
                       <input
                         type="checkbox"
-                        checked={directorGroupSet.has(
+                        checked={localDirectorGroups.has(
                           String(row.grupo || "")
                             .trim()
                             .toLowerCase(),
                         )}
-                        readOnly
-                        disabled
+                        readOnly={!isEditing || !form.representante_curso}
+                        disabled={!isEditing || !form.representante_curso}
+                        onChange={() => handleToggleDirectorGroup(row.grupo)}
                         className="w-4 h-4 mx-auto tour-director-checkbox"
                         aria-label={`Director de grupo: ${row.grupo || "sin grupo"}`}
                       />
@@ -1532,13 +1527,17 @@ const ProfileTeacher = ({
 
       {/* 5) Botones */}
       <div className="flex gap-3 justify-end">
-        {!isPageMode && (
-          <SimpleButton
-            msj="Cancelar"
-            bg="bg-error"
-            text="text-surface"
-            onClick={handleCancel}
-          />
+        {!isPageMode && isEditing && (
+          <div id="tour-profile-guardar">
+            <SimpleButton
+              msj={isSaving ? "Guardando..." : "Guardar"}
+              icon={isSaving ? "Loader" : "Save"}
+              bg="bg-accent"
+              text="text-surface"
+              onClick={handleSave}
+              disabled={isSaving || !canSave}
+            />
+          </div>
         )}
       </div>
     </div>

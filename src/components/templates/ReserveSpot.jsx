@@ -38,7 +38,8 @@ const INITIAL_STUDENT = {
   grade: "",
 };
 
-const INITIAL_MOTHER = {
+const INITIAL_GUARDIAN = {
+  parentesco: "",
   first_name: "",
   second_name: "",
   first_lastname: "",
@@ -49,16 +50,15 @@ const INITIAL_MOTHER = {
   identificationtype: "",
 };
 
-const INITIAL_FATHER = {
-  first_name: "",
-  second_name: "",
-  first_lastname: "",
-  second_lastname: "",
-  telephone: "",
-  email: "",
-  identification: "",
-  identificationtype: "",
-};
+const PARENTESCO_OPTIONS = [
+  "Madre",
+  "Padre",
+  "Abuelo(a)",
+  "Tío(a)",
+  "Hermano(a)",
+  "Tutor legal",
+  "Otro",
+];
 
 const inputClass =
   "w-full p-2 border rounded bg-surface text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/40 border-secondary/40";
@@ -73,42 +73,33 @@ const Field = ({ label, error, children }) => (
 
 // ───────────────────── Sección reutilizable de acudiente ─────────────────────
 
-const GuardianFormSection = ({
-  title,
-  prefix,
-  data,
-  onChange,
-  errors,
-  isPrimary,
-  onPrimaryToggle,
-}) => (
+const GuardianFormSection = ({ prefix, data, onChange, errors }) => (
   <section
     id={`tour-rs-${prefix}-section`}
     className="border border-secondary/30 rounded-lg overflow-hidden"
   >
-    <div className="bg-primary text-surface p-3 flex items-center justify-between">
-      <h3 className="text-xl font-bold">{title}</h3>
-      <label
-        id={`tour-rs-${prefix}-primary`}
-        className="flex items-center gap-2 cursor-pointer select-none"
-      >
-        <input
-          type="checkbox"
-          checked={isPrimary}
-          onChange={onPrimaryToggle}
-          className="w-4 h-4 accent-surface cursor-pointer"
-        />
-        <span className="text-sm font-medium">Acudiente principal</span>
-      </label>
+    <div className="bg-primary text-surface p-3">
+      <h3 className="text-xl font-bold">Datos del acudiente</h3>
     </div>
 
-    {isPrimary && (
-      <p className="px-4 pt-2 text-xs font-semibold text-primary">
-        ★ Este es el acudiente principal
-      </p>
-    )}
-
     <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div id={`tour-rs-${prefix}-parentesco`} className="md:col-span-2">
+        <Field label="Parentesco" error={errors[`${prefix}_parentesco`]}>
+          <select
+            name="parentesco"
+            value={data.parentesco}
+            onChange={onChange}
+            className={inputClass}
+          >
+            <option value="">Selecciona parentesco</option>
+            {PARENTESCO_OPTIONS.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </div>
       <div id={`tour-rs-${prefix}-doctype`}>
         <Field error={errors[`${prefix}_identificationtype`]}>
           <TypeDocumentSelector
@@ -227,9 +218,7 @@ const ReserveSpot = ({ onSuccess }) => {
   }, [loadValuesReservations]);
 
   const [student, setStudent] = useState(INITIAL_STUDENT);
-  const [mother, setMother] = useState(INITIAL_MOTHER);
-  const [father, setFather] = useState(INITIAL_FATHER);
-  const [primaryGuardian, setPrimaryGuardian] = useState(""); // "mother" | "father"
+  const [guardian, setGuardian] = useState(INITIAL_GUARDIAN);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
@@ -380,16 +369,10 @@ const ReserveSpot = ({ onSuccess }) => {
     return [...unique.entries()].map(([label, value]) => ({ value, label }));
   }, [valuesReservations, student.sede, student.jornada]);
 
-  const handleMotherChange = (e) => {
+  const handleGuardianChange = (e) => {
     const { name, value } = e.target;
-    setMother((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [`mother_${name}`]: "" }));
-  };
-
-  const handleFatherChange = (e) => {
-    const { name, value } = e.target;
-    setFather((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [`father_${name}`]: "" }));
+    setGuardian((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [`guardian_${name}`]: "" }));
   };
 
   // ─── Handlers de firma ───
@@ -426,17 +409,17 @@ const ReserveSpot = ({ onSuccess }) => {
       student.jornada &&
       student.grade;
 
-    if (!studentOk || !primaryGuardian || !signatureSaved) return false;
+    if (!studentOk || !signatureSaved) return false;
 
-    const guardianData = primaryGuardian === "mother" ? mother : father;
     return !!(
-      guardianData.first_name.trim() &&
-      guardianData.first_lastname.trim() &&
-      guardianData.telephone.trim() &&
-      guardianData.identification.trim() &&
-      guardianData.identificationtype
+      guardian.parentesco &&
+      guardian.first_name.trim() &&
+      guardian.first_lastname.trim() &&
+      guardian.telephone.trim() &&
+      guardian.identification.trim() &&
+      guardian.identificationtype
     );
-  }, [student, mother, father, primaryGuardian, signatureSaved]);
+  }, [student, guardian, signatureSaved]);
 
   // ─── Helpers para etiquetas de opciones ───
   const getLabel = useCallback((options, value) => {
@@ -645,24 +628,20 @@ const ReserveSpot = ({ onSuccess }) => {
     ]);
     y += 4;
 
-    // ── Acudientes ──
-    const addGuardian = (gData, title, isPrimary) => {
-      addSectionHeader(`${title}${isPrimary ? " — Acudiente principal" : ""}`);
-      addTwoColumns([
-        ["Tipo documento", gData.identificationtype || "—"],
-        ["N.º identificación", gData.identification],
-        ["Primer nombre", gData.first_name],
-        ["Segundo nombre", gData.second_name],
-        ["Primer apellido", gData.first_lastname],
-        ["Segundo apellido", gData.second_lastname],
-        ["Teléfono", gData.telephone],
-        ["Email", gData.email],
-      ]);
-      y += 4;
-    };
-
-    addGuardian(mother, "Acudiente — Madre", primaryGuardian === "mother");
-    addGuardian(father, "Acudiente — Padre", primaryGuardian === "father");
+    // ── Acudiente ──
+    addSectionHeader("Datos del acudiente");
+    addTwoColumns([
+      ["Parentesco", guardian.parentesco || "—"],
+      ["Tipo documento", guardian.identificationtype || "—"],
+      ["N.º identificación", guardian.identification],
+      ["Primer nombre", guardian.first_name],
+      ["Segundo nombre", guardian.second_name],
+      ["Primer apellido", guardian.first_lastname],
+      ["Segundo apellido", guardian.second_lastname],
+      ["Teléfono", guardian.telephone],
+      ["Email", guardian.email],
+    ]);
+    y += 4;
 
     // ── Firma ──
     if (y > 200) {
@@ -678,9 +657,7 @@ const ReserveSpot = ({ onSuccess }) => {
     doc.save("reserva_cupo.pdf");
   }, [
     student,
-    mother,
-    father,
-    primaryGuardian,
+    guardian,
     signatureData,
     deptoOptions,
     municipioOptions,
@@ -711,24 +688,17 @@ const ReserveSpot = ({ onSuccess }) => {
     if (!student.jornada) e.student_jornada = "Selecciona una jornada.";
     if (!student.grade) e.student_grade = "Selecciona un grado.";
 
-    // Acudiente principal obligatorio
-    if (!primaryGuardian)
-      e.primaryGuardian = "Debes marcar quién es el acudiente principal.";
-
-    // Valida los campos requeridos del acudiente principal seleccionado
-    const validatePerson = (person, prefix) => {
-      if (!person.first_name.trim()) e[`${prefix}_first_name`] = "Obligatorio.";
-      if (!person.first_lastname.trim())
-        e[`${prefix}_first_lastname`] = "Obligatorio.";
-      if (!person.telephone.trim()) e[`${prefix}_telephone`] = "Obligatorio.";
-      if (!person.identification.trim())
-        e[`${prefix}_identification`] = "Obligatorio.";
-      if (!person.identificationtype)
-        e[`${prefix}_identificationtype`] = "Selecciona tipo de documento.";
-    };
-
-    if (primaryGuardian === "mother") validatePerson(mother, "mother");
-    if (primaryGuardian === "father") validatePerson(father, "father");
+    // Acudiente
+    if (!guardian.parentesco)
+      e.guardian_parentesco = "Selecciona el parentesco.";
+    if (!guardian.first_name.trim()) e.guardian_first_name = "Obligatorio.";
+    if (!guardian.first_lastname.trim())
+      e.guardian_first_lastname = "Obligatorio.";
+    if (!guardian.telephone.trim()) e.guardian_telephone = "Obligatorio.";
+    if (!guardian.identification.trim())
+      e.guardian_identification = "Obligatorio.";
+    if (!guardian.identificationtype)
+      e.guardian_identificationtype = "Selecciona tipo de documento.";
 
     // Firma
     if (!signatureSaved)
@@ -786,34 +756,19 @@ const ReserveSpot = ({ onSuccess }) => {
         fd.append("student_photo", student.photo_link);
       }
 
-      // --- Datos de la madre (prefijo mother_) ---
-      fd.append("mother_first_name", mother.first_name.trim());
-      fd.append("mother_second_name", mother.second_name.trim());
-      fd.append("mother_first_lastname", mother.first_lastname.trim());
-      fd.append("mother_second_lastname", mother.second_lastname.trim());
-      fd.append("mother_telephone", mother.telephone.trim());
-      fd.append("mother_email", mother.email.trim());
-      fd.append("mother_identification", mother.identification.trim());
+      // --- Datos del acudiente (prefijo guardian_) ---
+      fd.append("guardian_parentesco", guardian.parentesco);
+      fd.append("guardian_first_name", guardian.first_name.trim());
+      fd.append("guardian_second_name", guardian.second_name.trim());
+      fd.append("guardian_first_lastname", guardian.first_lastname.trim());
+      fd.append("guardian_second_lastname", guardian.second_lastname.trim());
+      fd.append("guardian_telephone", guardian.telephone.trim());
+      fd.append("guardian_email", guardian.email.trim());
+      fd.append("guardian_identification", guardian.identification.trim());
       fd.append(
-        "mother_identificationtype",
-        mother.identificationtype ? Number(mother.identificationtype) : "",
+        "guardian_identificationtype",
+        guardian.identificationtype ? Number(guardian.identificationtype) : "",
       );
-
-      // --- Datos del padre (prefijo father_) ---
-      fd.append("father_first_name", father.first_name.trim());
-      fd.append("father_second_name", father.second_name.trim());
-      fd.append("father_first_lastname", father.first_lastname.trim());
-      fd.append("father_second_lastname", father.second_lastname.trim());
-      fd.append("father_telephone", father.telephone.trim());
-      fd.append("father_email", father.email.trim());
-      fd.append("father_identification", father.identification.trim());
-      fd.append(
-        "father_identificationtype",
-        father.identificationtype ? Number(father.identificationtype) : "",
-      );
-
-      // --- Acudiente principal ---
-      fd.append("primary_guardian", primaryGuardian);
 
       // ── Log para depuración ──
       console.log("=== ReserveSpot FormData ===");
@@ -838,9 +793,7 @@ const ReserveSpot = ({ onSuccess }) => {
 
       // Resetear formularios
       setStudent(INITIAL_STUDENT);
-      setMother(INITIAL_MOTHER);
-      setFather(INITIAL_FATHER);
-      setPrimaryGuardian("");
+      setGuardian(INITIAL_GUARDIAN);
       setErrors({});
       sigCanvas.current?.clear();
       setSignatureData("");
@@ -1174,45 +1127,13 @@ const ReserveSpot = ({ onSuccess }) => {
           </div>
         </section>
 
-        {/* ═══════════════ ZONA 2: ACUDIENTES ═══════════════ */}
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-lg font-bold text-on-surface">
-              Datos de los acudientes
-            </h3>
-            <span className="text-sm text-on-surface/60">
-              (Marca quién es el acudiente principal)
-            </span>
-          </div>
-
-          {errors.primaryGuardian && (
-            <p className="text-xs text-error">{errors.primaryGuardian}</p>
-          )}
-
-          <GuardianFormSection
-            title="Madre"
-            prefix="mother"
-            data={mother}
-            onChange={handleMotherChange}
-            errors={errors}
-            isPrimary={primaryGuardian === "mother"}
-            onPrimaryToggle={() =>
-              setPrimaryGuardian(primaryGuardian === "mother" ? "" : "mother")
-            }
-          />
-
-          <GuardianFormSection
-            title="Padre"
-            prefix="father"
-            data={father}
-            onChange={handleFatherChange}
-            errors={errors}
-            isPrimary={primaryGuardian === "father"}
-            onPrimaryToggle={() =>
-              setPrimaryGuardian(primaryGuardian === "father" ? "" : "father")
-            }
-          />
-        </div>
+        {/* ═══════════════ ZONA 2: ACUDIENTE ═══════════════ */}
+        <GuardianFormSection
+          prefix="guardian"
+          data={guardian}
+          onChange={handleGuardianChange}
+          errors={errors}
+        />
 
         {/* ═══════════════ ZONA 3: FIRMA DEL ACUDIENTE ═══════════════ */}
         <section

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { sha256 } from "js-sha256";
 import Loader from "../../components/atoms/Loader";
 import SimpleButton from "../../components/atoms/SimpleButton";
+import { useNotification } from "../../lib/context/NotificationContext";
 import tourRegisterUser from "../../tour/tourRegisterUser";
 import RoleSelector from "../../components/molecules/RoleSelector";
 import TypeDocumentSelector from "../../components/molecules/TypeDocumentSelector";
@@ -21,6 +22,7 @@ const RegisterUser = () => {
   const { schools, loading, reload } = useSchool();
   const { registerUser, loadingRegisterUser, errorRegisterUser } = useData();
   const { idInstitution, rol } = useAuth();
+  const { addNotification } = useNotification();
 
   const [formData, setFormData] = useState({
     identificationtype: "",
@@ -184,8 +186,27 @@ const RegisterUser = () => {
     try {
       const res = await registerUser(payload);
       console.log("Usuario registrado:", res);
+      addNotification("Usuario registrado exitosamente.", "success");
+      setFormData({
+        identificationtype: "",
+        identification: "",
+        telephone: "",
+        email: "",
+        first_name: "",
+        second_name: "",
+        first_lastname: "",
+        second_lastname: "",
+        password: "",
+        role: "",
+        idInstitution: "",
+      });
+      setFormErrors({});
     } catch (err) {
       console.error("Error registrando usuario:", err);
+      addNotification(
+        err?.message || "Ocurrió un error al registrar el usuario.",
+        "error",
+      );
     }
   };
 
@@ -209,14 +230,9 @@ const RegisterUser = () => {
         onSubmit={handleSubmit}
         className="grid grid-cols-1 md:grid-cols-3 gap-4"
       >
-        {(loadingRegisterUser || errorRegisterUser) && (
-          <div className="md:col-span-3 flex flex-col gap-2">
-            {loadingRegisterUser && <Loader message="Registrando…" />}
-            {!loadingRegisterUser && errorRegisterUser && (
-              <div className="p-3 rounded border border-error bg-error/10 text-error">
-                {errorRegisterUser?.message || "Ocurrió un error."}
-              </div>
-            )}
+        {loadingRegisterUser && (
+          <div className="md:col-span-3">
+            <Loader message="Registrando…" />
           </div>
         )}
 

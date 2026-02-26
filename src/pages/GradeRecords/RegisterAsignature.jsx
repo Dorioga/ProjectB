@@ -361,7 +361,7 @@ const RegisterAsignature = ({ onSuccess }) => {
           ) : (
             <>
               {/* Agrupar grados por nombre de asignatura con controles y conteos */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
                 {(() => {
                   const grouped = availableGrades.reduce((acc, g) => {
                     const key = g.nombre || "Sin nombre";
@@ -403,7 +403,7 @@ const RegisterAsignature = ({ onSuccess }) => {
                         <div className="flex items-center justify-between p-2 bg-primary rounded-lg">
                           <div className="flex items-center gap-3 rounded">
                             <div className="font-semibold bg-surface px-2 py-1 rounded">
-                              Grado {name}
+                              {name}
                             </div>
                             <div className="text-sm opacity-70">
                               (

@@ -26,11 +26,12 @@ const ProfileSchoolPage = () => {
       setError(null);
       try {
         const res = await getDataSchool({ idInstitution });
+        // Pasamos el array completo para que ProfileSchool extraiga todas las filas de escala
         const d =
           res?.data && Array.isArray(res.data)
-            ? res.data[0]
+            ? res.data
             : Array.isArray(res)
-              ? res[0]
+              ? res
               : res;
         setSchoolData(d ?? null);
       } catch (err) {
@@ -62,7 +63,12 @@ const ProfileSchoolPage = () => {
         mode={schoolData ? "update" : "register"}
         initialData={schoolData}
         initialEditing={false}
-        schoolId={schoolData?.id_institution || schoolData?.id || idInstitution}
+        schoolId={
+          (Array.isArray(schoolData) ? schoolData[0] : schoolData)
+            ?.id_institution ||
+          (Array.isArray(schoolData) ? schoolData[0] : schoolData)?.id ||
+          idInstitution
+        }
       />
     </div>
   );

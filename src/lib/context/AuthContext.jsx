@@ -3,6 +3,7 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import * as authService from "../../services/authService";
@@ -94,10 +95,38 @@ export function AuthProvider({ children }) {
   // Estado del modal de términos y condiciones
   const [showTermsModal, setShowTermsModal] = useState(false);
   // Almacena el rol pendiente para cargar el menú después de aceptar términos
-  const pendingRolRef = React.useRef(null);
+  const pendingRolRef = useRef(null);
 
   // Maneja el estado de la barra lateral
   const [isOpen, setIsOpen] = useState(true);
+
+  // Ref para evitar doble llamada a loadProfile (StrictMode)
+  const profileLoadedRef = useRef(false);
+
+  // ── Helper: limpiar todo el estado de sesión ──
+  const clearSession = useCallback(() => {
+    setUserId(null);
+    setUserName(null);
+    setUserEmail(null);
+    setNameSchool(null);
+    setIdInstitution(null);
+    setImgSchool(null);
+    setNameRole(null);
+    setRol(null);
+    setNameSede(null);
+    setIdSede(null);
+    setColorPrincipal(null);
+    setColorSecundario(null);
+    setMenu(null);
+    setIdDocente(null);
+    setIdEstudiante(null);
+    setIdPersona(null);
+    setNumeroIdentificacion(null);
+    setToken(null);
+    sessionStorage.clear();
+    localStorage.clear();
+    setAuthToken(null);
+  }, []);
 
   const loadProfile = useCallback(async () => {
     if (!token) {
@@ -105,6 +134,10 @@ export function AuthProvider({ children }) {
       setError(null);
       return;
     }
+    // Evitar llamadas duplicadas (StrictMode, re-renders)
+    if (profileLoadedRef.current) return;
+    profileLoadedRef.current = true;
+
     setLoading(true);
     setError(null);
     try {
@@ -112,7 +145,6 @@ export function AuthProvider({ children }) {
       const profile = await authService.getProfile();
       const data = profile.user || profile;
 
-      // Guardar variables individuales
       setUserId(data?.id ?? null);
       setUserName(data?.name ?? null);
       setUserEmail(data?.email ?? null);
@@ -120,31 +152,12 @@ export function AuthProvider({ children }) {
       setRol(data?.rol ?? null);
       setNumeroIdentificacion(data?.numero_identificacion ?? null);
     } catch (err) {
-      // Limpiar todo en caso de error
-      setUserId(null);
-      setUserName(null);
-      setUserEmail(null);
-      setNameSchool(null);
-      setIdInstitution(null);
-      setImgSchool(null);
-      setNameRole(null);
-      setRol(null);
-      setNameSede(null);
-      setIdSede(null);
-      setColorPrincipal(null);
-      setColorSecundario(null);
-      setMenu(null);
-      setIdDocente(null);
-      setIdEstudiante(null);
-      setIdPersona(null);
-      setToken(null);
-      sessionStorage.clear();
-      setAuthToken(null);
+      clearSession();
       setError(err);
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, clearSession]);
 
   // ✅ Un solo useEffect que guarda todo en localStorage.
   useEffect(() => {
@@ -198,6 +211,11 @@ export function AuthProvider({ children }) {
     }
   }, [token, userId, loadProfile]);
 
+  // Resetear flag cuando cambia el token (nuevo login / logout)
+  useEffect(() => {
+    profileLoadedRef.current = false;
+  }, [token]);
+
   // Aplicar colores personalizados al cargar la página si existen en localStorage
   useEffect(() => {
     if (colorPrincipal || colorSecundario) {
@@ -209,31 +227,12 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const unsubscribe = eventBus.on((message, type) => {
       if (type === "auth" && message === "sessionExpired") {
-        // limpiar estado local y redirigir
-        setUserId(null);
-        setUserName(null);
-        setUserEmail(null);
-        setNameSchool(null);
-        setIdInstitution(null);
-        setImgSchool(null);
-        setNameRole(null);
-        setRol(null);
-        setNameSede(null);
-        setIdSede(null);
-        setColorPrincipal(null);
-        setColorSecundario(null);
-        setMenu(null);
-        setIdDocente(null);
-        setIdEstudiante(null);
-        setIdPersona(null);
-        setToken(null);
-        sessionStorage.clear();
-        setAuthToken(null);
+        clearSession();
         navigate("/login");
       }
     });
     return unsubscribe;
-  }, [navigate]);
+  }, [navigate, clearSession]);
 
   // Mantener el título del sitio como "Nexus — ABBR" (fallback a "Nexus")
   useEffect(() => {
@@ -248,81 +247,110 @@ export function AuthProvider({ children }) {
     }
   }, [nameSchool]);
 
-  const login = async (credentials) => {
-    setLoading(true);
-    setError(null);
+  // ── Helper: cargar menú por rol ──
+  const loadMenuByRol = useCallback(async (rolValue) => {
+    if (!rolValue) return;
+    const fd = new FormData();
+    fd.append("id_rol", String(rolValue));
+    fd.append("rol", String(rolValue));
     try {
-      const res = await authService.login(credentials);
-      console.log("AuthContext - Login response:", res);
+      const menuRes = await getMenuRol(fd);
+      setMenu(menuRes);
+    } catch {
+      setMenu([]);
+    }
+  }, []);
 
-      // La respuesta viene en res.data
-      const data = res?.data || res;
-      console.log("AuthContext - Datos del usuario extraídos:", data);
-      // ✅ Validación adicional: Verificar datos mínimos requeridos
-      if (!data || !data.accessToken) {
-        throw new Error(
-          "No se pudo iniciar sesión. Respuesta del servidor inválida.",
-        );
-      }
+  const login = useCallback(
+    async (credentials) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await authService.login(credentials);
+        console.log("AuthContext - Login response:", res);
 
-      const t = data.accessToken;
-      console.log("AuthContext - Token extraído:", t);
-
-      // Asegura que el token se use inmediatamente (antes de pedir menú).
-      if (t) {
-        setToken(t);
-        setAuthToken(t);
-        console.log("AuthContext - Token guardado en localStorage");
-      }
-      console.log(
-        "AuthContext - Cargando datos del usuario en el contexto...",
-        data,
-      );
-      // Guardar todas las variables individuales
-      setUserId(data?.id ?? null);
-      setUserName(data?.name ?? null);
-      setUserEmail(data?.email ?? null);
-      setNameSchool(data?.nombre_institucion ?? null);
-      setIdInstitution(data?.id_institucion ?? null);
-      setImgSchool(data?.link_logo ?? null);
-      setNameRole(data?.name_rol ?? null);
-      setRol(data?.rol ?? null);
-      setNameSede(data?.name_sede ?? null);
-      setIdSede(data?.id_sede ?? null);
-      setColorPrincipal(data?.color_principal ?? null);
-      setColorSecundario(data?.color_secundario ?? null);
-      setIdDocente(data?.id_docente ?? null);
-      setIdEstudiante(data?.id_estudiante ?? null);
-      setNumeroIdentificacion(data?.numero_identificacion ?? null);
-      setIdPersona(data?.id_persona ?? null);
-
-      if (data?.color_principal || data?.color_secundario) {
-        applyCustomColors(data?.color_principal, data?.color_secundario);
-      }
-
-      // Para roles 5 y 6: verificar aceptación de términos ANTES de cargar el menú
-      const rolValue = data?.rol;
-      const needsTermsCheck =
-        String(rolValue) === "5" || String(rolValue) === "6";
-
-      if (needsTermsCheck) {
-        try {
-          console.log(
-            "AuthContext - Verificando aceptación de términos para rol",
-            data.id_persona,
+        // La respuesta viene en res.data
+        const data = res?.data || res;
+        console.log("AuthContext - Datos del usuario extraídos:", data);
+        // ✅ Validación adicional: Verificar datos mínimos requeridos
+        if (!data || !data.accessToken) {
+          throw new Error(
+            "No se pudo iniciar sesión. Respuesta del servidor inválida.",
           );
-          const termsRes = await authService.valuesAccessData({
-            idPersona: data?.id_persona,
-          });
-          console.log("AuthContext - Respuesta de términos:", termsRes);
-          if (termsRes?.code === "ERROR") {
-            // Guardar el rol para cargar el menú después de aceptar
+        }
+
+        const t = data.accessToken;
+        console.log("AuthContext - Token extraído:", t);
+
+        // Asegura que el token se use inmediatamente (antes de pedir menú).
+        if (t) {
+          setToken(t);
+          setAuthToken(t);
+          console.log("AuthContext - Token guardado en localStorage");
+        }
+        console.log(
+          "AuthContext - Cargando datos del usuario en el contexto...",
+          data,
+        );
+        // Guardar todas las variables individuales
+        setUserId(data?.id ?? null);
+        setUserName(data?.name ?? null);
+        setUserEmail(data?.email ?? null);
+        setNameSchool(data?.nombre_institucion ?? null);
+        setIdInstitution(data?.id_institucion ?? null);
+        setImgSchool(data?.link_logo ?? null);
+        setNameRole(data?.name_rol ?? null);
+        setRol(data?.rol ?? null);
+        setNameSede(data?.name_sede ?? null);
+        setIdSede(data?.id_sede ?? null);
+        setColorPrincipal(data?.color_principal ?? null);
+        setColorSecundario(data?.color_secundario ?? null);
+        setIdDocente(data?.id_docente ?? null);
+        setIdEstudiante(data?.id_estudiante ?? null);
+        setNumeroIdentificacion(data?.numero_identificacion ?? null);
+        setIdPersona(data?.id_persona ?? null);
+
+        if (data?.color_principal || data?.color_secundario) {
+          applyCustomColors(data?.color_principal, data?.color_secundario);
+        }
+
+        // Para roles 5 y 6: verificar aceptación de términos ANTES de cargar el menú
+        const rolValue = data?.rol;
+        const needsTermsCheck =
+          String(rolValue) === "5" || String(rolValue) === "6";
+
+        if (needsTermsCheck) {
+          try {
+            console.log(
+              "AuthContext - Verificando aceptación de términos para rol",
+              data.id_persona,
+            );
+            const termsRes = await authService.valuesAccessData({
+              idPersona: data?.id_persona,
+            });
+            console.log("AuthContext - Respuesta de términos:", termsRes);
+            if (termsRes?.code === "ERROR") {
+              // Guardar el rol para cargar el menú después de aceptar
+              pendingRolRef.current = rolValue;
+              setShowTermsModal(true);
+              // Retornar sin cargar el menú ni navegar: Login.jsx se encarga de esperar
+              return {
+                token: t,
+                idPersona: data?.id_persona ?? null,
+                name: data?.name ?? null,
+                email: data?.email ?? null,
+                rol: rolValue ?? null,
+                name_rol: data?.name_rol ?? null,
+                pendingTerms: true,
+              };
+            }
+          } catch {
+            // Error de red → mostrar modal por seguridad
             pendingRolRef.current = rolValue;
             setShowTermsModal(true);
-            // Retornar sin cargar el menú ni navegar: Login.jsx se encarga de esperar
             return {
               token: t,
-              idPersona: data?.id_persona ?? null,
+              id: data?.id ?? null,
               name: data?.name ?? null,
               email: data?.email ?? null,
               rol: rolValue ?? null,
@@ -330,82 +358,40 @@ export function AuthProvider({ children }) {
               pendingTerms: true,
             };
           }
-        } catch {
-          // Error de red → mostrar modal por seguridad
-          pendingRolRef.current = rolValue;
-          setShowTermsModal(true);
-          return {
-            token: t,
-            id: data?.id ?? null,
-            name: data?.name ?? null,
-            email: data?.email ?? null,
-            rol: rolValue ?? null,
-            name_rol: data?.name_rol ?? null,
-            pendingTerms: true,
-          };
         }
+
+        // Cargar menú por rol al iniciar sesión.
+        await loadMenuByRol(data?.rol);
+
+        return {
+          token: t,
+          id: data?.id ?? null,
+          name: data?.name ?? null,
+          email: data?.email ?? null,
+          rol: data?.rol ?? null,
+          name_rol: data?.name_rol ?? null,
+        };
+      } catch (err) {
+        setError(err);
+        throw err;
+      } finally {
+        setLoading(false);
       }
+    },
+    [loadMenuByRol],
+  );
 
-      // Cargar menú por rol al iniciar sesión.
-      if (data?.rol) {
-        const fd = new FormData();
-        fd.append("id_rol", String(data.rol));
-        fd.append("rol", String(data.rol));
-
-        try {
-          const menuRes = await getMenuRol(fd);
-          setMenu(menuRes);
-        } catch (menuErr) {
-          // No bloquea el login, pero deja el error disponible.
-          setMenu([]);
-          setError(menuErr);
-        }
-      }
-
-      return {
-        token: t,
-        id: data?.id ?? null,
-        name: data?.name ?? null,
-        email: data?.email ?? null,
-        rol: data?.rol ?? null,
-        name_rol: data?.name_rol ?? null,
-      };
-    } catch (err) {
-      setError(err);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const logout = async () => {
+  const logout = useCallback(async () => {
     setLoading(true);
     try {
       // await authService.logout().catch(() => {});
     } finally {
-      setUserId(null);
-      setUserName(null);
-      setUserEmail(null);
-      setNameSchool(null);
-      setIdInstitution(null);
-      setImgSchool(null);
-      setNameRole(null);
-      setRol(null);
-      setNameSede(null);
-      setIdSede(null);
-      setColorPrincipal(null);
-      setColorSecundario(null);
-      setMenu(null);
-      setIdDocente(null);
-      setIdEstudiante(null);
-      setToken(null);
-      localStorage.clear();
-      setAuthToken(null);
-      resetTheme(); // Restaurar tema por defecto
+      clearSession();
+      resetTheme();
       setLoading(false);
       navigate("/login");
     }
-  };
+  }, [clearSession, navigate]);
 
   // --- Nuevos métodos del servicio que se exponen en el contexto ------------
 
@@ -413,63 +399,40 @@ export function AuthProvider({ children }) {
    * Se invoca cuando el usuario cierra el modal de términos tras aceptarlos.
    * Carga el menú que quedó pendiente y navega al dashboard.
    */
-  const closeTermsModal = async () => {
+  const closeTermsModal = useCallback(async () => {
     const rolValue = pendingRolRef.current;
     if (rolValue) {
-      const fd = new FormData();
-      fd.append("id_rol", String(rolValue));
-      fd.append("rol", String(rolValue));
-      try {
-        const menuRes = await getMenuRol(fd);
-        setMenu(menuRes);
-      } catch {
-        setMenu([]);
-      }
+      await loadMenuByRol(rolValue);
       pendingRolRef.current = null;
     }
     setShowTermsModal(false);
-    // Navegar solo aquí: este método solo se invoca al pulsar "Continuar"
     navigate("/dashboard/home");
-  };
+  }, [loadMenuByRol, navigate]);
 
-  /** Cierra el modal sin navegar ni cargar menú (botón ✕ / backdrop). */
-  const dismissTermsModal = () => {
+  const dismissTermsModal = useCallback(() => {
     setShowTermsModal(false);
-  };
-  const valuesAccessData = async (payload) => {
-    setLoading(true);
-    try {
-      return await authService.valuesAccessData(payload);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, []);
 
-  const accessData = async (payload) => {
-    setLoading(true);
-    try {
-      return await authService.accessData(payload);
-    } finally {
-      setLoading(false);
-    }
-  };
-  const registerSignature = async (payload) => {
-    setLoading(true);
-    try {
-      return await authService.registerSignature(payload);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // ── Métodos de servicio (no usan loading global) ──
+  const valuesAccessData = useCallback(async (payload) => {
+    return authService.valuesAccessData(payload);
+  }, []);
 
-  const recoveryPassword = async (payload) => {
-    setLoading(true);
-    try {
-      return await authService.recoveryPassword(payload);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const accessData = useCallback(async (payload) => {
+    return authService.accessData(payload);
+  }, []);
+
+  const registerSignature = useCallback(async (payload) => {
+    return authService.registerSignature(payload);
+  }, []);
+
+  const recoveryPassword = useCallback(async (payload) => {
+    return authService.recoveryPassword(payload);
+  }, []);
+
+  // ── Sidebar toggles estables ──
+  const toggleSidebar = useCallback(() => setIsOpen((prev) => !prev), []);
+  const closeSidebar = useCallback(() => setIsOpen(false), []);
 
   const value = useMemo(
     () => ({
@@ -498,8 +461,8 @@ export function AuthProvider({ children }) {
       showTermsModal,
       closeTermsModal,
       dismissTermsModal,
-      toggleSidebar: () => setIsOpen(!isOpen),
-      closeSidebar: () => setIsOpen(false),
+      toggleSidebar,
+      closeSidebar,
       login,
       logout,
       valuesAccessData,
@@ -527,15 +490,20 @@ export function AuthProvider({ children }) {
       idEstudiante,
       idPersona,
       numero_identificacion,
-      setNumeroIdentificacion,
       loading,
       error,
       isOpen,
       showTermsModal,
       closeTermsModal,
       dismissTermsModal,
+      toggleSidebar,
+      closeSidebar,
       login,
       logout,
+      valuesAccessData,
+      accessData,
+      registerSignature,
+      recoveryPassword,
       loadProfile,
     ],
   );

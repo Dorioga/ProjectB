@@ -256,7 +256,7 @@ const ManageAsignature = () => {
           isOpen={isAddOpen}
           onClose={() => setIsAddOpen(false)}
           title="Agregar asignatura"
-          size="6xl"
+          size="screen-2xl"
         >
           <RegisterAsignature
             onSuccess={() => {
@@ -274,7 +274,7 @@ const ManageAsignature = () => {
             setSelectedAsignature(null);
           }}
           title="Editar asignatura"
-          size="4xl"
+          size="screen-2xl"
         >
           {selectedAsignature && (
             <ProfileAssignature

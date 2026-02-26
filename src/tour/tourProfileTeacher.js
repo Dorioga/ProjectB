@@ -107,7 +107,7 @@ const tourProfileTeacher = ({ isPageMode = false } = {}) => {
       popover: {
         title: "Director de grupo",
         description:
-          "Marca la casilla si el docente es director de un grado/grupo específico.",
+          "Indica si el docente es director de un grado/grupo específico. Este checkbox se activa solo cuando el campo 'Representante de curso' está marcado y estás en modo edición.",
         side: "left",
         align: "center",
       },
@@ -117,7 +117,7 @@ const tourProfileTeacher = ({ isPageMode = false } = {}) => {
       popover: {
         title: "Tabla de asignaciones",
         description:
-          "Lista los grados/grupos donde el docente está asignado; marca las filas para activar o desactivar.",
+          "Lista los grados/grupos donde el docente está asignado. Marca o desmarca las filas para activar o desactivar cada asignación antes de guardar.",
         side: "top",
         align: "center",
       },
@@ -125,9 +125,19 @@ const tourProfileTeacher = ({ isPageMode = false } = {}) => {
     {
       element: "#tour-profile-save",
       popover: {
+        title: "Editar / Cancelar edición",
+        description:
+          "Este botón alterna el modo de edición. Cuando dice 'Editar' (lápiz), activa los campos para modificar. Cuando dice 'Cancelar edición' (X), descarta los cambios y vuelve al modo solo lectura.",
+        side: "bottom",
+        align: "center",
+      },
+    },
+    {
+      element: "#tour-profile-guardar",
+      popover: {
         title: "Guardar cambios",
         description:
-          "Después de editar, haz clic aquí para guardar los cambios del docente.",
+          "Una vez que hayas terminado de editar, haz clic aquí para guardar todos los cambios del docente. El botón sólo aparece cuando estás en modo edición.",
         side: "top",
         align: "center",
       },
@@ -147,6 +157,7 @@ const tourProfileTeacher = ({ isPageMode = false } = {}) => {
       ".tour-director-checkbox",
       "#tour-profile-assignments-table",
       "#tour-profile-save",
+      "#tour-profile-guardar",
     ];
 
     allSteps = allSteps.filter((s) => !editingSelectors.includes(s.element));

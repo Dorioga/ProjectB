@@ -34,6 +34,7 @@ const RegisterRecords = () => {
   const [porcentualTotal, setPorcentualTotal] = useState(100);
   const [finalTest, setFinalTest] = useState({
     record: 0,
+    porcentual: 20,
     goal: "",
   });
 
@@ -208,8 +209,16 @@ const RegisterRecords = () => {
   }, [sedeWorkday, isTeacher]);
 
   useEffect(() => {
-    setPorcentualTotal(isTest ? 80 : 100);
-  }, [isTest]);
+    if (isTest) {
+      const examPct = Math.min(
+        99,
+        Math.max(1, Number(finalTest.porcentual) || 20),
+      );
+      setPorcentualTotal(100 - examPct);
+    } else {
+      setPorcentualTotal(100);
+    }
+  }, [isTest, finalTest.porcentual]);
 
   // Función auxiliar para calcular distribución de porcentajes
   const distributePercentages = useCallback((records, total) => {
@@ -227,6 +236,7 @@ const RegisterRecords = () => {
     }));
   }, []);
 
+  // Reconstruir el array de notas solo cuando cambia la cantidad de notas
   useEffect(() => {
     const safeNumber = Number(numberRecords);
     if (!safeNumber || safeNumber < 1) {
@@ -245,12 +255,32 @@ const RegisterRecords = () => {
 
       return distributePercentages(next, porcentualTotal);
     });
-  }, [numberRecords, porcentualTotal, distributePercentages]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [numberRecords, distributePercentages]);
+
+  // Redistribuir porcentuales cuando cambia el total (ej: se edita el examen final)
+  useEffect(() => {
+    setAuxRecords((prev) => {
+      if (!prev.length) return prev;
+      return distributePercentages(prev, porcentualTotal);
+    });
+  }, [porcentualTotal, distributePercentages]);
 
   const canSetNumberRecords =
     Boolean(sedeSelected) &&
     Boolean(asignatureSelected) &&
     Boolean(periodSelected);
+
+  const canSubmit =
+    Boolean(sedeSelected) &&
+    Boolean(asignatureSelected) &&
+    Boolean(periodSelected) &&
+    Boolean(gradeSelected) &&
+    Boolean(workdaySelected) &&
+    auxRecords.length > 0 &&
+    auxRecords.every(
+      (r) => String(r.name ?? "").trim() !== "" && Number(r.porcentual) > 0,
+    );
 
   const handleRecordChange = (index, field, value) => {
     setAuxRecords((prev) => {
@@ -371,7 +401,7 @@ const RegisterRecords = () => {
       setNumberRecords(0);
       setAuxRecords([]);
       setIsTest(false);
-      setFinalTest({ record: 0, goal: "" });
+      setFinalTest({ record: 0, porcentual: 20, goal: "" });
     } catch (error) {
       console.error("Error al registrar notas:", error);
     }
@@ -604,7 +634,9 @@ const RegisterRecords = () => {
                 </div>
 
                 <div>
-                  <label className="text-sm font-semibold">Logros</label>
+                  <label className="text-sm font-semibold">
+                    Objetivo de la nota
+                  </label>
                   <input
                     type="text"
                     className="w-full p-2 border rounded bg-surface tour-note-goal"
@@ -612,7 +644,7 @@ const RegisterRecords = () => {
                     onChange={(e) =>
                       handleRecordChange(idx, "goal", e.target.value)
                     }
-                    placeholder="Logros"
+                    placeholder="Objetivo de la nota"
                   />
                 </div>
               </div>
@@ -635,15 +667,26 @@ const RegisterRecords = () => {
                     Porcentual (%)
                   </label>
                   <input
-                    type="text"
+                    type="number"
+                    step="1"
+                    min={1}
+                    max={99}
                     className="w-full p-2 border rounded bg-surface"
-                    value="20"
-                    readOnly
+                    value={finalTest.porcentual}
+                    onChange={(e) => {
+                      const val = Math.min(
+                        99,
+                        Math.max(1, Number(e.target.value) || 1),
+                      );
+                      setFinalTest((prev) => ({ ...prev, porcentual: val }));
+                    }}
                   />
                 </div>
 
                 <div>
-                  <label className="text-sm font-semibold">Logros</label>
+                  <label className="text-sm font-semibold">
+                    Objetivo de la nota
+                  </label>
                   <input
                     type="text"
                     className="w-full p-2 border rounded bg-surface"
@@ -654,7 +697,7 @@ const RegisterRecords = () => {
                         goal: e.target.value,
                       }))
                     }
-                    placeholder="Logros"
+                    placeholder="Objetivo de la nota"
                   />
                 </div>
               </div>
@@ -669,7 +712,7 @@ const RegisterRecords = () => {
               text={"text-surface"}
               bg={"bg-secondary"}
               icon={"Save"}
-              disabled={loadingSchool}
+              disabled={loadingSchool || !canSubmit}
             />
           </div>
         </div>

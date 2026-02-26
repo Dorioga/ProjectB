@@ -25,7 +25,6 @@ const Sidebar = () => {
   // showContent se activa DESPUÉS de que termina la animación de apertura (300ms)
   // y se desactiva inmediatamente al cerrar para ocultar el contenido al instante
   const [showContent, setShowContent] = useState(isOpen);
-  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
   useEffect(() => {
     let timer;
@@ -38,8 +37,12 @@ const Sidebar = () => {
   }, [isOpen]);
 
   // Colapsar automáticamente en pantallas pequeñas (< 768px = md)
+  // Antes usábamos 1300px, lo que cerraba la barra incluso en pantallas
+  // grandes. Ahora sólo forzamos el cierre en móviles reales para que el
+  // usuario pueda reabrirla sin problemas. La apertura/ cierre depende
+  // del botón en el propio sidebar.
   useEffect(() => {
-    const BREAKPOINT = 1300;
+    const BREAKPOINT = 768; // coincide con `md` de Tailwind
     const handleResize = () => {
       if (window.innerWidth < BREAKPOINT) {
         closeSidebar();
@@ -54,7 +57,7 @@ const Sidebar = () => {
   const displayName = String(userName ?? "").trim();
   return (
     <div
-      className="fixed left-0 top-0 z-50 h-screen grid grid-rows-10 border rounded-r-2xl bg-primary overflow-hidden"
+      className="fixed left-0 top-0 z-50 h-screen grid grid-rows-10 border rounded-br-2xl bg-primary overflow-hidden"
       style={{
         width: isOpen ? "300px" : "70px",
         transition: "width 300ms ease-in-out",
@@ -62,7 +65,8 @@ const Sidebar = () => {
     >
       <div className="row-span-3">
         <div
-          className="flex justify-end py-3 px-6 cursor-pointer"
+          className={`flex py-3 cursor-pointer transition-colors duration-200
+            ${isOpen ? "justify-end px-6" : "justify-center px-0"}`}
           onClick={toggleSidebar}
         >
           {isOpen ? (
@@ -77,9 +81,9 @@ const Sidebar = () => {
               path={imgSchool || "/LogoGuadalupe.png"}
               size={"logo"}
             />
-            <div className="text-surface font-bold text-sm px-2">
+            {/* <div className="text-surface font-bold text-sm px-2">
               {nameSchool || "NEXUS"}
-            </div>
+            </div> */}
             <div className="text-surface text-sm px-2">
               {nameSede || "Software"}
             </div>
@@ -114,37 +118,12 @@ const Sidebar = () => {
         </ul>
       </div>
       <div className="flex flex-col items-center row-span-2 justify-center  ">
-        <button
-          type="button"
-          title="Cambiar contraseña"
-          onClick={() => setChangePasswordOpen(true)}
-          className="flex flex-col items-center cursor-pointer rounded-lg px-2 py-1 hover:bg-secondary/40 transition-colors gap-2"
-        >
-          <div className="flex flex-row gap-2">
-            <User className="text-surface text-2xl" />
-            <p className="text-surface">Ver perfil</p>
-          </div>
-          {showContent ? (
-            <div className="text-surface text-sm text-center">{nameRole}</div>
-          ) : null}
-        </button>
-        <button
-          className="flex flex-row items-center gap-2 px-4 py-2 rounded-md  hover:bg-error hover:text-surface text-error transition-colors duration-200 font-semibold cursor-pointer"
-          onClick={logout}
-        >
-          <LogOut className="text-xl" />
-          {showContent ? <h2 className="text-lg">Cerrar sesión</h2> : null}
-        </button>
         <div className="flex flex-row items-center">
           {showContent ? (
             <h2 className="text-surface font-bold text-xl">NEXUS</h2>
           ) : null}
         </div>
       </div>
-      <ChangePasswordModal
-        isOpen={changePasswordOpen}
-        onClose={() => setChangePasswordOpen(false)}
-      />
     </div>
   );
 };

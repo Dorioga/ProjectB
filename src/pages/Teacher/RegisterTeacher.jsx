@@ -200,6 +200,14 @@ const RegisterTeacher = ({ onSuccess }) => {
       notify.error("El correo es obligatorio.");
       return;
     }
+    if (!String(formData.telephone ?? "").trim()) {
+      notify.error("El teléfono es obligatorio.");
+      setFormErrors((prev) => ({
+        ...prev,
+        telephone: "El teléfono es obligatorio.",
+      }));
+      return;
+    }
 
     // Validar contraseña si fue ingresada (opcional pero con reglas)
     if (String(formData.password ?? "").trim()) {
@@ -458,14 +466,19 @@ const RegisterTeacher = ({ onSuccess }) => {
         </div>
 
         <div>
-          <label>Teléfono</label>
+          <label>
+            Teléfono <span className="text-red-500 ml-1">*</span>
+          </label>
           <input
             type="text"
             name="telephone"
             value={formData.telephone}
             onChange={handleChange}
-            className="w-full p-2 border rounded bg-surface"
+            className={`w-full p-2 border rounded bg-surface ${formErrors.telephone ? "border-red-500" : ""}`}
           />
+          {formErrors.telephone && (
+            <p className="text-red-600 text-sm mt-1">{formErrors.telephone}</p>
+          )}
         </div>
 
         <div>

@@ -3,7 +3,6 @@ import Modal from "../atoms/Modal";
 import SimpleButton from "../atoms/SimpleButton";
 import Loader from "../atoms/Loader";
 import useAuth from "../../lib/hooks/useAuth";
-import SignatureCanvas from "react-signature-canvas";
 
 /**
  * Modal encargado de mostrar los términos y condiciones y la política de datos.
@@ -14,21 +13,10 @@ import SignatureCanvas from "react-signature-canvas";
 const TermsModal = ({ isOpen, onClose, onAccept }) => {
   const [checked, setChecked] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [signatureData, setSignatureData] = useState("");
-  const [signatureSaved, setSignatureSaved] = useState(false);
-  const [savingSig, setSavingSig] = useState(false);
 
-  const sigCanvas = useRef(null);
+  const { accessData, rol, numero_identificacion } = useAuth();
 
-  const {
-    accessData,
-    rol,
-    registerSignature,
-    idPersona,
-    numero_identificacion,
-  } = useAuth();
-
-  const isRole5 = String(rol) === "5";
+  const isRole5 = String(rol) === "5" || String(rol) === "6";
 
   const parseIdPersona = (val) => {
     try {
@@ -38,44 +26,8 @@ const TermsModal = ({ isOpen, onClose, onAccept }) => {
     }
   };
 
-  /* ── Handlers de firma ───────────────────────────────────────── */
-  const handleSignatureEnd = useCallback(() => {
-    const data = sigCanvas.current?.toDataURL("image/png") ?? "";
-    setSignatureData(data);
-  }, []);
-
-  const handleClearSignature = useCallback(() => {
-    sigCanvas.current?.clear();
-    setSignatureData("");
-    setSignatureSaved(false);
-  }, []);
-
-  const handleCancelSignature = useCallback(() => {
-    sigCanvas.current?.clear();
-    setSignatureData("");
-    setSignatureSaved(false);
-    setChecked(false);
-  }, []);
-
-  const handleSaveSignature = useCallback(async () => {
-    if (!signatureData || !numero_identificacion) return;
-    setSavingSig(true);
-    try {
-      await registerSignature({
-        identificacion: numero_identificacion,
-        imageBase64: signatureData,
-      });
-      setSignatureSaved(true);
-    } catch (err) {
-      console.error("Error guardando firma:", err);
-    } finally {
-      setSavingSig(false);
-    }
-  }, [signatureData, numero_identificacion, registerSignature]);
-
   /* ── Handler principal ───────────────────────────────────────── */
   const handleAccept = useCallback(async () => {
-    if (isRole5 && !signatureSaved) return;
     setLoading(true);
     let idPersona = parseIdPersona(localStorage.getItem("idPersona"));
     console.log("Enviando aceptación de términos para idPersona:", idPersona);
@@ -88,15 +40,7 @@ const TermsModal = ({ isOpen, onClose, onAccept }) => {
     } finally {
       setLoading(false);
     }
-  }, [
-    isRole5,
-    signatureSaved,
-    idPersona,
-    numero_identificacion,
-    accessData,
-    onAccept,
-    onClose,
-  ]);
+  }, [numero_identificacion, accessData, onAccept, onClose]);
 
   return (
     <Modal
@@ -124,16 +68,6 @@ const TermsModal = ({ isOpen, onClose, onAccept }) => {
               Términos y condiciones de uso (PDF)
             </a>
           </li>
-          <li>
-            <a
-              href="https://nexusplataforma.com/storage/otros/POL%C3%8DTICA%20DE%20TRATAMIENTO%20DE%20DATOS%20PERSONALES.pdf"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary underline"
-            >
-              Política de tratamiento de datos personales (PDF)
-            </a>
-          </li>
         </ul>
         <div className="flex items-start">
           <input
@@ -144,71 +78,15 @@ const TermsModal = ({ isOpen, onClose, onAccept }) => {
             className="mr-2 mt-1"
           />
           <label htmlFor="terms-checkbox" className="text-sm">
-            He leído y acepto los términos y condiciones y la Política de
-            Tratamiento de Datos Personales.
+            He leído y acepto los términos y condiciones
           </label>
         </div>
-        {/* signature canvas for role 5 */}
-        {isRole5 && checked && (
-          <div className="space-y-2">
-            {/* option to save signature to server */}
-            <SignatureCanvas
-              ref={sigCanvas}
-              penColor="black"
-              canvasProps={{ className: "signature-canvas border w-full h-32" }}
-              onEnd={handleSignatureEnd}
-            />
-            <div className="flex gap-2">
-              <SimpleButton
-                msj="Limpiar"
-                onClick={handleClearSignature}
-                bg="bg-gray-300"
-                text="text-black"
-                hover="hover:bg-gray-400"
-              />
-              <div className="relative inline-block">
-                <SimpleButton
-                  msj="Guardar firma"
-                  onClick={handleSaveSignature}
-                  disabled={!signatureData || savingSig}
-                  bg="bg-secondary"
-                  text="text-surface"
-                  hover="hover:bg-secondary/80"
-                />
-                {savingSig && (
-                  <span className="absolute right-0 top-0">
-                    <Loader />
-                  </span>
-                )}
-              </div>
-              <SimpleButton
-                msj="Cancelar"
-                onClick={handleCancelSignature}
-                bg="bg-red-500"
-                text="text-surface"
-                hover="hover:bg-red-600"
-              />
-            </div>
-            {isRole5 && !signatureData && (
-              <p className="text-xs text-error">
-                Debe dibujar su firma para poder continuar.
-              </p>
-            )}
-            {isRole5 && signatureData && !signatureSaved && (
-              <p className="text-xs text-warning">
-                Después de dibujar la firma, pulse{" "}
-                <strong>Guardar firma</strong> para habilitar el botón
-                Continuar.
-              </p>
-            )}
-          </div>
-        )}
 
         <div className="flex items-center gap-4">
           <SimpleButton
             msj="Continuar"
             onClick={handleAccept}
-            disabled={!checked || loading || (isRole5 && !signatureSaved)}
+            disabled={!checked || loading}
             bg="bg-secondary"
             text="text-surface"
             hover="hover:bg-secondary/80"

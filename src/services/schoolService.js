@@ -178,7 +178,7 @@ export async function updateSede(institutionId, sedeId, payload) {
 /**
  * Obtiene los grados por sede.
  *
- * Endpoint esperado: POST /grade_sede
+ * Endpoint esperado: POST /grade/sedeId
  * @param {Object} payload - Datos para filtrar los grados (ej: {id_sede: 1})
  * @returns {Promise<Object>} Respuesta del servidor con los grados
  */

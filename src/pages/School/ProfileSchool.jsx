@@ -275,6 +275,9 @@ const buildSistemaEvaluacion = (evaluationState) => {
       ? evaluationState.performanceScale
       : []
   ).map((r) => ({
+    ...(r?.id_sistema_evaluacion != null
+      ? { id_sistema_evaluacion: r.id_sistema_evaluacion }
+      : {}),
     escala: (r?.label ?? "").toString(),
     desde: parseNum(r?.start ?? ""),
     hasta: parseNum(r?.end ?? ""),
@@ -310,6 +313,7 @@ const ProfileSchool = ({
   const [formData, setFormData] = useState({
     municipality: "1",
     name: "",
+    nit: "",
     slogan: "",
     address: "",
     email: "",
@@ -329,48 +333,69 @@ const ProfileSchool = ({
   // Si se pasa initialData, sincronizar el form
   useEffect(() => {
     if (!initialData) return;
+
+    // Soporte para formato plano: array de filas donde cada una repite los campos
+    // de la institución y agrega escala/desde/hasta
+    const isArrayFormat = Array.isArray(initialData) && initialData.length > 0;
+    const baseData = isArrayFormat ? initialData[0] : initialData;
+
     // Mapear campos de la institución recibida a nuestro formData
     const map = {
-      municipality: initialData.municipality ?? initialData.municipio ?? "1",
-      name: initialData.nombre_institucion || "",
-      slogan: initialData.eslogan ?? "",
-      address: initialData.address ?? initialData.direccion ?? "",
-      email: initialData.email ?? initialData.correo ?? "",
-      phone: initialData.phone ?? initialData.telefono ?? "",
-      principalName: initialData.director ?? "",
-      coordinadorName: initialData.coordinador ?? "",
-      logo: initialData.link_logo ?? "",
-      mainColor: initialData.color_principal ?? "#131a27",
-      secondaryColor: initialData.color_secundario ?? "#ff9300",
-      workday: initialData.fk_jornada ? String(initialData.fk_jornada) : "",
-      codDane: initialData.cod_dane ?? "",
-      signaturePrincipal: initialData.link_firma ?? "",
-      sede: Array.isArray(initialData.sede) ? initialData.sede : [],
-      department_id: initialData.department_id ?? "",
+      municipality: baseData.municipality ?? baseData.municipio ?? "1",
+      name: baseData.nombre_institucion || "",
+      nit: baseData.nit ?? "",
+      slogan: baseData.eslogan ?? "",
+      address: baseData.address ?? baseData.direccion ?? "",
+      email: baseData.email ?? baseData.correo ?? "",
+      phone: baseData.phone ?? baseData.telefono ?? "",
+      principalName: baseData.director ?? "",
+      coordinadorName: baseData.coordinador ?? "",
+      logo: baseData.link_logo ?? "",
+      mainColor: baseData.color_principal ?? "#131a27",
+      secondaryColor: baseData.color_secundario ?? "#ff9300",
+      workday: baseData.fk_jornada ? String(baseData.fk_jornada) : "",
+      codDane: baseData.cod_dane ?? "",
+      signaturePrincipal: baseData.link_firma ?? "",
+      sede: Array.isArray(baseData.sede) ? baseData.sede : [],
+      department_id: baseData.department_id ?? "",
     };
 
     setFormData((prev) => ({ ...prev, ...map }));
 
-    // Mapear sistema de evaluación si viene en initialData
-    const rawScale =
-      initialData?.sistema_evaluacion?.escala_desempeno ??
-      initialData?.escala_desempeno ??
-      "";
+    // Construir escala de desempeño
+    let parsedScale;
+    if (isArrayFormat) {
+      // Cada elemento del array tiene: escala (label), desde (start), hasta (end), id_sistema_evaluacion
+      parsedScale = initialData
+        .filter((row) => row.escala || row.desde != null || row.hasta != null)
+        .map((row) => ({
+          id_sistema_evaluacion: row.id_sistema_evaluacion ?? null,
+          label: row.escala ?? "",
+          start: normalizeNumericValue(row.desde ?? ""),
+          end: normalizeNumericValue(row.hasta ?? ""),
+        }));
+    } else {
+      const rawScale =
+        baseData?.sistema_evaluacion?.escala_desempeno ??
+        baseData?.escala_desempeno ??
+        "";
+      parsedScale = parsePerformanceScale(rawScale);
+    }
 
-    const rawPromotion =
-      initialData?.sistema_evaluacion?.politica_promocion ??
-      initialData?.politica_promocion ??
-      "";
+    // umbral: en formato array viene en cada fila; tomarlo del primero
+    const rawPromotion = isArrayFormat
+      ? (baseData?.umbral ?? "")
+      : (baseData?.sistema_evaluacion?.politica_promocion ??
+        baseData?.politica_promocion ??
+        "");
 
-    const parsedScale = parsePerformanceScale(rawScale);
     setEvaluation({
       performanceScale: parsedScale,
       promotionThreshold: parsePromotionThreshold(rawPromotion),
     });
 
     // validar inmediatamente al cargar
-    const { errors: initErrors, rowErrors: initRowErrors } =
-      validatePerformanceScale(parsedScale);
+    const { errors: initErrors } = validatePerformanceScale(parsedScale);
     setScaleErrors(initErrors);
   }, [initialData]);
   const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
@@ -571,6 +596,12 @@ const ProfileSchool = ({
 
         if (isUpdate && schoolId) {
           // Para actualización, enviar sólo los campos permitidos
+          const parseNum = (v) => {
+            if (v === undefined || v === null || v === "") return null;
+            const n = parseFloat(String(v).replace(",", "."));
+            return Number.isNaN(n) ? null : n;
+          };
+
           const updatePayload = {
             address: payload.address ?? "",
             codDane: payload.codDane ?? "",
@@ -580,14 +611,25 @@ const ProfileSchool = ({
             mainColor: payload.mainColor ?? "",
             municipality: payload.municipality ?? "",
             name: payload.name ?? "",
+            nit: payload.nit ?? "",
             phone: payload.phone ?? "",
             principalName: payload.principalName ?? "",
             secondaryColor: payload.secondaryColor ?? "",
             signaturePrincipal: payload.signaturePrincipal ?? "",
             slogan: payload.slogan ?? "",
             workday: payload.workday ? parseInt(payload.workday) : null,
-            // Sistema de evaluación (desde estado local)
-            sistema_evaluacion: buildSistemaEvaluacion(evaluation),
+            // Escala de evaluación: usa id_evaluacion del registro original
+            escala_evaluacion: (Array.isArray(evaluation.performanceScale)
+              ? evaluation.performanceScale
+              : []
+            ).map((r) => ({
+              id_evaluacion:
+                r.id_sistema_evaluacion != null
+                  ? parseInt(r.id_sistema_evaluacion)
+                  : undefined,
+              desde: parseNum(r.start),
+              hasta: parseNum(r.end),
+            })),
           };
 
           console.log("Datos a enviar (update):", updatePayload);
@@ -671,12 +713,9 @@ const ProfileSchool = ({
     ],
   );
 
-  const toggleEditing = useCallback(async () => {
-    if (isEditing) {
-      await handleSubmit();
-    }
+  const toggleEditing = useCallback(() => {
     setIsEditing((v) => !v);
-  }, [isEditing, handleSubmit]);
+  }, []);
 
   const title = useMemo(() => {
     return isUpdate ? "Actualizar institución" : "Registrar nueva institución";
@@ -1047,9 +1086,9 @@ const ProfileSchool = ({
           <SimpleButton
             type="button"
             onClick={toggleEditing}
-            msj={isEditing ? "Guardar" : "Editar"}
-            icon={isEditing ? "Save" : "Pencil"}
-            bg={isEditing ? "bg-secondary" : "bg-warning"}
+            msj={isEditing ? "Cancelar" : "Editar"}
+            icon={isEditing ? "X" : "Pencil"}
+            bg={isEditing ? "bg-red-500" : "bg-warning"}
             text={"text-surface"}
           />
         </div>
@@ -1073,6 +1112,22 @@ const ProfileSchool = ({
           {formErrors.name && (
             <p className="text-red-600 text-sm mt-1">{formErrors.name}</p>
           )}
+        </div>
+
+        <div className="md:col-span-2">
+          <label className={getLabelClassName("", !isEditing)}>NIT</label>
+          <input
+            type="text"
+            name="nit"
+            value={formData.nit}
+            onChange={handleChange}
+            disabled={!isEditing}
+            className={getInputClassName(
+              "w-full p-2 border rounded bg-surface",
+              !isEditing,
+            )}
+            placeholder="Ej: 900123456-7"
+          />
         </div>
 
         <div className="md:col-span-2">
@@ -1393,22 +1448,13 @@ const ProfileSchool = ({
                                 >
                                   <option value="">Seleccione</option>
                                   <option
-                                    value="Superior"
+                                    value="Bajo"
                                     disabled={
-                                      usedScaleLabels.includes("Superior") &&
-                                      row.label !== "Superior"
+                                      usedScaleLabels.includes("Bajo") &&
+                                      row.label !== "Bajo"
                                     }
                                   >
-                                    Superior
-                                  </option>
-                                  <option
-                                    value="Alto"
-                                    disabled={
-                                      usedScaleLabels.includes("Alto") &&
-                                      row.label !== "Alto"
-                                    }
-                                  >
-                                    Alto
+                                    Bajo
                                   </option>
                                   <option
                                     value="Básico"
@@ -1420,13 +1466,22 @@ const ProfileSchool = ({
                                     Básico
                                   </option>
                                   <option
-                                    value="Bajo"
+                                    value="Alto"
                                     disabled={
-                                      usedScaleLabels.includes("Bajo") &&
-                                      row.label !== "Bajo"
+                                      usedScaleLabels.includes("Alto") &&
+                                      row.label !== "Alto"
                                     }
                                   >
-                                    Bajo
+                                    Alto
+                                  </option>
+                                  <option
+                                    value="Superior"
+                                    disabled={
+                                      usedScaleLabels.includes("Superior") &&
+                                      row.label !== "Superior"
+                                    }
+                                  >
+                                    Superior
                                   </option>
                                 </select>
                               ) : (
@@ -1577,12 +1632,12 @@ const ProfileSchool = ({
             <div className="grid grid-cols-1 gap-3">
               <div>
                 <label>Escala de desempeño</label>
-                <div className="p-2 bg-surface border rounded">
+                <div className="p-2 bg-surface rounded">
                   {Array.isArray(evaluation.performanceScale) &&
                   evaluation.performanceScale.length > 0 ? (
                     <table className="w-full table-auto border rounded bg-surface">
                       <thead>
-                        <tr className="bg-gray-100">
+                        <tr className="bg-primary text-surface">
                           <th className="p-2 text-left">Estado</th>
                           <th className="p-2 text-center">Inicio</th>
                           <th className="p-2 text-center">Fin</th>

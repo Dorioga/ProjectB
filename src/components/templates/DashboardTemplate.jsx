@@ -2,6 +2,7 @@ import React from "react";
 import Sidebar from "../molecules/Sidebar";
 import { Outlet } from "react-router-dom";
 import useAuth from "../../lib/hooks/useAuth";
+import { SideProfile } from "../molecules/SideProfile";
 const DashboardTemplate = ({ data, options }) => {
   const { isOpen } = useAuth();
   return (
@@ -14,6 +15,9 @@ const DashboardTemplate = ({ data, options }) => {
           isOpen ? "xl:pl-75" : "pl-17"
         }`}
       >
+        <div className="h-16 bg-primary w-full flex items-center shadow  rounded-br-2xl ">
+          <SideProfile />
+        </div>
         <Outlet />
       </main>
     </div>

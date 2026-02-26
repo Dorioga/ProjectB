@@ -57,11 +57,12 @@ const ManageSchools = () => {
       const res = await getDataSchool(payload);
 
       // Respuesta: { code, data: [ { ... } ], status }
+      // Pasamos el array completo para que ProfileSchool extraiga todas las filas de escala
       const d =
         res && res.data && Array.isArray(res.data)
-          ? res.data[0]
+          ? res.data
           : Array.isArray(res)
-            ? res[0]
+            ? res
             : res;
       setSelectedInstitutionData(d ?? institution);
     } catch (err) {
@@ -205,8 +206,14 @@ const ManageSchools = () => {
               initialData={selectedInstitutionData ?? selectedInstitution}
               initialEditing={openAsEdit}
               schoolId={
-                selectedInstitutionData?.id_institution ||
-                selectedInstitutionData?.id ||
+                (Array.isArray(selectedInstitutionData)
+                  ? selectedInstitutionData[0]
+                  : selectedInstitutionData
+                )?.id_institution ||
+                (Array.isArray(selectedInstitutionData)
+                  ? selectedInstitutionData[0]
+                  : selectedInstitutionData
+                )?.id ||
                 selectedInstitution?.id_institution ||
                 selectedInstitution?.id
               }

@@ -629,16 +629,14 @@ const ProfileStudent = ({
             </label>
             <span
               className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
-                String(data?.auDoc_idAcudiente || "").includes("https://") ||
-                data?.link_identificacion_acudiente
+                data.Doc_acudiente
                   ? "bg-green-100 text-green-800 border-green-200 "
                   : "bg-yellow-100 text-yellow-800 border-yellow-200 "
               }`}
             >
-              {String(data?.auDoc_idAcudiente || "").includes("https://") ||
-              data?.link_identificacion_acudiente
-                ? "Cargado"
-                : "No cargado"}
+              {/* ||
+              data?.link_identificacion_acudiente */}
+              {data?.Doc_acudiente ? "Cargado" : "No cargado"}
             </span>
             {isEditing ? (
               <div
@@ -658,8 +656,7 @@ const ProfileStudent = ({
                   }
                 />
               </div>
-            ) : String(data?.auDoc_idAcudiente || "").includes("https://") ||
-              data?.link_identificacion_acudiente ? (
+            ) : data?.Doc_acudiente ? (
               <SimpleButton
                 onClick={() => {
                   setIsOpenDocument(true);
@@ -695,18 +692,16 @@ const ProfileStudent = ({
             <label className="text-lg font-medium lg:col-span-1">
               Identificación Estudiante:
             </label>
+            {/* ||
+                data?.link_identificacion */}
             <span
               className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
-                String(data?.auDoc_idEstudiante || "").includes("https://") ||
-                data?.link_identificacion
+                data?.Doc_estudiante
                   ? "bg-green-100 text-green-800 border-green-200 "
                   : "bg-yellow-100 text-yellow-800 border-yellow-200 "
               }`}
             >
-              {String(data?.auDoc_idEstudiante || "").includes("https://") ||
-              data?.link_identificacion
-                ? "Cargado"
-                : "No cargado"}
+              {data?.Doc_estudiante ? "Cargado" : "No cargado"}
             </span>
             {isEditing ? (
               <div
@@ -724,8 +719,7 @@ const ProfileStudent = ({
                   }
                 />
               </div>
-            ) : String(data?.auDoc_idEstudiante || "").includes("https://") ||
-              data?.link_identificacion ? (
+            ) : data?.Doc_estudiante ? (
               <SimpleButton
                 onClick={() => {
                   setIsOpenDocument(true);

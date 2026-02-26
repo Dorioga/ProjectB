@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { sha256 } from "js-sha256";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import TypeDocumentSelector from "../../components/molecules/TypeDocumentSelector";
-import SedeSelect from "../../components/atoms/SedeSelect";
 import { useNotify } from "../../lib/hooks/useNotify";
 import useAuth from "../../lib/hooks/useAuth";
 import { registerGuardian } from "../../services/studentService";
@@ -18,13 +17,17 @@ const INITIAL_FORM = {
   email: "",
   identification: "",
   identificationtype: "",
-  sede: "",
   password: "",
 };
 
-const Field = ({ label, error, children }) => (
+const Field = ({ label, error, required, children }) => (
   <div className="flex flex-col gap-1">
-    <label className="text-sm font-medium text-on-surface">{label}</label>
+    {label && (
+      <label className="text-sm font-medium text-on-surface">
+        {label}
+        {required && <span className="text-error ml-1">*</span>}
+      </label>
+    )}
     {children}
     {error && <p className="text-xs text-error">{error}</p>}
   </div>
@@ -37,10 +40,11 @@ const RegisterParents = ({ fkEstudiante, onSuccess }) => {
   const { idSede, idInstitution } = useAuth();
   const notify = useNotify();
 
-  const [form, setForm] = useState({
-    ...INITIAL_FORM,
-    sede: idSede ? String(idSede) : "",
-  });
+  const [form, setForm] = useState({ ...INITIAL_FORM });
+  // sede se resuelve desde el estudiante encontrado o del auth; no se muestra en el form
+  const [resolvedSede, setResolvedSede] = useState(
+    idSede ? String(idSede) : "",
+  );
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
@@ -68,6 +72,12 @@ const RegisterParents = ({ fkEstudiante, onSuccess }) => {
         setFoundStudentId(found.id_estudiante);
         setSearchStatus("found");
         setErrors((prev) => ({ ...prev, fk_estudiante: "" }));
+        // Usar la sede del estudiante encontrado; si no viene, mantener la del auth
+        const studentSede =
+          found.id_sede ?? found.fk_sede ?? found.sede_id ?? null;
+        if (studentSede) {
+          setResolvedSede(String(studentSede));
+        }
         notify.success(
           `Estudiante encontrado: ${found.first_name ?? ""} ${found.first_lastname ?? ""}.`,
         );
@@ -89,21 +99,58 @@ const RegisterParents = ({ fkEstudiante, onSuccess }) => {
 
   const validate = () => {
     const e = {};
+
     if (!form.first_name.trim())
       e.first_name = "El primer nombre es obligatorio.";
+    else if (!/^[a-záéíóúüñA-ZÁÉÍÓÚÜÑ\s'-]+$/i.test(form.first_name.trim()))
+      e.first_name = "El primer nombre solo puede contener letras.";
+
+    if (
+      form.second_name.trim() &&
+      !/^[a-záéíóúüñA-ZÁÉÍÓÚÜÑ\s'-]+$/i.test(form.second_name.trim())
+    )
+      e.second_name = "El segundo nombre solo puede contener letras.";
+
     if (!form.first_lastname.trim())
       e.first_lastname = "El primer apellido es obligatorio.";
+    else if (!/^[a-záéíóúüñA-ZÁÉÍÓÚÜÑ\s'-]+$/i.test(form.first_lastname.trim()))
+      e.first_lastname = "El primer apellido solo puede contener letras.";
+
+    if (
+      form.second_lastname.trim() &&
+      !/^[a-záéíóúüñA-ZÁÉÍÓÚÜÑ\s'-]+$/i.test(form.second_lastname.trim())
+    )
+      e.second_lastname = "El segundo apellido solo puede contener letras.";
+
     if (!form.telephone.trim()) e.telephone = "El teléfono es obligatorio.";
+    else if (!/^\d{7,15}$/.test(form.telephone.trim()))
+      e.telephone = "El teléfono debe contener entre 7 y 15 dígitos numéricos.";
+
+    if (
+      form.email.trim() &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())
+    )
+      e.email = "Ingresa un correo electrónico válido.";
+
     if (!form.identification.trim())
       e.identification = "La identificación es obligatoria.";
+    else if (form.identification.trim().length < 5)
+      e.identification = "La identificación debe tener al menos 5 caracteres.";
+
     if (!form.identificationtype)
       e.identificationtype = "Selecciona el tipo de documento.";
-    if (!form.sede) e.sede = "Selecciona la sede.";
+
     if (!form.password.trim()) e.password = "La contraseña es obligatoria.";
     else if (form.password.trim().length < 6)
       e.password = "Mínimo 6 caracteres.";
+    else if (!/[A-Z]/.test(form.password))
+      e.password = "La contraseña debe tener al menos una mayúscula.";
+    else if (!/\d/.test(form.password))
+      e.password = "La contraseña debe tener al menos un número.";
+
     if (!foundStudentId)
       e.fk_estudiante = "No se pudo identificar al estudiante.";
+
     return e;
   };
 
@@ -124,7 +171,7 @@ const RegisterParents = ({ fkEstudiante, onSuccess }) => {
       email: form.email.trim(),
       identification: form.identification.trim(),
       identificationtype: Number(form.identificationtype),
-      sede: Number(form.sede),
+      sede: Number(resolvedSede),
       password: sha256(form.password.trim()),
       fk_estudiante: Number(foundStudentId),
     };
@@ -133,7 +180,8 @@ const RegisterParents = ({ fkEstudiante, onSuccess }) => {
     try {
       await registerGuardian(payload);
       notify.success("Acudiente registrado correctamente.");
-      setForm({ ...INITIAL_FORM, sede: idSede ? String(idSede) : "" });
+      setForm({ ...INITIAL_FORM });
+      setResolvedSede(idSede ? String(idSede) : "");
       setErrors({});
       onSuccess?.();
     } catch (err) {
@@ -200,7 +248,7 @@ const RegisterParents = ({ fkEstudiante, onSuccess }) => {
           noValidate
         >
           {/* Tipo de documento */}
-          <Field error={errors.identificationtype}>
+          <Field required error={errors.identificationtype}>
             <TypeDocumentSelector
               name="identificationtype"
               value={form.identificationtype}
@@ -211,7 +259,11 @@ const RegisterParents = ({ fkEstudiante, onSuccess }) => {
           </Field>
 
           {/* N.º de identificación */}
-          <Field label="N.º de identificación" error={errors.identification}>
+          <Field
+            label="N.º de identificación"
+            required
+            error={errors.identification}
+          >
             <input
               type="text"
               name="identification"
@@ -222,7 +274,7 @@ const RegisterParents = ({ fkEstudiante, onSuccess }) => {
           </Field>
 
           {/* Primer nombre */}
-          <Field label="Primer nombre" error={errors.first_name}>
+          <Field label="Primer nombre" required error={errors.first_name}>
             <input
               type="text"
               name="first_name"
@@ -244,7 +296,7 @@ const RegisterParents = ({ fkEstudiante, onSuccess }) => {
           </Field>
 
           {/* Primer apellido */}
-          <Field label="Primer apellido" error={errors.first_lastname}>
+          <Field label="Primer apellido" required error={errors.first_lastname}>
             <input
               type="text"
               name="first_lastname"
@@ -266,7 +318,7 @@ const RegisterParents = ({ fkEstudiante, onSuccess }) => {
           </Field>
 
           {/* Teléfono */}
-          <Field label="Teléfono" error={errors.telephone}>
+          <Field label="Teléfono" required error={errors.telephone}>
             <input
               type="tel"
               name="telephone"
@@ -287,19 +339,8 @@ const RegisterParents = ({ fkEstudiante, onSuccess }) => {
             />
           </Field>
 
-          {/* Sede */}
-          <Field error={errors.sede}>
-            <SedeSelect
-              name="sede"
-              value={form.sede}
-              onChange={handleChange}
-              placeholder="Selecciona una sede"
-              className={input}
-            />
-          </Field>
-
           {/* Contraseña */}
-          <Field label="Contraseña" error={errors.password}>
+          <Field label="Contraseña" required error={errors.password}>
             <input
               type="password"
               name="password"
