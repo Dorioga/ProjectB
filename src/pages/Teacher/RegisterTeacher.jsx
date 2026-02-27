@@ -368,15 +368,6 @@ const RegisterTeacher = ({ onSuccess }) => {
             onChange={handleChange}
           />
         </div>
-        <div id="tour-workday">
-          <JourneySelect
-            name="workday"
-            value={formData.workday}
-            filterValue={sedeJornada}
-            onChange={handleChange}
-            disabled={!String(formData.sede ?? "").trim()}
-          />
-        </div>
 
         <div id="tour-doctype">
           <TypeDocumentSelector
@@ -520,6 +511,16 @@ const RegisterTeacher = ({ onSuccess }) => {
             value={formData.direccion}
             onChange={handleChange}
             className="w-full p-2 border rounded bg-surface"
+          />
+        </div>
+        <div id="tour-workday">
+          <JourneySelect
+            name="workday"
+            value={formData.workday}
+            filterValue={sedeJornada}
+            onChange={handleChange}
+            disabled={!String(formData.sede ?? "").trim()}
+            includeAmbas={sedeJornada !== "3"}
           />
         </div>
 

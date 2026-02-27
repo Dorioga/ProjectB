@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import useSchool from "../../lib/hooks/useSchool";
 import useAuth from "../../lib/hooks/useAuth";
 import useData from "../../lib/hooks/useData";
+import { sortAlphabetically } from "../../utils/formatUtils";
 import DataTable from "../../components/atoms/DataTable";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import Modal from "../../components/atoms/Modal";
@@ -88,7 +89,7 @@ const ManageAsignature = () => {
         : (response?.data ?? []);
 
       console.log("ManageAsignature - asignaturas recibidas:", asignaturas);
-      setTableData(asignaturas);
+      setTableData(sortAlphabetically(asignaturas, "nombre_asignatura"));
     } catch (error) {
       console.error("Error al cargar asignaturas:", error);
       setFetchError(error?.message || String(error));
@@ -161,6 +162,13 @@ const ManageAsignature = () => {
       {
         accessorKey: "codigo_asignatura",
         header: "Código",
+        meta: {
+          hideOnLG: true,
+        },
+      },
+      {
+        accessorKey: "nombre_jornada",
+        header: "Jornada",
         meta: {
           hideOnLG: true,
         },

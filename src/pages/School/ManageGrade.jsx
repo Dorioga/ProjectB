@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import useSchool from "../../lib/hooks/useSchool";
 import useAuth from "../../lib/hooks/useAuth";
 import useData from "../../lib/hooks/useData";
+import { sortAlphabetically } from "../../utils/formatUtils";
 import DataTable from "../../components/atoms/DataTable";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import Modal from "../../components/atoms/Modal";
@@ -80,7 +81,7 @@ const ManageGrade = () => {
         : (response?.data ?? []);
 
       console.log("ManageGrade - grados recibidos:", grados);
-      setTableData(grados);
+      setTableData(sortAlphabetically(grados, "nombre_grado"));
     } catch (error) {
       console.error("Error al cargar grados:", error);
       setFetchError(error?.message || String(error));

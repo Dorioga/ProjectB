@@ -291,3 +291,35 @@ export function isAfterEndDate(endDate) {
 
   return today > closeDate;
 }
+
+/**
+ * Ordena un array de objetos alfabéticamente por un campo específico.
+ * Útil para ordenar datos antes de pasarlos a un DataTable.
+ *
+ * @param {Array<Object>} data - Array de objetos a ordenar.
+ * @param {string} field - Nombre del campo por el cual ordenar.
+ * @param {"asc"|"desc"} order - Dirección del orden: "asc" (A-Z) o "desc" (Z-A). Por defecto "asc".
+ * @returns {Array<Object>} Nuevo array ordenado alfabéticamente.
+ *
+ * @example
+ * const sorted = sortAlphabetically(students, "nombre");
+ * const sortedDesc = sortAlphabetically(teachers, "apellido", "desc");
+ */
+export function sortAlphabetically(data, field, order = "asc") {
+  if (!Array.isArray(data) || !field) return data;
+
+  return [...data].sort((a, b) => {
+    const valA = String(a[field] ?? "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+    const valB = String(b[field] ?? "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+
+    if (valA < valB) return order === "asc" ? -1 : 1;
+    if (valA > valB) return order === "asc" ? 1 : -1;
+    return 0;
+  });
+}

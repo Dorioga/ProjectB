@@ -286,11 +286,11 @@ const DashHome = () => {
         <Loader message="Cargando estudiantes..." size={96} />
       )}
       {/* --- Encabezado con selector de jornada --- */}
-      <div className="grid grid-cols-5 justify-between items-center gap-4">
-        <h1 className="text-2xl font-bold col-span-2">Panel principal</h1>
+      <div className="grid grid-cols-1 2xl:grid-cols-5 justify-between items-center gap-4">
+        <h1 className="text-2xl font-bold  xl:col-span-2">Panel principal</h1>
 
-        <div className="grid grid-cols-10 w-full items-center gap-3 col-span-3">
-          <div className="col-span-2">
+        <div className="grid grid-cols-3 lg:grid-cols-6 w-full items-center gap-3 xl:col-span-3">
+          <div className="col-span-1">
             <label className="text-sm font-medium">Sede</label>
             <select
               value={selectedSede}
@@ -306,7 +306,7 @@ const DashHome = () => {
             </select>
           </div>
 
-          <div className="col-span-2">
+          <div className="col-span-1">
             <label className="text-sm font-medium">Jornada</label>
             <select
               value={selectedJourney === "todas" ? "" : selectedJourney}
@@ -325,7 +325,7 @@ const DashHome = () => {
             </select>
           </div>
 
-          <div className="col-span-2">
+          <div className="col-span-1">
             <label className="text-sm font-medium">Grado</label>
             <select
               value={selectedGrade}
@@ -376,7 +376,7 @@ const DashHome = () => {
             </select>
           </div>
 
-          <div className="col-span-2 ">
+          <div className="col-span-1 ">
             <label className="text-sm font-medium text-white">Filtro </label>
             <button
               onClick={() => {

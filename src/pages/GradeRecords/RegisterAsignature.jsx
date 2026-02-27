@@ -330,7 +330,7 @@ const RegisterAsignature = ({ onSuccess }) => {
             value={formData.jornada}
             onChange={handleChange}
             filterValue={sedeWorkday}
-            includeAmbas={false}
+            includeAmbas={sedeWorkday === "3"}
             className={inputClassName}
             labelClassName={labelClassName}
             label={
@@ -426,7 +426,7 @@ const RegisterAsignature = ({ onSuccess }) => {
                             <SimpleButton
                               type="button"
                               onClick={() => toggleSelectAllGroup(grades)}
-                              icon={allSelected ? "Square" : "CheckSquare"}
+                              icon={allSelected ? "CheckSquare" : "Square"}
                               msjtooltip={
                                 allSelected
                                   ? "Deseleccionar"

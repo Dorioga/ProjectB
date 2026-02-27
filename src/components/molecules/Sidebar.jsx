@@ -121,7 +121,7 @@ const Sidebar = () => {
         <div className="flex flex-row items-center">
           {showContent ? (
             <PreviewIMG
-              path="https://nexusplataforma.com/storage/logosnexus/1.png"
+              path="https://nexusplataforma.com/storage/logosnexus/8.png"
               size="logo"
             />
           ) : null}

@@ -1,13 +1,46 @@
 import axios from "axios";
-//https://nexusplataforma.com/api/
-//"https://backend-barranquilla.onrender.com"
+
 const BASE = import.meta.env.VITE_API_URL || "https://nexusplataforma.com/api/";
-// const BASE =
-//   import.meta.env.VITE_API_URL || "https://backend-barranquilla.onrender.com";
 
 const apiClient = axios.create({
   baseURL: BASE,
-  timeout: 0, // sin timeout para uploads grandes
+  timeout: 0,
+});
+
+let apiDisabled = false; // <<< bandera global
+
+export function setApiDisabled(value = true) {
+  apiDisabled = value;
+}
+
+export function isApiDisabled() {
+  return apiDisabled;
+}
+
+apiClient.interceptors.request.use((config) => {
+  // si las peticiones están desactivadas devolvemos un resultado
+  // “fake” en lugar de seguir al servidor
+  if (apiDisabled) {
+    // puedes devolver una promesa resuelta con {data:…} o
+    // cancelar para que el caller lo maneje como un error
+    return Promise.resolve({
+      ...config,
+      data: { code: "OK", mock: true, result: null }, // lo que necesites
+    });
+  }
+
+  config.headers = config.headers || {};
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  if (config.data instanceof FormData) {
+    delete config.headers["Content-Type"];
+  } else {
+    config.headers["Content-Type"] = "application/json";
+    config.headers["Accept"] = "application/json";
+  }
+  return config;
 });
 
 // Sistema de eventos para notificaciones
@@ -27,25 +60,6 @@ const eventBus = {
 // Exportar para que el NotificationContext se suscriba
 export { eventBus };
 
-apiClient.interceptors.request.use((config) => {
-  // Asegurar que headers esté inicializado
-  config.headers = config.headers || {};
-
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`; // <-- aquí
-  }
-  // Si envías FormData, NO fijes Content-Type
-  if (config.data instanceof FormData) {
-    delete config.headers["Content-Type"];
-  } else {
-    config.headers["Content-Type"] = "application/json";
-    config.headers["Accept"] = "application/json";
-  }
-  return config;
-});
-
-// Interceptor de respuestas: normaliza errores y maneja problemas de autenticación
 apiClient.interceptors.response.use(
   (res) => {
     const data = res.data;
