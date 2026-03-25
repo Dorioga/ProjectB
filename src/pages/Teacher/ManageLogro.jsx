@@ -302,7 +302,7 @@ const ManageLogro = () => {
 
   return (
     <div className=" p-6  h-full gap-4 flex flex-col">
-      <div className="w-full flex justify-between items-center bg-primary text-surface p-3 rounded-t-lg">
+      <div className="w-full flex justify-between items-center bg-primary text-surface p-3 rounded-lg">
         <h2 className="text-2xl font-bold">Gestión de Logros</h2>
         <div className="w-56">
           <SimpleButton
@@ -316,7 +316,7 @@ const ManageLogro = () => {
       </div>
 
       {/* Selectores en cascada */}
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mt-2">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mt-2">
         {/* Sede siempre primero */}
         <SedeSelect
           value={sedeSelected}
@@ -431,9 +431,7 @@ const ManageLogro = () => {
         />
 
         <div>
-          <label className="block text-sm font-medium mb-1">
-            Tipo de logro
-          </label>
+          <label className="">Tipo de logro</label>
           <select
             className="w-full p-2 border rounded bg-surface"
             value={tipoLogro}

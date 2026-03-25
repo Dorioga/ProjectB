@@ -1,12 +1,19 @@
 import { useState, useEffect, useRef } from "react";
 import SimpleButton from "../atoms/SimpleButton";
 import JourneySelect from "../atoms/JourneySelect";
+import tourProfileSede from "../../tour/tourProfileSede";
 
-const ProfileSede = ({ data, onSave, initialEditing = false }) => {
+const ProfileSede = ({
+  data,
+  onSave,
+  initialEditing = false,
+  initialTutorial = false,
+}) => {
   // data puede ser null mientras se carga; usar un objeto seguro
   const safeData = data || {};
   const [isEditing, setIsEditing] = useState(Boolean(initialEditing));
   const [isSaving, setIsSaving] = useState(false);
+  const [isTourMode, setIsTourMode] = useState(Boolean(initialTutorial));
   const [form, setForm] = useState({
     nombre_sede: safeData.nombre_sede || safeData.nombre || "",
     direccion: safeData.direccion || safeData.address || "",
@@ -77,6 +84,30 @@ const ProfileSede = ({ data, onSave, initialEditing = false }) => {
 
   const nombreRef = useRef(null);
 
+  const startTour = () => {
+    console.debug("ProfileSede - iniciando tour");
+    setIsTourMode(true);
+    tourProfileSede();
+    const checkDriverVisible = () =>
+      !!document.querySelector(
+        ".driver-popover, .driver-overlay, .driver-container, .driver",
+      );
+    const observer = new MutationObserver(() => {
+      if (!checkDriverVisible()) {
+        setIsTourMode(false);
+        observer.disconnect();
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    setTimeout(
+      () => {
+        setIsTourMode(false);
+        observer.disconnect();
+      },
+      3 * 60 * 1000,
+    );
+  };
+
   // Auto resize textarea for nombre_sede
   useEffect(() => {
     if (nombreRef.current) {
@@ -85,31 +116,71 @@ const ProfileSede = ({ data, onSave, initialEditing = false }) => {
     }
   }, [form.nombre_sede, isEditing]);
 
+  useEffect(() => {
+    if (!initialTutorial) return;
+    const t = setTimeout(() => {
+      setIsTourMode(true);
+      tourProfileSede();
+      const checkDriverVisible = () =>
+        !!document.querySelector(
+          ".driver-popover, .driver-overlay, .driver-container, .driver",
+        );
+      const observer = new MutationObserver(() => {
+        if (!checkDriverVisible()) {
+          setIsTourMode(false);
+          observer.disconnect();
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+      setTimeout(
+        () => {
+          setIsTourMode(false);
+          observer.disconnect();
+        },
+        3 * 60 * 1000,
+      );
+    }, 250);
+    return () => clearTimeout(t);
+  }, [initialTutorial]);
+
   return (
     <div className="w-full flex flex-col gap-4">
-      <div className="flex justify-end">
-        <div className="w-40">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="col-span-3"></div>
+        <div className="grid grid-cols-2 gap-2 items-center col-span-2">
           <SimpleButton
-            onClick={handleToggleEdit}
-            msj={isSaving ? "Guardando..." : isEditing ? "Guardar" : "Editar"}
-            icon={isEditing ? "Save" : "Pencil"}
-            bg={isEditing ? "bg-accent" : "bg-secondary"}
+            onClick={startTour}
+            icon="HelpCircle"
+            msjtooltip="Iniciar tutorial"
+            noRounded={false}
+            bg="bg-info"
             text="text-surface"
-            disabled={isSaving}
+            className="w-auto px-3 py-1.5"
           />
+          <div id="tour-sede-save" className="">
+            <SimpleButton
+              onClick={handleToggleEdit}
+              msj={isSaving ? "Guardando..." : isEditing ? "Guardar" : "Editar"}
+              icon={isEditing ? "Save" : "Pencil"}
+              bg={isEditing ? "bg-accent" : "bg-secondary"}
+              text="text-surface"
+              disabled={isSaving}
+            />
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label className="font-semibold">Nombre Sede</label>
-          <textarea
+          <input
+            id="tour-sede-nombre"
             ref={nombreRef}
             name="nombre_sede"
             value={form.nombre_sede}
             onChange={handleChange}
-            rows={2}
-            className={`w-full p-2 border rounded bg-surface ${isEditing && !isSaving ? "ring-2 ring-accent/30" : "opacity-80 text-gray-700"}`}
+            type=""
+            className={`w-full p-2 border rounded bg-surface ${isEditing && !isSaving ? "" : "opacity-80 text-gray-700"} ${isTourMode && !String(form.nombre_sede).trim() ? "border-red-500 ring-2 ring-red-100" : ""}`}
             disabled={!isEditing || isSaving}
             style={{ resize: "none", overflow: "hidden" }}
             title={form.nombre_sede}
@@ -119,10 +190,11 @@ const ProfileSede = ({ data, onSave, initialEditing = false }) => {
         <div>
           <label className="font-semibold">Dirección</label>
           <input
+            id="tour-sede-direccion"
             name="direccion"
             value={form.direccion}
             onChange={handleChange}
-            className={`w-full p-2 border rounded bg-surface ${isEditing && !isSaving ? "ring-2 ring-accent/30" : "opacity-80 text-gray-700"}`}
+            className={`w-full p-2 border rounded bg-surface ${isEditing && !isSaving ? "" : "opacity-80 text-gray-700"}`}
             disabled={!isEditing || isSaving}
           />
         </div>
@@ -130,10 +202,11 @@ const ProfileSede = ({ data, onSave, initialEditing = false }) => {
         <div>
           <label className="font-semibold">Teléfono</label>
           <input
+            id="tour-sede-telefono"
             name="telefono"
             value={form.telefono}
             onChange={handleChange}
-            className={`w-full p-2 border rounded bg-surface ${isEditing && !isSaving ? "ring-2 ring-accent/30" : "opacity-80 text-gray-700"}`}
+            className={`w-full p-2 border rounded bg-surface ${isEditing && !isSaving ? "" : "opacity-80 text-gray-700"}`}
             disabled={!isEditing || isSaving}
           />
         </div>
@@ -141,10 +214,11 @@ const ProfileSede = ({ data, onSave, initialEditing = false }) => {
         <div>
           <label className="font-semibold">Estado</label>
           <select
+            id="tour-sede-estado"
             name="estado"
             value={form.estado}
             onChange={handleChange}
-            className={`w-full p-2 border rounded bg-surface ${isEditing && !isSaving ? "ring-2 ring-accent/30" : "opacity-80 text-gray-700"}`}
+            className={`w-full p-2 border rounded bg-surface ${isEditing && !isSaving ? "" : "opacity-80 text-gray-700"}`}
             disabled={!isEditing || isSaving}
           >
             <option value="">Selecciona estado</option>
@@ -153,7 +227,7 @@ const ProfileSede = ({ data, onSave, initialEditing = false }) => {
           </select>
         </div>
 
-        <div>
+        <div id="tour-sede-jornada">
           <JourneySelect
             label="ID Jornada"
             labelClassName="font-semibold"
@@ -161,17 +235,9 @@ const ProfileSede = ({ data, onSave, initialEditing = false }) => {
             value={form.fk_jornada}
             filterValue={String(form.fk_jornada) === "3" ? "3" : ""}
             onChange={handleChange}
-            className={`w-full p-2 border rounded bg-surface ${isEditing && !isSaving ? "ring-2 ring-accent/30" : "opacity-80 text-gray-700"}`}
+            className={`w-full p-2 border rounded bg-surface ${isEditing && !isSaving ? "" : "opacity-80 text-gray-700"}`}
             disabled={!isEditing || isSaving}
           />
-
-          {String(form.fk_jornada) === "3" && (
-            <p className="text-sm text-yellow-600 mt-2">
-              Nota: el valor actual es "Ambas" (ID 3). Aquí solo se muestran
-              "Mañana" y "Tarde"; selecciona una de ellas para actualizar la
-              jornada.
-            </p>
-          )}
         </div>
       </div>
     </div>

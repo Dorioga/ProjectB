@@ -132,24 +132,39 @@ const ProfileAssignature = ({ data, onSave, initialEditing = false }) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label className="font-semibold">Nombre Asignatura</label>
-          <textarea
+          <input
             ref={nombreRef}
             name="name_asignature"
             value={form.name_asignature}
             onChange={handleChange}
-            rows={2}
             className={`w-full p-2 border rounded bg-surface ${isEditing && !isSaving ? "ring-2 ring-accent/30" : "opacity-80 text-gray-700"}`}
             disabled={!isEditing || isSaving}
-            style={{ resize: "none", overflow: "hidden" }}
             title={form.name_asignature}
           />
           {errors.name_asignature && (
             <div className="text-sm text-red-600 mt-1">
               {errors.name_asignature}
             </div>
+          )}
+        </div>
+        <div>
+          <label className="font-semibold">Estado</label>
+          <select
+            name="estado"
+            value={form.estado}
+            onChange={handleChange}
+            className={`w-full p-2 border rounded bg-surface ${isEditing && !isSaving ? "ring-2 ring-accent/30" : "opacity-80 text-gray-700"}`}
+            disabled={!isEditing || isSaving}
+          >
+            <option value="">Selecciona estado</option>
+            <option value="Activo">Activo</option>
+            <option value="Inactivo">Inactivo</option>
+          </select>
+          {errors.estado && (
+            <div className="text-sm text-red-600 mt-1">{errors.estado}</div>
           )}
         </div>
 
@@ -169,7 +184,7 @@ const ProfileAssignature = ({ data, onSave, initialEditing = false }) => {
           )}
         </div>
 
-        <div className="md:col-span-2">
+        <div className="md:col-span-3">
           <label className="font-semibold">Descripción</label>
           <textarea
             name="description"
@@ -184,24 +199,6 @@ const ProfileAssignature = ({ data, onSave, initialEditing = false }) => {
             <div className="text-sm text-red-600 mt-1">
               {errors.description}
             </div>
-          )}
-        </div>
-
-        <div>
-          <label className="font-semibold">Estado</label>
-          <select
-            name="estado"
-            value={form.estado}
-            onChange={handleChange}
-            className={`w-full p-2 border rounded bg-surface ${isEditing && !isSaving ? "ring-2 ring-accent/30" : "opacity-80 text-gray-700"}`}
-            disabled={!isEditing || isSaving}
-          >
-            <option value="">Selecciona estado</option>
-            <option value="Activo">Activo</option>
-            <option value="Inactivo">Inactivo</option>
-          </select>
-          {errors.estado && (
-            <div className="text-sm text-red-600 mt-1">{errors.estado}</div>
           )}
         </div>
       </div>

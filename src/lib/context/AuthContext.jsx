@@ -79,6 +79,9 @@ export function AuthProvider({ children }) {
   const [idPersona, setIdPersona] = useState(() =>
     loadFromStorage("idPersona"),
   );
+  const [fkInstitucion, setFkInstitucion] = useState(() =>
+    loadFromStorage("fk_institucion"),
+  );
 
   // número de identificación (cedula, etc.) del usuario
   // no se persiste en localStorage, solo se mantiene en memoria
@@ -96,6 +99,8 @@ export function AuthProvider({ children }) {
   const [showTermsModal, setShowTermsModal] = useState(false);
   // Almacena el rol pendiente para cargar el menú después de aceptar términos
   const pendingRolRef = useRef(null);
+  // Almacena datos de login pendientes cuando se requiere aceptación de términos
+  const pendingLoginDataRef = useRef(null);
 
   // Maneja el estado de la barra lateral
   const [isOpen, setIsOpen] = useState(true);
@@ -171,6 +176,7 @@ export function AuthProvider({ children }) {
     saveToStorage("rol", rol);
     saveToStorage("nameSede", nameSede);
     saveToStorage("idSede", idSede);
+    saveToStorage("fk_institucion", fkInstitucion);
     saveToStorage("colorPrincipal", colorPrincipal);
     saveToStorage("colorSecundario", colorSecundario);
     saveToStorage("menu", menu);
@@ -196,6 +202,7 @@ export function AuthProvider({ children }) {
     rol,
     nameSede,
     idSede,
+    fkInstitucion,
     colorPrincipal,
     colorSecundario,
     menu,
@@ -261,6 +268,39 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  // Helper: guardar datos de login en el estado (dispara persistencia en localStorage)
+  const commitLoginData = useCallback((data) => {
+    const t = data.accessToken;
+    if (t) {
+      setToken(t);
+      setAuthToken(t);
+    }
+    setUserId(data?.id ?? null);
+    setUserName(data?.name ?? null);
+    setUserEmail(data?.email ?? null);
+    setNameSchool(data?.nombre_institucion ?? null);
+    setIdInstitution(data?.id_institucion ?? null);
+    setImgSchool(
+      data?.link_logo
+        ? data.link_logo.replace(/^https?:\/\/nexusplataforma\.com/, "")
+        : null,
+    );
+    setNameRole(data?.name_rol ?? null);
+    setRol(data?.rol ?? null);
+    setNameSede(data?.name_sede ?? null);
+    setIdSede(data?.id_sede ?? null);
+    setColorPrincipal(data?.color_principal ?? null);
+    setColorSecundario(data?.color_secundario ?? null);
+    setIdDocente(data?.id_docente ?? null);
+    setIdEstudiante(data?.id_estudiante ?? null);
+    setIdPersona(data?.id_persona ?? null);
+    setFkInstitucion(data?.fk_institucion ?? null);
+    setNumeroIdentificacion(data?.numero_identificacion ?? null);
+    if (data?.color_principal || data?.color_secundario) {
+      applyCustomColors(data?.color_principal, data?.color_secundario);
+    }
+  }, []);
+
   const login = useCallback(
     async (credentials) => {
       setLoading(true);
@@ -272,7 +312,7 @@ export function AuthProvider({ children }) {
         // La respuesta viene en res.data
         const data = res?.data || res;
         console.log("AuthContext - Datos del usuario extraídos:", data);
-        // ✅ Validación adicional: Verificar datos mínimos requeridos
+        // Validación adicional: Verificar datos mínimos requeridos
         if (!data || !data.accessToken) {
           throw new Error(
             "No se pudo iniciar sesión. Respuesta del servidor inválida.",
@@ -280,46 +320,15 @@ export function AuthProvider({ children }) {
         }
 
         const t = data.accessToken;
-        console.log("AuthContext - Token extraído:", t);
 
-        // Asegura que el token se use inmediatamente (antes de pedir menú).
-        if (t) {
-          setToken(t);
-          setAuthToken(t);
-          console.log("AuthContext - Token guardado en localStorage");
-        }
-        console.log(
-          "AuthContext - Cargando datos del usuario en el contexto...",
-          data,
-        );
-        // Guardar todas las variables individuales
-        setUserId(data?.id ?? null);
-        setUserName(data?.name ?? null);
-        setUserEmail(data?.email ?? null);
-        setNameSchool(data?.nombre_institucion ?? null);
-        setIdInstitution(data?.id_institucion ?? null);
-        setImgSchool(data?.link_logo ?? null);
-        setNameRole(data?.name_rol ?? null);
-        setRol(data?.rol ?? null);
-        setNameSede(data?.name_sede ?? null);
-        setIdSede(data?.id_sede ?? null);
-        setColorPrincipal(data?.color_principal ?? null);
-        setColorSecundario(data?.color_secundario ?? null);
-        setIdDocente(data?.id_docente ?? null);
-        setIdEstudiante(data?.id_estudiante ?? null);
-        setNumeroIdentificacion(data?.numero_identificacion ?? null);
-        setIdPersona(data?.id_persona ?? null);
-
-        if (data?.color_principal || data?.color_secundario) {
-          applyCustomColors(data?.color_principal, data?.color_secundario);
-        }
-
-        // Para roles 5 y 6: verificar aceptación de términos ANTES de cargar el menú
+        // Para roles 5 y 6: verificar aceptación de términos ANTES de guardar datos
         const rolValue = data?.rol;
         const needsTermsCheck =
           String(rolValue) === "5" || String(rolValue) === "6";
 
         if (needsTermsCheck) {
+          // Token temporal solo para llamadas API (no se guarda en estado/localStorage)
+          setAuthToken(t);
           try {
             console.log(
               "AuthContext - Verificando aceptación de términos para rol",
@@ -330,13 +339,16 @@ export function AuthProvider({ children }) {
             });
             console.log("AuthContext - Respuesta de términos:", termsRes);
             if (termsRes?.code === "ERROR") {
-              // Guardar el rol para cargar el menú después de aceptar
+              // Guardar datos completos en ref SIN persistir en localStorage
+              pendingLoginDataRef.current = { ...data, accessToken: t };
               pendingRolRef.current = rolValue;
+              // numero_identificacion no se persiste en localStorage, es seguro setear
+              setNumeroIdentificacion(data?.numero_identificacion ?? null);
               setShowTermsModal(true);
-              // Retornar sin cargar el menú ni navegar: Login.jsx se encarga de esperar
               return {
                 token: t,
                 idPersona: data?.id_persona ?? null,
+                numero_identificacion: data?.numero_identificacion ?? null,
                 name: data?.name ?? null,
                 email: data?.email ?? null,
                 rol: rolValue ?? null,
@@ -346,11 +358,14 @@ export function AuthProvider({ children }) {
             }
           } catch {
             // Error de red → mostrar modal por seguridad
+            pendingLoginDataRef.current = { ...data, accessToken: t };
             pendingRolRef.current = rolValue;
+            setNumeroIdentificacion(data?.numero_identificacion ?? null);
             setShowTermsModal(true);
             return {
               token: t,
-              id: data?.id ?? null,
+              idPersona: data?.id_persona ?? null,
+              numero_identificacion: data?.numero_identificacion ?? null,
               name: data?.name ?? null,
               email: data?.email ?? null,
               rol: rolValue ?? null,
@@ -360,8 +375,56 @@ export function AuthProvider({ children }) {
           }
         }
 
+        // Flujo normal: guardar todo en estado → localStorage
+        commitLoginData(data);
+
         // Cargar menú por rol al iniciar sesión.
         await loadMenuByRol(data?.rol);
+
+        // Para usuarios tipo docente, obtener fk_institucion según la sede
+        const isDocente =
+          String(data?.name_rol ?? "")
+            .toLowerCase()
+            .includes("docente") || String(data?.rol) === "7";
+
+        const idSedeValue = data?.id_sede ?? data?.idSede;
+
+        if (isDocente && idSedeValue) {
+          try {
+            const instRes = await authService.getTeacherInstitution({
+              idSede: Number(idSedeValue),
+            });
+            console.log(
+              "AuthContext - getTeacherInstitution response:",
+              instRes,
+            );
+
+            // El endpoint devuelve { code, data: [{ id_institucion }] }
+            // O puede retornar el arreglo directamente.
+            const maybeArray =
+              Array.isArray(instRes) && instRes.length > 0
+                ? instRes
+                : Array.isArray(instRes?.data)
+                  ? instRes.data
+                  : null;
+
+            const maybeObject =
+              maybeArray?.[0] ??
+              (!maybeArray && typeof instRes === "object" ? instRes : null);
+
+            const fk =
+              maybeObject?.id_institucion ??
+              maybeObject?.fk_institucion ??
+              null;
+            console.log("AuthContext - fkInstitucion resuelto:", fk);
+            setFkInstitucion(fk);
+          } catch (err) {
+            console.warn(
+              "AuthContext - no se pudo obtener fk_institucion:",
+              err,
+            );
+          }
+        }
 
         return {
           token: t,
@@ -378,7 +441,7 @@ export function AuthProvider({ children }) {
         setLoading(false);
       }
     },
-    [loadMenuByRol],
+    [loadMenuByRol, commitLoginData],
   );
 
   const logout = useCallback(async () => {
@@ -397,19 +460,32 @@ export function AuthProvider({ children }) {
 
   /**
    * Se invoca cuando el usuario cierra el modal de términos tras aceptarlos.
-   * Carga el menú que quedó pendiente y navega al dashboard.
+   * Persiste los datos de login en estado/localStorage, carga el menú y navega al dashboard.
    */
   const closeTermsModal = useCallback(async () => {
+    const data = pendingLoginDataRef.current;
     const rolValue = pendingRolRef.current;
+
+    // Ahora sí: persistir datos de login en estado → localStorage
+    if (data) {
+      commitLoginData(data);
+      pendingLoginDataRef.current = null;
+    }
+
     if (rolValue) {
       await loadMenuByRol(rolValue);
       pendingRolRef.current = null;
     }
     setShowTermsModal(false);
     navigate("/dashboard/home");
-  }, [loadMenuByRol, navigate]);
+  }, [commitLoginData, loadMenuByRol, navigate]);
 
   const dismissTermsModal = useCallback(() => {
+    // Limpiar datos pendientes sin persistir
+    pendingLoginDataRef.current = null;
+    pendingRolRef.current = null;
+    setNumeroIdentificacion(null);
+    setAuthToken(null);
     setShowTermsModal(false);
   }, []);
 
@@ -441,6 +517,7 @@ export function AuthProvider({ children }) {
       userEmail,
       nameSchool,
       idInstitution,
+      fkInstitucion,
       imgSchool,
       token,
       menu,
@@ -477,6 +554,7 @@ export function AuthProvider({ children }) {
       userEmail,
       nameSchool,
       idInstitution,
+      fkInstitucion,
       imgSchool,
       token,
       menu,

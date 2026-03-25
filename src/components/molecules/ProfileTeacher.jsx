@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import SimpleButton from "../atoms/SimpleButton";
 import Modal from "../atoms/Modal";
 import { formatDateToDisplay, parseDateToISO } from "../../utils/formatUtils";
@@ -13,6 +13,45 @@ import { required, isEmail, isText } from "../../utils/validationUtils";
 import { useNotify } from "../../lib/hooks/useNotify";
 import tourProfileTeacher from "../../tour/tourProfileTeacher";
 
+/* ── Helpers extraídos para eliminar duplicación ── */
+
+const buildFormFromData = (d, applyDateFormat = false) => ({
+  id_docente: d.id_docente ?? d.id ?? null,
+  per_id: d.per_id ?? d.id_persona ?? null,
+  first_name: d.first_name || "",
+  second_name: d.second_name || "",
+  first_lastname: d.first_lastname || "",
+  second_lastname: d.second_lastname || "",
+  telephone: d.telefono || d.telephone || "",
+  email: d.correo || d.email || "",
+  identification: d.identification || d.numero_identificacion || "",
+  fecha_nacimiento: applyDateFormat
+    ? formatDateToDisplay(d.fecha_nacimiento || d.birthday || "")
+    : d.fecha_nacimiento || d.birthday || "",
+  direccion: d.direccion || d.address || "",
+  nombre_sede: d.nombre_sede || d.name_sede || "",
+  id_sede: d.id_sede || d.idSede || "",
+  fk_journey: d.fk_journey || d.fk_jornada || "",
+  nombre_jornada: d.nombre_jornada || d.nombre_jornada_estudiante || "",
+  representante_curso: !!(
+    d.director_of_grade ||
+    d.representante_curso ||
+    d.is_representative
+  ),
+});
+
+const inputCls = (isEditing, hasError, isTourHighlight) => {
+  const base = "w-full p-2 border rounded";
+  const editState = isEditing
+    ? "bg-white border-gray-300"
+    : "bg-gray-50 border-transparent text-gray-600 cursor-not-allowed";
+  const errCls = hasError ? "border-red-500" : "";
+  const tourCls = isTourHighlight ? "border-red-500 ring-2 ring-red-100" : "";
+  return `${base} ${editState} ${errCls} ${tourCls}`
+    .replace(/\s+/g, " ")
+    .trim();
+};
+
 const ProfileTeacher = ({
   data = {},
   onSave,
@@ -20,37 +59,15 @@ const ProfileTeacher = ({
   initialTutorial = false,
   onClose,
   onReload,
-  mode = "modal", // "modal" | "page"  — controla qué elementos se muestran
+  mode = "modal",
 }) => {
   const isPageMode = mode === "page";
-  console.log("ProfileTeacher data:", data);
   const [isEditing, setIsEditing] = useState(Boolean(initialEditing));
-  const [form, setForm] = useState({
-    id_docente: data.id_docente ?? data.id ?? null,
-    per_id: data.per_id ?? data.id_persona ?? null,
-    first_name: data.first_name || "",
-    second_name: data.second_name || "",
-    first_lastname: data.first_lastname || "",
-    second_lastname: data.second_lastname || "",
-    telephone: data.telefono || data.telephone || "",
-    email: data.correo || data.email || "",
-    identification: data.identification || data.numero_identificacion || "",
-    fecha_nacimiento: data.fecha_nacimiento || data.birthday || "",
-    direccion: data.direccion || data.address || "",
-    nombre_sede: data.nombre_sede || data.name_sede || "",
-    id_sede: data.id_sede || data.idSede || "",
-    fk_journey: data.fk_journey || data.fk_jornada || "",
-    fk_jornada: data.fk_jornada || data.fk_journey || "",
-    nombre_jornada: data.nombre_jornada || data.nombre_jornada || "",
-    // Representante de curso
-    representante_curso:
-      data.representante_curso ?? data.is_representative ?? false,
-  });
+  const [form, setForm] = useState(() => buildFormFromData(data));
 
   // Estados/refs necesarios (faltaban y provocaban ReferenceError)
   const originalRef = useRef({});
 
-  // Estado para errores de validación e indicador de guardado
   const [formErrors, setFormErrors] = useState({});
   const [isSaving, setIsSaving] = useState(false);
   const notify = useNotify();
@@ -62,36 +79,87 @@ const ProfileTeacher = ({
   const [newSede, setNewSede] = useState([]);
   const [showAsignatureGrades, setShowAsignatureGrades] = useState(false);
   const [showSedeAsignatures, setShowSedeAsignatures] = useState({});
-
-  // Modo tutorial local: activa resaltado en tiempo real para campos obligatorios
   const [isTourMode, setIsTourMode] = useState(Boolean(initialTutorial));
 
-  const handleCurrentSedeChange = (e) => {
-    const val = e.target.value;
-    const label =
-      (e.target.options &&
-        e.target.options[e.target.selectedIndex] &&
-        e.target.options[e.target.selectedIndex].text) ||
-      form.nombre_sede ||
-      "";
-    const wday = getSedeWorkday(val);
+  // Helper: limpiar error de asignaturas del estado de errores
+  const clearAsignaturesError = useCallback(() => {
+    setFormErrors((prev) => {
+      if (!prev?.asignatures) return prev;
+      const { asignatures: _, ...rest } = prev;
+      return rest;
+    });
+  }, []);
 
-    // If the selection didn't change, just set it silently
-    if (String(val) === String(form.id_sede)) {
-      setForm((prev) => ({
-        ...prev,
-        id_sede: val,
-        nombre_sede: label,
-        fk_journey: wday && wday !== "3" ? wday : "",
-        nombre_jornada: "",
-      }));
-      return;
-    }
+  // Helper: iniciar tour con observer de driver.js
+  const startTour = useCallback(() => {
+    setIsTourMode(true);
+    tourProfileTeacher({ isPageMode });
+    const checkVisible = () =>
+      !!document.querySelector(
+        ".driver-popover, .driver-overlay, .driver-container, .driver",
+      );
+    const observer = new MutationObserver(() => {
+      if (!checkVisible()) {
+        setIsTourMode(false);
+        observer.disconnect();
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    const timer = setTimeout(
+      () => {
+        setIsTourMode(false);
+        observer.disconnect();
+      },
+      3 * 60 * 1000,
+    );
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, [isPageMode]);
 
-    // Open confirmation modal before applying change
-    setPendingSedeChange({ val, label, wday });
-    setConfirmChangeSedeOpen(true);
-  };
+  const { journeys } = useSchool();
+  const { createTeacherAsignature, createTeacherSede } = useTeacher();
+  const { institutionSedes } = useData();
+
+  const getSedeWorkday = useCallback(
+    (sedeId) => {
+      if (!sedeId || !Array.isArray(institutionSedes)) return null;
+      const found = institutionSedes.find(
+        (s) => String(s?.id) === String(sedeId),
+      );
+      return found?.fk_workday ? String(found.fk_workday) : null;
+    },
+    [institutionSedes],
+  );
+
+  const handleCurrentSedeChange = useCallback(
+    (e) => {
+      const val = e.target.value;
+      const label =
+        e.target.options?.[e.target.selectedIndex]?.text ||
+        form.nombre_sede ||
+        "";
+      const wday = getSedeWorkday(val);
+
+      // If the selection didn't change, just set it silently
+      if (String(val) === String(form.id_sede)) {
+        setForm((prev) => ({
+          ...prev,
+          id_sede: val,
+          nombre_sede: label,
+          fk_journey: wday && wday !== "3" ? wday : "",
+          nombre_jornada: "",
+        }));
+        return;
+      }
+
+      // Open confirmation modal before applying change
+      setPendingSedeChange({ val, label, wday });
+      setConfirmChangeSedeOpen(true);
+    },
+    [form.id_sede, form.nombre_sede, getSedeWorkday],
+  );
 
   const confirmChangeSede = () => {
     if (!pendingSedeChange) return;
@@ -112,21 +180,6 @@ const ProfileTeacher = ({
   const cancelChangeSede = () => {
     setConfirmChangeSedeOpen(false);
     setPendingSedeChange(null);
-  };
-
-  // ahora `id_sede` y `fk_journey` forman parte del `form` (se sincronizan más abajo)
-
-  const { journeys } = useSchool();
-  const { createTeacherAsignature, createTeacherSede } = useTeacher();
-  const { institutionSedes } = useData();
-
-  // Obtener el fk_workday de una sede por su id
-  const getSedeWorkday = (sedeId) => {
-    if (!sedeId || !Array.isArray(institutionSedes)) return null;
-    const found = institutionSedes.find(
-      (s) => String(s?.id) === String(sedeId),
-    );
-    return found?.fk_workday ? String(found.fk_workday) : null;
   };
 
   // Construir grupos derivados a partir de `data` (subjects/groups)
@@ -294,159 +347,120 @@ const ProfileTeacher = ({
     return names;
   }, [subjectStatusMap]);
 
-  // Director de grupo: parsear CSV recibido en `data.director_of_grade` (o compatibilidad `director_of_grades`)
-  // Normalizamos a minúsculas para comparaciones case-insensitive
-  const directorGroupSet = useMemo(() => {
+  // Director de grupo: parsear CSV de nombres de grupo recibidos en `data.director_of_grade` (ej. "C5A" o "C5A,C4A")
+  const directorGroupNames = useMemo(() => {
     const raw = data?.director_of_grade ?? data?.director_of_grades ?? "";
     if (!raw) return new Set();
     return new Set(
       String(raw)
         .split(",")
-        .map((s) => String(s).trim().toLowerCase())
+        .map((s) => String(s).trim())
         .filter(Boolean),
     );
   }, [data?.director_of_grade, data?.director_of_grades]);
 
-  const [localDirectorGroups, setLocalDirectorGroups] = useState(() => {
-    const raw = data?.director_of_grade ?? data?.director_of_grades ?? "";
-    if (!raw) return new Set();
-    return new Set(
-      String(raw)
-        .split(",")
-        .map((s) => String(s).trim().toLowerCase())
-        .filter(Boolean),
-    );
-  });
+  // localDirectorGroups almacena nombres de grupo seleccionados (ej. "C5A")
+  const [localDirectorGroups, setLocalDirectorGroups] = useState(
+    () => new Set(),
+  );
 
   const handleToggleDirectorGroup = (grupo) => {
-    const key = String(grupo || "")
-      .trim()
-      .toLowerCase();
+    if (!grupo) return;
     setLocalDirectorGroups((prev) => {
       const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
+      if (next.has(grupo)) next.delete(grupo);
+      else next.add(grupo);
       return next;
     });
   };
 
-  // Toggle una fila individual
-  const handleToggleRow = (idx) => {
-    const key = rowKeys[idx];
-    setActiveRowKeys((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-    // limpiar posible error de asignaturas
-    setFormErrors((prev) => {
-      if (!prev || !prev.asignatures) return prev;
-      const next = { ...prev };
-      delete next.asignatures;
-      return next;
-    });
-  };
+  // Sincronizar localDirectorGroups cuando cambian los datos (carga asíncrona o recarga)
+  useEffect(() => {
+    setLocalDirectorGroups(directorGroupNames);
+  }, [directorGroupNames]);
 
-  // Toggle todas las filas de una asignatura
-  const handleToggleSubject = (subjectName) => {
-    const status = subjectStatusMap.get(subjectName);
-    const subjectKeys = rowKeys.filter(
-      (_, idx) => assignmentRows[idx].asignatura === subjectName,
-    );
-    setActiveRowKeys((prev) => {
-      const next = new Set(prev);
-      if (status?.checked) {
-        subjectKeys.forEach((k) => next.delete(k));
-      } else {
-        subjectKeys.forEach((k) => next.add(k));
-      }
-      return next;
-    });
-    // limpiar posible error de asignaturas
-    setFormErrors((prev) => {
-      if (!prev || !prev.asignatures) return prev;
-      const next = { ...prev };
-      delete next.asignatures;
-      return next;
-    });
-  };
+  // si el docente deja de ser representante, limpiar selección de director
+  useEffect(() => {
+    if (!form.representante_curso) {
+      setLocalDirectorGroups(new Set());
+    }
+  }, [form.representante_curso]);
 
-  // Toggle todas las filas
-  const handleToggleAllRows = () => {
+  const handleToggleRow = useCallback(
+    (idx) => {
+      const key = rowKeys[idx];
+      setActiveRowKeys((prev) => {
+        const next = new Set(prev);
+        if (next.has(key)) next.delete(key);
+        else next.add(key);
+        return next;
+      });
+      clearAsignaturesError();
+    },
+    [rowKeys, clearAsignaturesError],
+  );
+
+  const handleToggleSubject = useCallback(
+    (subjectName) => {
+      const status = subjectStatusMap.get(subjectName);
+      const subjectKeys = rowKeys.filter(
+        (_, idx) => assignmentRows[idx].asignatura === subjectName,
+      );
+      setActiveRowKeys((prev) => {
+        const next = new Set(prev);
+        if (status?.checked) {
+          subjectKeys.forEach((k) => next.delete(k));
+        } else {
+          subjectKeys.forEach((k) => next.add(k));
+        }
+        return next;
+      });
+      clearAsignaturesError();
+    },
+    [subjectStatusMap, rowKeys, assignmentRows, clearAsignaturesError],
+  );
+
+  const handleToggleAllRows = useCallback(() => {
     setActiveRowKeys((prev) =>
       prev.size === rowKeys.length ? new Set() : new Set(rowKeys),
     );
-    // limpiar posible error de asignaturas
-    setFormErrors((prev) => {
-      if (!prev || !prev.asignatures) return prev;
-      const next = { ...prev };
-      delete next.asignatures;
-      return next;
-    });
-  };
+    clearAsignaturesError();
+  }, [rowKeys, clearAsignaturesError]);
 
   useEffect(() => {
     setIsEditing(Boolean(initialEditing));
   }, [initialEditing]);
 
-  // Si se recibe initialTutorial=true, iniciar tour automáticamente cuando el componente esté montado
   useEffect(() => {
     if (!initialTutorial) return;
-    // pequeño retraso para asegurar que el DOM esté listo
+    let cleanup;
     const t = setTimeout(() => {
-      setIsTourMode(true);
-      tourProfileTeacher({ isPageMode });
-      const checkDriverVisible = () =>
-        !!document.querySelector(
-          ".driver-popover, .driver-overlay, .driver-container, .driver",
-        );
-
-      const observer = new MutationObserver(() => {
-        if (!checkDriverVisible()) {
-          setIsTourMode(false);
-          observer.disconnect();
-        }
-      });
-      observer.observe(document.body, { childList: true, subtree: true });
-      setTimeout(
-        () => {
-          setIsTourMode(false);
-          observer.disconnect();
-        },
-        3 * 60 * 1000,
-      );
+      cleanup = startTour();
     }, 250);
-    return () => clearTimeout(t);
-  }, [initialTutorial]);
+    return () => {
+      clearTimeout(t);
+      cleanup?.();
+    };
+  }, [initialTutorial, startTour]);
 
   useEffect(() => {
-    const initialForm = {
-      id_docente: data.id_docente ?? data.id ?? null,
-      per_id: data.per_id ?? data.id_persona ?? null,
-      first_name: data.first_name || "",
-      second_name: data.second_name || "",
-      first_lastname: data.first_lastname || "",
-      second_lastname: data.second_lastname || "",
-      telephone: data.telefono || data.telephone || "",
-      email: data.correo || data.email || "",
-      identification: data.identification || data.numero_identificacion || "",
-      fecha_nacimiento: formatDateToDisplay(
-        data.fecha_nacimiento || data.birthday || "",
-      ),
-      direccion: data.direccion || data.address || "",
-      nombre_sede: data.nombre_sede || data.name_sede || "",
-      id_sede: data.id_sede || data.idSede || "",
-      fk_journey: data.fk_journey || data.fk_jornada || "",
-      nombre_jornada:
-        data.nombre_jornada || data.nombre_jornada_estudiante || "",
-    };
+    const initialForm = buildFormFromData(data, true);
     setForm(initialForm);
     setEstado(data.estado || "");
+    const rawDog = data?.director_of_grade ?? data?.director_of_grades ?? "";
+    const initialDirectorGroups = new Set(
+      rawDog
+        ? String(rawDog)
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : [],
+    );
     originalRef.current = {
       form: initialForm,
       estado: data.estado || "",
       activeRowKeys: originalRef.current?.activeRowKeys || null,
+      directorGroups: initialDirectorGroups,
     };
   }, [data]);
 
@@ -544,35 +558,16 @@ const ProfileTeacher = ({
   };
 
   const handleCancel = () => {
-    // reset to original
     const orig = originalRef.current || {};
-    setForm(
-      orig.form || {
-        first_name: data.first_name || "",
-        second_name: data.second_name || "",
-        first_lastname: data.first_lastname || "",
-        second_lastname: data.second_lastname || "",
-        telephone: data.telefono || data.telephone || "",
-        email: data.correo || data.email || "",
-        nombre_sede: data.nombre_sede || data.name_sede || "",
-        id_sede: data.id_sede || data.idSede || "",
-        fk_journey: data.fk_journey || data.fk_jornada || "",
-        fecha_nacimiento: formatDateToDisplay(
-          data.fecha_nacimiento || data.birthday || "",
-        ),
-        direccion: data.direccion || data.address || "",
-        identification: data.identification || data.numero_identificacion || "",
-        representante_curso:
-          data.representante_curso ?? data.is_representative ?? false,
-      },
-    );
+    setForm(orig.form || buildFormFromData(data, true));
     setEstado(orig.estado || data.estado || "");
-    setActiveRowKeys(originalRef.current?.activeRowKeys || new Set(rowKeys));
-    setLocalDirectorGroups(directorGroupSet);
+    setActiveRowKeys(orig.activeRowKeys || new Set(rowKeys));
+    setLocalDirectorGroups(directorGroupNames);
     setNewAsignatures([]);
     setNewSede([]);
     setShowAsignatureGrades(false);
     setShowSedeAsignatures({});
+    setFormErrors({});
     setIsEditing(false);
   };
 
@@ -581,6 +576,7 @@ const ProfileTeacher = ({
       form: null,
       estado: null,
       activeRowKeys: null,
+      directorGroups: null,
     };
     const formChanged =
       JSON.stringify(orig.form || {}) !== JSON.stringify(form || {});
@@ -590,10 +586,16 @@ const ProfileTeacher = ({
       ? origKeys.size !== activeRowKeys.size ||
         [...origKeys].some((k) => !activeRowKeys.has(k))
       : false;
-    return formChanged || estadoChanged || rowsChanged;
-  }, [form, estado, activeRowKeys]);
+    const origDir = orig.directorGroups;
+    const directorChanged = origDir
+      ? origDir.size !== localDirectorGroups.size ||
+        [...origDir].some((k) => !localDirectorGroups.has(k))
+      : false;
+    return formChanged || estadoChanged || rowsChanged || directorChanged;
+  }, [form, estado, activeRowKeys, localDirectorGroups]);
 
-  const validateForm = (showErrors = true) => {
+  // Validación pura (sin side effects) — usada tanto por useMemo como por handleSave
+  const computeFormErrors = useCallback(() => {
     const next = {};
 
     const rFirst = required(
@@ -628,56 +630,72 @@ const ProfileTeacher = ({
       if (!rEmail.valid) next.email = rEmail.msg;
     }
 
-    // En modo page el docente no gestiona asignaturas desde su propio perfil,
-    // por lo que se omite esa validación.
+    // Solo bloquear si el usuario tocó los checkboxes Y desactivó todos
     if (!isPageMode && uniqueSubjects.length > 0) {
-      if (!activeSubjectNames || activeSubjectNames.length === 0) {
+      const origActiveKeys = originalRef.current?.activeRowKeys;
+      const subjectsModified = origActiveKeys
+        ? origActiveKeys.size !== activeRowKeys.size ||
+          [...origActiveKeys].some((k) => !activeRowKeys.has(k))
+        : false;
+      if (subjectsModified && activeSubjectNames.length === 0) {
         next.asignatures = "Debe seleccionar al menos una asignatura activa.";
       }
     }
 
-    if (showErrors) setFormErrors(next);
-    return { valid: Object.keys(next).length === 0, errors: next };
+    return next;
+  }, [
+    form.first_name,
+    form.first_lastname,
+    form.identification,
+    form.email,
+    isPageMode,
+    uniqueSubjects,
+    activeSubjectNames,
+    activeRowKeys,
+  ]);
+
+  const canSave = useMemo(() => {
+    return Object.keys(computeFormErrors()).length === 0;
+  }, [computeFormErrors]);
+
+  const FIELD_LABELS = {
+    first_name: "Primer nombre",
+    first_lastname: "Primer apellido",
+    identification: "Identificación",
+    email: "Correo",
+    asignatures: "Asignaturas",
   };
 
-  // Indica si el formulario actual es válido (sin mostrar errores)
-  const canSave = useMemo(() => {
-    const { valid } = validateForm(false);
-    return valid;
-  }, [form, activeRowKeys, uniqueSubjects, estado, isSaving, isPageMode]);
-
-  // Lista legible de campos faltantes para mostrar en mensaje/tooltip
   const missingFields = useMemo(() => {
-    const { errors } = validateForm(false);
-    const map = {
-      first_name: "Primer nombre",
-      first_lastname: "Primer apellido",
-      identification: "Identificación",
-      email: "Correo",
-      asignatures: "Asignaturas",
-    };
-    return Object.keys(errors || {}).map((k) => map[k] || k);
-  }, [form, activeRowKeys, uniqueSubjects, estado, isPageMode]);
+    const errors = computeFormErrors();
+    return Object.keys(errors).map((k) => FIELD_LABELS[k] || k);
+  }, [computeFormErrors]);
 
   const handleSave = async () => {
     if (!isDirty) {
-      // Si no hay cambios, salir del modo edición
-      console.log("Saving with payload:");
+      // Sin cambios en el formulario: salir de edición directamente
+      notify.info("No hay cambios para guardar.");
       setIsEditing(false);
       return;
     }
 
-    // Validar antes de construir el payload
-    const { valid, errors } = validateForm(true);
-    if (!valid) {
-      // mostrar primer error y detener
+    const errors = computeFormErrors();
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
       const firstMsg =
         Object.values(errors)[0] || "Corrige los campos del formulario.";
       notify.error(firstMsg);
       return;
     }
 
-    // Derivar asignaturas activas desde las filas seleccionadas
+    // ── Determinar si el usuario realmente modificó los checkboxes de asignaturas ──
+    const origActiveKeys = originalRef.current?.activeRowKeys;
+    const subjectsModified = origActiveKeys
+      ? origActiveKeys.size !== activeRowKeys.size ||
+        [...origActiveKeys].some((k) => !activeRowKeys.has(k))
+      : false;
+
+    // Asignaturas activas según el estado actual de los checkboxes
     const activeSubjects = new Set();
     const activeGradeIds = new Set();
     const inactiveGradeIds = new Set();
@@ -685,46 +703,74 @@ const ProfileTeacher = ({
     assignmentRows.forEach((row, idx) => {
       if (activeRowKeys.has(rowKeys[idx])) {
         activeSubjects.add(row.asignatura);
-        // Recolectar los id_grade_asignature_teacher de las filas activas
         if (row.id_grade_asignature_teacher != null) {
           activeGradeIds.add(Number(row.id_grade_asignature_teacher));
         }
-      } else {
-        // Recolectar los id_grade_asignature_teacher de las filas inactivas
-        if (row.id_grade_asignature_teacher != null) {
-          inactiveGradeIds.add(Number(row.id_grade_asignature_teacher));
-        }
+      } else if (row.id_grade_asignature_teacher != null) {
+        inactiveGradeIds.add(Number(row.id_grade_asignature_teacher));
       }
     });
 
-    // Incluir TODAS las asignaturas con su estado correspondiente
-    const asignatures = uniqueSubjects.map((s) => ({
-      fk_asignatura: Number(s.id),
-      status: activeSubjects.has(s.name) ? "Activo" : "Inactivo",
-    }));
+    // Nombres de asignaturas presentes en la UI (para saber cuáles son rastreables)
+    const trackedNames = new Set(uniqueSubjects.map((s) => s.name));
 
-    // Incluir TODOS los grades con su estado correspondiente
-    const grades = [
-      ...Array.from(activeGradeIds).map((id) => ({
-        id_grade_asignature_teacher: id,
-        status: "Activo",
-      })),
-      ...Array.from(inactiveGradeIds).map((id) => ({
-        id_grade_asignature_teacher: id,
-        status: "Inactivo",
-      })),
-    ];
+    // Determinar estado de una asignatura según el contexto
+    const resolveSubjectStatus = (name) => {
+      // Si el usuario NO tocó los checkboxes → preservar como "Activo"
+      if (!subjectsModified) return "Activo";
+      // Si la asignatura no está rastreada en la UI → preservar
+      if (!trackedNames.has(name)) return "Activo";
+      // Si está rastreada, usar el estado real del checkbox
+      return activeSubjects.has(name) ? "Activo" : "Inactivo";
+    };
 
-    console.log("Filas activas e inactivas:", {
-      totalRows: assignmentRows.length,
-      activeRowsCount: activeRowKeys.size,
-      inactiveRowsCount: assignmentRows.length - activeRowKeys.size,
-      activeSubjects: Array.from(activeSubjects),
-      activeGradeIds: Array.from(activeGradeIds),
-      inactiveGradeIds: Array.from(inactiveGradeIds),
-      asignatures,
-      grades,
+    // ── Construir lista completa de asignaturas desde data.subjects + uniqueSubjects ──
+    const seenSubjectIds = new Set();
+    const asignatures = [];
+
+    // 1) data.subjects es la fuente autoritativa del backend
+    if (Array.isArray(data.subjects)) {
+      data.subjects.forEach((s) => {
+        const id = s.id_asignatura ?? s.id;
+        if (id != null && !seenSubjectIds.has(Number(id))) {
+          seenSubjectIds.add(Number(id));
+          asignatures.push({
+            fk_asignatura: Number(id),
+            status: resolveSubjectStatus(s.asignatura || ""),
+          });
+        }
+      });
+    }
+
+    // 2) Agregar cualquier asignatura de uniqueSubjects que no estuviera en data.subjects
+    uniqueSubjects.forEach((s) => {
+      if (s.id != null && !seenSubjectIds.has(Number(s.id))) {
+        seenSubjectIds.add(Number(s.id));
+        asignatures.push({
+          fk_asignatura: Number(s.id),
+          status: resolveSubjectStatus(s.name),
+        });
+      }
     });
+
+    // ── Grades: solo enviar cambios si el usuario modificó checkboxes ──
+    const grades = subjectsModified
+      ? [
+          ...Array.from(activeGradeIds).map((id) => ({
+            id_grade_asignature_teacher: id,
+            status: "Activo",
+          })),
+          ...Array.from(inactiveGradeIds).map((id) => ({
+            id_grade_asignature_teacher: id,
+            status: "Inactivo",
+          })),
+        ]
+      : assignmentRows
+          .filter((r) => r.id_grade_asignature_teacher != null)
+          .map((r) => ({
+            id_grade_asignature_teacher: Number(r.id_grade_asignature_teacher),
+            status: "Activo",
+          }));
 
     const payload = {
       first_name: form.first_name,
@@ -744,19 +790,19 @@ const ProfileTeacher = ({
       asignatures,
       grades,
     };
-    console.log("Saving with payload:", payload);
-
     setIsSaving(true);
     try {
       if (typeof onSave === "function") {
         const teacherId = form.id_docente ?? data.id_docente ?? data.id ?? null;
         const personId = form.per_id ?? data.per_id ?? data.id_persona ?? null;
         await onSave(teacherId, personId, payload);
+        notify.success("Docente guardado correctamente.");
         // actualizar snapshot
         originalRef.current = {
           form: { ...form },
           estado,
           activeRowKeys: new Set(activeRowKeys),
+          directorGroups: new Set(localDirectorGroups),
         };
         setIsEditing(false);
       } else {
@@ -765,26 +811,20 @@ const ProfileTeacher = ({
           form: { ...form },
           estado,
           activeRowKeys: new Set(activeRowKeys),
+          directorGroups: new Set(localDirectorGroups),
         };
         setIsEditing(false);
       }
     } catch (err) {
-      console.error("Error al guardar docente:", err);
+      notify.error("Error al guardar el docente. Intenta nuevamente.");
       // Mantener en modo edición para que el usuario lo corrija
     } finally {
       setIsSaving(false);
     }
   };
+
   const handleRegisterSede = async () => {
-    console.log("Registering new sedes:", newSede);
-
-    if (!createTeacherSede) {
-      console.warn("createTeacherSede no está disponible en el contexto");
-      return;
-    }
-
-    if (!Array.isArray(newSede) || newSede.length === 0) {
-      console.warn("No hay sedes nuevas para registrar");
+    if (!createTeacherSede || !Array.isArray(newSede) || newSede.length === 0) {
       return;
     }
 
@@ -807,34 +847,29 @@ const ProfileTeacher = ({
           })),
         };
 
-        console.log("createTeacherSede payload:", payload);
-        const result = await createTeacherSede(payload);
-        console.log("createTeacherSede result:", result);
+        await createTeacherSede(payload);
       }
 
       // Limpiar estado y cerrar UI de agregar sedes
       setNewSede([]);
       setShowSedeAsignatures({});
 
+      notify.success("Sede registrada correctamente.");
       // Recargar datos del docente
       if (typeof onReload === "function") {
         await onReload();
       }
     } catch (err) {
-      console.error("Error al registrar sedes nuevas:", err);
+      notify.error("Error al registrar la sede. Intenta nuevamente.");
       throw err;
     }
   };
   const handleRegisterAsignature = async () => {
-    console.log("Registering new asignature:", newAsignatures);
-
-    if (!createTeacherAsignature) {
-      console.warn("createTeacherAsignature no está disponible en el contexto");
-      return;
-    }
-
-    if (!Array.isArray(newAsignatures) || newAsignatures.length === 0) {
-      console.warn("No hay asignaturas nuevas para registrar");
+    if (
+      !createTeacherAsignature ||
+      !Array.isArray(newAsignatures) ||
+      newAsignatures.length === 0
+    ) {
       return;
     }
 
@@ -853,42 +888,25 @@ const ProfileTeacher = ({
     };
 
     try {
-      const result = await createTeacherAsignature(payload);
-      console.log("createTeacherAsignature result:", result);
+      await createTeacherAsignature(payload);
 
-      // Limpiar estado y cerrar UI de agregar asignaturas
       setNewAsignatures([]);
       setShowAsignatureGrades(false);
 
-      // Recargar los datos del docente para mostrar las nuevas asignaturas
+      notify.success("Asignaturas registradas correctamente.");
       if (typeof onReload === "function") {
         await onReload();
       }
-
-      return result;
     } catch (err) {
-      console.error("Error al asignar asignaturas al docente:", err);
-      // Reexponer el error para manejarlo en UI si fuera necesario
+      notify.error("Error al registrar las asignaturas. Intenta nuevamente.");
       throw err;
     }
   };
   return (
     <div className={"w-full flex flex-col gap-4  px-4"}>
-      <div className="grid grid-cols-5 items-center gap-4">
-        <div className="col-span-4 flex items-center gap-3">
+      <div className="w-full grid sm:grid-cols-2 lg:grid-cols-5 justify-between items-center bg-primary text-surface p-3 rounded-t-lg gap-4">
+        <div className="col-span-3 flex items-center gap-3">
           <h3 className="font-bold text-xl">Información basica del docente</h3>
-          {form.id_docente ? (
-            <span className="text-sm text-gray-500 ml-2">
-              ID: {form.id_docente}
-            </span>
-          ) : null}
-          {!isPageMode && (
-            <span
-              className={`text-xs font-medium px-2 py-1 rounded ${isEditing ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}`}
-            >
-              {isEditing ? "Modo edición" : "Solo lectura"}
-            </span>
-          )}
           {!isPageMode && (
             <div className="ml-4 text-sm text-gray-600">
               Campos con <span className="text-red-500">*</span> obligatorios
@@ -898,42 +916,7 @@ const ProfileTeacher = ({
         <div className="flex items-center gap-2">
           <SimpleButton
             type="button"
-            onClick={() => {
-              const startProfileTour = () => {
-                setIsTourMode(true);
-                // arrancar tour
-                tourProfileTeacher({ isPageMode });
-
-                // observar la llegada/retirada del overlay de driver.js para desactivar modo tour
-                const checkDriverVisible = () =>
-                  !!document.querySelector(
-                    ".driver-popover, .driver-overlay, .driver-container, .driver",
-                  );
-
-                const observer = new MutationObserver(() => {
-                  if (!checkDriverVisible()) {
-                    setIsTourMode(false);
-                    observer.disconnect();
-                  }
-                });
-
-                observer.observe(document.body, {
-                  childList: true,
-                  subtree: true,
-                });
-
-                // fallback: desactivar tour después de 3 minutos
-                setTimeout(
-                  () => {
-                    setIsTourMode(false);
-                    observer.disconnect();
-                  },
-                  3 * 60 * 1000,
-                );
-              };
-
-              startProfileTour();
-            }}
+            onClick={startTour}
             icon="HelpCircle"
             msjtooltip="Iniciar tutorial"
             noRounded={false}
@@ -942,10 +925,9 @@ const ProfileTeacher = ({
             className="w-auto px-3 py-1.5"
           />
         </div>
-        {!isPageMode && (
-          <div className="w-full grid grid-cols-5 col-span-5 gap-4">
+        {!isPageMode ? (
+          <div className="w-full gap-4">
             {" "}
-            <div className="col-span-4"></div>
             <div id="tour-profile-save">
               <SimpleButton
                 onClick={() => {
@@ -962,7 +944,7 @@ const ProfileTeacher = ({
               />
             </div>
           </div>
-        )}
+        ) : null}
         {isEditing && !canSave && missingFields.length > 0 && (
           <div className="ml-4 text-sm text-red-600">
             Faltan: {missingFields.join(", ")}
@@ -971,7 +953,7 @@ const ProfileTeacher = ({
       </div>
 
       {/* 1) Información básica */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         <div>
           <label className="font-semibold">
             Primer nombre{" "}
@@ -982,7 +964,11 @@ const ProfileTeacher = ({
             name="first_name"
             value={form.first_name}
             onChange={handleChange}
-            className={`w-full p-2 border rounded ${isEditing ? "bg-white border-gray-300" : "bg-gray-50 border-transparent text-gray-600 cursor-not-allowed"} ${formErrors.first_name ? "border-red-500" : ""} ${isTourMode && !String(form.first_name).trim() ? "border-red-500 ring-2 ring-red-100" : ""}`}
+            className={inputCls(
+              isEditing,
+              formErrors.first_name,
+              isTourMode && !String(form.first_name).trim(),
+            )}
             disabled={!isEditing}
           />
           {formErrors.first_name && (
@@ -998,7 +984,7 @@ const ProfileTeacher = ({
             name="second_name"
             value={form.second_name}
             onChange={handleChange}
-            className={`w-full p-2 border rounded ${isEditing ? "bg-white border-gray-300" : "bg-gray-50 border-transparent text-gray-600 cursor-not-allowed"}`}
+            className={inputCls(isEditing, false, false)}
             disabled={!isEditing}
           />
         </div>
@@ -1013,7 +999,11 @@ const ProfileTeacher = ({
             name="first_lastname"
             value={form.first_lastname}
             onChange={handleChange}
-            className={`w-full p-2 border rounded ${isEditing ? "bg-white border-gray-300" : "bg-gray-50 border-transparent text-gray-600 cursor-not-allowed"} ${formErrors.first_lastname ? "border-red-500" : ""} ${isTourMode && !String(form.first_lastname).trim() ? "border-red-500 ring-2 ring-red-100" : ""}`}
+            className={inputCls(
+              isEditing,
+              formErrors.first_lastname,
+              isTourMode && !String(form.first_lastname).trim(),
+            )}
             disabled={!isEditing}
           />
           {formErrors.first_lastname && (
@@ -1029,7 +1019,7 @@ const ProfileTeacher = ({
             name="second_lastname"
             value={form.second_lastname}
             onChange={handleChange}
-            className={`w-full p-2 border rounded ${isEditing ? "bg-white border-gray-300" : "bg-gray-50 border-transparent text-gray-600 cursor-not-allowed"}`}
+            className={inputCls(isEditing, false, false)}
             disabled={!isEditing}
           />
         </div>
@@ -1040,7 +1030,7 @@ const ProfileTeacher = ({
             name="telephone"
             value={form.telephone}
             onChange={handleChange}
-            className={`w-full p-2 border rounded ${isEditing ? "bg-white border-gray-300" : "bg-gray-50 border-transparent text-gray-600 cursor-not-allowed"}`}
+            className={inputCls(isEditing, false, false)}
             disabled={!isEditing}
           />
         </div>
@@ -1054,7 +1044,11 @@ const ProfileTeacher = ({
             name="email"
             value={form.email}
             onChange={handleChange}
-            className={`w-full p-2 border rounded ${isEditing ? "bg-white border-gray-300" : "bg-gray-50 border-transparent text-gray-600 cursor-not-allowed"} ${formErrors.email ? "border-red-500" : ""} ${isTourMode && !String(form.email).trim() ? "border-red-500 ring-2 ring-red-100" : ""}`}
+            className={inputCls(
+              isEditing,
+              formErrors.email,
+              isTourMode && !String(form.email).trim(),
+            )}
             disabled={!isEditing}
           />
           {formErrors.email && (
@@ -1072,7 +1066,11 @@ const ProfileTeacher = ({
             name="identification"
             value={form.identification}
             onChange={handleChange}
-            className={`w-full p-2 border rounded ${isEditing ? "bg-white border-gray-300" : "bg-gray-50 border-transparent text-gray-600 cursor-not-allowed"} ${formErrors.identification ? "border-red-500" : ""} ${isTourMode && !String(form.identification).trim() ? "border-red-500 ring-2 ring-red-100" : ""}`}
+            className={inputCls(
+              isEditing,
+              formErrors.identification,
+              isTourMode && !String(form.identification).trim(),
+            )}
             disabled={!isEditing}
           />
           {formErrors.identification && (
@@ -1089,7 +1087,7 @@ const ProfileTeacher = ({
             value={form.fecha_nacimiento}
             onChange={handleChange}
             placeholder="DD/MM/YYYY"
-            className={`w-full p-2 border rounded ${isEditing ? "bg-white border-gray-300" : "bg-gray-50 border-transparent text-gray-600 cursor-not-allowed"}`}
+            className={inputCls(isEditing, false, false)}
             disabled={!isEditing}
           />
         </div>
@@ -1100,7 +1098,7 @@ const ProfileTeacher = ({
             name="direccion"
             value={form.direccion}
             onChange={handleChange}
-            className={`w-full p-2 border rounded ${isEditing ? "bg-white border-gray-300" : "bg-gray-50 border-transparent text-gray-600 cursor-not-allowed"}`}
+            className={inputCls(isEditing, false, false)}
             disabled={!isEditing}
           />
         </div>
@@ -1109,7 +1107,7 @@ const ProfileTeacher = ({
           <select
             value={estado}
             onChange={handleEstadoChange}
-            className={`w-full p-2 border rounded ${isEditing ? "bg-white border-gray-300" : "bg-gray-50 border-transparent text-gray-600 cursor-not-allowed"}`}
+            className={inputCls(isEditing, false, false)}
             disabled={!isEditing}
           >
             <option value="Activo">Activo</option>
@@ -1122,12 +1120,12 @@ const ProfileTeacher = ({
             <input
               type="checkbox"
               name="representante_curso"
-              checked={!!form.representante_curso}
+              checked={form.representante_curso}
               disabled={!isEditing}
               onChange={(e) =>
                 setForm((prev) => ({
                   ...prev,
-                  representante_curso: !!e.target.checked,
+                  representante_curso: e.target.checked,
                 }))
               }
               className="w-4 h-4"
@@ -1352,16 +1350,14 @@ const ProfileTeacher = ({
                     <td className="px-3 py-2">
                       <input
                         type="checkbox"
-                        checked={localDirectorGroups.has(
-                          String(row.grupo || "")
-                            .trim()
-                            .toLowerCase(),
-                        )}
+                        checked={
+                          !!row.grupo && localDirectorGroups.has(row.grupo)
+                        }
                         readOnly={!isEditing || !form.representante_curso}
                         disabled={!isEditing || !form.representante_curso}
                         onChange={() => handleToggleDirectorGroup(row.grupo)}
                         className="w-4 h-4 mx-auto tour-director-checkbox"
-                        aria-label={`Director de grupo: ${row.grupo || "sin grupo"}`}
+                        aria-label={`Director de grupo: ${row.grupo || "n/a"}`}
                       />
                     </td>
                   </tr>

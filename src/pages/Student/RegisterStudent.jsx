@@ -91,7 +91,6 @@ const RegisterStudent = ({ onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const newErrors = {};
     if (!formData.identificationtype)
       newErrors.identificationtype = "Selecciona un tipo de documento.";
@@ -106,7 +105,6 @@ const RegisterStudent = ({ onSuccess }) => {
       newErrors.fecha_nacimiento = "La fecha de nacimiento es requerida.";
     if (!formData.telephone.trim())
       newErrors.telephone = "El teléfono es requerido.";
-    if (!formData.email.trim()) newErrors.email = "El email es requerido.";
     if (!formData.password.trim())
       newErrors.password = "La contraseña es requerida.";
     if (!formData.sede) newErrors.sede = "La sede es requerida.";
@@ -124,7 +122,10 @@ const RegisterStudent = ({ onSuccess }) => {
       // ── PASO 1: construir el FormData con los archivos y enviarlo ──────────
       const form = new FormData();
       form.append("cedulaEstudiante", formData.link_identificacion);
-      form.append("soporteExcel", formData.link_piar);
+      // Solo adjuntar el soporte Excel si el checkbox PIAR está marcado y hay archivo
+      if (formData.cuenta_piar && formData.link_piar) {
+        form.append("soporteExcel", formData.link_piar);
+      }
       form.append("identificacion", formData.identification);
 
       const res = await upload(form, "upload/estudiantes");
@@ -404,9 +405,7 @@ const RegisterStudent = ({ onSuccess }) => {
           )}
         </div>
         <div>
-          <label>
-            Email <span className="text-error">*</span>
-          </label>
+          <label>Email</label>
           <input
             type="email"
             name="email"

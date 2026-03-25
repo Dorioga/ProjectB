@@ -32,7 +32,7 @@ const SimpleButton = ({
       type={type}
       aria-describedby={tooltipEnabled ? tooltipId : undefined}
       className={`relative group flex flex-row w-full justify-center items-center cursor-pointer ${
-        noRounded ? "p-3" : "rounded-md p-2"
+        noRounded ? "p-3" : "rounded-lg p-2"
       } ${bg} ${text} ${hover}  focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60 ${className}`}
       onClick={onClick}
       disabled={disabled}

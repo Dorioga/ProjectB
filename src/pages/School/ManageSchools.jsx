@@ -126,7 +126,7 @@ const ManageSchools = () => {
     <div className=" p-6  h-full gap-4 flex flex-col">
       <div
         id="tour-header"
-        className="w-full flex justify-between items-center bg-primary text-surface p-3 rounded-t-lg"
+        className="w-full flex justify-between items-center bg-primary text-surface p-3 rounded-lg"
       >
         <div className="flex items-center gap-3">
           <h2 className="text-2xl font-bold">Datos de Instituciones</h2>

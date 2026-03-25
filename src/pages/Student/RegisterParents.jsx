@@ -4,9 +4,12 @@ import SimpleButton from "../../components/atoms/SimpleButton";
 import TypeDocumentSelector from "../../components/molecules/TypeDocumentSelector";
 import { useNotify } from "../../lib/hooks/useNotify";
 import useAuth from "../../lib/hooks/useAuth";
-import { registerGuardian } from "../../services/studentService";
-import { allstudent } from "../../services/schoolService";
+import {
+  registerGuardian,
+  getStudentByIdentification,
+} from "../../services/studentService";
 import Loader from "../../components/atoms/Loader";
+import tourRegisterParents from "../../tour/tourRegisterParents";
 
 const INITIAL_FORM = {
   first_name: "",
@@ -61,30 +64,15 @@ const RegisterParents = ({ fkEstudiante, onSuccess }) => {
     setSearchStatus("loading");
     setFoundStudentId(null);
     try {
-      const result = await allstudent({ institucion: idInstitution });
-      const list = Array.isArray(result) ? result : (result?.data ?? []);
-      const found = list.find(
-        (s) =>
-          String(s.identification ?? s.numero_identificacion ?? "").trim() ===
-          value,
-      );
-      if (found) {
-        setFoundStudentId(found.id_estudiante);
-        setSearchStatus("found");
-        setErrors((prev) => ({ ...prev, fk_estudiante: "" }));
-        // Usar la sede del estudiante encontrado; si no viene, mantener la del auth
-        const studentSede =
-          found.id_sede ?? found.fk_sede ?? found.sede_id ?? null;
-        if (studentSede) {
-          setResolvedSede(String(studentSede));
-        }
-        notify.success(
-          `Estudiante encontrado: ${found.first_name ?? ""} ${found.first_lastname ?? ""}.`,
-        );
-      } else {
-        setSearchStatus("not_found");
-        notify.error("No se encontró un estudiante con esa identificación.");
-      }
+      const found = await getStudentByIdentification({
+        numero_identificacion_estu: Number(value),
+        fk_institucion: Number(idInstitution),
+      });
+      console.log("Estudiante encontrado:", found);
+      setFoundStudentId(found.id_estudiante);
+      setSearchStatus("found");
+      setErrors((prev) => ({ ...prev, fk_estudiante: "" }));
+      notify.success(`Estudiante encontrado: ${found.nombre ?? ""}.`);
     } catch (err) {
       setSearchStatus("not_found");
       notify.error(err?.message ?? "Error al buscar el estudiante.");
@@ -194,8 +182,20 @@ const RegisterParents = ({ fkEstudiante, onSuccess }) => {
   return (
     <div className=" p-6  h-full gap-4 flex flex-col">
       {loading && <Loader message="Registrando acudiente…" />}
-      <div className="w-full grid grid-cols-7 items-center bg-primary text-surface p-3 rounded-t-lg">
+      <div className="w-full grid grid-cols-7 items-center bg-primary text-surface p-3 rounded-lg">
         <h2 className="text-2xl col-span-4 font-bold">Datos de Acudiente</h2>
+        <div className="col-span-3 flex justify-end">
+          <SimpleButton
+            type="button"
+            onClick={() => tourRegisterParents({ searchStatus })}
+            icon="HelpCircle"
+            msjtooltip="Iniciar tutorial"
+            noRounded={false}
+            bg="bg-info"
+            text="text-surface"
+            className="w-auto px-3 py-1.5"
+          />
+        </div>
       </div>
 
       {/* Búsqueda de estudiante por número de identificación */}
@@ -203,7 +203,7 @@ const RegisterParents = ({ fkEstudiante, onSuccess }) => {
         <label className="text-sm font-semibold text-on-surface">
           Buscar estudiante por N.º de identificación
         </label>
-        <div className="flex gap-2 items-center">
+        <div className="grid grid-cols-5 gap-2  items-center">
           <input
             type="text"
             value={studentIdInput}
@@ -214,17 +214,20 @@ const RegisterParents = ({ fkEstudiante, onSuccess }) => {
             }}
             onKeyDown={(e) => e.key === "Enter" && handleSearchStudent()}
             placeholder="Ej: 1043482950"
-            className={input}
+            id="tour-search-student"
+            className="col-span-3 w-full p-2 border rounded bg-surface text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/40 border-secondary/40"
           />
-          <SimpleButton
-            type="button"
-            msj={searchStatus === "loading" ? "Buscando..." : "Buscar"}
-            text="text-surface"
-            bg="bg-primary"
-            icon="Search"
-            disabled={searchStatus === "loading"}
-            onClick={handleSearchStudent}
-          />
+          <div className="col-span-2">
+            <SimpleButton
+              type="button"
+              msj={searchStatus === "loading" ? "Buscando..." : "Buscar"}
+              text="text-surface"
+              bg="bg-primary"
+              icon="Search"
+              disabled={searchStatus === "loading"}
+              onClick={handleSearchStudent}
+            />
+          </div>
         </div>
         {searchStatus === "found" && (
           <p className="text-xs text-success font-medium">
@@ -244,12 +247,13 @@ const RegisterParents = ({ fkEstudiante, onSuccess }) => {
       {searchStatus === "found" && (
         <form
           onSubmit={handleSubmit}
-          className="grid grid-cols-1 md:grid-cols-2 gap-4"
+          className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4"
           noValidate
         >
           {/* Tipo de documento */}
           <Field required error={errors.identificationtype}>
             <TypeDocumentSelector
+              id="tour-doctype"
               name="identificationtype"
               value={form.identificationtype}
               onChange={handleChange}
@@ -265,6 +269,7 @@ const RegisterParents = ({ fkEstudiante, onSuccess }) => {
             error={errors.identification}
           >
             <input
+              id="tour-identification"
               type="text"
               name="identification"
               value={form.identification}
@@ -276,6 +281,7 @@ const RegisterParents = ({ fkEstudiante, onSuccess }) => {
           {/* Primer nombre */}
           <Field label="Primer nombre" required error={errors.first_name}>
             <input
+              id="tour-firstname"
               type="text"
               name="first_name"
               value={form.first_name}
@@ -287,6 +293,7 @@ const RegisterParents = ({ fkEstudiante, onSuccess }) => {
           {/* Segundo nombre */}
           <Field label="Segundo nombre" error={errors.second_name}>
             <input
+              id="tour-secondname"
               type="text"
               name="second_name"
               value={form.second_name}
@@ -298,6 +305,7 @@ const RegisterParents = ({ fkEstudiante, onSuccess }) => {
           {/* Primer apellido */}
           <Field label="Primer apellido" required error={errors.first_lastname}>
             <input
+              id="tour-firstlastname"
               type="text"
               name="first_lastname"
               value={form.first_lastname}
@@ -309,6 +317,7 @@ const RegisterParents = ({ fkEstudiante, onSuccess }) => {
           {/* Segundo apellido */}
           <Field label="Segundo apellido" error={errors.second_lastname}>
             <input
+              id="tour-secondlastname"
               type="text"
               name="second_lastname"
               value={form.second_lastname}
@@ -320,6 +329,7 @@ const RegisterParents = ({ fkEstudiante, onSuccess }) => {
           {/* Teléfono */}
           <Field label="Teléfono" required error={errors.telephone}>
             <input
+              id="tour-telephone"
               type="tel"
               name="telephone"
               value={form.telephone}
@@ -331,6 +341,7 @@ const RegisterParents = ({ fkEstudiante, onSuccess }) => {
           {/* Correo electrónico */}
           <Field label="Correo electrónico" error={errors.email}>
             <input
+              id="tour-email"
               type="email"
               name="email"
               value={form.email}
@@ -342,6 +353,7 @@ const RegisterParents = ({ fkEstudiante, onSuccess }) => {
           {/* Contraseña */}
           <Field label="Contraseña" required error={errors.password}>
             <input
+              id="tour-password"
               type="password"
               name="password"
               value={form.password}
@@ -351,15 +363,20 @@ const RegisterParents = ({ fkEstudiante, onSuccess }) => {
             />
           </Field>
 
-          <div className="md:col-span-2 mt-2">
-            <SimpleButton
-              type="submit"
-              msj={loading ? "Registrando..." : "Registrar acudiente"}
-              text="text-surface"
-              bg="bg-accent"
-              icon="Save"
-              disabled={loading}
-            />
+          <div
+            id="tour-submit"
+            className="w-full flex justify-center md:col-span-5 mt-2"
+          >
+            <div className="w-1/2">
+              <SimpleButton
+                type="submit"
+                msj={loading ? "Registrando..." : "Registrar acudiente"}
+                text="text-surface"
+                bg="bg-accent"
+                icon="Save"
+                disabled={loading}
+              />
+            </div>
           </div>
         </form>
       )}

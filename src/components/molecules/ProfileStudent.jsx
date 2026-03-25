@@ -7,6 +7,8 @@ import CameraModal from "./CameraModal";
 import ExcuseModal from "./ExcuseModal";
 import PDFViewerModal from "./PDFViewerModal.jsx";
 import { formatDateToDisplay } from "../../utils/formatUtils";
+import { upload } from "../../services/uploadService";
+import { useNotify } from "../../lib/hooks/useNotify";
 
 const ProfileStudent = ({
   data,
@@ -14,6 +16,8 @@ const ProfileStudent = ({
   onSave,
   initialEditing = false,
 }) => {
+  const notify = useNotify();
+
   console.log(" 123 Data en ProfileStudent:", data);
   ///Preguntar el State
   const [isEditing, setIsEditing] = useState(Boolean(initialEditing));
@@ -82,14 +86,22 @@ const ProfileStudent = ({
     );
   }, [data]);
 
-  const toggleEditing = () => {
+  const toggleEditing = async () => {
     if (isEditing) {
-      // Aquí puedes llamar a la función para guardar los cambios
-      handleSaveChanges();
+      await handleSaveChanges();
     }
     setIsEditing(!isEditing);
   };
-  const handleSaveChanges = () => {
+  const handleSaveChanges = async () => {
+    // Validar que si PIAR está activado, debe haber un archivo (nuevo o ya existente)
+    const piarYaExiste = Boolean(data?.link_piar || data?.auDoc_piar);
+    if (hasPiar && !piarYaExiste && !documentFiles.piar) {
+      notify.error(
+        "El PIAR está activado. Debes adjuntar el archivo de soporte antes de guardar.",
+      );
+      return;
+    }
+
     // Mapear state_process a process_id
     const processIdMap = {
       Conforme: "2",
@@ -138,19 +150,41 @@ const ProfileStudent = ({
 
     // Si hay archivos nuevos, actualizar los links correspondientes
     if (photoFile) {
-      // La foto se subirá y se actualizará el photo_link
       updatedData.photo_link = photoPreview;
     }
 
-    if (documentFiles.id_Student) {
-      // El documento se subirá y se actualizará el identification_link
-      updatedData.identification_link = ""; // Se actualizará después de subir
-    }
+    // ── Subida de archivos (identificación y/o PIAR) ───────────────────────
+    const hasIdFile = Boolean(documentFiles.id_Student);
+    const hasPiarFile = Boolean(hasPiar && documentFiles.piar);
 
-    // PIAR (archivo Excel)
-    if (documentFiles.piar) {
-      // Se subirá y el backend deberá devolver el enlace en la respuesta
-      updatedData.piar_link = "";
+    if (hasIdFile || hasPiarFile) {
+      try {
+        const form = new FormData();
+        form.append(
+          "identificacion",
+          data.numero_identificacion || data.identification || "",
+        );
+        if (hasIdFile) {
+          form.append("cedulaEstudiante", documentFiles.id_Student);
+        }
+        if (hasPiarFile) {
+          form.append("soporteExcel", documentFiles.piar);
+        }
+
+        const res = await upload(form, "upload/estudiantes");
+
+        if (res && res.status === 200 && Array.isArray(res.data)) {
+          res.data.forEach((entry) => {
+            if (entry.field === "cedulaEstudiante") {
+              updatedData.identification_link = "yes";
+            } else if (entry.field === "soporteExcel") {
+              updatedData.piar_link = "yes";
+            }
+          });
+        }
+      } catch (err) {
+        console.error("Error subiendo archivos en ProfileStudent:", err);
+      }
     }
 
     if (onSave) {
@@ -162,6 +196,14 @@ const ProfileStudent = ({
           data,
         );
       }
+      console.log(
+        "Invocando onSave con studentId:",
+        studentId,
+        "personId:",
+        personId,
+        "updatedData:",
+        updatedData,
+      );
       onSave(studentId, personId, updatedData);
     }
 
@@ -204,13 +246,23 @@ const ProfileStudent = ({
     <div className="w-full flex flex-col items-center justify-center">
       <div className="w-11/12 flex flex-col gap-4">
         <div className="w-full flex justify-end">
-          <div className="grid grid-cols-2 gap-2">
+          <div className="flex gap-2">
+            {isEditing && (
+              <SimpleButton
+                onClick={() => setIsEditing(false)}
+                msj="Cancelar"
+                bg="bg-secondary"
+                icon="X"
+                text="text-surface"
+              />
+            )}
             <SimpleButton
-              onClick={toggleEditing}
-              msj={isEditing ? "Guardar" : "Editar"}
-              bg={isEditing ? "bg-accent" : "bg-secondary"}
-              icon={isEditing ? "Save" : "Pencil"}
-              text={"text-surface"}
+              onClick={() => setIsEditing(true)}
+              msj="Editar"
+              bg="bg-primary"
+              icon="Pencil"
+              text="text-surface"
+              disabled={isEditing}
             />
           </div>
         </div>
@@ -589,24 +641,23 @@ const ProfileStudent = ({
               </span>
             </div>
 
-            {isEditing ? (
-              hasPiar ? (
-                <div className="flex">
-                  <FileChooser
-                    accept=".xlsx,.xls"
-                    onChange={(file) => handleDocumentChange("piar", file)}
-                    label={
-                      documentFiles.piar
-                        ? documentFiles.piar.name
-                        : "Cargar (.xlsx)"
-                    }
-                  />
-                </div>
-              ) : (
-                <div />
-              )
-            ) : String(data?.auDoc_piar || "").includes("https://") ||
-              data?.link_piar ? (
+            {hasPiar && (
+              <div className="flex">
+                <FileChooser
+                  editing={isEditing}
+                  accept=".xlsx,.xls"
+                  onChange={(file) => handleDocumentChange("piar", file)}
+                  label={
+                    documentFiles.piar
+                      ? documentFiles.piar.name
+                      : "Cargar (.xlsx)"
+                  }
+                />
+              </div>
+            )}
+            {!isEditing &&
+            (String(data?.auDoc_piar || "").includes("https://") ||
+              data?.link_piar) ? (
               <a
                 className="text-primary underline"
                 href={data.auDoc_piar || data?.link_piar}
@@ -615,9 +666,7 @@ const ProfileStudent = ({
               >
                 Descargar PIAR
               </a>
-            ) : (
-              <div />
-            )}
+            ) : null}
           </div>
           <div
             className={`w-full grid grid-cols-1  gap-4 items-center ${
@@ -645,6 +694,7 @@ const ProfileStudent = ({
                 }`}
               >
                 <FileChooser
+                  editing={isEditing}
                   accept=".pdf,.jpg,.jpeg,.png"
                   onChange={(file) =>
                     handleDocumentChange("id_Acudiente", file)
@@ -673,15 +723,7 @@ const ProfileStudent = ({
                 text="text-surface"
               />
             ) : (
-              <FileChooser
-                accept=".pdf,.jpg,.jpeg,.png"
-                onChange={(file) => handleDocumentChange("id_Acudiente", file)}
-                label={
-                  documentFiles.id_Acudiente
-                    ? documentFiles.id_Acudiente.name
-                    : "Cargar archivo"
-                }
-              />
+              <div />
             )}
           </div>
           <div
@@ -710,6 +752,7 @@ const ProfileStudent = ({
                 }`}
               >
                 <FileChooser
+                  editing={isEditing}
                   accept=".pdf,.jpg,.jpeg,.png"
                   onChange={(file) => handleDocumentChange("id_Student", file)}
                   label={
@@ -734,15 +777,7 @@ const ProfileStudent = ({
                 text="text-surface"
               />
             ) : (
-              <FileChooser
-                accept=".pdf,.jpg,.jpeg,.png"
-                onChange={(file) => handleDocumentChange("id_Student", file)}
-                label={
-                  documentFiles.id_Student
-                    ? documentFiles.id_Student.name
-                    : "Cargar archivo"
-                }
-              />
+              <div />
             )}
           </div>
         </div>
@@ -751,6 +786,19 @@ const ProfileStudent = ({
           <p>Fecha de ingreso: {data.fecha_ingreso}</p>
           <p>Última actualización: {data.ultima_actualizacion}</p>
         </div>
+
+        {/* Botón guardar en la parte inferior, solo visible en modo edición */}
+        {isEditing && (
+          <div className="w-full flex justify-end pb-4">
+            <SimpleButton
+              onClick={toggleEditing}
+              msj="Guardar"
+              bg="bg-accent"
+              icon="Save"
+              text="text-surface"
+            />
+          </div>
+        )}
       </div>
       <CameraModal
         isOpen={isOpenCamera}

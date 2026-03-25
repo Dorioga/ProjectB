@@ -114,6 +114,19 @@ export async function registerSignature(payload) {
 }
 
 /**
+ * Registra la reserva de cupo de un estudiante.
+ * POST /slots
+ * @param {Object} payload - Datos del estudiante y acudiente.
+ * @returns {Promise} Respuesta del servidor.
+ */
+export async function registerSlot(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Payload inválido para registerSlot");
+  }
+  return ApiClient.instance.post("/slots", payload);
+}
+
+/**
  * Solicita la recuperación de contraseña según el rol del usuario.
  * POST /recoverypassword
  * @param {Object} payload - { email?, lastName?, identificationNumber?, idRol }
@@ -124,6 +137,19 @@ export async function recoveryPassword(payload) {
     throw new Error("Payload inválido para recoveryPassword");
   }
   return ApiClient.instance.post("/recoverypassword", payload);
+}
+
+/**
+ * Obtiene la institución asignada para un docente, a partir de la sede.
+ * POST /institucion/teacher
+ * @param {{ idSede: number }} payload
+ * @returns {Promise<Object>} Respuesta del servidor con id_institucion
+ */
+export async function getTeacherInstitution(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Payload inválido para getTeacherInstitution");
+  }
+  return ApiClient.instance.post("/institucion/teacher", payload);
 }
 
 /**

@@ -7,6 +7,7 @@ const SedeModal = ({
   sede,
   onSave,
   initialEditing = false,
+  initialTutorial = false,
 }) => {
   const modalTitle = sede ? "Perfil de la Sede" : "Crear nueva sede";
 
@@ -16,12 +17,13 @@ const SedeModal = ({
       onClose={onClose}
       title={modalTitle}
       showCloseButton={false}
-      size="4xl"
+      size="7xl"
     >
       <ProfileSede
         data={sede}
         onSave={onSave}
         initialEditing={initialEditing}
+        initialTutorial={initialTutorial}
       />
     </Modal>
   );

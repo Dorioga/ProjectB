@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Upload, File, X } from "lucide-react";
 
 const FileChooser = ({
@@ -9,9 +9,30 @@ const FileChooser = ({
   disabled = false,
   label = "Seleccionar archivo",
   mode = "default",
+  // Control de visibilidad. Muchas veces sólo queremos mostrar el
+  // botón cuando estamos en modo edición, por lo que se puede pasar
+  // `editing={isEditing}` o cualquier otra expresión booleana. El valor
+  // por defecto es `true` para mantener compatibilidad.
+  editing = true,
 }) => {
-  const [selectedFiles, setSelectedFiles] = useState([]);
+  // Si el componente no está autorizado para mostrarse (p.ej. estamos
+  // viendo un perfil en modo lectura), no renderizamos nada.
+  if (!editing) return null;
+  const normalizeValue = (val) => {
+    if (!val) return [];
+    if (Array.isArray(val)) return val;
+    return [val];
+  };
+
+  const [selectedFiles, setSelectedFiles] = useState(() =>
+    normalizeValue(value),
+  );
   const fileInputRef = useRef(null);
+
+  // Sincronizar con el prop value cuando cambia desde el padre
+  useEffect(() => {
+    setSelectedFiles(normalizeValue(value));
+  }, [value]);
 
   const handleFileChange = (event) => {
     const files = event.target.files;
@@ -66,6 +87,11 @@ const FileChooser = ({
       (_, index) => index !== indexToRemove,
     );
     setSelectedFiles(newFiles);
+    // Resetear el input para que pueda volver a disparar onChange
+    // aunque se seleccione el mismo archivo u otro nuevo
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
     if (onChange) {
       onChange(multiple ? newFiles : null);
     }

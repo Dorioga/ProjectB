@@ -4,16 +4,34 @@ import {
   useState,
   useCallback,
   useEffect,
+  useRef,
 } from "react";
 import { eventBus } from "../../services/ApiClient";
 
 const NotificationContext = createContext(undefined);
 
+// Ventana de deduplicación en ms: mensajes idénticos dentro de este lapso se ignoran
+const DEDUP_WINDOW_MS = 600;
+
 export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
+  // Registro de mensajes recientes para evitar duplicados
+  const recentRef = useRef(new Map());
+
+  /** Devuelve true si el mensaje ya fue mostrado recientemente */
+  const isDuplicate = useCallback((message, type) => {
+    const key = `${type}::${message}`;
+    const now = Date.now();
+    const last = recentRef.current.get(key);
+    if (last && now - last < DEDUP_WINDOW_MS) return true;
+    recentRef.current.set(key, now);
+    return false;
+  }, []);
 
   const addNotification = useCallback(
     (message, type = "error", duration = 5000) => {
+      if (isDuplicate(message, type)) return null;
+
       const id = Date.now() + Math.random();
       const notification = { id, message, type };
 
@@ -27,7 +45,7 @@ export const NotificationProvider = ({ children }) => {
 
       return id;
     },
-    [],
+    [isDuplicate],
   );
 
   const removeNotification = useCallback((id) => {
@@ -41,24 +59,21 @@ export const NotificationProvider = ({ children }) => {
   // Suscribirse a eventos del ApiClient — suscripción estable en mount (evita re-suscribir)
   useEffect(() => {
     const unsubscribe = eventBus.on((message, type) => {
-      // Añadir notificación directamente para evitar dependencia en `addNotification`
+      if (isDuplicate(message, type)) return;
+
       const id = Date.now() + Math.random();
       const notification = { id, message, type };
 
       setNotifications((prev) => [...prev, notification]);
 
       // auto-clear después del timeout por defecto (5s)
-      const t = setTimeout(() => {
+      setTimeout(() => {
         setNotifications((prev) => prev.filter((n) => n.id !== id));
       }, 5000);
-
-      // No necesitamos limpiar `t` aquí (se limpia al remover la notificación),
-      // pero guardarlo sería necesario si quisiéramos cancelar timeouts al unmount.
-      void t;
     });
 
     return unsubscribe;
-  }, []);
+  }, [isDuplicate]);
 
   return (
     <NotificationContext.Provider

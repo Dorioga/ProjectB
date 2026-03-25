@@ -171,7 +171,7 @@ const ManageGrade = () => {
 
   return (
     <div className="p-6 h-full gap-4 flex flex-col">
-      <div className="w-full grid grid-cols-5 justify-between items-center bg-primary text-surface p-3 rounded-t-lg">
+      <div className="w-full grid grid-cols-5 justify-between items-center bg-primary text-surface p-3 rounded-lg">
         <h2 className="text-2xl col-span-4 font-bold">Gestión de Grados</h2>
         <SimpleButton
           onClick={() => setIsAddOpen(true)}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   BarChart,
   Bar,
@@ -15,17 +15,19 @@ import useAuth from "../../lib/hooks/useAuth";
 import useTeacher from "../../lib/hooks/useTeacher";
 import { getCurrentTheme } from "../../utils/themeManager";
 import Loader from "../../components/atoms/Loader";
+import AlertTable from "../../components/molecules/AlertTable";
 
 const DashHome = () => {
   const { reload } = useStudent();
-  const { fetchAllStudents } = useSchool();
-  const { idInstitution, rol, idDocente } = useAuth();
+  const { fetchAllStudents, fetchStudentAlerts } = useSchool();
+  const { idInstitution, rol, idDocente, imgSchool } = useAuth();
   const { getAllStudentTeacher } = useTeacher();
 
   const isTeacher = Boolean(idDocente); // antiguo patrón usado en otros componentes
 
   const [allStudents, setAllStudents] = useState([]);
   const [isLoadingAllStudents, setIsLoadingAllStudents] = useState(false);
+  const [studentAlerts, setStudentAlerts] = useState([]);
 
   // Selectors state
   const [selectedSede, setSelectedSede] = useState("");
@@ -34,10 +36,21 @@ const DashHome = () => {
   const [selectedGroup, setSelectedGroup] = useState("");
   const [selectedBeca, setSelectedBeca] = useState("");
 
+  const loadAlerts = useCallback(async () => {
+    // solo cargamos alertas cuando rol es 3
+    if (!(rol === 3 || rol === "3")) return;
+
+    try {
+      const raw = await fetchStudentAlerts();
+      setStudentAlerts(Array.isArray(raw) ? raw : []);
+    } catch (err) {
+      console.error("Home - error loading alerts:", err);
+    }
+  }, [fetchStudentAlerts, rol]);
+
   // Cargar estudiantes del contexto y la lista completa desde el servicio al montar
   useEffect(() => {
     reload();
-
     const loadAll = async () => {
       setIsLoadingAllStudents(true);
       try {
@@ -280,22 +293,39 @@ const DashHome = () => {
     );
   }, [filteredStudents]);
 
+  if (rol === 5 || rol === "5" || rol === 6 || rol === "6") {
+    return (
+      <div
+        className="h-full w-full"
+        style={{
+          backgroundImage: `url(${imgSchool})`,
+          backgroundColor: "rgba(240,244,248,0.5)", // ligero fondo semi-transparente
+          backgroundSize: "40% auto", // más pequeña que el contenedor
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          opacity: 0.5, // transparencia total del div
+        }}
+      />
+    );
+  }
+
   return (
     <div className=" p-6  h-full gap-4 flex flex-col">
       {isLoadingAllStudents && (
         <Loader message="Cargando estudiantes..." size={96} />
       )}
       {/* --- Encabezado con selector de jornada --- */}
-      <div className="grid grid-cols-1 2xl:grid-cols-5 justify-between items-center gap-4">
-        <h1 className="text-2xl font-bold  xl:col-span-2">Panel principal</h1>
 
-        <div className="grid grid-cols-3 lg:grid-cols-6 w-full items-center gap-3 xl:col-span-3">
+      <div className="grid grid-cols-1 2xl:grid-cols-5 justify-between items-center gap-4 bg-primary text-surface p-3 rounded-lg">
+        <h1 className="text-2xl font-bold  xl:col-span-1">Panel principal</h1>
+
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 w-full items-center gap-3 xl:col-span-4">
           <div className="col-span-1">
             <label className="text-sm font-medium">Sede</label>
             <select
               value={selectedSede}
               onChange={(e) => setSelectedSede(e.target.value)}
-              className="w-full p-2 border rounded-lg bg-input"
+              className="w-full p-2 border rounded-lg bg-input text-black bg-surface"
             >
               <option value="">Todas las sedes</option>
               {sedesFromStudents.map((s) => (
@@ -314,7 +344,7 @@ const DashHome = () => {
                 const val = e.target.value;
                 setSelectedJourney(val || "todas");
               }}
-              className="w-full p-2 border rounded-lg bg-input"
+              className="w-full p-2 border rounded-lg bg-input text-black bg-surface"
             >
               <option value="">Todas</option>
               {jornadas.map((j) => (
@@ -333,7 +363,7 @@ const DashHome = () => {
                 setSelectedGrade(e.target.value);
                 setSelectedGroup("");
               }}
-              className="w-full p-2 border rounded-lg bg-input"
+              className="w-full p-2 border rounded-lg bg-input text-black bg-surface"
             >
               <option value="">Todos</option>
               {gradesFromStudents.map((g) => (
@@ -349,7 +379,7 @@ const DashHome = () => {
             <select
               value={selectedGroup}
               onChange={(e) => setSelectedGroup(e.target.value)}
-              className="w-full p-2 border rounded-lg bg-input"
+              className="w-full p-2 border rounded-lg bg-input text-black bg-surface"
             >
               <option value="">Todos</option>
               {groupsFromStudents.map((gr) => (
@@ -365,7 +395,7 @@ const DashHome = () => {
             <select
               value={selectedBeca}
               onChange={(e) => setSelectedBeca(e.target.value)}
-              className="w-full p-2 border rounded-lg bg-input"
+              className="w-full p-2 border rounded-lg bg-input text-black bg-surface"
             >
               <option value="">Todos</option>
               {becaStatuses.map((b) => (
@@ -386,7 +416,7 @@ const DashHome = () => {
                 setSelectedGroup("");
                 setSelectedBeca("");
               }}
-              className="p-2 w-full rounded-lg bg-secondary text-surface border"
+              className="p-2 w-full rounded-lg bg-secondary text-surface "
             >
               Limpiar filtros
             </button>
@@ -409,7 +439,7 @@ const DashHome = () => {
       </div>
 
       {/* --- Gráfico y Tabla --- */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Gráfico Apilado */}
         <div className="lg:col-span-2 bg-background p-6 rounded-lg shadow flex flex-col">
           <h3 className="font-semibold mb-4">
@@ -445,21 +475,21 @@ const DashHome = () => {
         {/* Tabla de Resumen por Grado */}
         <div className="bg-background p-6 rounded-lg shadow">
           <h3 className="font-semibold mb-4">Resumen por grado</h3>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-lg">
             <table className="w-full text-sm rounded-lg ">
-              <thead className="bg-secondary text-surface rounded-lg">
-                <tr>
-                  <th className="p-2 text-left">Grado</th>
+              <thead className="bg-secondary text-surface rounded-lg ">
+                <tr className="rounded-lg">
+                  <th className="p-2 text-left rounded-tl-lg">Grado</th>
                   {selectedJourney === "todas" && (
                     <>
                       <th className="p-2 text-center">Mañana</th>
                       <th className="p-2 text-center">Tarde</th>
                     </>
                   )}
-                  <th className="p-2 text-center">Total</th>
+                  <th className="p-2 text-center rounded-tr-lg">Total</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="">
                 {studentData.map((item, index) => (
                   <tr key={index} className="border-b hover:bg-gray-50">
                     <td className="p-2 font-semibold">{item.grade}</td>
@@ -501,6 +531,10 @@ const DashHome = () => {
           </div>
         </div>
       </div>
+      {/* --- Alertas Documentales --- */}
+      {(rol === "3" || rol === "2" || rol === "4") && (
+        <AlertTable alerts={studentAlerts} onRefresh={loadAlerts} />
+      )}
     </div>
   );
 };

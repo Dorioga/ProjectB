@@ -71,6 +71,28 @@ export async function getStudents(params = {}) {
   return studentsMock;
 }
 
+/**
+ * Busca un estudiante por número de identificación y fk_institucion.
+ * Endpoint: POST /values/student/guardian
+ * @param {{ numero_identificacion_estu: string, fk_institucion: number }} payload
+ * @returns {Promise<{ id_estudiante: string, nombre: string }>}
+ */
+export async function getStudentByIdentification(payload) {
+  if (!payload?.numero_identificacion_estu || !payload?.fk_institucion) {
+    throw new Error(
+      "numero_identificacion_estu y fk_institucion son requeridos.",
+    );
+  }
+  const res = await ApiClient.instance.post(
+    "/values/student/guardian",
+    payload,
+  );
+  const data = res?.data[0] ?? res;
+  console.log("StudentService - getStudentByIdentification:", res);
+  if (!data?.id_estudiante) throw new Error("Estudiante no encontrado.");
+  return data;
+}
+
 export async function getStudent(payload) {
   // Aceptar tanto string/id como objeto payload
   const body =
@@ -177,6 +199,75 @@ export async function deleteStudent(id) {
   return ApiClient.del(`/students/${id}`);
 }
 
+/**
+ * Registra una observación de estudiante.
+ *
+ * Endpoint: POST /observation/add
+ * @param {Object} payload
+ * @param {number} payload.fk_estudiante
+ * @param {number} payload.fk_grado
+ * @param {string} payload.lugar_nacimiento
+ * @param {number} payload.fk_acudiente
+ * @param {string} payload.ocupacion
+ * @param {string} payload.observacion
+ * @param {string} payload.telefono
+ * @param {number} [payload.fk_docente] - Solo cuando el rol es docente
+ * @returns {Promise<Object>} Respuesta del servidor
+ */
+export async function registerObservation(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+
+  const res = await ApiClient.instance.post("/observation/add", payload);
+  console.log("StudentService - registerObservation:", res);
+
+  if (res && typeof res === "object" && "data" in res) return res;
+  if (res !== undefined && res !== null) return res;
+
+  throw new Error("Respuesta inesperada de registerObservation.");
+}
+
+/**
+ * Consulta observaciones de un estudiante por número de identificación.
+ *
+ * Endpoint: POST /data/observation
+ * @param {{ numberId: string }} payload
+ * @returns {Promise<Array>} Lista de observaciones
+ */
+export async function getObservationData(payload) {
+  if (!payload?.numberId) {
+    throw new Error("numberId es requerido.");
+  }
+
+  const res = await ApiClient.instance.post("/data/observation", payload);
+  console.log("StudentService - getObservationData:", res);
+
+  const data = Array.isArray(res) ? res : (res?.data ?? []);
+  return data;
+}
+
+/**
+ * Actualiza la observación de un registro del observador.
+ *
+ * Endpoint: POST /observer/
+ * @param {{ id_observador: number, observacion: string }} payload
+ * @returns {Promise<Object>} Respuesta del servidor
+ */
+export async function updateObservation(payload) {
+  if (!payload?.id_observador) {
+    throw new Error("id_observador es requerido.");
+  }
+
+  const res = await ApiClient.instance.patch("/observer/:value", payload);
+  console.log("StudentService - updateObservation:", res);
+
+  if (res && typeof res === "object" && "data" in res) return res;
+  if (res !== undefined && res !== null) return res;
+
+  throw new Error("Respuesta inesperada de updateObservation.");
+}
+
 /* Opcional: subir foto (FormData). */
 export async function uploadStudentPhoto(id, formData) {
   return ApiClient.post(`/students/${id}/photo`, formData, {
@@ -217,4 +308,82 @@ export async function registerGuardian(payload) {
   if (data && typeof data === "object" && "data" in data) return data.data;
   if (data !== undefined && data !== null) return data;
   throw new Error("Respuesta inesperada de registerGuardian.");
+}
+
+/**
+ * Obtiene las notas de un estudiante por su id.
+ * Endpoint: POST /note/student/:studentId
+ * @param {string|number} studentId - ID del estudiante
+ * @returns {Promise<Array>} Lista de notas del estudiante
+ */
+
+/**
+ * Obtiene el observador de un estudiante por número de identificación.
+ *
+ * Endpoint: POST /student/observer
+ * @param {{ numberId: string }} payload
+ * @returns {Promise<Object>} Datos del estudiante y acudiente.
+ */
+export async function getStudentObserver(payload) {
+  if (!payload?.numberId) {
+    throw new Error("numberId es requerido para getStudentObserver.");
+  }
+  const res = await ApiClient.instance.post("/data/student/observer", payload);
+  const data = res?.data ?? res;
+  console.log("StudentService - getStudentObserver:", data);
+  if (!data[0]?.id_estudiante) throw new Error("Estudiante no encontrado.");
+  return data;
+}
+
+export async function getStudentNotesById(studentId) {
+  console.log(
+    "StudentService - getStudentNotesById llamado con studentId:",
+    studentId,
+  );
+  if (!studentId)
+    throw new Error("studentId es requerido para getStudentNotesById");
+  const res = await ApiClient.post(`/note/student/${studentId}`);
+  const data = res;
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+  throw new Error("Respuesta inesperada de /note/student.");
+}
+
+/**
+ * Obtiene el boletín de notas de un estudiante filtrado por período y año.
+ *
+ * Endpoint: POST /students/boletin
+ * @param {{ studentId: number|string, periodId: number, year: string }} payload
+ * @returns {Promise<Array>} Listado de registros del boletín.
+ */
+export async function getBoletin(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+  const res = await ApiClient.instance.post("/students/boletin", payload);
+  const data = res;
+  console.log("StudentService - getBoletin:", data);
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+  throw new Error("Respuesta inesperada de /students/boletin.");
+}
+
+/**
+ * Obtiene la asistencia de un estudiante.
+ *
+ * Endpoint: POST /students/assistence
+ * @param {{ studentId: number, sedeId: number }} payload
+ * @returns {Promise<Array>} Listado de registros de asistencia.
+ */
+export async function getStudentAssistence(payload) {
+  if (!payload?.studentId || !payload?.sedeId) {
+    throw new Error("studentId y sedeId son requeridos.");
+  }
+  const res = await ApiClient.instance.post("/students/assistence", payload);
+  const data = res;
+  console.log("StudentService - getStudentAssistence:", data);
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (Array.isArray(data)) return data;
+  if (data !== undefined && data !== null) return data;
+  throw new Error("Respuesta inesperada de /students/assistence.");
 }

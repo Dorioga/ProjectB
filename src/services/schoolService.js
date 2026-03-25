@@ -1,6 +1,27 @@
 import { ApiClient } from "./ApiClient";
 
 /**
+ * Crea una o varias sedes para una institución.
+ *
+ * Endpoint esperado: POST /sede
+ * @param {{ sedes: Array<{ nombre_sede: string, direccion: string, telefono: string, fk_jornada: number, fk_institucion: number, sede_tip: string }> }} payload
+ * @returns {Promise<Object>} Respuesta del servidor
+ */
+export async function createSede(payload) {
+  if (!payload || !Array.isArray(payload.sedes) || payload.sedes.length === 0) {
+    throw new Error(
+      "payload debe tener al menos una sede en el array 'sedes'.",
+    );
+  }
+  const res = await ApiClient.instance.post("/sede", payload);
+  const data = res;
+  console.log("SchoolService - createSede:", data);
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+  throw new Error("Respuesta inesperada de /sede.");
+}
+
+/**
  * Obtiene información de la institución.
  *
  * Endpoint esperado: GET /institution
@@ -21,6 +42,16 @@ export async function getInstitution() {
     throw error;
   }
 }
+export async function getInstitutionScales(institutionId) {
+  const res = await ApiClient.instance.post(
+    `/institutions/${institutionId}/scales`,
+  );
+  const data = res;
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+  throw new Error("Respuesta inesperada de /institutions/:id/scales.");
+}
+
 export async function createSchool(payload) {
   if (!payload || typeof payload !== "object") {
     throw new Error("payload debe ser un objeto.");
@@ -428,6 +459,53 @@ export async function createNote(payload) {
 
   throw new Error("Respuesta inesperada de createNote.");
 }
+
+/**
+ * Actualiza una nota existente
+ * Endpoint esperado: PATCH /note/:noteId
+ * @param {number|string} noteId - ID de la nota a actualizar
+ * @param {Object} payload
+ * @returns {Promise<Object>} Respuesta del servidor
+ */
+export async function updateNote(noteId, payload) {
+  if (!noteId) throw new Error("noteId es requerido para updateNote.");
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+
+  const res = await ApiClient.instance.patch(`/note/${noteId}`, payload);
+
+  const data = res;
+  console.log("SchoolService - updateNote:", data);
+
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de updateNote.");
+}
+
+/**
+ * Crea o actualiza notas (cuando se agrega al menos una nota nueva)
+ * Endpoint esperado: POST /createourupdatenote
+ * payload: { nombre_nota, porcentaje, logro, fk_docente, fk_grade, fk_period, fk_asignatura, notasActualizar: [...] }
+ * @param {Object} payload
+ * @returns {Promise<Object>} Respuesta del servidor
+ */
+export async function createOrUpdateNote(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto para createOrUpdateNote.");
+  }
+
+  const res = await ApiClient.instance.post("/createourupdatenote", payload);
+
+  const data = res;
+  console.log("SchoolService - createOrUpdateNote:", data);
+
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de createOrUpdateNote.");
+}
 // Use `useTeacher()` / `TeacherContext` or import `teacherService` directly.
 // Use `useTeacher()` / `TeacherContext` or import `teacherService` directly.
 /**
@@ -462,9 +540,12 @@ export async function getStudentGrades(payload) {
  * Endpoint: GET /values/reservations
  * @returns {Promise<Array>} Array con la información combinada de filtros
  */
-export async function getValuesReservations() {
+export async function getValuesReservations(payload = {}) {
   try {
-    const res = await ApiClient.get("/values/reservations");
+    console.log("SchoolService - getValuesReservations payload:", payload);
+
+    // El endpoint cambió a POST y espera { municipioId: number }
+    const res = await ApiClient.instance.post("/values/reservations", payload);
     const data = Array.isArray(res) ? res : (res?.data ?? []);
 
     console.log("SchoolService - getValuesReservations:", data);
@@ -489,6 +570,24 @@ export async function getValuesReservations() {
  * @param {Object} payload - Datos para filtrar estudiantes
  * @returns {Promise<Object>} Respuesta del servidor con los estudiantes
  */
+/**
+ * Obtiene las alertas documentales de estudiantes.
+ *
+ * Endpoint esperado: GET /student/alerts
+ * @returns {Promise<Array>} Array de alertas de estudiantes
+ */
+export async function getStudentAlerts() {
+  try {
+    const res = await ApiClient.get("/student/alerts");
+    const data = Array.isArray(res) ? res : (res?.data ?? []);
+    console.log("SchoolService - getStudentAlerts:", data);
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error("Error en getStudentAlerts:", error);
+    throw error;
+  }
+}
+
 export async function allstudent(payload) {
   if (!payload || typeof payload !== "object") {
     throw new Error("payload debe ser un objeto.");

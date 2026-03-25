@@ -13,6 +13,8 @@ import { useNotify } from "../../lib/hooks/useNotify";
 import { minLength, matchesPattern } from "../../utils/validationUtils";
 import tourRegisterTeacher from "../../tour/tourRegisterTeacher";
 
+const DEFAULT_BIRTH_DATE = new Date().toISOString().split("T")[0];
+
 const RegisterTeacher = ({ onSuccess }) => {
   const { sedes, reloadSedes } = useSchool();
   const { addTeacher, loadingTeachers: teacherLoading } = useTeacher();
@@ -30,7 +32,7 @@ const RegisterTeacher = ({ onSuccess }) => {
     sede: 0,
     password: "",
     workday: 0,
-    fecha_nacimiento: "",
+    fecha_nacimiento: DEFAULT_BIRTH_DATE,
     direccion: "",
     asignature: [],
     // Representante de curso (boolean) y lista de grados donde es director
@@ -249,7 +251,7 @@ const RegisterTeacher = ({ onSuccess }) => {
       workday: formData.workday,
       identification: formData.identification,
       identificationtype: formData.identificationtype,
-      fecha_nacimiento: formData.fecha_nacimiento || "",
+      fecha_nacimiento: formData.fecha_nacimiento || DEFAULT_BIRTH_DATE,
       telephone: formData.telephone || "",
       email: formData.email,
       password: formData.password ? sha256(String(formData.password)) : "",
@@ -287,7 +289,7 @@ const RegisterTeacher = ({ onSuccess }) => {
         workday: 0,
         identification: "",
         identificationtype: 0,
-        fecha_nacimiento: "",
+        fecha_nacimiento: DEFAULT_BIRTH_DATE,
         telephone: "",
         email: "",
         password: "",
@@ -316,50 +318,57 @@ const RegisterTeacher = ({ onSuccess }) => {
   };
 
   return (
-    <div className="border p-6 rounded bg-bg h-full gap-4 flex flex-col">
-      <div className="grid grid-cols-5 items-center justify-between">
-        <h2 className="col-span-4 font-bold text-2xl">Registrar Docente</h2>
-        <SimpleButton
-          type="button"
-          onClick={() => {
-            setIsTourMode(true);
-            tourRegisterTeacher();
-            const checkDriverVisible = () =>
-              !!document.querySelector(
-                ".driver-popover, .driver-overlay, .driver-container, .driver",
-              );
-            const observer = new MutationObserver(() => {
-              if (!checkDriverVisible()) {
-                setIsTourMode(false);
-                observer.disconnect();
-              }
-            });
-            observer.observe(document.body, { childList: true, subtree: true });
-            setTimeout(
-              () => {
-                setIsTourMode(false);
-                observer.disconnect();
-              },
-              3 * 60 * 1000,
-            );
-          }}
-          icon="HelpCircle"
-          msjtooltip="Iniciar tutorial"
-          noRounded={false}
-          bg="bg-info"
-          text="text-surface"
-          className="w-auto px-3 py-1.5"
-        />
+    <div className=" p-6 rounded  h-full gap-4 flex flex-col">
+      <div className="flex w-full items-end justify-between">
+        {/* <h2 className="col-span-4 font-bold text-2xl">Registrar Docente</h2> */}
         <div className="col-span-5 mt-2 text-sm text-gray-600">
           Campos marcados con <span className="text-red-500">*</span> son
           obligatorios.
         </div>
+        <div className="w-1/5">
+          <SimpleButton
+            type="button"
+            onClick={() => {
+              setIsTourMode(true);
+              tourRegisterTeacher();
+              const checkDriverVisible = () =>
+                !!document.querySelector(
+                  ".driver-popover, .driver-overlay, .driver-container, .driver",
+                );
+              const observer = new MutationObserver(() => {
+                if (!checkDriverVisible()) {
+                  setIsTourMode(false);
+                  observer.disconnect();
+                }
+              });
+              observer.observe(document.body, {
+                childList: true,
+                subtree: true,
+              });
+              setTimeout(
+                () => {
+                  setIsTourMode(false);
+                  observer.disconnect();
+                },
+                3 * 60 * 1000,
+              );
+            }}
+            icon="HelpCircle"
+            msjtooltip="Iniciar tutorial"
+            noRounded={false}
+            bg="bg-info"
+            text="text-surface"
+            className="w-auto px-3 py-1.5"
+          />
+        </div>
       </div>
       <form
         onSubmit={handleSubmit}
-        className="grid grid-cols-1 md:grid-cols-3 gap-4"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
       >
-        <div className="md:col-span-3 font-bold">Información personal</div>
+        <div className="md:col-span-2 lg:col-span-4 font-bold   text-surface bg-primary p-2 rounded-lg">
+          Información personal
+        </div>
 
         <div id="tour-sede">
           <SedeSelect
@@ -452,7 +461,10 @@ const RegisterTeacher = ({ onSuccess }) => {
           />
         </div>
 
-        <div id="tour-contact-info" className="md:col-span-3 font-bold mt-4">
+        <div
+          id="tour-contact-info"
+          className=" md:col-span-2 lg:col-span-4 font-bold  text-surface bg-primary p-2 rounded-lg"
+        >
           Información de contacto
         </div>
 
@@ -524,10 +536,7 @@ const RegisterTeacher = ({ onSuccess }) => {
           />
         </div>
 
-        <div id="tour-asignatures" className="md:col-span-3">
-          <label className="font-semibold">
-            Asignaturas <span className="text-red-500 ml-1">*</span>
-          </label>
+        <div id="tour-asignatures" className="md:col-span-2 lg:col-span-4">
           <AsignatureGrades
             sede={formData.sede}
             workday={formData.workday}
@@ -562,9 +571,12 @@ const RegisterTeacher = ({ onSuccess }) => {
         </div>
 
         {/* Representante de curso + selección de grados (director_curso) */}
-        <div className="md:col-span-3 p-4 bg-bg rounded-lg shadow-md">
-          <label className="text-lg font-medium">Representante de curso</label>
-          <div className="flex items-center gap-3 mt-2">
+
+        <div className=" md:col-span-2 lg:col-span-4 font-bold  text-surface bg-primary p-2 rounded-lg">
+          Director de curso
+        </div>
+        <div className="md:col-span-2 lg:col-span-4  flex flex-col items-start gap-3 px-4">
+          <div className="flex flex-row gap-2 items-center">
             <input
               type="checkbox"
               name="representante_curso"
@@ -589,7 +601,7 @@ const RegisterTeacher = ({ onSuccess }) => {
           </div>
 
           {formData.representante_curso && (
-            <div className="mt-4">
+            <div className="py-2 w-full">
               <label className="block text-sm font-medium mb-2">
                 Selecciona los grados donde será Director/Representante:
               </label>
@@ -615,7 +627,7 @@ const RegisterTeacher = ({ onSuccess }) => {
                     new Map(entries.map((x) => [x.id, x])).values(),
                   );
                   return (
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
                       {unique.map((grade) => (
                         <label
                           key={grade.id}
@@ -660,7 +672,7 @@ const RegisterTeacher = ({ onSuccess }) => {
         </div>
 
         {submitOk ? (
-          <div className="md:col-span-3 p-4 rounded-lg border-l-4 border-green-500 bg-gray-50 text-green-700">
+          <div className="md:col-span-2 lg:col-span-4 p-4 rounded-lg border-l-4 border-green-500 bg-gray-50 text-green-700">
             <div className="flex items-start gap-3">
               <svg
                 className="w-6 h-6 shrink-0 mt-0.5"
@@ -685,7 +697,7 @@ const RegisterTeacher = ({ onSuccess }) => {
 
         <div
           id="tour-submit"
-          className="md:col-span-3 mt-4 flex justify-center"
+          className="md:col-span-2 lg:col-span-4 mt-4 flex justify-center"
         >
           <div className="w-full md:w-1/2">
             <SimpleButton

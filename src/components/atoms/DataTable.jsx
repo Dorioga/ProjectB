@@ -151,6 +151,22 @@ const DataTable = ({
 
     // Crear el worksheet desde los datos JSON
     const worksheet = XLSX.utils.json_to_sheet(exportData);
+
+    // Prevenir inyección de fórmulas en Excel: forzar tipo string en celdas
+    // cuyos valores comiencen con caracteres interpretados como fórmulas (=, -, +, @)
+    const formulaPrefixes = ["=", "-", "+", "@"];
+    Object.keys(worksheet).forEach((cellAddr) => {
+      if (cellAddr.startsWith("!")) return; // omitir metadatos del worksheet
+      const cell = worksheet[cellAddr];
+      if (
+        cell &&
+        typeof cell.v === "string" &&
+        formulaPrefixes.some((ch) => cell.v.startsWith(ch))
+      ) {
+        cell.t = "s"; // forzar tipo string para evitar evaluación como fórmula
+      }
+    });
+
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Datos");
 
@@ -177,10 +193,10 @@ const DataTable = ({
           value={globalFilter ?? ""}
           onChange={(e) => setGlobalFilter(e.target.value)}
           placeholder="Buscar en la tabla..."
-          className="border p-2 rounded col-span-2 bg-surface"
+          className="border p-2 rounded col-span-3 bg-surface"
         />
 
-        <div className="grid grid-cols-2  col-span-4  gap-4">
+        <div className="grid grid-cols-3  col-span-4  gap-4">
           {mode !== null && showDownloadButtons && (
             <>
               <SimpleButton
@@ -205,20 +221,19 @@ const DataTable = ({
               />
             </>
           )}
-        </div>
-
-        <div
-          className={` grid w-full col-end-8 gap-2  ${
-            mode !== null ? "" : ""
-          } `}
-        >
-          <SimpleButton
-            onClick={handleExport}
-            bg="bg-green-600"
-            icon="FileUp"
-            text="text-surface"
-            msj="Exportar a Excel"
-          />
+          <div
+            className={` grid w-full col-end-8 gap-2  ${
+              mode !== null ? "" : ""
+            } `}
+          >
+            <SimpleButton
+              onClick={handleExport}
+              bg="bg-green-600"
+              icon="FileUp"
+              text="text-surface"
+              msj="Exportar a Excel"
+            />
+          </div>
         </div>
       </div>
 
@@ -264,47 +279,58 @@ const DataTable = ({
             ))}
           </thead>
           <tbody>
-            {table.getRowModel().rows.map((row) => (
-              <tr
-                key={row.id}
-                className={`border-b bg-surface hover:bg-gray-50 transition-colors duration-300 ${
-                  typeof rowClassName === "function"
-                    ? rowClassName(row)
-                    : (rowClassName ?? "")
-                }`}
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <td
-                    key={cell.id}
-                    className={`p-0 h-full text-center ${
-                      cell.column.columnDef.meta?.hideOnSM
-                        ? "hidden sm:table-cell"
-                        : ""
-                    }${
-                      cell.column.columnDef.meta?.hideOnMD
-                        ? "hidden md:table-cell"
-                        : ""
-                    } 
-                    ${
-                      cell.column.columnDef.meta?.hideOnLG
-                        ? "hidden lg:table-cell"
-                        : ""
-                    }${
-                      cell.column.columnDef.meta?.hideOnXL
-                        ? "hidden xl:table-cell"
-                        : ""
-                    }`}
-                  >
-                    <div className=" p-0 block">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </div>
-                  </td>
-                ))}
+            {table.getRowModel().rows.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={table.getHeaderGroups()?.[0]?.headers?.length || 1}
+                  className="p-6 text-center text-gray-500"
+                >
+                  Sin datos
+                </td>
               </tr>
-            ))}
+            ) : (
+              table.getRowModel().rows.map((row) => (
+                <tr
+                  key={row.id}
+                  className={`border-b bg-surface hover:bg-gray-50 transition-colors duration-300 ${
+                    typeof rowClassName === "function"
+                      ? rowClassName(row)
+                      : (rowClassName ?? "")
+                  }`}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <td
+                      key={cell.id}
+                      className={`p-0 h-full text-center ${
+                        cell.column.columnDef.meta?.hideOnSM
+                          ? "hidden sm:table-cell"
+                          : ""
+                      }${
+                        cell.column.columnDef.meta?.hideOnMD
+                          ? "hidden md:table-cell"
+                          : ""
+                      } 
+                      ${
+                        cell.column.columnDef.meta?.hideOnLG
+                          ? "hidden lg:table-cell"
+                          : ""
+                      }${
+                        cell.column.columnDef.meta?.hideOnXL
+                          ? "hidden xl:table-cell"
+                          : ""
+                      }`}
+                    >
+                      <div className=" p-0 block">
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </div>
+                    </td>
+                  ))}
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -367,7 +393,7 @@ const DataTable = ({
             }}
             className="border p-2 rounded"
           >
-            {[10, 20, 50, 100].map((pageSize) => (
+            {[10, 20, 50, 100, 150].map((pageSize) => (
               <option key={pageSize} value={pageSize}>
                 {pageSize}
               </option>

@@ -10,6 +10,7 @@ const UploadStudentExcel = ({ onSuccess } = {}) => {
   const [file, setFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState(null);
+  const [uploadResult, setUploadResult] = useState(null); // { message, errores[] }
 
   const ACCEPT_EXCEL =
     ".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel";
@@ -30,6 +31,7 @@ const UploadStudentExcel = ({ onSuccess } = {}) => {
     const f = Array.isArray(selected) ? selected[0] : selected;
     setFile(f ?? null);
     setStatus(null);
+    setUploadResult(null);
   }, []);
 
   const notify = useNotify();
@@ -46,14 +48,33 @@ const UploadStudentExcel = ({ onSuccess } = {}) => {
     setStatus(null);
 
     try {
-      await uploadStudentsExcel(file);
+      const res = await uploadStudentsExcel(file);
 
+      // Normalizar respuesta: soporta res directo o res.data
+      const resData = res?.data ?? res ?? {};
+      const errores = Array.isArray(resData?.errores)
+        ? resData.errores
+        : Array.isArray(res?.errores)
+          ? res.errores
+          : [];
+      const summaryMessage =
+        res?.message || resData?.message || "Archivo enviado correctamente.";
+
+      setUploadResult({ message: summaryMessage, errores });
       setFile(null);
-      const successMessage = "Archivo enviado correctamente.";
-      setStatus({ type: "success", message: successMessage });
-      notify.success(successMessage);
 
-      if (typeof onSuccess === "function") onSuccess();
+      if (errores.length === 0) {
+        setStatus({ type: "success", message: summaryMessage });
+        notify.success(summaryMessage);
+      } else {
+        setStatus({
+          type: "success",
+          message: `${summaryMessage} — ${errores.length} fila(s) con errores.`,
+        });
+        notify.success(summaryMessage);
+      }
+
+      if (errores.length === 0 && typeof onSuccess === "function") onSuccess();
     } catch (err) {
       const msg =
         err?.message ||
@@ -61,6 +82,7 @@ const UploadStudentExcel = ({ onSuccess } = {}) => {
         err?.response?.data?.message ||
         "No fue posible subir el archivo.";
       setStatus({ type: "error", message: msg });
+      setUploadResult(null);
       notify.error(msg);
     } finally {
       setSubmitting(false);
@@ -127,6 +149,57 @@ const UploadStudentExcel = ({ onSuccess } = {}) => {
           }`}
         >
           {status.message}
+        </div>
+      )}
+
+      {/* Tabla de errores del servidor */}
+      {uploadResult?.errores?.length > 0 && (
+        <div className="flex flex-col gap-2 mt-2">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-sm text-error">
+              Filas con errores ({uploadResult.errores.length})
+            </h3>
+            <button
+              type="button"
+              onClick={() => setUploadResult(null)}
+              className="text-xs text-gray-400 hover:text-gray-600 cursor-pointer"
+            >
+              Cerrar
+            </button>
+          </div>
+          <div className="overflow-x-auto rounded border border-error/30">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-primary text-surface">
+                <tr>
+                  <th className="px-3 py-2 font-medium whitespace-nowrap">
+                    Fila
+                  </th>
+                  <th className="px-3 py-2 font-medium whitespace-nowrap">
+                    Documento
+                  </th>
+                  <th className="px-3 py-2 font-medium">Error</th>
+                </tr>
+              </thead>
+              <tbody>
+                {uploadResult.errores.map((e, i) => (
+                  <tr
+                    key={i}
+                    className={`border-t border-error/20 ${
+                      i % 2 === 0 ? "" : "bg-white"
+                    }`}
+                  >
+                    <td className="px-3 py-2 text-center font-mono">
+                      {e.row ?? "—"}
+                    </td>
+                    <td className="px-3 py-2 font-mono">
+                      {e.documento ?? "—"}
+                    </td>
+                    <td className="px-3 py-2 text-black">{e.error ?? "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

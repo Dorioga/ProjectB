@@ -46,6 +46,8 @@ const RegisterAssistance = () => {
   const [studentsFromService, setStudentsFromService] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
   const [period, setPeriod] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fechaAsistencia, setFechaAsistencia] = useState("");
 
   const notify = useNotify();
 
@@ -208,6 +210,12 @@ const RegisterAssistance = () => {
 
   const handleSubmitAll = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    const fecha_assistance =
+      fechaAsistencia || new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
     const rows = (studentsFromService || []).map((student) => {
       const studentKey = getStudentKey(student);
       // Forzar PRESENTE en el payload (checkbox siempre seleccionado)
@@ -225,12 +233,19 @@ const RegisterAssistance = () => {
             : "No",
         ),
         fk_sede: Number(sedeSelected) || null,
+        fecha_assistance,
       };
     });
+    console.log(
+      "RegisterAssistance - payload para registrar asistencia:",
+      rows,
+    );
 
     try {
       await registerAssistance(rows);
       notify.success("Asistencia registrada correctamente");
+      // regresar al modo no edición para mostrar el botón "Activar Asistencia"
+      setIsEditMode(false);
       // marcar todas las filas como guardadas (persistente)
       setRowSavedById((prev) => {
         const next = { ...(prev ?? {}) };
@@ -244,6 +259,8 @@ const RegisterAssistance = () => {
     } catch (err) {
       console.error("RegisterAssistance - error registrando asistencia:", err);
       notify.error(err?.message || "Error al registrar asistencia");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -470,7 +487,7 @@ const RegisterAssistance = () => {
   };
 
   return (
-    <div className="p-6 h-full gap-4 flex flex-col">
+    <div className="p-3 h-full gap-4 flex flex-col">
       {/* Global loader when any row or data is loading */}
       {(Object.values(rowLoadingById || {}).some(Boolean) ||
         loadingData ||
@@ -484,8 +501,8 @@ const RegisterAssistance = () => {
           size={56}
         />
       )}
-      <div className="grid grid-cols-5 items-center justify-between">
-        <h2 className="col-span-4 text-2xl font-bold">Registrar Asistencia</h2>
+      <div className="w-full grid grid-cols-5 justify-between items-center  text-surface  rounded-lg">
+        <h2 className="col-span-4 text-2xl font-bold"></h2>
         <SimpleButton
           type="button"
           onClick={tourRegisterAssistance}
@@ -622,6 +639,22 @@ const RegisterAssistance = () => {
             className="w-full p-2 border rounded bg-surface"
           />
         </div>
+        <div>
+          <label className="text-lg font-semibold block mb-1">
+            Fecha de asistencia
+          </label>
+          <input
+            type="date"
+            value={fechaAsistencia}
+            onChange={(e) => setFechaAsistencia(e.target.value)}
+            className="w-full p-2 border rounded bg-surface"
+          />
+          {!fechaAsistencia && (
+            <p className="text-xs opacity-60 mt-1">
+              Se usará la fecha de hoy ({new Date().toISOString().slice(0, 10)})
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col gap-4">
@@ -634,10 +667,7 @@ const RegisterAssistance = () => {
             No hay estudiantes para los filtros seleccionados.
           </div>
         ) : (
-          <form
-            onSubmit={handleSubmitAll}
-            className="bg-surface border rounded"
-          >
+          <div className="bg-surface border rounded">
             <div className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
               <div id="tour-assistance-count" className="text-sm opacity-80">
                 Estudiantes:{" "}
@@ -654,20 +684,20 @@ const RegisterAssistance = () => {
                   icon={isEditMode ? "X" : "Edit"}
                   bg={isEditMode ? "bg-error" : "bg-secondary"}
                   text="text-surface"
-                  msj={
-                    isEditMode ? "Cancelar Asistencia" : "Activar Asistencia"
-                  }
+                  msj={isEditMode ? "Cerrar Asistencia" : "Activar Asistencia"}
                   className="px-3 py-1.5 tour-edit-toggle"
                 />
 
                 {isEditMode && (
                   <SimpleButton
-                    type="submit"
+                    type="button"
+                    onClick={handleSubmitAll}
                     icon="Save"
                     bg="bg-accent"
                     text="text-surface"
                     msj="Guardar asistencias"
                     className="px-3 py-1.5"
+                    disabled={isSubmitting}
                   />
                 )}
               </div>
@@ -722,9 +752,10 @@ const RegisterAssistance = () => {
                     },
                   },
                 ]}
+                pageSize={50}
               />
             </div>
-          </form>
+          </div>
         )}
       </div>
     </div>

@@ -195,6 +195,22 @@ export function StudentProvider({ children }) {
     }
   }, []);
 
+  const getStudentNotesById = useCallback(async (studentId) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await studentService.getStudentNotesById(studentId);
+      console.log("StudentContext: Notas del estudiante obtenidas:", res);
+      return Array.isArray(res) ? res : (res?.data ?? []);
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // obtiene N estudiantes aleatorios (usa studentService.getRandomStudents)
   const getRandomStudents = useCallback(async (count = 5) => {
     setLoading(true);
@@ -202,6 +218,57 @@ export function StudentProvider({ children }) {
     try {
       const items = await studentService.getRandomStudents(count);
       return items;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // wrapper que normaliza el resultado de getStudentObserver
+  const getStudentObserver = useCallback(async (payload) => {
+    const res = await studentService.getStudentObserver(payload);
+    if (Array.isArray(res)) return res[0] || null;
+    return res;
+  }, []);
+
+  const registerObservation = useCallback(async (payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await studentService.registerObservation(payload);
+      eventBus.emit("¡Observación registrada correctamente!", "success");
+      return result;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const getObservationData = useCallback(async (payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await studentService.getObservationData(payload);
+      return result;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const updateObservation = useCallback(async (payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await studentService.updateObservation(payload);
+      eventBus.emit("¡Observación actualizada correctamente!", "success");
+      return result;
     } catch (err) {
       setError(err);
       throw err;
@@ -218,8 +285,14 @@ export function StudentProvider({ children }) {
       selected,
       reload: loadStudents,
       getStudent,
+      getStudentByIdentification: studentService.getStudentByIdentification,
+      getStudentObserver,
+      registerObservation,
+      getObservationData,
+      updateObservation,
       updateStudent,
       getRandomStudents,
+      getStudentNotesById,
       addStudent,
       registerStudent,
       removeStudent,
@@ -234,8 +307,12 @@ export function StudentProvider({ children }) {
       getStudent,
       updateStudent,
       getRandomStudents,
+      getStudentNotesById,
       addStudent,
       registerStudent,
+      registerObservation,
+      getObservationData,
+      updateObservation,
       removeStudent,
       uploadStudentsExcel,
     ],

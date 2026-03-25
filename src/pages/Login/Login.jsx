@@ -11,6 +11,7 @@ const Login = () => {
     email: "",
     infokey: "",
   });
+  const [pendingIdPersona, setPendingIdPersona] = useState(null);
   const {
     login,
     loading,
@@ -64,7 +65,9 @@ const Login = () => {
       const loginData = await login(formData);
       // Si hay términos pendientes el modal se muestra; la navegación
       // ocurre únicamente al pulsar "Continuar" en el modal (closeTermsModal).
-      if (!loginData?.pendingTerms) {
+      if (loginData?.pendingTerms) {
+        setPendingIdPersona(loginData.idPersona);
+      } else {
         navigate("/dashboard/home");
       }
     } catch {
@@ -77,6 +80,7 @@ const Login = () => {
         isOpen={showTermsModal}
         onClose={dismissTermsModal}
         onAccept={handleAcceptTerms}
+        pendingIdPersona={pendingIdPersona}
       />
       <div className="w-full grid grid-cols-1 lg:grid-cols-2">
         <div className="hidden lg:flex lg:flex-col lg:items-center lg:justify-center">
@@ -161,6 +165,13 @@ const Login = () => {
                 onClick={() => navigate("/forgot-password")}
               >
                 ¿Olvidaste tu contraseña?
+              </button>
+              <button
+                type="button"
+                className="pointer hover:underline text-secondary font-semibold"
+                onClick={() => navigate("/reserveSpot")}
+              >
+                Reservar Cupo
               </button>
               <p className="text-surface text-center text-sm">
                 <a

@@ -208,6 +208,26 @@ export function TeacherProvider({ children }) {
     }
   }, []);
 
+  // Obtener valores de asistencia (tipos, estados, etc.)
+  const getAssistanceValues = useCallback(async (payload = {}) => {
+    try {
+      const res = await teacherService.getAssistanceValues(payload);
+      return res;
+    } catch (err) {
+      throw err;
+    }
+  }, []);
+
+  // Obtener asignaturas por sede para control de asistencia
+  const getAssistanceBySedeAsignatures = useCallback(async (payload = {}) => {
+    try {
+      const res = await teacherService.getAssistanceBySedeAsignatures(payload);
+      return res;
+    } catch (err) {
+      throw err;
+    }
+  }, []);
+
   // ----------------- Logros (nuevo) -----------------
   const getLogroType = useCallback(async () => {
     setLoadingTeachers(true);
@@ -305,6 +325,20 @@ export function TeacherProvider({ children }) {
     }
   }, []);
 
+  const getNotesTeacher = useCallback(async (payload = {}) => {
+    setLoadingTeachers(true);
+    setErrorTeachers(null);
+    try {
+      const res = await teacherService.getNotesTeacher(payload);
+      return res;
+    } catch (err) {
+      setErrorTeachers(err);
+      throw err;
+    } finally {
+      setLoadingTeachers(false);
+    }
+  }, []);
+
   const assignSede = useCallback(async (payload) => {
     try {
       const res = await teacherService.createTeacherSede(payload);
@@ -373,8 +407,12 @@ export function TeacherProvider({ children }) {
       updateLogro,
       // Asistencia
       registerAssistance,
+      getAssistanceValues,
+      getAssistanceBySedeAsignatures,
       // estudiantes docente
       getAllStudentTeacher,
+      // notas docente
+      getNotesTeacher,
     }),
     [
       teachers,
@@ -405,7 +443,10 @@ export function TeacherProvider({ children }) {
       getAllLogros,
       updateLogro,
       registerAssistance,
+      getAssistanceValues,
+      getAssistanceBySedeAsignatures,
       getAllStudentTeacher,
+      getNotesTeacher,
     ],
   );
 

@@ -29,6 +29,14 @@ import ManageSedes from "../pages/School/ManageSedes";
 import ManageAsignature from "../pages/School/ManageAsignature";
 import ManageGrade from "../pages/School/ManageGrade";
 import ProfileTeacherPage from "../pages/Teacher/ProfileTeacherPage";
+import ManageAssistance from "../pages/Teacher/ManageAssistance";
+import ControlAsistencia from "../pages/Teacher/ControlAsistencia";
+import ManageNote from "../pages/Teacher/ManageNote";
+import StudentNotes from "../pages/Student/StudentNotes";
+import ProfileStudentPage from "../pages/Student/ProfileStudentPage";
+import ObservadorEstudiante from "../pages/Student/ObservadorEstudiante";
+import ManageObserver from "../pages/Student/ManageObserver";
+import AssistenceStudent from "../pages/Student/AssistenceStudent";
 import ReserveSpot from "../components/templates/ReserveSpot";
 const GeneralRoutes = () => {
   return (
@@ -38,6 +46,7 @@ const GeneralRoutes = () => {
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reserveSpot" element={<ReserveSpot />} />
           <Route
             path="dashboard"
             element={
@@ -51,18 +60,13 @@ const GeneralRoutes = () => {
             <Route path="studentSchool" element={<AllStudent />} />
             <Route path="singleStudent" element={<SingleStudent />} />
             <Route path="searchStudents" element={<SearchStudents />} />
-            <Route path="registerStudent" element={<RegisterStudent />} />
-            <Route path="registerParents" element={<RegisterParents />} />
-            <Route path="reserveSpot" element={<ReserveSpot />} />
             <Route path="uploadStudentExcel" element={<UploadStudentExcel />} />
             <Route path="uploadStudentPDF" element={<UploadStudentPDF />} />
-
             <Route path="reports" element={<Reports />} />
             <Route path="auditory" element={<Auditory />} />
-
             <Route path="profileSchool" element={<ProfileSchoolPage />} />
             <Route path="profileTeacher" element={<ProfileTeacherPage />} />
-
+            <Route path="profileStudent" element={<ProfileStudentPage />} />
             <Route path="registerAsignature" element={<RegisterAsignature />} />
             <Route path="registerRecords" element={<RegisterRecords />} />
             <Route path="registerTeacher" element={<RegisterTeacher />} />
@@ -72,7 +76,9 @@ const GeneralRoutes = () => {
               path="registerStudentRecords"
               element={<RegisterStudentRecords />}
             />
-
+            <Route path="registerStudent" element={<RegisterStudent />} />
+            <Route path="registerParents" element={<RegisterParents />} />
+            <Route path="reserveSpot" element={<ReserveSpot />} />
             <Route path="manageTeacher" element={<ManageTeacher />} />
             <Route path="manageLogro" element={<ManageLogro />} />
             <Route path="manageStudent" element={<ManageStudent />} />
@@ -80,6 +86,16 @@ const GeneralRoutes = () => {
             <Route path="manageSedes" element={<ManageSedes />} />
             <Route path="manageAsignature" element={<ManageAsignature />} />
             <Route path="manageGrade" element={<ManageGrade />} />
+            <Route path="manageAssistance" element={<ManageAssistance />} />
+            <Route path="controlAsistencia" element={<ControlAsistencia />} />
+            <Route path="manageNote" element={<ManageNote />} />
+            <Route path="studentNotes" element={<StudentNotes />} />
+            <Route
+              path="observadorEstudiante"
+              element={<ObservadorEstudiante />}
+            />
+            <Route path="assistenceStudent" element={<AssistenceStudent />} />
+            <Route path="manageObserver" element={<ManageObserver />} />
           </Route>
         </Routes>
       </div>

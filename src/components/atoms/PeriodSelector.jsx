@@ -67,15 +67,8 @@ const PeriodSelector = ({
   };
 
   return (
-    <div className="mb-4">
-      {label && (
-        <label
-          htmlFor={name}
-          className={labelClassName || "block text-sm font-medium mb-1"}
-        >
-          {label}
-        </label>
-      )}
+    <div className="">
+      {label && <label htmlFor={name}>{label}</label>}
       <select
         id={name}
         name={name}

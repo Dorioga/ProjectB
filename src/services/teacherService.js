@@ -302,6 +302,24 @@ export async function updateAssignmentNote(payload) {
 }
 
 /**
+ * Obtiene los valores de asistencia (tipos, estados, etc.)
+ * Endpoint esperado: POST /assistance/values
+ */
+export async function getAssistanceValues(payload = {}) {
+  try {
+    const res = await ApiClient.instance.post("/assistance/values", payload);
+    const data = res;
+    console.log("teacherService - getAssistanceValues:", data);
+    if (data && typeof data === "object" && "data" in data) return data.data;
+    if (data !== undefined && data !== null) return data;
+    throw new Error("Respuesta inesperada de /assistance/values.");
+  } catch (error) {
+    console.error("teacherService - getAssistanceValues error:", error);
+    throw error;
+  }
+}
+
+/**
  * Registra asistencia de estudiantes (POST /assistance/student)
  * payload: objeto con la información de asistencia requerida por el backend
  */
@@ -366,6 +384,55 @@ export async function updateLogro(logroId, institucionFk, payload) {
     return data;
   } catch (error) {
     console.error("teacherService - updateLogro error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Obtiene notas del docente por grado, periodo y asignatura
+ * Endpoint: POST /notes/data
+ * payload: { fk_docente, fk_grade, fk_periodo, fk_asignatura }
+ */
+export async function getNotesTeacher(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto para getNotesTeacher.");
+  }
+  try {
+    const res = await ApiClient.instance.post("/notes/data", payload);
+    const data = Array.isArray(res) ? res : (res?.data ?? res);
+    return data;
+  } catch (error) {
+    console.error("teacherService - getNotesTeacher error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Obtiene asignaturas por sede para control de asistencia
+ * Endpoint: POST /assistance/sede/asignatures
+ * @param {Object} payload - { idSede, idWorkDay, startDate, endDate }
+ * @returns {Promise<Array>}
+ */
+export async function getAssistanceBySedeAsignatures(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error(
+      "payload debe ser un objeto para getAssistanceBySedeAsignatures.",
+    );
+  }
+  try {
+    const res = await ApiClient.instance.post(
+      "/assistance/sede/asignatures",
+      payload,
+    );
+    const data = res;
+    if (data && typeof data === "object" && "data" in data) return data.data;
+    if (data !== undefined && data !== null) return data;
+    throw new Error("Respuesta inesperada de /assistance/sede/asignatures.");
+  } catch (error) {
+    console.error(
+      "teacherService - getAssistanceBySedeAsignatures error:",
+      error,
+    );
     throw error;
   }
 }

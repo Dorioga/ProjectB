@@ -408,9 +408,9 @@ const RegisterRecords = () => {
   };
 
   return (
-    <div className="p-6 h-full gap-4 flex flex-col">
-      <div className="grid grid-cols-5 items-center justify-between">
-        <h2 className="col-span-4 text-2xl font-bold">Registrar Notas</h2>
+    <div className="p-2 h-full gap-4 flex flex-col">
+      <div className="w-full grid grid-cols-5 justify-between items-center  text-surface rounded-lg">
+        <h2 className="col-span-4 text-2xl font-bold"></h2>
         <SimpleButton
           type="button"
           onClick={tourRegisterRecords}
@@ -425,7 +425,7 @@ const RegisterRecords = () => {
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div
           id="tour-filters"
-          className="grid grid-cols-1 md:grid-cols-5 gap-4"
+          className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4"
         >
           <SedeSelect
             value={sedeSelected}
@@ -549,27 +549,25 @@ const RegisterRecords = () => {
             className="w-full p-2 border rounded bg-surface"
             autoLoad={true}
           />
-
-          <div id="tour-num-records" className="col-span-2 ">
-            <label className="text-lg font-semibold">
-              ¿Cuántas notas deseas registrar?
-            </label>
-            <input
-              type="number"
-              min={1}
-              className="w-full p-2 border rounded bg-surface"
-              value={numberRecords || ""}
-              onChange={(e) => setNumberRecords(Number(e.target.value))}
-              disabled={!canSetNumberRecords}
-            />
-            {!canSetNumberRecords ? (
-              <div className="text-xs opacity-70 mt-1">
-                Selecciona sede, asignatura y periodo para habilitar este campo.
-              </div>
-            ) : null}
-          </div>
         </div>
-
+        <div id="tour-num-records" className="w-full md:w-2/3 lg:w-2/5">
+          <label className="text-lg font-semibold">
+            ¿Cuántas notas deseas registrar?
+          </label>
+          <input
+            type="number"
+            min={1}
+            className="w-full p-2 border rounded bg-surface"
+            value={numberRecords || ""}
+            onChange={(e) => setNumberRecords(Number(e.target.value))}
+            disabled={!canSetNumberRecords}
+          />
+          {!canSetNumberRecords ? (
+            <div className="text-xs opacity-70 mt-1">
+              Selecciona sede, asignatura y periodo para habilitar este campo.
+            </div>
+          ) : null}
+        </div>
         <div id="tour-final-test" className="flex items-center gap-2">
           <input
             id="useFinalTest"
@@ -591,10 +589,15 @@ const RegisterRecords = () => {
             {auxRecords.map((rec, idx) => (
               <div
                 key={idx}
-                className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-surface border border-gray-300 rounded-sm p-3"
+                className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-primary border-gray-300 rounded-lg p-5"
               >
-                <div>
-                  <label className="text-sm font-semibold">Nombre</label>
+                <h2 className=" text-lg text-surface font-bold text-center md:text-left  md:col-span-3">
+                  Nota {idx + 1}
+                </h2>
+                <div className="w-full flex flex-col gap-1 rounded-t-lg">
+                  <label className="text-sm font-semibold bg-secondary text-surface p-2 w-full rounded-t-lg">
+                    Descripción
+                  </label>
                   <input
                     type="text"
                     className="w-full p-2 border rounded bg-surface tour-note-name"
@@ -602,39 +605,42 @@ const RegisterRecords = () => {
                     onChange={(e) =>
                       handleRecordChange(idx, "name", e.target.value)
                     }
-                    placeholder={`Nota ${idx + 1}`}
                   />
                 </div>
 
-                <div>
-                  <label className="text-sm font-semibold">
-                    Porcentual (%)
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      step="0.01"
-                      min={0}
-                      className="w-full p-2 border rounded bg-surface tour-note-porcentual"
-                      value={rec?.porcentual ?? 0}
-                      onChange={(e) =>
-                        handlePorcentualChange(idx, e.target.value)
-                      }
-                    />
-                    <label className="flex items-center gap-1 text-xs opacity-80 select-none">
+                <div className="w-full flex flex-col gap-1 rounded-t-lg">
+                  <div className="flex flex-row bg-secondary justify-between rounded-t-lg pr-4">
+                    <label className="text-sm font-semibold  text-surface p-2 w-full ">
+                      Porcentual (%)
+                    </label>
+
+                    <div className="flex flex-row">
                       <input
                         type="checkbox"
-                        className="tour-note-lock"
+                        className="tour-note-lock "
                         checked={Boolean(rec?.locked)}
                         onChange={() => togglePorcentualLock(idx)}
-                      />
-                      Fijar
-                    </label>
+                        title="Fijar porcentaje"
+                      />{" "}
+                      <label className="text-sm font-semibold  text-surface p-2 w-full ">
+                        Fijar
+                      </label>
+                    </div>
                   </div>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min={0}
+                    className="w-full p-2 border rounded bg-surface tour-note-porcentual"
+                    value={rec?.porcentual ?? 0}
+                    onChange={(e) =>
+                      handlePorcentualChange(idx, e.target.value)
+                    }
+                  />
                 </div>
 
-                <div>
-                  <label className="text-sm font-semibold">
+                <div className="w-full flex flex-col gap-1 rounded-t-lg">
+                  <label className="text-sm font-semibold bg-secondary text-surface p-2 w-full rounded-t-lg text-center">
                     Objetivo de la nota
                   </label>
                   <input
@@ -644,16 +650,20 @@ const RegisterRecords = () => {
                     onChange={(e) =>
                       handleRecordChange(idx, "goal", e.target.value)
                     }
-                    placeholder="Objetivo de la nota"
                   />
                 </div>
               </div>
             ))}
 
             {isTest ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-surface border border-gray-300 rounded-sm p-3">
-                <div>
-                  <label className="text-sm font-semibold">Nombre</label>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-primary border-gray-300 rounded-lg p-5">
+                <h2 className=" text-lg text-surface font-bold text-center md:text-left  md:col-span-3">
+                  Examen Final
+                </h2>
+                <div className="w-full flex flex-col gap-1 rounded-t-lg">
+                  <label className="text-sm font-semibold bg-secondary text-surface p-2 w-full rounded-t-lg ">
+                    Nombre
+                  </label>
                   <input
                     type="text"
                     className="w-full p-2 border rounded bg-surface"
@@ -662,8 +672,8 @@ const RegisterRecords = () => {
                   />
                 </div>
 
-                <div>
-                  <label className="text-sm font-semibold">
+                <div className="w-full flex flex-col gap-1 rounded-t-lg">
+                  <label className="text-sm font-semibold bg-secondary text-surface p-2 w-full rounded-t-lg">
                     Porcentual (%)
                   </label>
                   <input
@@ -683,8 +693,8 @@ const RegisterRecords = () => {
                   />
                 </div>
 
-                <div>
-                  <label className="text-sm font-semibold">
+                <div className="w-full flex flex-col gap-1 rounded-t-lg">
+                  <label className="text-sm font-semibold bg-secondary text-surface p-2 w-full rounded-t-lg ">
                     Objetivo de la nota
                   </label>
                   <input
@@ -697,7 +707,6 @@ const RegisterRecords = () => {
                         goal: e.target.value,
                       }))
                     }
-                    placeholder="Objetivo de la nota"
                   />
                 </div>
               </div>

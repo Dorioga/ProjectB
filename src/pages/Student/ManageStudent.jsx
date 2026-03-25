@@ -142,7 +142,7 @@ const ManageStudent = () => {
         accessorKey: "nombre_sede",
         header: "Sede",
         meta: {
-          hideOnLG: true,
+          hideOnXL: true,
         },
       },
       {
@@ -198,7 +198,7 @@ const ManageStudent = () => {
 
   return (
     <div className=" p-6  h-full gap-4 flex flex-col">
-      <div className="w-full grid grid-cols-7 items-center bg-primary text-surface p-3 rounded-t-lg">
+      <div className="w-full grid grid-cols-7 items-center bg-primary text-surface p-3 rounded-lg">
         <h2 className="text-2xl col-span-4 font-bold">Datos de Estudiantes</h2>
         <div className="grid grid-cols-3 gap-2 w-full col-span-3">
           <SimpleButton

@@ -212,7 +212,7 @@ const RegisterUser = () => {
 
   return (
     <div className=" p-6  h-full gap-4 flex flex-col">
-      <div className="w-full grid grid-cols-5 justify-between items-center  p-2 rounded-t-lg">
+      <div className="w-full grid grid-cols-5 justify-between items-center bg-primary text-surface p-3 rounded-lg">
         <h2 className="col-span-4 font-bold text-2xl">Registrar Usuario</h2>
         <SimpleButton
           type="button"
@@ -228,15 +228,17 @@ const RegisterUser = () => {
 
       <form
         onSubmit={handleSubmit}
-        className="grid grid-cols-1 md:grid-cols-3 gap-4"
+        className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4"
       >
         {loadingRegisterUser && (
-          <div className="md:col-span-3">
+          <div className="md:col-span-2 xl:col-span-4">
             <Loader message="Registrando…" />
           </div>
         )}
 
-        <div className="md:col-span-3 font-bold">Información personal</div>
+        <div className="md:col-span-2 xl:col-span-4 font-bold">
+          Información personal
+        </div>
 
         <div id="tour-doctype">
           <TypeDocumentSelector
@@ -361,7 +363,10 @@ const RegisterUser = () => {
           ) : null}
         </div>
 
-        <div id="tour-contact-info" className="md:col-span-3 font-bold mt-4">
+        <div
+          id="tour-contact-info"
+          className="md:col-span-2 xl:col-span-4 font-bold mt-4"
+        >
           Acceso
         </div>
 
@@ -406,7 +411,7 @@ const RegisterUser = () => {
 
         <div
           id="tour-submit"
-          className="md:col-span-3 mt-4 flex justify-center"
+          className="md:col-span-2 xl:col-span-4 mt-4 flex justify-center"
         >
           <div className="w-full md:w-1/2">
             <SimpleButton

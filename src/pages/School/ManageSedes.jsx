@@ -6,6 +6,7 @@ import DataTable from "../../components/atoms/DataTable";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import SedeModal from "../../components/molecules/SedeModal";
 import Modal from "../../components/atoms/Modal";
+import RegisterSede from "../../components/molecules/RegisterSede";
 import { useNotify } from "../../lib/hooks/useNotify";
 
 const ManageSedes = () => {
@@ -204,7 +205,7 @@ const ManageSedes = () => {
 
   return (
     <div className=" p-6  h-full gap-4 flex flex-col">
-      <div className="w-full flex justify-between items-center bg-primary text-surface p-3 rounded-t-lg">
+      <div className="w-full flex justify-between items-center bg-primary text-surface p-3 rounded-lg">
         <h2 className="text-2xl font-bold">Datos de Sedes</h2>
         <div className="w-56">
           <SimpleButton
@@ -273,25 +274,16 @@ const ManageSedes = () => {
       <Modal
         isOpen={isAddOpen}
         onClose={() => setIsAddOpen(false)}
-        title="Agregar sede"
-        size="4xl"
+        title="Agregar sede(s)"
+        size="7xl"
       >
-        <div className="p-6 bg-surface rounded">
-          <h2 className="text-xl font-bold mb-4">Agregar Nueva Sede</h2>
-          <p className="text-sm opacity-80 mb-4">
-            Formulario de registro de sede (pendiente implementación)
-          </p>
-          <SimpleButton
-            onClick={() => {
-              notify.info("Función de creación no implementada aún");
+        <div className="p-4">
+          <RegisterSede
+            onSuccess={() => {
               setIsAddOpen(false);
+              fetchSedesData();
             }}
-            icon="X"
-            bg="bg-error"
-            text="text-surface"
-          >
-            Cerrar
-          </SimpleButton>
+          />
         </div>
       </Modal>
     </div>

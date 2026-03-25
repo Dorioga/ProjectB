@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import Loader from "../atoms/Loader";
 import AsignatureSelector from "./AsignatureSelector";
 import useSchool from "../../lib/hooks/useSchool";
+import { LucidePlus, LucideSave } from "lucide-react";
 
 export default function AsignatureGrades({
   sede,
@@ -73,15 +74,17 @@ export default function AsignatureGrades({
     if (!tempAsignature || tempGrades.length === 0) return;
 
     // Convertir los grades seleccionados (ids) a objetos con id y nombre para que el padre tenga el mapeo
-    const gradesWithNames = (Array.isArray(tempGrades) ? tempGrades : []).map((gId) => {
-      const found = (availableAsignatureGrades || []).find(
-        (gr) => String(gr?.id_grado ?? gr?.id) === String(gId),
-      );
-      return {
-        idgrade: String(gId),
-        nombre_grado: found?.grado ?? found?.nombre_grado ?? String(gId),
-      };
-    });
+    const gradesWithNames = (Array.isArray(tempGrades) ? tempGrades : []).map(
+      (gId) => {
+        const found = (availableAsignatureGrades || []).find(
+          (gr) => String(gr?.id_grado ?? gr?.id) === String(gId),
+        );
+        return {
+          idgrade: String(gId),
+          nombre_grado: found?.grado ?? found?.nombre_grado ?? String(gId),
+        };
+      },
+    );
 
     const newAsign = {
       idAsignature: tempAsignature,
@@ -99,10 +102,12 @@ export default function AsignatureGrades({
   };
 
   return (
-    <>
-      <div className="md:col-span-3 font-bold mt-4">Asignaturas y Grados</div>
+    <div className="">
+      <div className="md:col-span-3 font-bold  text-surface bg-primary p-2 rounded-lg">
+        Asignaturas y Grados <span className="text-red-500 ml-1">*</span>
+      </div>
 
-      <div className="md:col-span-3 border p-4 rounded bg-gray-50">
+      <div className=" py-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <AsignatureSelector
             name="tempAsignature"
@@ -117,13 +122,24 @@ export default function AsignatureGrades({
             }}
             sedeId={sede}
             workdayId={workday}
-            labelClassName="font-semibold"
+            labelClassName="font-semibold "
           />
+          <div className="flex items-end justify-end ">
+            <button
+              type="button"
+              onClick={handleAdd}
+              disabled={!tempAsignature || tempGrades.length === 0}
+              className="bg-secondary text-surface px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center"
+            >
+              <LucidePlus className="inline-block w-4 h-4 mr-1" />
+              Agregar Asignatura
+            </button>
+          </div>
         </div>
 
         {tempAsignature && (
           <div className="mt-4">
-            <label className="font-semibold">
+            <label className="font-semibold ">
               Grados donde dictará esta asignatura:
             </label>
             {!sede || !workday ? (
@@ -137,7 +153,7 @@ export default function AsignatureGrades({
                 No hay grados disponibles para esta asignatura.
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mt-2">
+              <div className="grid grid-cols-2  md:grid-cols-5 gap-2 mt-2">
                 {availableAsignatureGrades.map((grade) => {
                   const gradeId = String(grade?.id_grado ?? "");
                   const gradeName = String(grade?.grado ?? "");
@@ -160,17 +176,6 @@ export default function AsignatureGrades({
             )}
           </div>
         )}
-
-        <div className="mt-4">
-          <button
-            type="button"
-            onClick={handleAdd}
-            disabled={!tempAsignature || tempGrades.length === 0}
-            className="bg-blue-500 text-surface px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
-          >
-            Agregar Asignatura
-          </button>
-        </div>
       </div>
 
       {asignatures.length > 0 && (
@@ -205,6 +210,6 @@ export default function AsignatureGrades({
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

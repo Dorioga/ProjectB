@@ -245,18 +245,19 @@ const RegisterAsignature = ({ onSuccess }) => {
 
   return (
     <div className="p-6 h-full gap-4 flex flex-col">
-      <div className="grid grid-cols-5 items-center justify-between">
-        <h2 className="font-bold col-span-4 text-2xl">Registrar Asignatura</h2>
-        <SimpleButton
-          type="button"
-          onClick={tourRegisterAsignature}
-          icon="HelpCircle"
-          msjtooltip="Iniciar tutorial"
-          noRounded={false}
-          bg="bg-info"
-          text="text-surface"
-          className="w-auto px-3 py-1.5"
-        />
+      <div className="flex w-full items-end justify-end">
+        <div className="w-1/5">
+          <SimpleButton
+            type="button"
+            onClick={tourRegisterAsignature}
+            icon="HelpCircle"
+            msjtooltip="Iniciar tutorial"
+            noRounded={false}
+            bg="bg-info"
+            text="text-surface"
+            className="w-auto px-3 py-1.5"
+          />
+        </div>
       </div>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div id="tour-name">

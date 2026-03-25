@@ -4,31 +4,43 @@ import JourneySelect from "../atoms/JourneySelect";
 
 const ProfileGrade = ({ data, onSave, initialEditing = false }) => {
   const safeData = data || {};
+  console.log("ProfileGrade - render - data prop:", data);
   const [isEditing, setIsEditing] = useState(Boolean(initialEditing));
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState({});
 
-  const [form, setForm] = useState({
-    nombre_grado: safeData.nombre_grado || safeData.name_grade || "",
-    idWorkDay:
+  const [form, setForm] = useState(() => {
+    const wday =
       safeData.idWorkDay ??
       safeData.id_workday ??
       safeData.fk_workday ??
-      safeData.workday ??
-      "",
-    grupo: safeData.grupo || safeData.name_group || "",
-    estado: safeData.estado || "",
+      safeData.fk_jornada ??
+      null;
+    return {
+      nombre_grado: safeData.nombre_grado || safeData.name_grade || "",
+      idWorkDay: wday != null ? String(wday) : "",
+      grupo: safeData.grupo || safeData.name_group || "",
+      estado: safeData.estado || "",
+    };
   });
-
+  console.log("ProfileGrade - data:", form);
   useEffect(() => {
     setIsEditing(Boolean(initialEditing));
   }, [initialEditing]);
 
   useEffect(() => {
     const d = data || {};
+    const wday =
+      d.idWorkDay ??
+      d.id_workday ??
+      d.fk_workday ??
+      d.fk_jornada ??
+      d.id_jornada ??
+      d.workday ??
+      null;
     setForm({
       nombre_grado: d.nombre_grado || d.name_grade || "",
-      idWorkDay: d.idWorkDay ?? d.id_workday ?? d.fk_workday ?? d.workday ?? "",
+      idWorkDay: wday != null ? String(wday) : "",
       grupo: d.grupo || d.name_group || "",
       estado: d.estado || "",
     });
@@ -137,15 +149,13 @@ const ProfileGrade = ({ data, onSave, initialEditing = false }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Nombre del grado */}
         <div>
-          <label className="font-semibold">Nombre del Grado</label>
+          <label className="">Nombre del Grado</label>
           <input
             name="nombre_grado"
             value={form.nombre_grado}
             onChange={handleChange}
             className={`w-full p-2 border rounded bg-surface ${
-              isEditing && !isSaving
-                ? "ring-2 ring-accent/30"
-                : "opacity-80 text-gray-700"
+              isEditing && !isSaving ? "" : "opacity-80 text-gray-700"
             }`}
             disabled={!isEditing || isSaving}
             placeholder="Ej: 6°"
@@ -159,15 +169,13 @@ const ProfileGrade = ({ data, onSave, initialEditing = false }) => {
 
         {/* Grupo */}
         <div>
-          <label className="font-semibold">Grupo</label>
+          <label className="">Grupo</label>
           <input
             name="grupo"
             value={form.grupo}
             onChange={handleChange}
             className={`w-full p-2 border rounded bg-surface ${
-              isEditing && !isSaving
-                ? "ring-2 ring-accent/30"
-                : "opacity-80 text-gray-700"
+              isEditing && !isSaving ? "" : "opacity-80 text-gray-700"
             }`}
             disabled={!isEditing || isSaving}
             placeholder="Ej: A"
@@ -179,17 +187,14 @@ const ProfileGrade = ({ data, onSave, initialEditing = false }) => {
 
         {/* Jornada */}
         <div>
-          <label className="font-semibold">Jornada</label>
           <JourneySelect
             name="idWorkDay"
-            value={String(form.idWorkDay ?? "")}
+            value={form.idWorkDay}
             onChange={(e) =>
               setForm((prev) => ({ ...prev, idWorkDay: e.target.value }))
             }
             className={`w-full p-2 border rounded bg-surface ${
-              isEditing && !isSaving
-                ? "ring-2 ring-accent/30"
-                : "opacity-80 text-gray-700"
+              isEditing && !isSaving ? "" : "opacity-80 text-gray-700"
             }`}
             disabled={!isEditing || isSaving}
             includeAmbas={false}
@@ -201,15 +206,13 @@ const ProfileGrade = ({ data, onSave, initialEditing = false }) => {
 
         {/* Estado */}
         <div>
-          <label className="font-semibold">Estado</label>
+          <label className="">Estado</label>
           <select
             name="estado"
             value={form.estado}
             onChange={handleChange}
             className={`w-full p-2 border rounded bg-surface ${
-              isEditing && !isSaving
-                ? "ring-2 ring-accent/30"
-                : "opacity-80 text-gray-700"
+              isEditing && !isSaving ? "" : "opacity-80 text-gray-700"
             }`}
             disabled={!isEditing || isSaving}
           >

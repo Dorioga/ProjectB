@@ -10,7 +10,7 @@ import useAuth from "../../lib/hooks/useAuth";
  * - onAccept : se llama tras enviar la aceptación y navega al dashboard.
  *              Si no se proporciona, usa onClose como fallback.
  */
-const TermsModal = ({ isOpen, onClose, onAccept }) => {
+const TermsModal = ({ isOpen, onClose, onAccept, pendingIdPersona }) => {
   const [checked, setChecked] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -29,7 +29,10 @@ const TermsModal = ({ isOpen, onClose, onAccept }) => {
   /* ── Handler principal ───────────────────────────────────────── */
   const handleAccept = useCallback(async () => {
     setLoading(true);
-    let idPersona = parseIdPersona(localStorage.getItem("idPersona"));
+    // Usar prop si existe (datos aún no están en localStorage), si no fallback a localStorage
+    let idPersona = pendingIdPersona
+      ? pendingIdPersona
+      : parseIdPersona(localStorage.getItem("idPersona"));
     console.log("Enviando aceptación de términos para idPersona:", idPersona);
     try {
       await accessData({ fk_perona: idPersona, numero_identificacion });
@@ -40,7 +43,7 @@ const TermsModal = ({ isOpen, onClose, onAccept }) => {
     } finally {
       setLoading(false);
     }
-  }, [numero_identificacion, accessData, onAccept, onClose]);
+  }, [pendingIdPersona, numero_identificacion, accessData, onAccept, onClose]);
 
   return (
     <Modal

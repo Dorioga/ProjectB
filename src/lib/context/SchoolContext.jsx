@@ -7,10 +7,13 @@ import React, {
   useRef,
 } from "react";
 import * as schoolService from "../../services/schoolService";
+import * as authService from "../../services/authService";
 import { eventBus } from "../../services/ApiClient";
 import { mapTeacherRowsToProcessed } from "../../utils/teacherUtils";
 
-export const SchoolContext = createContext(null);
+// Providing a default empty object prevents consumers from seeing null
+// during the very first render before the provider has computed its value.
+export const SchoolContext = createContext({});
 
 export function SchoolProvider({ children }) {
   const [schools, setSchools] = useState([]);
@@ -39,6 +42,7 @@ export function SchoolProvider({ children }) {
   const journeysLoadedRef = useRef(false);
   const periodsLoadedRef = useRef(false);
   const valuesReservationsLoadedRef = useRef(false);
+  const loadingValuesReservationsRef = useRef(false);
 
   const loadSedes = useCallback(async (params = {}) => {
     setLoadingSedes(true);
@@ -113,28 +117,44 @@ export function SchoolProvider({ children }) {
     }
   }, [loadingPeriods]);
 
-  const loadValuesReservations = useCallback(async () => {
-    if (valuesReservationsLoadedRef.current || loadingValuesReservations)
-      return;
+  // municipioId opcional para filtrar valores según el municipio seleccionado
+  const loadValuesReservations = useCallback(
+    async (municipioId = null) => {
+      if (loadingValuesReservationsRef.current) return;
 
-    valuesReservationsLoadedRef.current = true;
-    setLoadingValuesReservations(true);
-    setErrorValuesReservations(null);
-    try {
-      const data = await schoolService.getValuesReservations();
-      setValuesReservations(Array.isArray(data) ? data : (data?.data ?? []));
-      console.log(
-        `SchoolContext: ${Array.isArray(data) ? data.length : 0} valores de reservación cargados`,
-      );
-    } catch (err) {
-      console.error("Error al cargar valores de reservación:", err);
-      setErrorValuesReservations(err);
-      setValuesReservations([]);
-      valuesReservationsLoadedRef.current = false;
-    } finally {
-      setLoadingValuesReservations(false);
-    }
-  }, [loadingValuesReservations]);
+      // si ya se cargaron sin municipioId explícito, no repetir
+      if (valuesReservationsLoadedRef.current && municipioId === null) return;
+
+      loadingValuesReservationsRef.current = true;
+      valuesReservationsLoadedRef.current = true;
+      setLoadingValuesReservations(true);
+      setErrorValuesReservations(null);
+      try {
+        const payload = municipioId ? { municipioId } : {};
+        const data = await schoolService.getValuesReservations(payload);
+        setValuesReservations(Array.isArray(data) ? data : (data?.data ?? []));
+        console.log(
+          `SchoolContext: ${
+            Array.isArray(data) ? data.length : 0
+          } valores de reservación cargados (municipioId=${municipioId})`,
+        );
+      } catch (err) {
+        console.error("Error al cargar valores de reservación:", err);
+        setErrorValuesReservations(err);
+        setValuesReservations([]);
+        valuesReservationsLoadedRef.current = false;
+      } finally {
+        loadingValuesReservationsRef.current = false;
+        setLoadingValuesReservations(false);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
+  const registerSlot = useCallback(async (payload) => {
+    return authService.registerSlot(payload);
+  }, []);
 
   const loadRecords = useCallback(async (params = {}) => {
     setLoadingRecords(true);
@@ -440,7 +460,46 @@ export function SchoolProvider({ children }) {
     }
   }, []);
 
+  const updateNote = useCallback(async (noteId, payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await schoolService.updateNote(noteId, payload);
+      eventBus.emit("¡Nota actualizada exitosamente!", "success");
+      return result;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const createOrUpdateNote = useCallback(async (payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await schoolService.createOrUpdateNote(payload);
+      eventBus.emit("¡Notas guardadas exitosamente!", "success");
+      return result;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // getTeacherSubjects is provided by TeacherContext (useTeacher).
+
+  const getInstitutionScales = useCallback(async (institutionId) => {
+    try {
+      return await schoolService.getInstitutionScales(institutionId);
+    } catch (err) {
+      console.error("Error al obtener escalas:", err);
+      throw err;
+    }
+  }, []);
 
   const getInstitution = useCallback(async () => {
     setLoading(true);
@@ -491,6 +550,17 @@ export function SchoolProvider({ children }) {
     }
   }, []);
 
+  const fetchStudentAlerts = useCallback(async () => {
+    try {
+      const alerts = await schoolService.getStudentAlerts();
+      console.log("SchoolContext - fetchStudentAlerts:", alerts);
+      return Array.isArray(alerts) ? alerts : [];
+    } catch (error) {
+      console.error("Error al obtener alertas de estudiantes:", error);
+      throw error;
+    }
+  }, []);
+
   const value = useMemo(
     () => ({
       schools,
@@ -528,15 +598,20 @@ export function SchoolProvider({ children }) {
       updateSede,
       getGradeAsignature,
       createNote,
+      updateNote,
+      createOrUpdateNote,
       getInstitution,
+      getInstitutionScales,
       getStudentGrades,
       pathSignature,
       setPathSignature,
       fetchAllStudents,
+      fetchStudentAlerts,
       valuesReservations,
       loadingValuesReservations,
       errorValuesReservations,
       loadValuesReservations,
+      registerSlot,
     }),
     [
       schools,
@@ -544,6 +619,7 @@ export function SchoolProvider({ children }) {
       loadingValuesReservations,
       errorValuesReservations,
       loadValuesReservations,
+      registerSlot,
       loading,
       error,
       sedes,
@@ -578,10 +654,14 @@ export function SchoolProvider({ children }) {
       updateSede,
       getGradeAsignature,
       createNote,
+      updateNote,
+      createOrUpdateNote,
       getInstitution,
+      getInstitutionScales,
       getStudentGrades,
       pathSignature,
       fetchAllStudents,
+      fetchStudentAlerts,
     ],
   );
 

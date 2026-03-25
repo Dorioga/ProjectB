@@ -4,8 +4,6 @@ import useTeacher from "../../lib/hooks/useTeacher";
 import useAuth from "../../lib/hooks/useAuth";
 import { mapTeacherRowsToProcessed } from "../../utils/teacherUtils";
 import DataTable from "../../components/atoms/DataTable";
-import AlertTable from "../../components/molecules/AlertTable";
-import { alertsResponse } from "../../services/DataExamples/alertsResponse";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import Modal from "../../components/atoms/Modal";
 import RegisterTeacher from "./RegisterTeacher";
@@ -16,12 +14,10 @@ const ManageTeacher = () => {
   const { idInstitution } = useAuth();
   const { loading } = useSchool();
   const { fetchAllTeachers, updateTeacher, getDataTeacher } = useTeacher();
-  const alerts = alertsResponse;
 
   const [teachers, setTeachers] = useState([]);
   const [tableData, setTableData] = useState([]); // datos concretos que pasaremos a DataTable
   const [selectedTeacher, setSelectedTeacher] = useState(null);
-  const [fetchError, setFetchError] = useState(null);
   const prevTeachersRef = useRef([]);
   const hasFetchedRef = useRef(false); // evita múltiples llamadas al servicio
   const lastResponseRef = useRef(null); // para depuración: guarda la última respuesta cruda
@@ -37,7 +33,6 @@ const ManageTeacher = () => {
   // Extraer la lógica de carga en una función reutilizable para poder invocarla desde fuera (p.ej. al crear un docente)
   const fetchTeachersData = async () => {
     try {
-      setFetchError(null);
       setIsTableLoading(true);
 
       console.log("ManageTeacher - idInstitution:", idInstitution);
@@ -45,7 +40,7 @@ const ManageTeacher = () => {
         console.warn(
           "ManageTeacher - idInstitution no disponible; abortando fetchAllTeachers.",
         );
-        setFetchError("No hay idInstitution — revisa la sesión de usuario.");
+        notify.error("No hay idInstitution — revisa la sesión de usuario.");
         setIsTableLoading(false);
         return;
       }
@@ -69,7 +64,7 @@ const ManageTeacher = () => {
       hasFetchedRef.current = true;
     } catch (error) {
       console.error("Error al cargar docentes:", error);
-      setFetchError(error?.message || String(error));
+      notify.error(error?.message || "Error al cargar docentes");
       // Permitir reintento en caso de error
       hasFetchedRef.current = false;
     } finally {
@@ -160,14 +155,14 @@ const ManageTeacher = () => {
         accessorKey: "nombre_sede",
         header: "Sede",
         meta: {
-          hideOnLG: true,
+          hideOnXL: true,
         },
       },
       {
         accessorKey: "estado",
         header: "Estado",
         meta: {
-          hideOnLG: true,
+          hideOnXL: true,
         },
       },
 
@@ -185,10 +180,10 @@ const ManageTeacher = () => {
             .filter(Boolean);
           if (parts.length === 0) return null;
           return (
-            <div className="grid grid-cols-3 items-start gap-1 p-2">
+            <div className="grid grid-cols-2 2xl:grid-cols-3 items-start gap-1 p-2">
               {parts.map((p, i) => (
                 <div key={i} className="text-left text-sm">
-                  - {p}
+                  -{p}
                 </div>
               ))}
             </div>
@@ -224,7 +219,7 @@ const ManageTeacher = () => {
         accessorKey: "director_of_grade",
         header: "Director de grado",
         meta: {
-          hideOnLG: true,
+          hideOnXL: true,
         },
       },
 
@@ -259,13 +254,13 @@ const ManageTeacher = () => {
   );
 
   return (
-    <div className=" p-6  h-full gap-4 flex flex-col">
-      <div className="w-full flex justify-between items-center bg-primary text-surface p-3 rounded-t-lg">
-        <h2 className="text-2xl font-bold">Datos de Docentes</h2>
-        <div className="w-56">
+    <div className=" p-6 h-full gap-4 flex flex-col">
+      <div className="w-full grid sm:grid-cols-2 lg:grid-cols-5 justify-between items-center bg-primary text-surface p-3 rounded-lg">
+        <h2 className="text-2xl font-bold lg:col-span-4">Datos de Docentes</h2>
+        <div className="">
           <SimpleButton
             onClick={() => setIsAddOpen(true)}
-            msj="Agregar docente"
+            msj="Registrar docente"
             icon="Plus"
             bg="bg-secondary"
             text="text-surface"
@@ -292,17 +287,11 @@ const ManageTeacher = () => {
           }
         />
 
-        {fetchError && (
-          <div className="mt-4 text-center text-red-600">
-            Error al cargar docentes: {fetchError}
-          </div>
-        )}
-
         <Modal
           isOpen={isAddOpen}
           onClose={() => setIsAddOpen(false)}
-          title="Agregar docente"
-          size="4xl"
+          title="Registrar docente"
+          size="7xl"
         >
           <RegisterTeacher
             onSuccess={(result) => {
@@ -338,13 +327,6 @@ const ManageTeacher = () => {
             }
           }}
         />
-
-        {/* Debug UI: mostrar cuantos registros hay en state */}
-        <div className="mt-3">
-          <div className="text-sm text-gray-700">
-            Registros en state: <strong>{teachers.length}</strong>
-          </div>
-        </div>
       </div>
     </div>
   );

@@ -502,6 +502,7 @@ const RegisterStudentRecords = () => {
         const tipoForStudent = {};
         const logroForStudent = selectedLogroByStudent || {};
         const logroOptionsForStudent = {};
+        const recoveryForStudent = {};
 
         data.forEach((n) => {
           const name = String(
@@ -547,6 +548,17 @@ const RegisterStudentRecords = () => {
             null;
           if (noteComment && !commentsForStudent[studentKey]) {
             commentsForStudent[studentKey] = String(noteComment);
+          }
+
+          // Extraer nota de recuperación si viene en la respuesta
+          const noteRecovery =
+            n?.nota_recuperacion ?? n?.recovery_note ?? n?.recoveryNote ?? null;
+          if (
+            noteRecovery != null &&
+            (recoveryForStudent[studentKey] === undefined ||
+              recoveryForStudent[studentKey] === null)
+          ) {
+            recoveryForStudent[studentKey] = String(noteRecovery);
           }
 
           // Extraer fk_tipo_logro (primer select) y id_logro (segundo select) si vienen
@@ -601,6 +613,8 @@ const RegisterStudentRecords = () => {
             ...prev,
             ...logroOptionsForStudent,
           }));
+        if (Object.keys(recoveryForStudent).length > 0)
+          setRecoveryNotesById((prev) => ({ ...prev, ...recoveryForStudent }));
       });
 
       const consolidatedNotes = Array.from(notesMap.values());
@@ -608,7 +622,6 @@ const RegisterStudentRecords = () => {
       console.debug("initial valuesByStudent set", { valuesByStudent });
       setRecordValuesByStudent(valuesByStudent);
       setCommentsById({});
-      setRecoveryNotesById({});
       setNoteMetaByStudent(metaByStudent);
 
       // Inicializar estados por fila basados en valores traídos del servicio:
@@ -954,7 +967,10 @@ const RegisterStudentRecords = () => {
     const studentKey = getStudentKey(student);
     const values = recordValuesByStudent?.[studentKey] ?? {};
     const comment = commentsById?.[studentKey] ?? "";
-    const recoveryNote = recoveryNotesById?.[studentKey] ?? "";
+    const recoveryNote =
+      String(periodSelected) === "4"
+        ? (recoveryNotesById?.[studentKey] ?? "")
+        : "";
 
     // id seleccionado del select "logro" (segundo select de comentarios)
     const selectedLogro =
@@ -1016,6 +1032,10 @@ const RegisterStudentRecords = () => {
           value_note: noteNum,
           nota_periodo_porcentual: notePercentageFinal,
           ...(selectedLogro ? { id_logro: Number(selectedLogro) } : {}),
+          // recovery note por estudiante sigue igual para todas las notas
+          ...(recoveryNote && String(recoveryNote).trim() !== ""
+            ? { recovery_note: Number(recoveryNote) }
+            : {}),
         };
         if (finalInfo.isComplete) updateItem.nota_final = finalInfo.final;
         updateArray.push(updateItem);
@@ -1028,6 +1048,9 @@ const RegisterStudentRecords = () => {
           goal_student: comment || "",
           note_percentage_final: notePercentageFinal,
           ...(selectedLogro ? { id_logro: Number(selectedLogro) } : {}),
+          ...(recoveryNote && String(recoveryNote).trim() !== ""
+            ? { recovery_note: Number(recoveryNote) }
+            : {}),
         };
         if (finalInfo.isComplete) insertItem.final_note = finalInfo.final;
         insertArray.push(insertItem);
@@ -1060,14 +1083,12 @@ const RegisterStudentRecords = () => {
           ...(selectedTipo ? { fk_tipo_logro: Number(selectedTipo) } : {}),
           ...(selectedLogro ? { id_logro: Number(selectedLogro) } : {}),
           note_student: insertArray,
-          ...(recoveryNote && String(recoveryNote).trim() !== ""
-            ? { recovery_note: Number(recoveryNote) }
-            : {}),
         });
         ops.push(saveAssignmentNotes(insertPayload));
       }
 
       if (updateArray.length > 0) {
+        // el recovery_note ya está dentro de cada updateItem, no lo añadimos
         const updatePayload = normalizeNumericInPayload({
           fk_grado: Number(gradeSelected),
           fk_sede: Number(sedeSelected),
@@ -1076,9 +1097,6 @@ const RegisterStudentRecords = () => {
           ...(selectedTipo ? { fk_tipo_logro: Number(selectedTipo) } : {}),
           ...(selectedLogro ? { id_logro: Number(selectedLogro) } : {}),
           note_student: updateArray,
-          ...(recoveryNote && String(recoveryNote).trim() !== ""
-            ? { recovery_note: Number(recoveryNote) }
-            : {}),
         });
         ops.push(updateAssignmentNote(updatePayload));
       }
@@ -1198,12 +1216,6 @@ const RegisterStudentRecords = () => {
         accessorFn: (student) =>
           [
             getStudentName(student),
-            String(
-              student?.id_estudiante ??
-                student?.id_student ??
-                student?.identification ??
-                "",
-            ),
             student?.grado ?? student?.grade_scholar ?? "",
           ]
             .filter(Boolean)
@@ -1219,8 +1231,7 @@ const RegisterStudentRecords = () => {
             <div className="text-left p-3">
               <div className="font-medium">{fullName || "Estudiante"}</div>
               <div className="text-xs opacity-80">
-                ID: {student?.id_estudiante || "-"} · Grado:{" "}
-                {student?.grado || student?.grade_scholar || "-"}
+                - Grado: {student?.grado || student?.grade_scholar || "-"}
               </div>
             </div>
           );
@@ -1237,6 +1248,11 @@ const RegisterStudentRecords = () => {
 
       columns.push({
         id: recordKey,
+        accessorFn: (student) => {
+          const key = getStudentKey(student);
+          const vals = recordValuesByStudentRef.current?.[key] ?? {};
+          return vals?.[recordKey] ?? vals?.[recordName] ?? "";
+        },
         meta: {
           exportHeader: recordName
             ? `${recordName}${Number.isFinite(porcentual) ? ` (${porcentual}%)` : ""}`
@@ -1289,7 +1305,8 @@ const RegisterStudentRecords = () => {
 
     // Columna de nota final
     columns.push({
-      accessorKey: "final",
+      id: "final",
+      accessorKey: "__notaFinal",
       meta: { exportHeader: "Nota Final" },
       header: <div className="lowercase first-letter:uppercase">Final</div>,
       cell: ({ row }) => {
@@ -1299,13 +1316,22 @@ const RegisterStudentRecords = () => {
           recordValuesByStudentRef.current?.[studentKey] ?? {};
         const finalInfo = computeFinalRecord(studentValues);
 
-        const bgClass = finalInfo.isComplete ? "bg-green-100" : "bg-yellow-100";
+        const nota = parseFloat(finalInfo.final);
+        const bgClass = !isNaN(nota)
+          ? nota < 3
+            ? "bg-red-100"
+            : nota <= 3.5
+              ? "bg-yellow-100"
+              : "bg-green-100"
+          : finalInfo.isComplete
+            ? "bg-green-100"
+            : "bg-yellow-100";
 
         return (
           <div className={`p-3 text-center ${bgClass} rounded`}>
             <div className="font-medium">{finalInfo.final}</div>
             <div className="text-xs opacity-80">
-              {finalInfo.isComplete ? "Completo" : "En progreso"}
+              {finalInfo.isComplete ? "Completo" : "Progreso"}
               {finalInfo.porcentualTotal !== 100 ? (
                 <span className="opacity-80">
                   {" "}
@@ -1318,46 +1344,63 @@ const RegisterStudentRecords = () => {
       },
     });
 
-    // Columna de nota de recuperación
-    columns.push({
-      accessorKey: "recovery",
-      meta: { exportHeader: "Recuperación" },
-      header: (
-        <div className="lowercase first-letter:uppercase">Recuperación</div>
-      ),
-      cell: ({ row }) => {
-        const student = row.original;
-        const studentKey = getStudentKey(student);
-        const recoveryValue = recoveryNotesByIdRef.current?.[studentKey] ?? "";
-        const editing = rowEditByIdRef.current?.[studentKey] !== false;
+    // Columna de nota de recuperación (solo periodo 4)
+    if (String(periodSelected) === "4") {
+      columns.push({
+        id: "recovery",
+        accessorFn: (student) =>
+          recoveryNotesByIdRef.current?.[getStudentKey(student)] ?? "",
+        meta: { exportHeader: "Recuperación" },
+        header: (
+          <div className="lowercase first-letter:uppercase">Recuperación</div>
+        ),
+        cell: ({ row }) => {
+          const student = row.original;
+          const studentKey = getStudentKey(student);
+          const recoveryValue =
+            recoveryNotesByIdRef.current?.[studentKey] ?? "";
+          const editing = rowEditByIdRef.current?.[studentKey] !== false;
 
-        return (
-          <div className="p-2">
-            <input
-              type="number"
-              min={0}
-              max={5}
-              step={0.01}
-              value={recoveryValue}
-              onChange={(e) =>
-                handleRecoveryNoteChange(
-                  studentKey,
-                  sanitizeGradeInput(e.target.value),
-                )
-              }
-              onBlur={() => clampAndFormatRecovery(studentKey)}
-              className="w-full p-2 border rounded bg-surface text-center"
-              placeholder="0.00"
-              disabled={loadingDataRef.current || editing === false}
-            />
-          </div>
-        );
-      },
-    });
+          return (
+            <div className="p-2">
+              <input
+                type="number"
+                min={0}
+                max={5}
+                step={0.01}
+                value={recoveryValue}
+                onChange={(e) =>
+                  handleRecoveryNoteChange(
+                    studentKey,
+                    sanitizeGradeInput(e.target.value),
+                  )
+                }
+                onBlur={() => clampAndFormatRecovery(studentKey)}
+                className="w-full p-2 border rounded bg-surface text-center"
+                placeholder="0.00"
+                disabled={loadingDataRef.current || editing === false}
+              />
+            </div>
+          );
+        },
+      });
+    }
 
     // Columna de comentarios (ahora: tipo de logro + logro filtrado)
     columns.push({
-      accessorKey: "comments",
+      id: "comments",
+      accessorFn: (student) => {
+        const key = getStudentKey(student);
+        const comment = commentsByIdRef.current?.[key] ?? "";
+        if (comment) return comment;
+        const selectedLogro = selectedLogroByStudentRef.current?.[key] ?? "";
+        if (!selectedLogro) return "";
+        const options = logrosOptionsByStudentRef.current?.[key] ?? [];
+        const logro = options.find(
+          (l) => String(l.id) === String(selectedLogro),
+        );
+        return logro?.descripcion ?? String(selectedLogro);
+      },
       meta: { exportHeader: "Comentarios del docente" },
       header: (
         <div className="lowercase first-letter:uppercase">
@@ -1543,18 +1586,32 @@ const RegisterStudentRecords = () => {
     handleCommentChange,
     handleRecoveryNoteChange,
     sanitizeGradeInput,
+    periodSelected,
     // Forzar re-registro de columnas cuando tipos de logro carguen
     // (cell renderer lee refs, pero el useMemo debe reejecutarse para reflejar cambios)
     tipoLogroOptions,
   ]);
 
   // Preparar los datos para DataTable
+  // Se incluye __notaFinal calculada para que el buscador global del DataTable la indexe correctamente
   const tableData = useMemo(() => {
-    return filteredStudents;
-  }, [filteredStudents]);
+    return (Array.isArray(filteredStudents) ? filteredStudents : []).map(
+      (s) => {
+        const finalInfo = computeFinalRecord(
+          recordValuesByStudent?.[getStudentKey(s)] ?? {},
+        );
+        return {
+          ...s,
+          // Incluye nota y estado para que el buscador global del DataTable los indexe
+          __notaFinal: `${finalInfo.final} ${finalInfo.isComplete ? "Completo" : "Progreso"}`,
+        };
+      },
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredStudents, recordValuesByStudent]);
 
   return (
-    <div className=" p-6  h-full gap-4 flex flex-col">
+    <div className=" p-2 w-full h-full gap-4 flex flex-col">
       {/* Global loader for row / data operations */}
       {(loadingDataRef.current ||
         Object.values(rowLoadingByIdRef.current || {}).some(Boolean)) && (
@@ -1564,10 +1621,8 @@ const RegisterStudentRecords = () => {
         />
       )}
 
-      <div className="grid grid-cols-5 items-center justify-between">
-        <h2 className="col-span-4 text-2xl font-bold">
-          Registrar Notas Estudiantes
-        </h2>
+      <div className="w-full grid grid-cols-5 justify-between items-center  text-surface  rounded-lg">
+        <h2 className="col-span-4 text-2xl font-bold"></h2>
         <SimpleButton
           type="button"
           onClick={tourRegisterStudentRecords}

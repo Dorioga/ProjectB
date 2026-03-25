@@ -5,15 +5,43 @@ import React, {
   useEffect,
   useMemo,
 } from "react";
+import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 import SignatureCanvas from "react-signature-canvas";
+
+/** Comprime cualquier imagen (URL, blob:// o base64) a JPEG con canvas. */
+const compressToJpeg = (src, quality = 0.75, maxWidth = 400) =>
+  new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const scale = img.width > maxWidth ? maxWidth / img.width : 1;
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const cv = document.createElement("canvas");
+      cv.width = w;
+      cv.height = h;
+      const ctx = cv.getContext("2d");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      resolve(cv.toDataURL("image/jpeg", quality));
+    };
+    img.onerror = reject;
+    img.src = src;
+  });
 import SimpleButton from "../atoms/SimpleButton";
 import tourReserveSpot from "../../tour/tourReserveSpot";
 
 import TypeDocumentSelector from "../molecules/TypeDocumentSelector";
+import DepartmentSelector from "../molecules/DepartmentSelector";
+import CitySelector from "../molecules/CitySelector";
 import Loader from "../atoms/Loader";
+import * as schoolService from "../../services/schoolService";
+import { upload } from "../../services/uploadService";
 import useSchool from "../../lib/hooks/useSchool";
 import { useNotify } from "../../lib/hooks/useNotify";
+import useData from "../../lib/hooks/useData";
 
 // ───────────────────── Constantes ─────────────────────
 
@@ -26,16 +54,13 @@ const INITIAL_STUDENT = {
   email: "",
   identification: "",
   identificationtype: "",
-  departamento: "",
-  municipio: "",
   sede: "",
   jornada: "",
+  grade: "",
   fecha_nacimiento: "",
   direccion: "",
   gender: "",
-  nui: "",
   per_id: "",
-  grade: "",
 };
 
 const INITIAL_GUARDIAN = {
@@ -204,48 +229,102 @@ const GuardianFormSection = ({ prefix, data, onChange, errors }) => (
 
 // ───────────────────── Componente principal ─────────────────────
 
-const ReserveSpot = ({ onSuccess }) => {
+const ReserveSpot = ({ mode = "Externo", onSuccess }) => {
   const notify = useNotify();
+  const navigate = useNavigate();
   const {
     valuesReservations,
     loadingValuesReservations,
     loadValuesReservations,
+    registerSlot,
   } = useSchool();
-
-  // Cargar valores de reservación al montar
-  useEffect(() => {
-    loadValuesReservations();
-  }, [loadValuesReservations]);
 
   const [student, setStudent] = useState(INITIAL_STUDENT);
   const [guardian, setGuardian] = useState(INITIAL_GUARDIAN);
+
+  // ─── Filtros previos al formulario (dept + municipio) ───
+  const [filterDept, setFilterDept] = useState("");
+  const [filterCity, setFilterCity] = useState("");
+
+  // Cuando el usuario elige municipio, lanzar POST /values/reservations con {municipioId}
+  useEffect(() => {
+    if (filterCity) {
+      loadValuesReservations(filterCity);
+    }
+  }, [filterCity, loadValuesReservations]);
+
+  // ─── Grados: carga directa sin depender del token ───
+  const [grades, setGrades] = useState([]);
+  const [loadingGrades, setLoadingGrades] = useState(false);
+
+  useEffect(() => {
+    if (!student.sede || !student.jornada) {
+      setGrades([]);
+      return;
+    }
+    let cancelled = false;
+    const fetchGrades = async () => {
+      setLoadingGrades(true);
+      try {
+        const result = await schoolService.getGradeSede({
+          idSede: Number(student.sede),
+          idWorkDay: Number(student.jornada),
+        });
+        if (!cancelled) {
+          const list = Array.isArray(result) ? result : (result?.data ?? []);
+          setGrades(list);
+        }
+      } catch (err) {
+        if (!cancelled) setGrades([]);
+        console.error("ReserveSpot - error al cargar grados:", err);
+      } finally {
+        if (!cancelled) setLoadingGrades(false);
+      }
+    };
+    fetchGrades();
+    return () => {
+      cancelled = true;
+    };
+  }, [student.sede, student.jornada]);
+
+  const gradeOptions = useMemo(
+    () =>
+      (Array.isArray(grades) ? grades : [])
+        .filter(Boolean)
+        .map((g) => ({
+          value: String(g.id_grade ?? g.id ?? g.id_grado ?? ""),
+          label: g.grado ?? g.nombre ?? g.nombre_grado ?? g.name ?? "",
+          grupo: g.grupo ?? "",
+        }))
+        .filter((g) => g.value && g.label),
+    [grades],
+  );
+
+  // Carga inicial sin payload (opcional, para pre‑poblar si el API lo permite)
+  // useEffect(() => { loadValuesReservations(); }, [loadValuesReservations]);
+
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
+  // tipos de documento para PDF (traídos del contexto con useData)
+  const { typeIdentification } = useData();
+  const typeDocumentOptions = useMemo(() => {
+    if (!Array.isArray(typeIdentification)) return [];
+    return typeIdentification
+      .filter(Boolean)
+      .map((x) => ({
+        value: String(x.id ?? ""),
+        label: String(x.name ?? ""),
+      }))
+      .filter((o) => o.value && o.label);
+  }, [typeIdentification]);
+
   // ─── Firma ───
-  const [signatureData, setSignatureData] = useState("");
+  const [signatureData, setSignatureData] = useState(""); // JPEG → PDF
+  const [signatureDataPng, setSignatureDataPng] = useState(""); // PNG → servicio
   const [signatureSaved, setSignatureSaved] = useState(false);
   const [savingSig, setSavingSig] = useState(false);
   const sigCanvas = useRef(null);
-
-  // ─── Logo institucional (precargado para el PDF) ───
-  const [logoBase64, setLogoBase64] = useState("");
-  useEffect(() => {
-    fetch("/LogoGuadalupe.png")
-      .then((r) => r.blob())
-      .then(
-        (blob) =>
-          new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result);
-            reader.readAsDataURL(blob);
-          }),
-      )
-      .then((b64) => setLogoBase64(b64))
-      .catch(() => {
-        /* sin logo si falla la carga */
-      });
-  }, []);
 
   // ─── Handlers genéricos ───
   const handleStudentChange = (e) => {
@@ -257,20 +336,11 @@ const ReserveSpot = ({ onSuccess }) => {
     setErrors((prev) => ({ ...prev, [`student_${name}`]: "" }));
   };
 
-  // ─── Handler en cascada para selects de ubicación/grupo ───
+  // ─── Handler en cascada para selects de matrícula ───
   const handleCascadeChange = useCallback((field, value) => {
     setStudent((prev) => {
       const next = { ...prev, [field]: value };
-      if (field === "departamento") {
-        next.municipio = "";
-        next.sede = "";
-        next.jornada = "";
-        next.grade = "";
-      } else if (field === "municipio") {
-        next.sede = "";
-        next.jornada = "";
-        next.grade = "";
-      } else if (field === "sede") {
+      if (field === "sede") {
         next.jornada = "";
         next.grade = "";
       } else if (field === "jornada") {
@@ -281,47 +351,15 @@ const ReserveSpot = ({ onSuccess }) => {
     setErrors((prev) => ({ ...prev, [`student_${field}`]: "" }));
   }, []);
 
-  // ─── Opciones derivadas (filtros en cascada) ───
-  const deptoOptions = useMemo(() => {
+  // ─── Opciones derivadas del nuevo response ───
+  // { id_sede, nombre_sede, fk_jornada, nombre_jornada }
+  const sedeOptions = useMemo(() => {
     const unique = new Map();
     valuesReservations.forEach((item) => {
-      if (!unique.has(item.id_departamento)) {
-        unique.set(
-          item.id_departamento,
-          `Departamento ${item.id_departamento}`,
-        );
-      }
+      if (!unique.has(item.id_sede)) unique.set(item.id_sede, item.nombre_sede);
     });
     return [...unique.entries()].map(([value, label]) => ({ value, label }));
   }, [valuesReservations]);
-
-  const municipioOptions = useMemo(() => {
-    if (!student.departamento) return [];
-    const unique = new Map();
-    valuesReservations
-      .filter((item) => item.id_departamento === student.departamento)
-      .forEach((item) => {
-        if (!unique.has(item.id_municipio))
-          unique.set(item.id_municipio, item.nombre);
-      });
-    return [...unique.entries()].map(([value, label]) => ({ value, label }));
-  }, [valuesReservations, student.departamento]);
-
-  const sedeOptions = useMemo(() => {
-    if (!student.municipio) return [];
-    const unique = new Map();
-    valuesReservations
-      .filter(
-        (item) =>
-          item.id_departamento === student.departamento &&
-          item.id_municipio === student.municipio,
-      )
-      .forEach((item) => {
-        if (!unique.has(item.id_sede))
-          unique.set(item.id_sede, item.nombre_sede);
-      });
-    return [...unique.entries()].map(([value, label]) => ({ value, label }));
-  }, [valuesReservations, student.departamento, student.municipio]);
 
   const jornadaOptions = useMemo(() => {
     if (!student.sede) return [];
@@ -344,30 +382,51 @@ const ReserveSpot = ({ onSuccess }) => {
     return options;
   }, [valuesReservations, student.sede]);
 
-  const gradoOptions = useMemo(() => {
-    if (!student.sede || !student.jornada) return [];
-    const unique = new Map();
+  // ─── Datos completos de la sede seleccionada (nit, cod_dane, link_logo, etc.) ───
+  const sedeInfo = useMemo(
+    () =>
+      valuesReservations.find(
+        (item) => String(item.id_sede) === String(student.sede),
+      ) ?? null,
+    [valuesReservations, student.sede],
+  );
+  console.debug(
+    "Buscando info de sede para ID:",
+    student.sede,
+    valuesReservations,
+  );
+  // ─── Logo institucional (precargado para el PDF) ───
+  const [logoBase64, setLogoBase64] = useState("");
+  useEffect(() => {
+    const url = sedeInfo?.link_logo;
+    if (!url) {
+      setLogoBase64("");
+      return;
+    }
 
-    // Detectar si la jornada seleccionada proviene de una expansión de "Ambas"
-    const ambasEntry = valuesReservations.find(
-      (item) =>
-        item.id_sede === student.sede && item.nombre_jornada === "Ambas",
-    );
-    const isFromAmbas =
-      ambasEntry && (student.jornada === "1" || student.jornada === "2");
-
-    valuesReservations
-      .filter((item) => {
-        if (item.id_sede !== student.sede) return false;
-        if (isFromAmbas) return item.fk_jornada === ambasEntry.fk_jornada;
-        return item.fk_jornada === student.jornada;
+    // Cargar imagen desde URL externa y convertir a base64
+    fetch(url)
+      .then((response) => {
+        if (!response.ok) throw new Error("Error cargando logo");
+        return response.blob();
       })
-      .forEach((item) => {
-        if (!unique.has(item.nombre_grado))
-          unique.set(item.nombre_grado, item.id_grado);
+      .then((blob) => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      })
+      .then((base64) => compressToJpeg(base64, 0.75, 300))
+      .then((compressed) => {
+        setLogoBase64(compressed);
+      })
+      .catch((error) => {
+        console.error("❌ Error al cargar logo:", error, url);
+        setLogoBase64("");
       });
-    return [...unique.entries()].map(([label, value]) => ({ value, label }));
-  }, [valuesReservations, student.sede, student.jornada]);
+  }, [sedeInfo]);
 
   const handleGuardianChange = (e) => {
     const { name, value } = e.target;
@@ -377,13 +436,22 @@ const ReserveSpot = ({ onSuccess }) => {
 
   // ─── Handlers de firma ───
   const handleSignatureEnd = useCallback(() => {
-    const data = sigCanvas.current?.toDataURL("image/png") ?? "";
-    setSignatureData(data);
+    const raw = sigCanvas.current?.toDataURL("image/png") ?? "";
+    if (!raw) {
+      setSignatureData("");
+      setSignatureDataPng("");
+      return;
+    }
+    setSignatureDataPng(raw);
+    compressToJpeg(raw, 0.8, 600)
+      .then(setSignatureData)
+      .catch(() => setSignatureData(raw));
   }, []);
 
   const handleClearSignature = useCallback(() => {
     sigCanvas.current?.clear();
     setSignatureData("");
+    setSignatureDataPng("");
     setSignatureSaved(false);
   }, []);
 
@@ -403,8 +471,6 @@ const ReserveSpot = ({ onSuccess }) => {
       student.first_lastname.trim() &&
       student.identification.trim() &&
       student.identificationtype &&
-      student.departamento &&
-      student.municipio &&
       student.sede &&
       student.jornada &&
       student.grade;
@@ -439,7 +505,7 @@ const ReserveSpot = ({ onSuccess }) => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     const margin = 14;
-    const lh = 5;
+    const lh = 7;
     let y = 20;
 
     const addSectionHeader = (text) => {
@@ -451,10 +517,10 @@ const ReserveSpot = ({ onSuccess }) => {
       doc.setFont("helvetica", "bold");
       doc.setFillColor(41, 98, 160);
       doc.setTextColor(255, 255, 255);
-      doc.rect(margin, y - 5, pageWidth - margin * 2, lh + 2, "F");
+      doc.rect(margin, y - 5, pageWidth - margin * 2, lh + 1, "F");
       doc.text(text, margin + 2, y + 1);
       doc.setTextColor(40, 40, 40);
-      y += lh + 5;
+      y += lh + 3;
     };
 
     const addRow = (label, value, xOffset = 0) => {
@@ -493,7 +559,7 @@ const ReserveSpot = ({ onSuccess }) => {
           const maxW = pageWidth - margin * 2 - 38;
           const lines = doc.splitTextToSize(pairs[i][1] || "—", maxW);
           doc.text(lines, margin + 38, rowY);
-          y += lh * lines.length;
+          y += lh * lines.length - 2;
           i += 1;
         } else {
           doc.text(pairs[i][1] || "—", margin + 38, rowY);
@@ -507,7 +573,7 @@ const ReserveSpot = ({ onSuccess }) => {
           } else {
             i += 1;
           }
-          y += lh;
+          y += lh - 2;
         }
       }
     };
@@ -522,53 +588,56 @@ const ReserveSpot = ({ onSuccess }) => {
 
     // Logo a la izquierda
     if (logoBase64) {
-      doc.addImage(logoBase64, "PNG", margin, headerStartY - 4, logoW, logoH);
+      console.log("Agregando logo al PDF:", sedeInfo?.link_logo);
+      doc.addImage(logoBase64, "JPEG", margin, headerStartY - 4, logoW, logoH);
     }
 
     // Nombre del colegio
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(41, 98, 160);
-    doc.text(getLabelWithId(sedeOptions, student.sede), cx, y, {
-      align: "center",
-    });
+    doc.text(
+      sedeInfo?.nombre_sede ?? getLabelWithId(sedeOptions, student.sede),
+      cx,
+      y,
+      {
+        align: "center",
+      },
+    );
     y += lh;
 
-    // Subtítulo institución
-    doc.setFontSize(8.5);
-    doc.setFont("helvetica", "italic");
-    doc.setTextColor(60, 60, 60);
-    doc.text('Institución Educativa Distrital Ejemplo "La Excelencia"', cx, y, {
-      align: "center",
-    });
-    y += lh;
+    // Eslogan / subtítulo institución
+    if (sedeInfo?.eslogan) {
+      doc.setFontSize(8.5);
+      doc.setFont("helvetica", "italic");
+      doc.setTextColor(60, 60, 60);
+      doc.text(sedeInfo.eslogan, cx, y, { align: "center" });
+      y += lh;
+    }
 
     // NIT
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
-    doc.text("Nit. 123.456.789-0", cx, y, { align: "center" });
-    y += lh;
-
-    // Licencia
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
-    doc.setTextColor(41, 98, 160);
-    doc.text("LICENCIA DE FUNCIONAMIENTO", cx, y, { align: "center" });
-    y += lh;
-
-    doc.setFont("helvetica", "normal");
     doc.setTextColor(60, 60, 60);
-    doc.text("Según Resolución No. 002058  Sep 15 de 2000", cx, y, {
-      align: "center",
-    });
+    doc.text(`Nit. ${sedeInfo?.nit ?? "—"}`, cx, y, { align: "center" });
     y += lh;
 
-    // DANE / Sede / Núcleo
+    // Dirección y teléfono
+    if (sedeInfo?.direccion) {
+      doc.text(`Dirección: ${sedeInfo.direccion}`, cx, y, { align: "center" });
+      y += lh;
+    }
+    if (sedeInfo?.telefono) {
+      doc.text(`Tel: ${sedeInfo.telefono}`, cx, y, { align: "center" });
+      y += lh;
+    }
+
+    // DANE
     doc.setFont("helvetica", "bold");
     doc.setFontSize(7.5);
     doc.setTextColor(40, 40, 40);
     doc.text(
-      "DANE: 308001001382     SEDE: UNICA     NÚCLEO EDUCATIVO: Nº 14 A",
+      `Cód. DANE: ${sedeInfo?.cod_dane ?? "—"}${sedeInfo?.sede_tip ? `     Tipo: ${sedeInfo.sede_tip}` : ""}`,
       cx,
       y,
       { align: "center" },
@@ -602,9 +671,11 @@ const ReserveSpot = ({ onSuccess }) => {
     // ── Estudiante — Información personal ──
     addSectionHeader("Datos del estudiante — Información personal");
     addTwoColumns([
-      ["Tipo documento", student.identificationtype || "—"],
+      [
+        "Tipo documento",
+        getLabelWithId(typeDocumentOptions, student.identificationtype) || "—",
+      ],
       ["N.º identificación", student.identification],
-      ["NUI", student.nui],
       ["Primer nombre", student.first_name],
       ["Segundo nombre", student.second_name],
       ["Primer apellido", student.first_lastname],
@@ -620,11 +691,9 @@ const ReserveSpot = ({ onSuccess }) => {
     // ── Estudiante — Información de matrícula ──
     addSectionHeader("Datos del estudiante — Información de matrícula");
     addTwoColumns([
-      ["Departamento", getLabelWithId(deptoOptions, student.departamento)],
-      ["Municipio", getLabelWithId(municipioOptions, student.municipio)],
       ["Sede", getLabelWithId(sedeOptions, student.sede), true],
       ["Jornada", getLabelWithId(jornadaOptions, student.jornada)],
-      ["Grado", getLabelWithId(gradoOptions, student.grade)],
+      ["Grado", getLabelWithId(gradeOptions, student.grade) || "—"],
     ]);
     y += 4;
 
@@ -632,7 +701,10 @@ const ReserveSpot = ({ onSuccess }) => {
     addSectionHeader("Datos del acudiente");
     addTwoColumns([
       ["Parentesco", guardian.parentesco || "—"],
-      ["Tipo documento", guardian.identificationtype || "—"],
+      [
+        "Tipo documento",
+        getLabelWithId(typeDocumentOptions, guardian.identificationtype) || "—",
+      ],
       ["N.º identificación", guardian.identification],
       ["Primer nombre", guardian.first_name],
       ["Segundo nombre", guardian.second_name],
@@ -646,12 +718,24 @@ const ReserveSpot = ({ onSuccess }) => {
     // ── Firma ──
     if (y > 200) {
       doc.addPage();
-      y = 20;
+      y = 10;
     }
     addSectionHeader("Firma del acudiente");
     if (signatureData) {
-      doc.addImage(signatureData, "PNG", margin, y, 80, 35);
-      y += 42;
+      // usar un ancho aún más reducido para la firma en el PDF
+      // primero tomamos la mitad del área disponible
+      const fullW = (pageWidth - margin * 2) / 2;
+      // después usamos un cuarto de esa mitad (≈1/8 de la página)
+      const sigW = Math.min(fullW * 0.75, 100);
+      const sigH = sigW * (9 / 20); // mantener relación 20:9
+      if (y + sigH > 270) {
+        doc.addPage();
+        y = 30;
+      }
+      // centrar la firma reducida en el área disponible (basada en fullW original)
+      const sigX = margin;
+      doc.addImage(signatureData, "JPEG", sigX, y, sigW, sigH);
+      y += sigH + 3;
     }
 
     doc.save("reserva_cupo.pdf");
@@ -659,14 +743,11 @@ const ReserveSpot = ({ onSuccess }) => {
     student,
     guardian,
     signatureData,
-    deptoOptions,
-    municipioOptions,
     sedeOptions,
     jornadaOptions,
-    gradoOptions,
-    getLabel,
     getLabelWithId,
     logoBase64,
+    sedeInfo,
   ]);
 
   // ─── Validación ───
@@ -681,9 +762,6 @@ const ReserveSpot = ({ onSuccess }) => {
       e.student_identification = "Obligatorio.";
     if (!student.identificationtype)
       e.student_identificationtype = "Selecciona tipo de documento.";
-    if (!student.departamento)
-      e.student_departamento = "Selecciona un departamento.";
-    if (!student.municipio) e.student_municipio = "Selecciona un municipio.";
     if (!student.sede) e.student_sede = "Selecciona una sede.";
     if (!student.jornada) e.student_jornada = "Selecciona una jornada.";
     if (!student.grade) e.student_grade = "Selecciona un grado.";
@@ -721,73 +799,54 @@ const ReserveSpot = ({ onSuccess }) => {
     setLoading(true);
 
     try {
-      // ── Construir un solo FormData con toda la información ──
-      const fd = new FormData();
+      // ── Construir objeto de datos plano (no FormData) ──
+      const payload = {
+        primer_nombre_estu: student.first_name.trim(),
+        segundo_nombre_estu: student.second_name.trim(),
+        primer_apellido_estu: student.first_lastname.trim(),
+        segundo_apellido_estu: student.second_lastname.trim(),
+        correo_estu: student.email.trim(),
+        telefono_estu: student.telephone.trim(),
+        fk_tipo_identificacion_estu: student.identificationtype
+          ? Number(student.identificationtype)
+          : null,
+        numero_identificacion_estu: student.identification.trim(),
+        fecha_nacimiento_estu: student.fecha_nacimiento || null,
+        fk_sede: student.sede ? Number(student.sede) : null,
+        fk_jornada: student.jornada ? Number(student.jornada) : null,
+        fk_grado: student.grade ? Number(student.grade) : null,
+        genero: student.gender,
+        direccion: student.direccion.trim(),
 
-      // --- Datos del estudiante (prefijo student_) ---
-      fd.append("student_first_name", student.first_name.trim());
-      fd.append("student_second_name", student.second_name.trim());
-      fd.append("student_first_lastname", student.first_lastname.trim());
-      fd.append("student_second_lastname", student.second_lastname.trim());
-      fd.append("student_telephone", student.telephone.trim());
-      fd.append("student_email", student.email.trim());
-      fd.append("student_identification", student.identification.trim());
-      fd.append(
-        "student_identificationtype",
-        student.identificationtype ? Number(student.identificationtype) : "",
-      );
-      fd.append("student_sede", student.sede ? Number(student.sede) : "");
-      // campos básicos del estudiante ya añadidos más arriba
-      fd.append("student_fecha_nacimiento", student.fecha_nacimiento || "");
-      fd.append("student_direccion", student.direccion.trim());
-      fd.append("student_gender", student.gender || "");
-      fd.append("student_nui", student.nui.trim());
-      fd.append("student_per_id", student.per_id.trim());
-      fd.append("student_cuenta_piar", student.cuenta_piar ? "1" : "0");
+        parentesco: guardian.parentesco,
+        primer_nombre_acu: guardian.first_name.trim(),
+        segundo_nombre_acu: guardian.second_name.trim(),
+        primer_apellido_acu: guardian.first_lastname.trim(),
+        segundo_apellido_acu: guardian.second_lastname.trim(),
+        correo_acu: guardian.email.trim(),
+        telefono_acu: guardian.telephone.trim(),
+        fk_tipo_identificacion_acu: guardian.identificationtype
+          ? Number(guardian.identificationtype)
+          : null,
+        numero_identificacion_acu: guardian.identification.trim(),
+        tipo: mode === "Externo" ? "Externo" : "Interno",
+      };
 
-      // Archivos opcionales (se conservaron en estado pero no se muestran)
-      if (student.link_identificacion) {
-        fd.append("student_cedula", student.link_identificacion);
-      }
-      if (student.link_piar) {
-        fd.append("student_piar", student.link_piar);
-      }
-      if (student.photo_link && student.photo_link instanceof File) {
-        fd.append("student_photo", student.photo_link);
+      // Firma del acudiente: subir vía uploadService a /uploadfirma/acudientes
+      if (signatureDataPng) {
+        console.log("Subiendo firma del acudiente (PNG)...", signatureDataPng);
+        const fd = new FormData();
+        fd.append("imageBase64", signatureDataPng);
+        fd.append("folder", "acudientes");
+        fd.append("identificacion", guardian.identification.trim());
+        await upload(fd, "uploadfirma/acudientes");
       }
 
-      // --- Datos del acudiente (prefijo guardian_) ---
-      fd.append("guardian_parentesco", guardian.parentesco);
-      fd.append("guardian_first_name", guardian.first_name.trim());
-      fd.append("guardian_second_name", guardian.second_name.trim());
-      fd.append("guardian_first_lastname", guardian.first_lastname.trim());
-      fd.append("guardian_second_lastname", guardian.second_lastname.trim());
-      fd.append("guardian_telephone", guardian.telephone.trim());
-      fd.append("guardian_email", guardian.email.trim());
-      fd.append("guardian_identification", guardian.identification.trim());
-      fd.append(
-        "guardian_identificationtype",
-        guardian.identificationtype ? Number(guardian.identificationtype) : "",
-      );
+      // ── Registrar reserva de cupo en /slots ──
+      await registerSlot(payload);
 
       // ── Log para depuración ──
-      console.log("=== ReserveSpot FormData ===");
-      for (const [key, val] of fd.entries()) {
-        console.log(key, val instanceof File ? `[File] ${val.name}` : val);
-      }
-      console.log("============================");
-
-      // ── Enviar al backend (ajusta la ruta según tu API) ──
-      // Ejemplo: await ApiClient.instance.post("/reserve-spot", fd);
-      // Por ahora emitimos el FormData mediante onSuccess para que el padre lo procese.
-      // Firma del acudiente
-      if (signatureData) {
-        fd.append("guardian_signature", signatureData);
-      }
-
-      if (typeof onSuccess === "function") {
-        await onSuccess(fd);
-      }
+      console.log("=== ReserveSpot payload enviado a /slots ===", payload);
 
       notify.success("Reserva de cupo enviada correctamente.");
 
@@ -797,6 +856,7 @@ const ReserveSpot = ({ onSuccess }) => {
       setErrors({});
       sigCanvas.current?.clear();
       setSignatureData("");
+      setSignatureDataPng("");
       setSignatureSaved(false);
     } catch (err) {
       console.error("Error en ReserveSpot:", err);
@@ -811,26 +871,66 @@ const ReserveSpot = ({ onSuccess }) => {
   // ═══════════════════════ RENDER ═══════════════════════
 
   return (
-    <div className="p-6 h-full gap-4 flex flex-col">
-      <div className="w-full grid grid-cols-5 justify-between items-center p-2 rounded-t-lg">
-        <h2 className="col-span-4 text-2xl font-bold text-on-surface">
+    <div className="p-6 h-full gap-4 flex flex-col items-center justify-center w-full">
+      <div className="w-full xl:w-9/12 grid grid-cols-5 justify-between items-center bg-primary text-surface p-3 rounded-lg">
+        <h2 className="col-span-3 text-2xl font-bold text-on-surface">
           Reservar cupo
         </h2>
-        <SimpleButton
-          type="button"
-          onClick={tourReserveSpot}
-          icon="HelpCircle"
-          msjtooltip="Iniciar tutorial"
-          noRounded={false}
-          bg="bg-info"
-          text="text-surface"
-          className="w-auto px-3 py-1.5"
-        />
+        <div className="col-span-2 flex justify-end items-center gap-2">
+          <SimpleButton
+            type="button"
+            onClick={() => navigate("/login")}
+            icon="ArrowLeftCircle"
+            msjtooltip="Volver al inicio de sesión"
+            noRounded={false}
+            bg="bg-surface"
+            text="text-primary"
+            className="w-auto px-3 py-1.5"
+          />
+          <SimpleButton
+            type="button"
+            onClick={tourReserveSpot}
+            icon="HelpCircle"
+            msjtooltip="Iniciar tutorial"
+            noRounded={false}
+            bg="bg-info"
+            text="text-surface"
+            className="w-auto px-3 py-1.5"
+          />
+        </div>
       </div>
 
       {loading && <Loader message="Enviando reserva de cupo…" />}
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+      {/* ─── Filtros previos: departamento y municipio ─── */}
+      <section className="w-full xl:w-9/12 border border-secondary/30 rounded-lg overflow-hidden">
+        <div className="bg-primary text-surface p-3">
+          <h3 className="text-xl font-bold">Selecciona tu municipio</h3>
+        </div>
+        <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <DepartmentSelector
+            label="Departamento"
+            value={filterDept}
+            onChange={(e) => {
+              setFilterDept(e.target.value);
+              setFilterCity("");
+            }}
+            className={inputClass}
+          />
+          <CitySelector
+            label="Municipio"
+            departmentId={filterDept}
+            value={filterCity}
+            onChange={(e) => setFilterCity(e.target.value)}
+            className={inputClass}
+          />
+        </div>
+      </section>
+
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col gap-8 w-full xl:w-9/12"
+      >
         {/* ═══════════════ ZONA 1: ESTUDIANTE ═══════════════ */}
         <section
           id="tour-rs-student-section"
@@ -867,18 +967,6 @@ const ReserveSpot = ({ onSuccess }) => {
                   type="text"
                   name="identification"
                   value={student.identification}
-                  onChange={handleStudentChange}
-                  className={inputClass}
-                />
-              </Field>
-            </div>
-
-            <div id="tour-rs-student-nui">
-              <Field label="NUI" error={errors.student_nui}>
-                <input
-                  type="text"
-                  name="nui"
-                  value={student.nui}
                   onChange={handleStudentChange}
                   className={inputClass}
                 />
@@ -1014,52 +1102,13 @@ const ReserveSpot = ({ onSuccess }) => {
               <div className="md:col-span-3">
                 <Loader message="Cargando opciones…" />
               </div>
+            ) : !filterCity ? (
+              <div className="md:col-span-3 text-sm text-on-surface/60 italic">
+                Selecciona un departamento y municipio para ver las sedes
+                disponibles.
+              </div>
             ) : (
               <>
-                {/* Departamento */}
-                <div id="tour-rs-student-departamento">
-                  <Field
-                    label="Departamento"
-                    error={errors.student_departamento}
-                  >
-                    <select
-                      value={student.departamento}
-                      onChange={(e) =>
-                        handleCascadeChange("departamento", e.target.value)
-                      }
-                      className={inputClass}
-                    >
-                      <option value="">Selecciona departamento</option>
-                      {deptoOptions.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
-                  </Field>
-                </div>
-
-                {/* Municipio */}
-                <div id="tour-rs-student-municipio">
-                  <Field label="Municipio" error={errors.student_municipio}>
-                    <select
-                      value={student.municipio}
-                      onChange={(e) =>
-                        handleCascadeChange("municipio", e.target.value)
-                      }
-                      disabled={!student.departamento}
-                      className={inputClass}
-                    >
-                      <option value="">Selecciona municipio</option>
-                      {municipioOptions.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
-                  </Field>
-                </div>
-
                 {/* Sede */}
                 <div id="tour-rs-student-sede">
                   <Field label="Sede" error={errors.student_sede}>
@@ -1068,7 +1117,6 @@ const ReserveSpot = ({ onSuccess }) => {
                       onChange={(e) =>
                         handleCascadeChange("sede", e.target.value)
                       }
-                      disabled={!student.municipio}
                       className={inputClass}
                     >
                       <option value="">Selecciona sede</option>
@@ -1107,16 +1155,28 @@ const ReserveSpot = ({ onSuccess }) => {
                   <Field label="Grado" error={errors.student_grade}>
                     <select
                       value={student.grade}
-                      onChange={(e) =>
-                        handleCascadeChange("grade", e.target.value)
+                      onChange={(e) => {
+                        setStudent((prev) => ({
+                          ...prev,
+                          grade: e.target.value,
+                        }));
+                        setErrors((prev) => ({ ...prev, student_grade: "" }));
+                      }}
+                      disabled={
+                        !student.sede || !student.jornada || loadingGrades
                       }
-                      disabled={!student.jornada}
                       className={inputClass}
                     >
-                      <option value="">Selecciona grado</option>
-                      {gradoOptions.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
+                      <option value="">
+                        {loadingGrades
+                          ? "Cargando grados..."
+                          : !student.sede || !student.jornada
+                            ? "Selecciona sede y jornada primero"
+                            : "Selecciona grado"}
+                      </option>
+                      {gradeOptions.map((g) => (
+                        <option key={g.value} value={g.value}>
+                          {g.grupo ? `${g.label} - ${g.grupo}` : g.label}
                         </option>
                       ))}
                     </select>
@@ -1150,14 +1210,17 @@ const ReserveSpot = ({ onSuccess }) => {
               continuación.
             </p>
 
-            <SignatureCanvas
-              ref={sigCanvas}
-              penColor="black"
-              canvasProps={{
-                className: "signature-canvas border w-full h-36 rounded",
-              }}
-              onEnd={handleSignatureEnd}
-            />
+            <div className="w-full max-w-sm">
+              <SignatureCanvas
+                ref={sigCanvas}
+                penColor="black"
+                canvasProps={{
+                  className: "signature-canvas border w-full rounded h-24",
+                  style: { width: "100%" },
+                }}
+                onEnd={handleSignatureEnd}
+              />
+            </div>
 
             <div className="grid grid-cols-2 gap-2 flex-wrap">
               <div>

@@ -154,7 +154,7 @@ const ForgotPassword = () => {
 
   return (
     <div className="flex items-center justify-center w-full bg-primary">
-      <div className="flex flex-col gap-2 border p-6 rounded-lg bg-surface w-1/5">
+      <div className="flex flex-col gap-2 border p-6 rounded-lg bg-surface w-1/2  lg:w-1/3 2xl:w-1/5">
         <div>
           <Link
             to="/login"

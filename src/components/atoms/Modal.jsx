@@ -63,7 +63,7 @@ const Modal = ({
         onMouseDown={(e) => e.stopPropagation()}
       >
         {title && (
-          <div className="w-full text-xl flex flex-row justify-between items-center font-semibold bg-primary text-surface p-6 rounded-t shrink-0">
+          <div className="w-full text-2xl  flex flex-row justify-between items-center font-bold bg-primary text-surface p-6 rounded-t shrink-0">
             {title}
             <div className="bg-error rounded-full">
               <CircleX

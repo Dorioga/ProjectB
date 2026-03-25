@@ -15,7 +15,7 @@ const DashboardTemplate = ({ data, options }) => {
           isOpen ? "xl:pl-75" : "pl-17"
         }`}
       >
-        <div className="h-16 bg-primary w-full flex items-center shadow  rounded-br-2xl ">
+        <div className=" bg-primary w-full flex items-center shadow  rounded-br-2xl ">
           <SideProfile />
         </div>
         <Outlet />

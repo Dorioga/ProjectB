@@ -152,7 +152,7 @@ const ManageAsignature = () => {
         accessorKey: "id_asignatura",
         header: "ID",
         meta: {
-          hideOnSM: true,
+          hideOnMD: true,
         },
       },
       {
@@ -163,7 +163,7 @@ const ManageAsignature = () => {
         accessorKey: "codigo_asignatura",
         header: "Código",
         meta: {
-          hideOnLG: true,
+          hideOnXL: true,
         },
       },
       {
@@ -177,7 +177,7 @@ const ManageAsignature = () => {
         accessorKey: "descripcion",
         header: "Descripción",
         meta: {
-          hideOnMD: true,
+          hideOnXL: true,
         },
       },
       {
@@ -203,18 +203,20 @@ const ManageAsignature = () => {
 
   return (
     <div className="p-6 h-full gap-4 flex flex-col">
-      <div className="w-full grid grid-cols-5 justify-between items-center bg-primary text-surface p-3 rounded-t-lg">
-        <h2 className="text-2xl col-span-4 font-bold">
+      <div className="w-full grid grid-cols-5 justify-between items-center bg-primary text-surface p-3 rounded-lg">
+        <h2 className="text-2xl col-span-3 lg:col-span-4 xl:col-span-3 2xl:col-span-4 font-bold">
           Gestión de Asignaturas
         </h2>
-        <SimpleButton
-          onClick={() => setIsAddOpen(true)}
-          msj="Agregar asignatura"
-          icon="Plus"
-          bg="bg-secondary"
-          text="text-surface"
-          noRounded={false}
-        />
+        <div className="col-span-2 lg:col-span-1 xl:col-span-2 2xl:col-span-1 flex justify-end">
+          <SimpleButton
+            onClick={() => setIsAddOpen(true)}
+            msj="Registrar asignatura"
+            icon="Plus"
+            bg="bg-secondary"
+            text="text-surface"
+            noRounded={false}
+          />
+        </div>
       </div>
 
       {/* Filtros */}
@@ -263,7 +265,7 @@ const ManageAsignature = () => {
         <Modal
           isOpen={isAddOpen}
           onClose={() => setIsAddOpen(false)}
-          title="Agregar asignatura"
+          title="Registrar asignatura"
           size="screen-2xl"
         >
           <RegisterAsignature
