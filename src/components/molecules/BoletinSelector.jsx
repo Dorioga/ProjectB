@@ -652,6 +652,7 @@ const BoletinSelector = ({ studentId }) => {
       });
       const rows = Array.isArray(result) ? result : [];
       setBoletinData(rows);
+
       if (rows.length > 0 && rows[0].id_institucion) {
         try {
           const sc = await getInstitutionScales(rows[0].id_institucion);
