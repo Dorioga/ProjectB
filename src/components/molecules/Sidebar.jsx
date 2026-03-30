@@ -95,7 +95,7 @@ const Sidebar = () => {
           {showContent && (
             <div className="flex flex-col items-center justify-center text-center gap-2 px-2 transition-all duration-300 ease-in-out">
               <PreviewIMG
-                path={imgSchool || "/LogoGuadalupe.png"}
+                path={imgSchool || "/LogoGuadalupe11.png"}
                 size={"logo"}
               />
               {/* <div className="text-surface font-bold text-sm px-2">
