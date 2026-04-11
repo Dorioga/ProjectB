@@ -11,6 +11,7 @@ import useTeacher from "../../lib/hooks/useTeacher";
 import useAuth from "../../lib/hooks/useAuth";
 import useData from "../../lib/hooks/useData";
 import { useNotify } from "../../lib/hooks/useNotify";
+import tourManageAssistance from "../../tour/tourManageAssistance";
 
 /**
  * Formatea una fecha ISO a dd/mm/yyyy
@@ -324,9 +325,17 @@ const ManageAssistance = () => {
   return (
     <div className="p-6 h-full gap-4 flex flex-col">
       {/* Encabezado */}
-      <div className="w-full flex justify-between items-center bg-primary text-surface p-3 rounded-lg">
-        <h2 className="text-2xl font-bold">Gestión de Asistencias</h2>
-        <div className="w-52">
+      <div
+        id="tour-masst-header"
+        className="w-full grid gap-2 grid-cols-1 lg:grid-cols-5 xl:grid-cols-4 justify-between items-center bg-primary text-surface p-3 rounded-lg"
+      >
+        <div className=" lg:col-span-3 xl:col-span-2 flex items-center">
+          <h2 className="text-2xl font-bold">Gestión de Asistencias</h2>
+        </div>
+        <div
+          id="tour-masst-add-btn"
+          className=" grid grid-cols-2 col-span-2 xl:col-span-2 gap-2"
+        >
           <SimpleButton
             type="button"
             onClick={() => setIsRegisterOpen(true)}
@@ -335,13 +344,23 @@ const ManageAssistance = () => {
             bg="bg-secondary"
             text="text-surface"
           />
+          <SimpleButton
+            type="button"
+            onClick={tourManageAssistance}
+            icon="HelpCircle"
+            msjtooltip="Iniciar tutorial"
+            noRounded={false}
+            bg="bg-info"
+            text="text-surface"
+            className="w-auto px-3 py-1.5"
+          />
         </div>
       </div>
 
       {/* Panel de filtros */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-2">
         {/* Fecha inicio */}
-        <div>
+        <div id="tour-masst-date-start">
           <label className="block text-sm font-medium mb-1">Fecha inicio</label>
           <input
             type="date"
@@ -352,7 +371,7 @@ const ManageAssistance = () => {
         </div>
 
         {/* Fecha fin */}
-        <div>
+        <div id="tour-masst-date-end">
           <label className="block text-sm font-medium mb-1">Fecha fin</label>
           <input
             type="date"
@@ -363,41 +382,50 @@ const ManageAssistance = () => {
         </div>
 
         {/* Sede — docente ve sus sedes asignadas; admin ve las de la institución */}
-        <SedeSelect
-          value={sedeId}
-          onChange={handleSedeChange}
-          data={isDocente ? teacherSedeData : null}
-          loading={isDocente ? loadingTeacherSedes : false}
-        />
+        <div id="tour-masst-sede">
+          <SedeSelect
+            value={sedeId}
+            onChange={handleSedeChange}
+            data={isDocente ? teacherSedeData : null}
+            loading={isDocente ? loadingTeacherSedes : false}
+          />
+        </div>
 
         {/* Grado — docente usa customFetchMethod con sus grados asignados */}
-        <GradeSelector
-          label="Grado"
-          value={gradeId}
-          onChange={(e) => setGradeId(e.target.value)}
-          placeholder={
-            sedeId ? "Selecciona un grado" : "Selecciona sede primero"
-          }
-          sedeId={sedeId}
-          autoLoad={true}
-          disabled={!sedeId}
-          {...(isDocente && {
-            customFetchMethod: getTeacherGrades,
-            additionalParams: teacherGradesParams,
-          })}
-        />
+        <div id="tour-masst-grade">
+          <GradeSelector
+            label="Grado"
+            value={gradeId}
+            onChange={(e) => setGradeId(e.target.value)}
+            placeholder={
+              sedeId ? "Selecciona un grado" : "Selecciona sede primero"
+            }
+            sedeId={sedeId}
+            autoLoad={true}
+            disabled={!sedeId}
+            {...(isDocente && {
+              customFetchMethod: getTeacherGrades,
+              additionalParams: teacherGradesParams,
+            })}
+          />
+        </div>
 
         {/* Período */}
-        <PeriodSelector
-          label="Período"
-          value={periodId}
-          onChange={(e) => setPeriodId(e.target.value)}
-          autoLoad={true}
-        />
+        <div id="tour-masst-period">
+          <PeriodSelector
+            label="Período"
+            value={periodId}
+            onChange={(e) => setPeriodId(e.target.value)}
+            autoLoad={true}
+          />
+        </div>
 
         {/* Botones solo para admin — docente hace auto-fetch */}
         {!isDocente && (
-          <div className="flex gap-2 items-end md:col-span-5">
+          <div
+            id="tour-masst-search-btn"
+            className="flex gap-2 items-end md:col-span-5"
+          >
             <SimpleButton
               msj="Buscar"
               icon="Search"
@@ -421,7 +449,7 @@ const ManageAssistance = () => {
       </div>
 
       {/* Tabla de resultados */}
-      <div className="flex-1 mt-4">
+      <div id="tour-masst-table" className="flex-1 mt-4">
         {isLoading ? (
           <Loader message="Cargando asistencias..." size={96} />
         ) : !hasSearched ? (

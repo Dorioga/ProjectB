@@ -468,7 +468,7 @@ const RegisterTeacher = ({ onSuccess }) => {
           Información de contacto
         </div>
 
-        <div>
+        <div id="tour-telephone">
           <label>
             Teléfono <span className="text-red-500 ml-1">*</span>
           </label>
@@ -484,7 +484,7 @@ const RegisterTeacher = ({ onSuccess }) => {
           )}
         </div>
 
-        <div>
+        <div id="tour-email">
           <label>
             Correo <span className="text-red-500 ml-1">*</span>
           </label>
@@ -497,7 +497,7 @@ const RegisterTeacher = ({ onSuccess }) => {
           />
         </div>
 
-        <div>
+        <div id="tour-password">
           <label>Contraseña</label>
           <input
             type="password"
@@ -515,7 +515,7 @@ const RegisterTeacher = ({ onSuccess }) => {
           )}
         </div>
 
-        <div>
+        <div id="tour-address">
           <label>Dirección</label>
           <input
             type="text"
@@ -572,7 +572,10 @@ const RegisterTeacher = ({ onSuccess }) => {
 
         {/* Representante de curso + selección de grados (director_curso) */}
 
-        <div className=" md:col-span-2 lg:col-span-4 font-bold  text-surface bg-primary p-2 rounded-lg">
+        <div
+          id="tour-director-section"
+          className=" md:col-span-2 lg:col-span-4 font-bold  text-surface bg-primary p-2 rounded-lg"
+        >
           Director de curso
         </div>
         <div className="md:col-span-2 lg:col-span-4  flex flex-col items-start gap-3 px-4">

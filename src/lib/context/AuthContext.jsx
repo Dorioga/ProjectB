@@ -82,6 +82,10 @@ export function AuthProvider({ children }) {
   const [fkInstitucion, setFkInstitucion] = useState(() =>
     loadFromStorage("fk_institucion"),
   );
+  const [director, setDirector] = useState(() => loadFromStorage("director"));
+  const [gradoAcargo, setGradoAcargo] = useState(() =>
+    loadFromStorage("gradoAcargo"),
+  );
 
   // número de identificación (cedula, etc.) del usuario
   // no se persiste en localStorage, solo se mantiene en memoria
@@ -126,6 +130,8 @@ export function AuthProvider({ children }) {
     setIdDocente(null);
     setIdEstudiante(null);
     setIdPersona(null);
+    setDirector(null);
+    setGradoAcargo(null);
     setNumeroIdentificacion(null);
     setToken(null);
     sessionStorage.clear();
@@ -183,6 +189,8 @@ export function AuthProvider({ children }) {
     saveToStorage("idDocente", idDocente);
     saveToStorage("idEstudiante", idEstudiante);
     saveToStorage("idPersona", idPersona);
+    saveToStorage("director", director);
+    saveToStorage("gradoAcargo", gradoAcargo);
     // numero_identificacion intentionally not stored
     if (token) {
       localStorage.setItem("token", token);
@@ -209,6 +217,8 @@ export function AuthProvider({ children }) {
     idDocente,
     idEstudiante,
     idPersona,
+    director,
+    gradoAcargo,
     token,
   ]);
 
@@ -295,6 +305,8 @@ export function AuthProvider({ children }) {
     setIdEstudiante(data?.id_estudiante ?? null);
     setIdPersona(data?.id_persona ?? null);
     setFkInstitucion(data?.fk_institucion ?? null);
+    setDirector(data?.director ?? null);
+    setGradoAcargo(data?.grado_acargo ?? null);
     setNumeroIdentificacion(data?.numero_identificacion ?? null);
     if (data?.color_principal || data?.color_secundario) {
       applyCustomColors(data?.color_principal, data?.color_secundario);
@@ -530,6 +542,8 @@ export function AuthProvider({ children }) {
       idDocente,
       idEstudiante,
       idPersona,
+      director,
+      gradoAcargo,
       numero_identificacion,
       setNumeroIdentificacion,
       loading,
@@ -567,6 +581,8 @@ export function AuthProvider({ children }) {
       idDocente,
       idEstudiante,
       idPersona,
+      director,
+      gradoAcargo,
       numero_identificacion,
       loading,
       error,

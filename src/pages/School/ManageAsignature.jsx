@@ -11,6 +11,7 @@ import JourneySelect from "../../components/atoms/JourneySelect";
 import SedeSelect from "../../components/atoms/SedeSelect";
 import { useNotify } from "../../lib/hooks/useNotify";
 import ProfileAssignature from "../../components/molecules/ProfileAssignature";
+import tourManageAsignature from "../../tour/tourManageAsignature";
 
 const ManageAsignature = () => {
   const { idInstitution, idSede: authIdSede } = useAuth();
@@ -181,6 +182,20 @@ const ManageAsignature = () => {
         },
       },
       {
+        accessorKey: "estado_grade_asignature",
+        header: "Estado",
+        meta: {
+          hideOnXL: true,
+        },
+      },
+      {
+        accessorKey: "grados",
+        header: "Grados",
+        meta: {
+          hideOnXL: true,
+        },
+      },
+      {
         id: "actions",
         header: "Acciones",
         cell: ({ row }) => (
@@ -203,11 +218,17 @@ const ManageAsignature = () => {
 
   return (
     <div className="p-6 h-full gap-4 flex flex-col">
-      <div className="w-full grid grid-cols-5 justify-between items-center bg-primary text-surface p-3 rounded-lg">
-        <h2 className="text-2xl col-span-3 lg:col-span-4 xl:col-span-3 2xl:col-span-4 font-bold">
-          Gestión de Asignaturas
-        </h2>
-        <div className="col-span-2 lg:col-span-1 xl:col-span-2 2xl:col-span-1 flex justify-end">
+      <div
+        id="tour-ma-header"
+        className="w-full grid gap-2 grid-cols-1 lg:grid-cols-5 xl:grid-cols-4 justify-between items-center bg-primary text-surface p-3 rounded-lg"
+      >
+        <div className=" lg:col-span-3 xl:col-span-2 flex items-center">
+          <h2 className="text-2xl font-bold">Gestión de Asignaturas</h2>
+        </div>
+        <div
+          id="tour-ma-add-btn"
+          className=" grid grid-cols-2 col-span-2 xl:col-span-2 gap-2"
+        >
           <SimpleButton
             onClick={() => setIsAddOpen(true)}
             msj="Registrar asignatura"
@@ -216,19 +237,29 @@ const ManageAsignature = () => {
             text="text-surface"
             noRounded={false}
           />
+          <SimpleButton
+            type="button"
+            onClick={tourManageAsignature}
+            icon="HelpCircle"
+            msjtooltip="Iniciar tutorial"
+            noRounded={false}
+            bg="bg-info"
+            text="text-surface"
+            className="w-auto px-3 py-1.5"
+          />
         </div>
       </div>
 
       {/* Filtros */}
       <div className="bg-surface p-4 rounded-lg shadow grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
+        <div id="tour-ma-sede">
           <SedeSelect
             value={selectedSede}
             onChange={(e) => setSelectedSede(e.target.value)}
             className="bg-surface rounded-sm p-2 border border-gray-300 w-full focus:outline-none focus:ring-2 focus:ring-secondary"
           />
         </div>
-        <div>
+        <div id="tour-ma-jornada">
           <JourneySelect
             value={selectedJornada}
             onChange={(e) => setSelectedJornada(e.target.value)}
@@ -238,7 +269,7 @@ const ManageAsignature = () => {
         </div>
       </div>
 
-      <div className="relative flex-1 p-4">
+      <div id="tour-ma-table" className="relative flex-1 p-4">
         {!selectedSede || !selectedJornada ? (
           <div className="text-center py-8 text-gray-500">
             Selecciona una sede y jornada para ver las asignaturas

@@ -9,7 +9,17 @@ const tourRegisterAssistance = () => {
       popover: {
         title: "Filtros de asistencia",
         description:
-          "Selecciona sede, curso, asignatura, jornada y período para ver la lista de estudiantes.",
+          "Completa todos los filtros (sede, curso, asignatura, jornada, período y fecha) para habilitar la lista de estudiantes.",
+        side: "bottom",
+        align: "start",
+      },
+    },
+    {
+      element: "#tour-sede-assistance",
+      popover: {
+        title: "Sede",
+        description:
+          "Selecciona la sede a la que pertenece el grupo. Si eres docente, la sede se asigna automáticamente.",
         side: "bottom",
         align: "start",
       },
@@ -19,7 +29,7 @@ const tourRegisterAssistance = () => {
       popover: {
         title: "Curso",
         description:
-          "Filtra por curso/grado para mostrar los estudiantes correspondientes.",
+          "Elige el grado/curso para filtrar los estudiantes que aparecerán en la tabla de asistencia.",
         side: "bottom",
         align: "start",
       },
@@ -38,7 +48,8 @@ const tourRegisterAssistance = () => {
       element: "#tour-journey-assistance",
       popover: {
         title: "Jornada",
-        description: "Elige la jornada (mañana/tarde) si aplica.",
+        description:
+          "Elige la jornada (mañana/tarde). Para docentes se detecta automáticamente según la asignatura seleccionada.",
         side: "bottom",
         align: "start",
       },
@@ -48,7 +59,17 @@ const tourRegisterAssistance = () => {
       popover: {
         title: "Período",
         description:
-          "Selecciona el período escolar vigente para registrar la asistencia.",
+          "Selecciona el período escolar vigente para el que deseas registrar la asistencia.",
+        side: "bottom",
+        align: "start",
+      },
+    },
+    {
+      element: "#tour-date-assistance",
+      popover: {
+        title: "Fecha de asistencia",
+        description:
+          "Indica la fecha en que se toma la asistencia. Si la dejas vacía, se usará la fecha de hoy.",
         side: "bottom",
         align: "start",
       },
@@ -56,9 +77,9 @@ const tourRegisterAssistance = () => {
     {
       element: "#tour-assistance-count",
       popover: {
-        title: "Resumen",
+        title: "Resumen de asistencia",
         description:
-          "Verás el total de estudiantes y cuántos ya están marcados como presentes.",
+          "Muestra el total de estudiantes del grupo y cuántos están marcados como presentes.",
         side: "bottom",
         align: "start",
       },
@@ -68,7 +89,7 @@ const tourRegisterAssistance = () => {
       popover: {
         title: "Lista de estudiantes",
         description:
-          "En esta tabla marcas la asistencia y guardas por fila o en bloque.",
+          "Tabla con todos los estudiantes del grupo. Aquí puedes marcar la asistencia de cada uno y guardar los registros.",
         side: "top",
         align: "start",
       },
@@ -76,9 +97,9 @@ const tourRegisterAssistance = () => {
     {
       element: ".tour-edit-toggle",
       popover: {
-        title: "Modo edición",
+        title: "Activar / cerrar asistencia",
         description:
-          "Activa el modo edición para modificar las casillas de asistencia.",
+          "Haz clic en este botón para habilitar la edición de las casillas de asistencia. Al activarlo también aparece el botón de guardar en bloque.",
         side: "left",
         align: "center",
       },
@@ -88,7 +109,7 @@ const tourRegisterAssistance = () => {
       popover: {
         title: "Marcar presente",
         description:
-          "Marca/desmarca la casilla para indicar si el estudiante está presente.",
+          "Marca o desmarca la casilla para indicar si el estudiante está presente. Debes activar el modo edición primero.",
         side: "left",
         align: "center",
       },

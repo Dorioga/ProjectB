@@ -132,7 +132,7 @@ export default function AsignatureGrades({
               className="bg-secondary text-surface px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center"
             >
               <LucidePlus className="inline-block w-4 h-4 mr-1" />
-              Agregar Asignatura
+              Registrar Asignatura
             </button>
           </div>
         </div>

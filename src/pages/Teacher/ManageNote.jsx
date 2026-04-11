@@ -14,6 +14,7 @@ import Loader from "../../components/atoms/Loader";
 import useTeacher from "../../lib/hooks/useTeacher";
 import useAuth from "../../lib/hooks/useAuth";
 import { useNotify } from "../../lib/hooks/useNotify";
+import tourManageNote from "../../tour/tourManageNote";
 
 const ManageNote = () => {
   const {
@@ -183,20 +184,25 @@ const ManageNote = () => {
   return (
     <div className="p-6 h-full gap-4 flex flex-col">
       {/* ── Encabezado ──────────────────────────────────────────────────── */}
-      <div className="w-full flex justify-between items-center bg-primary text-surface p-3 rounded-lg">
-        <h2 className="text-2xl font-bold">Gestión de Notas</h2>
-        <div className="flex gap-2">
-          <div className="w-48">
+      <div
+        id="tour-mn-header"
+        className="w-full grid gap-2 grid-cols-1 lg:grid-cols-5  justify-between items-center bg-primary text-surface p-3 rounded-lg"
+      >
+        <div className=" lg:col-span-2 xl:col-span-2 flex items-center">
+          <h2 className="text-2xl font-bold">Gestión de Notas</h2>
+        </div>
+        <div className=" grid grid-cols-3 col-span-3  gap-2">
+          <div id="tour-mn-add-btn">
             <SimpleButton
               type="button"
               onClick={() => setIsAddOpen(true)}
-              msj="Crear nota"
+              msj="Registrar nota"
               icon="Plus"
               bg="bg-secondary"
               text="text-surface"
             />
           </div>
-          <div className="w-48">
+          <div id="tour-mn-assign-btn">
             <SimpleButton
               type="button"
               onClick={() => setIsAssignOpen(true)}
@@ -206,85 +212,107 @@ const ManageNote = () => {
               text="text-surface"
             />
           </div>
+          <div>
+            <SimpleButton
+              type="button"
+              onClick={tourManageNote}
+              icon="HelpCircle"
+              msjtooltip="Iniciar tutorial"
+              noRounded={false}
+              bg="bg-info"
+              text="text-surface"
+              className="w-auto px-3 py-1.5"
+            />
+          </div>
         </div>
       </div>
 
       {/* ── Selectores en cascada ────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mt-2">
         {/* Sede siempre primero */}
-        <SedeSelect
-          value={sedeId}
-          onChange={(e) => {
-            setSedeId(e.target.value);
-            setWorkdayId("");
-            setGradeId("");
-            setAsignatureId("");
-            setDetectedJourney(null);
-          }}
-          data={teacherSedeData}
-          loading={loadingTeacherSedes}
-        />
+        <div id="tour-mn-sede">
+          <SedeSelect
+            value={sedeId}
+            onChange={(e) => {
+              setSedeId(e.target.value);
+              setWorkdayId("");
+              setGradeId("");
+              setAsignatureId("");
+              setDetectedJourney(null);
+            }}
+            data={teacherSedeData}
+            loading={loadingTeacherSedes}
+          />
+        </div>
 
         {/* Sede → Grado → Asignatura → Jornada */}
-        <GradeSelector
-          label="Grado"
-          value={gradeId}
-          onChange={(e) => {
-            setGradeId(e.target.value);
-            setAsignatureId("");
-            setDetectedJourney(null);
-          }}
-          placeholder="Selecciona grado"
-          sedeId={sedeId}
-          workdayId={workdayId}
-          autoLoad={true}
-          customFetchMethod={getTeacherGrades}
-          additionalParams={teacherGradesParams}
-          disabled={!sedeId}
-        />
-        <AsignatureSelector
-          label="Asignatura"
-          value={asignatureId}
-          onChange={(e) => setAsignatureId(e.target.value)}
-          placeholder="Selecciona asignatura"
-          sedeId={sedeId || idSede}
-          workdayId={workdayId}
-          autoLoad={true}
-          customFetchMethod={getTeacherSubjects}
-          additionalParams={teacherSubjectsParams}
-          onJourneyDetected={(journey) => {
-            if (journey?.id) {
-              setWorkdayId(String(journey.id));
-              setDetectedJourney(journey);
-            }
-          }}
-          disabled={!gradeId}
-        />
-        <JourneySelect
-          value={workdayId}
-          onChange={(e) => setWorkdayId(e.target.value)}
-          filterValue={sedeWorkday}
-          subjectJourney={detectedJourney}
-          useTeacherSubjects={!asignatureId && !!gradeId}
-          sedeId={sedeId || idSede}
-          idTeacher={idDocente}
-          lockByAsignature={true}
-        />
+        <div id="tour-mn-grade">
+          <GradeSelector
+            label="Grado"
+            value={gradeId}
+            onChange={(e) => {
+              setGradeId(e.target.value);
+              setAsignatureId("");
+              setDetectedJourney(null);
+            }}
+            placeholder="Selecciona grado"
+            sedeId={sedeId}
+            workdayId={workdayId}
+            autoLoad={true}
+            customFetchMethod={getTeacherGrades}
+            additionalParams={teacherGradesParams}
+            disabled={!sedeId}
+          />
+        </div>
+        <div id="tour-mn-asignature">
+          <AsignatureSelector
+            label="Asignatura"
+            value={asignatureId}
+            onChange={(e) => setAsignatureId(e.target.value)}
+            placeholder="Selecciona asignatura"
+            sedeId={sedeId || idSede}
+            workdayId={workdayId}
+            autoLoad={true}
+            customFetchMethod={getTeacherSubjects}
+            additionalParams={teacherSubjectsParams}
+            onJourneyDetected={(journey) => {
+              if (journey?.id) {
+                setWorkdayId(String(journey.id));
+                setDetectedJourney(journey);
+              }
+            }}
+            disabled={!gradeId}
+          />
+        </div>
+        <div id="tour-mn-jornada">
+          <JourneySelect
+            value={workdayId}
+            onChange={(e) => setWorkdayId(e.target.value)}
+            filterValue={sedeWorkday}
+            subjectJourney={detectedJourney}
+            useTeacherSubjects={!asignatureId && !!gradeId}
+            sedeId={sedeId || idSede}
+            idTeacher={idDocente}
+            lockByAsignature={true}
+          />
+        </div>
 
-        <PeriodSelector
-          label="Periodo"
-          value={periodId}
-          onChange={(e) => setPeriodId(e.target.value)}
-          autoLoad={true}
-        />
+        <div id="tour-mn-period">
+          <PeriodSelector
+            label="Periodo"
+            value={periodId}
+            onChange={(e) => setPeriodId(e.target.value)}
+            autoLoad={true}
+          />
+        </div>
       </div>
 
       {/* ── Tabla de resultados ──────────────────────────────────────────── */}
-      <div className="flex-1 mt-4">
+      <div id="tour-mn-table" className="flex-1 mt-4">
         {" "}
         {tableData.length > 0 && !isLoading && (
           <div className="flex justify-end mb-2">
-            <div className="w-40">
+            <div id="tour-mn-edit-btn" className="w-40">
               <SimpleButton
                 type="button"
                 onClick={() => setIsEditOpen(true)}

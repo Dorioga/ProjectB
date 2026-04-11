@@ -10,6 +10,7 @@ import UploadStudentPDF from "./UploadStudentPDF";
 import StudentModal from "../../components/molecules/StudentModal";
 import useStudent from "../../lib/hooks/useStudent";
 import { useNotify } from "../../lib/hooks/useNotify";
+import tourManageStudent from "../../tour/tourManageStudent";
 
 const ManageStudent = () => {
   const { idInstitution, idSede } = useAuth();
@@ -198,36 +199,58 @@ const ManageStudent = () => {
 
   return (
     <div className=" p-6  h-full gap-4 flex flex-col">
-      <div className="w-full grid grid-cols-7 items-center bg-primary text-surface p-3 rounded-lg">
-        <h2 className="text-2xl col-span-4 font-bold">Datos de Estudiantes</h2>
-        <div className="grid grid-cols-3 gap-2 w-full col-span-3">
-          <SimpleButton
-            onClick={() => setIsAddOpen(true)}
-            msj="Agregar estudiante"
-            icon="Plus"
-            bg="bg-secondary"
-            text="text-surface"
-            noRounded={false}
-          />
-          <SimpleButton
-            onClick={() => setIsBulkOpen(true)}
-            msj="Carga masiva "
-            icon="Upload"
-            bg="bg-secondary"
-            text="text-surface"
-            noRounded={false}
-          />
-          <SimpleButton
-            onClick={() => setIsBulkPdfOpen(true)}
-            msj="Subir PDF(s)"
-            icon="FileText"
-            bg="bg-secondary"
-            text="text-surface"
-            noRounded={false}
-          />
+      <div
+        id="tour-mst-header"
+        className="w-full grid gap-2 grid-cols-1 lg:grid-cols-7 xl:grid-cols-11 2xl:grid-cols-8 justify-between items-center bg-primary text-surface p-3 rounded-lg"
+      >
+        <div className="w-full lg:col-span-2  xl:col-span-3 flex items-center">
+          <h2 className="text-2xl font-bold">Datos de Estudiantes</h2>
+        </div>
+        <div className="w-full grid grid-cols-7 lg:col-span-5 xl:col-span-8 2xl:col-span-5 gap-2">
+          <div id="tour-mst-add-btn" className="col-span-2">
+            <SimpleButton
+              onClick={() => setIsAddOpen(true)}
+              msj="Registrar estudiante"
+              icon="Plus"
+              bg="bg-secondary"
+              text="text-surface"
+              noRounded={false}
+            />
+          </div>
+          <div id="tour-mst-bulk-excel" className="col-span-2">
+            <SimpleButton
+              onClick={() => setIsBulkOpen(true)}
+              msj="Carga masiva "
+              icon="Upload"
+              bg="bg-secondary"
+              text="text-surface"
+              noRounded={false}
+            />
+          </div>
+          <div id="tour-mst-bulk-pdf" className="col-span-2">
+            <SimpleButton
+              onClick={() => setIsBulkPdfOpen(true)}
+              msj="Subir PDF(s)"
+              icon="FileText"
+              bg="bg-secondary"
+              text="text-surface"
+              noRounded={false}
+            />
+          </div>
+          <div className="col-span-1">
+            <SimpleButton
+              type="button"
+              onClick={tourManageStudent}
+              icon="HelpCircle"
+              msjtooltip="Iniciar tutorial"
+              noRounded={false}
+              bg="bg-info"
+              text="text-surface"
+            />
+          </div>
         </div>
       </div>
-      <div className="relative flex-1 p-4">
+      <div id="tour-mst-table" className="relative flex-1 p-4">
         <DataTable
           key="students-table"
           data={tableData || []}
@@ -248,7 +271,7 @@ const ManageStudent = () => {
         <Modal
           isOpen={isAddOpen}
           onClose={() => setIsAddOpen(false)}
-          title="Agregar estudiante"
+          title="Registrar estudiante"
           size="4xl"
         >
           <RegisterStudent

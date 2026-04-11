@@ -90,10 +90,6 @@ const GeneralRoutes = () => {
             <Route path="controlAsistencia" element={<ControlAsistencia />} />
             <Route path="manageNote" element={<ManageNote />} />
             <Route path="studentNotes" element={<StudentNotes />} />
-            <Route
-              path="observadorEstudiante"
-              element={<ObservadorEstudiante />}
-            />
             <Route path="assistenceStudent" element={<AssistenceStudent />} />
             <Route path="manageObserver" element={<ManageObserver />} />
           </Route>

@@ -8,6 +8,7 @@ import SedeModal from "../../components/molecules/SedeModal";
 import Modal from "../../components/atoms/Modal";
 import RegisterSede from "../../components/molecules/RegisterSede";
 import { useNotify } from "../../lib/hooks/useNotify";
+import tourManageSedes from "../../tour/tourManageSedes";
 
 const ManageSedes = () => {
   const { idInstitution } = useAuth();
@@ -205,21 +206,39 @@ const ManageSedes = () => {
 
   return (
     <div className=" p-6  h-full gap-4 flex flex-col">
-      <div className="w-full flex justify-between items-center bg-primary text-surface p-3 rounded-lg">
-        <h2 className="text-2xl font-bold">Datos de Sedes</h2>
-        <div className="w-56">
+      <div
+        id="tour-ms-header"
+        className="w-full grid gap-2 grid-cols-1 lg:grid-cols-5 xl:grid-cols-4 justify-between items-center bg-primary text-surface p-3 rounded-lg"
+      >
+        <div className=" lg:col-span-3 xl:col-span-2 flex items-center">
+          <h2 className="text-2xl font-bold">Gestión de Sedes</h2>
+        </div>
+        <div
+          id="tour-ms-add-btn"
+          className=" grid grid-cols-2 col-span-2 xl:col-span-2 gap-2"
+        >
           <SimpleButton
             onClick={() => setIsAddOpen(true)}
-            msj="Agregar sede"
+            msj="Registrar sede"
             icon="Plus"
             bg="bg-secondary"
             text="text-surface"
             noRounded={false}
           />
+          <SimpleButton
+            type="button"
+            onClick={tourManageSedes}
+            icon="HelpCircle"
+            msjtooltip="Iniciar tutorial"
+            noRounded={false}
+            bg="bg-info"
+            text="text-surface"
+            className="w-auto px-3 py-1.5"
+          />
         </div>
       </div>
 
-      <div className="relative flex-1 p-4">
+      <div id="tour-ms-table" className="relative flex-1 p-4">
         <DataTable
           key="sedes-table"
           data={tableData || []}
@@ -274,7 +293,7 @@ const ManageSedes = () => {
       <Modal
         isOpen={isAddOpen}
         onClose={() => setIsAddOpen(false)}
-        title="Agregar sede(s)"
+        title="Registrar sede(s)"
         size="7xl"
       >
         <div className="p-4">

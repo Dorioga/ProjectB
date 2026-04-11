@@ -13,6 +13,7 @@ import useData from "../../lib/hooks/useData";
 import { useNotify } from "../../lib/hooks/useNotify";
 import Loader from "../../components/atoms/Loader";
 import { upload } from "../../services/uploadService";
+import tourRegisterStudent from "../../tour/tourRegisterStudent";
 
 const RegisterStudent = ({ onSuccess }) => {
   const { registerStudent, loading } = useStudent();
@@ -256,14 +257,28 @@ const RegisterStudent = ({ onSuccess }) => {
 
   return (
     <div className="border p-6 rounded bg-bg h-full gap-4 flex flex-col">
-      <h2 className="text-xl font-semibold mb-4">Registrar estudiante</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold">Registrar estudiante</h2>
+        <SimpleButton
+          type="button"
+          onClick={tourRegisterStudent}
+          icon="HelpCircle"
+          msjtooltip="Iniciar tutorial"
+          noRounded={false}
+          bg="bg-info"
+          text="text-surface"
+          className="w-auto px-3 py-1.5"
+        />
+      </div>
       <form
         onSubmit={handleSubmit}
         className="grid grid-cols-1 md:grid-cols-3 gap-4"
       >
         {/* -- Campos del formulario -- */}
-        <div className="md:col-span-3 font-bold">Información personal</div>
-        <div>
+        <div id="tour-rst-personal-section" className="md:col-span-3 font-bold">
+          Información personal
+        </div>
+        <div id="tour-rst-doctype">
           <TypeDocumentSelector
             name="identificationtype"
             label={
@@ -281,7 +296,7 @@ const RegisterStudent = ({ onSuccess }) => {
             </p>
           )}
         </div>
-        <div>
+        <div id="tour-rst-identification">
           <label>
             N.º de identificación <span className="text-error">*</span>
           </label>
@@ -296,7 +311,7 @@ const RegisterStudent = ({ onSuccess }) => {
             <p className="text-xs text-error mt-1">{errors.identification}</p>
           )}
         </div>
-        <div>
+        <div id="tour-rst-nui">
           <label>NUI</label>
           <input
             type="text"
@@ -306,7 +321,7 @@ const RegisterStudent = ({ onSuccess }) => {
             className="w-full p-2 border rounded bg-surface"
           />
         </div>
-        <div>
+        <div id="tour-rst-firstname">
           <label>
             Primer nombre <span className="text-error">*</span>
           </label>
@@ -321,7 +336,7 @@ const RegisterStudent = ({ onSuccess }) => {
             <p className="text-xs text-error mt-1">{errors.first_name}</p>
           )}
         </div>
-        <div>
+        <div id="tour-rst-secondname">
           <label>Segundo nombre</label>
           <input
             type="text"
@@ -331,7 +346,7 @@ const RegisterStudent = ({ onSuccess }) => {
             className="w-full p-2 border rounded bg-surface"
           />
         </div>
-        <div>
+        <div id="tour-rst-firstlastname">
           <label>
             Primer apellido <span className="text-error">*</span>
           </label>
@@ -346,7 +361,7 @@ const RegisterStudent = ({ onSuccess }) => {
             <p className="text-xs text-error mt-1">{errors.first_lastname}</p>
           )}
         </div>
-        <div>
+        <div id="tour-rst-secondlastname">
           <label>Segundo apellido</label>
           <input
             type="text"
@@ -356,7 +371,7 @@ const RegisterStudent = ({ onSuccess }) => {
             className="w-full p-2 border rounded bg-surface"
           />
         </div>
-        <div>
+        <div id="tour-rst-gender">
           <label>
             Género <span className="text-error">*</span>
           </label>
@@ -374,7 +389,7 @@ const RegisterStudent = ({ onSuccess }) => {
             <p className="text-xs text-error mt-1">{errors.gender}</p>
           )}
         </div>
-        <div>
+        <div id="tour-rst-birthdate">
           <label>
             Fecha de nacimiento <span className="text-error">*</span>
           </label>
@@ -389,7 +404,7 @@ const RegisterStudent = ({ onSuccess }) => {
             <p className="text-xs text-error mt-1">{errors.fecha_nacimiento}</p>
           )}
         </div>
-        <div>
+        <div id="tour-rst-telephone">
           <label>
             Teléfono <span className="text-error">*</span>
           </label>
@@ -404,7 +419,7 @@ const RegisterStudent = ({ onSuccess }) => {
             <p className="text-xs text-error mt-1">{errors.telephone}</p>
           )}
         </div>
-        <div>
+        <div id="tour-rst-email">
           <label>Email</label>
           <input
             type="email"
@@ -417,7 +432,7 @@ const RegisterStudent = ({ onSuccess }) => {
             <p className="text-xs text-error mt-1">{errors.email}</p>
           )}
         </div>
-        <div>
+        <div id="tour-rst-address">
           <label>Dirección</label>
           <input
             type="text"
@@ -427,7 +442,7 @@ const RegisterStudent = ({ onSuccess }) => {
             className="w-full p-2 border rounded bg-surface"
           />
         </div>
-        <div>
+        <div id="tour-rst-password">
           <label>
             Contraseña <span className="text-error">*</span>
           </label>
@@ -443,10 +458,13 @@ const RegisterStudent = ({ onSuccess }) => {
           )}
         </div>
 
-        <div className="md:col-span-3 font-bold mt-4">
+        <div
+          id="tour-rst-academic-section"
+          className="md:col-span-3 font-bold mt-4"
+        >
           Información académica
         </div>
-        <div>
+        <div id="tour-rst-sede">
           <SedeSelect
             name="sede"
             label={
@@ -462,7 +480,7 @@ const RegisterStudent = ({ onSuccess }) => {
             <p className="text-xs text-error mt-1">{errors.sede}</p>
           )}
         </div>
-        <div>
+        <div id="tour-rst-workday">
           <JourneySelect
             name="workday"
             label={
@@ -480,7 +498,7 @@ const RegisterStudent = ({ onSuccess }) => {
             <p className="text-xs text-error mt-1">{errors.workday}</p>
           )}
         </div>
-        <div>
+        <div id="tour-rst-grade">
           <GradeSelector
             name="fk_grade"
             label={
@@ -498,21 +516,25 @@ const RegisterStudent = ({ onSuccess }) => {
             <p className="text-xs text-error mt-1">{errors.fk_grade}</p>
           )}
         </div>
-        <BecaSelector
-          name="fk_beca"
-          label="Beca"
-          value={formData.fk_beca}
-          onChange={handleChange}
-          placeholder="Selecciona una beca"
-        />
-        <PeriodSelector
-          name="periodo_ingreso"
-          label="Periodo de ingreso"
-          value={formData.periodo_ingreso}
-          onChange={handleChange}
-          placeholder="Selecciona un período"
-        />
-        <div>
+        <div id="tour-rst-beca">
+          <BecaSelector
+            name="fk_beca"
+            label="Beca"
+            value={formData.fk_beca}
+            onChange={handleChange}
+            placeholder="Selecciona una beca"
+          />
+        </div>
+        <div id="tour-rst-period">
+          <PeriodSelector
+            name="periodo_ingreso"
+            label="Periodo de ingreso"
+            value={formData.periodo_ingreso}
+            onChange={handleChange}
+            placeholder="Selecciona un período"
+          />
+        </div>
+        <div id="tour-rst-per-id">
           <label>PER ID</label>
           <input
             type="text"
@@ -523,7 +545,10 @@ const RegisterStudent = ({ onSuccess }) => {
           />
         </div>
 
-        <div className="md:col-span-3 font-bold mt-4 grid grid-cols-2 gap-4">
+        <div
+          id="tour-rst-documents-section"
+          className="md:col-span-3 font-bold mt-4 grid grid-cols-2 gap-4"
+        >
           Documentos y archivos
         </div>
         <div className="grid grid-cols-2 w-full col-span-3">
@@ -536,7 +561,10 @@ const RegisterStudent = ({ onSuccess }) => {
             accept={".pdf"}
           />
         </div> */}
-          <div className="flex flex-col justify-center items-center">
+          <div
+            id="tour-rst-id-doc"
+            className="flex flex-col justify-center items-center"
+          >
             <label>
               Documento de identificación <span className="text-error">*</span>
             </label>
@@ -555,7 +583,7 @@ const RegisterStudent = ({ onSuccess }) => {
           </div>
 
           {/* PIAR: checkbox + FileChooser (.xlsx/.xls) */}
-          <div className="grid grid-cols-2">
+          <div id="tour-rst-piar" className="grid grid-cols-2">
             <div className=" flex flex-col gap-3  text-center">
               <label>Cuenta con PIAR</label>
               <div className="flex flex-row gap-2 items-center justify-center">
@@ -599,7 +627,10 @@ const RegisterStudent = ({ onSuccess }) => {
             )}
           </div>
         </div>
-        <div className="md:col-span-3 mt-4 flex flex-col items-center gap-4">
+        <div
+          id="tour-rst-submit"
+          className="md:col-span-3 mt-4 flex flex-col items-center gap-4"
+        >
           {loading && <Loader message="Registrando estudiante..." />}
 
           {!loading && (

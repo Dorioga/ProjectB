@@ -5,6 +5,7 @@ import PeriodSelector from "../atoms/PeriodSelector";
 import SedeSelect from "../atoms/SedeSelect";
 import JourneySelect from "../atoms/JourneySelect";
 import SimpleButton from "../atoms/SimpleButton";
+import tourProfileLogro from "../../tour/tourProfileLogro";
 import { useNotify } from "../../lib/hooks/useNotify";
 import useTeacher from "../../lib/hooks/useTeacher";
 import useAuth from "../../lib/hooks/useAuth";
@@ -413,122 +414,150 @@ const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave }) => {
 
   return (
     <div className="p-4 space-y-4">
+      <div className="flex justify-end">
+        <SimpleButton
+          type="button"
+          onClick={tourProfileLogro}
+          icon="HelpCircle"
+          msjtooltip="Iniciar tutorial"
+          noRounded={false}
+          bg="bg-info"
+          text="text-surface"
+          className="w-auto px-3 py-1.5"
+        />
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {/* Sede siempre primero */}
-        <SedeSelect
-          value={sedeSelected}
-          onChange={(e) => {
-            setSedeSelected(e.target.value);
-            setGrade("");
-            setAsignature("");
-            setWorkdaySelected("");
-            setDetectedJourney(null);
-          }}
-          data={teacherSedeData}
-          loading={loadingTeacherSedes}
-        />
+        <div id="tour-pl-sede">
+          <SedeSelect
+            value={sedeSelected}
+            onChange={(e) => {
+              setSedeSelected(e.target.value);
+              setGrade("");
+              setAsignature("");
+              setWorkdaySelected("");
+              setDetectedJourney(null);
+            }}
+            data={teacherSedeData}
+            loading={loadingTeacherSedes}
+          />
+        </div>
 
         {/* Orden condicional según rol */}
         {isDocente ? (
           <>
             {/* DOCENTE: Sede → Grado → Asignatura → Jornada */}
-            <GradeSelector
-              label="Grado"
-              value={grade}
-              onChange={(e) => {
-                setGrade(e.target.value);
-                setAsignature("");
-                setDetectedJourney(null);
-              }}
-              placeholder="Selecciona grado"
-              sedeId={sedeSelected}
-              workdayId={workdaySelected}
-              autoLoad={true}
-              customFetchMethod={getTeacherGrades}
-              additionalParams={teacherGradesParams}
-              disabled={!sedeSelected}
-            />
-            <AsignatureSelector
-              label="Asignatura"
-              value={asignature}
-              onChange={(e) => setAsignature(e.target.value)}
-              placeholder="Selecciona asignatura"
-              sedeId={sedeSelected || idSede}
-              workdayId={workdaySelected}
-              autoLoad={true}
-              customFetchMethod={getTeacherSubjects}
-              additionalParams={teacherSubjectsParams}
-              onJourneyDetected={(journey) => {
-                if (journey?.id) {
-                  setWorkdaySelected(String(journey.id));
-                  setDetectedJourney(journey);
-                }
-              }}
-              disabled={!grade}
-            />
-            <JourneySelect
-              value={workdaySelected}
-              onChange={(e) => setWorkdaySelected(e.target.value)}
-              filterValue={sedeWorkday}
-              subjectJourney={detectedJourney}
-              useTeacherSubjects={!asignature && !!grade}
-              sedeId={sedeSelected || idSede}
-              idTeacher={idDocente}
-              lockByAsignature={true}
-            />
+            <div id="tour-pl-grade">
+              <GradeSelector
+                label="Grado"
+                value={grade}
+                onChange={(e) => {
+                  setGrade(e.target.value);
+                  setAsignature("");
+                  setDetectedJourney(null);
+                }}
+                placeholder="Selecciona grado"
+                sedeId={sedeSelected}
+                workdayId={workdaySelected}
+                autoLoad={true}
+                customFetchMethod={getTeacherGrades}
+                additionalParams={teacherGradesParams}
+                disabled={!sedeSelected}
+              />
+            </div>
+            <div id="tour-pl-asignature">
+              <AsignatureSelector
+                label="Asignatura"
+                value={asignature}
+                onChange={(e) => setAsignature(e.target.value)}
+                placeholder="Selecciona asignatura"
+                sedeId={sedeSelected || idSede}
+                workdayId={workdaySelected}
+                autoLoad={true}
+                customFetchMethod={getTeacherSubjects}
+                additionalParams={teacherSubjectsParams}
+                onJourneyDetected={(journey) => {
+                  if (journey?.id) {
+                    setWorkdaySelected(String(journey.id));
+                    setDetectedJourney(journey);
+                  }
+                }}
+                disabled={!grade}
+              />
+            </div>
+            <div id="tour-pl-workday">
+              <JourneySelect
+                value={workdaySelected}
+                onChange={(e) => setWorkdaySelected(e.target.value)}
+                filterValue={sedeWorkday}
+                subjectJourney={detectedJourney}
+                useTeacherSubjects={!asignature && !!grade}
+                sedeId={sedeSelected || idSede}
+                idTeacher={idDocente}
+                lockByAsignature={true}
+              />
+            </div>
           </>
         ) : (
           <>
             {/* NO DOCENTE: Sede → Jornada → Asignatura → Grado */}
-            <JourneySelect
-              value={workdaySelected}
-              onChange={(e) => {
-                setWorkdaySelected(e.target.value);
-                setAsignature("");
-                setGrade("");
-              }}
-              filterValue={sedeWorkday}
-              subjectJourney={detectedJourney}
-              sedeId={sedeSelected || idSede}
-              lockByAsignature={false}
-              disabled={!sedeSelected}
-            />
-            <AsignatureSelector
-              label="Asignatura"
-              value={asignature}
-              onChange={(e) => {
-                setAsignature(e.target.value);
-                setGrade("");
-              }}
-              placeholder="Selecciona asignatura"
-              sedeId={sedeSelected || idSede}
-              workdayId={workdaySelected}
-              autoLoad={true}
-              customFetchMethod={undefined}
-              additionalParams={{}}
-              disabled={!workdaySelected}
-            />
-            <GradeSelector
-              label="Grado"
-              value={grade}
-              onChange={(e) => setGrade(e.target.value)}
-              placeholder="Selecciona grado"
-              sedeId={sedeSelected}
-              workdayId={workdaySelected}
-              autoLoad={true}
-              disabled={!asignature}
-            />
+            <div id="tour-pl-workday">
+              <JourneySelect
+                value={workdaySelected}
+                onChange={(e) => {
+                  setWorkdaySelected(e.target.value);
+                  setAsignature("");
+                  setGrade("");
+                }}
+                filterValue={sedeWorkday}
+                subjectJourney={detectedJourney}
+                sedeId={sedeSelected || idSede}
+                lockByAsignature={false}
+                disabled={!sedeSelected}
+              />
+            </div>
+            <div id="tour-pl-asignature">
+              <AsignatureSelector
+                label="Asignatura"
+                value={asignature}
+                onChange={(e) => {
+                  setAsignature(e.target.value);
+                  setGrade("");
+                }}
+                placeholder="Selecciona asignatura"
+                sedeId={sedeSelected || idSede}
+                workdayId={workdaySelected}
+                autoLoad={true}
+                customFetchMethod={undefined}
+                additionalParams={{}}
+                disabled={!workdaySelected}
+              />
+            </div>
+            <div id="tour-pl-grade">
+              <GradeSelector
+                label="Grado"
+                value={grade}
+                onChange={(e) => setGrade(e.target.value)}
+                placeholder="Selecciona grado"
+                sedeId={sedeSelected}
+                workdayId={workdaySelected}
+                autoLoad={true}
+                disabled={!asignature}
+              />
+            </div>
           </>
         )}
 
-        <PeriodSelector
-          label="Periodo"
-          value={period}
-          onChange={(e) => setPeriod(e.target.value)}
-          autoLoad={true}
-        />
+        <div id="tour-pl-period">
+          <PeriodSelector
+            label="Periodo"
+            value={period}
+            onChange={(e) => setPeriod(e.target.value)}
+            autoLoad={true}
+          />
+        </div>
 
-        <div>
+        <div id="tour-pl-type">
           <label className="">Tipo de logro</label>
           <select
             className="w-full p-2 border rounded bg-surface"
@@ -552,7 +581,7 @@ const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave }) => {
         </div>
       </div>
 
-      <div>
+      <div id="tour-pl-description">
         <label className="block text-sm font-medium mb-1">
           Descripción <span className="text-red-600">*</span>
         </label>
@@ -569,7 +598,7 @@ const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave }) => {
         )}
       </div>
 
-      <div className="flex gap-2 justify-end">
+      <div id="tour-pl-submit" className="flex gap-2 justify-end">
         <SimpleButton
           msj="Cancelar"
           onClick={onClose}

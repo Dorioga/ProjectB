@@ -3,6 +3,7 @@ import SimpleButton from "../atoms/SimpleButton";
 import useSchool from "../../lib/hooks/useSchool";
 import useAuth from "../../lib/hooks/useAuth";
 import { useNotify } from "../../lib/hooks/useNotify";
+import tourProfileNote from "../../tour/tourProfileNote";
 
 // Redondeo consistente a 2 decimales
 const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
@@ -42,6 +43,35 @@ const ProfileNote = ({
   } = useSchool();
   const { idDocente } = useAuth();
   const notify = useNotify();
+
+  const [isTourMode, setIsTourMode] = useState(false);
+
+  const startTour = useCallback(() => {
+    setIsTourMode(true);
+    tourProfileNote();
+    const checkVisible = () =>
+      !!document.querySelector(
+        ".driver-popover, .driver-overlay, .driver-container, .driver",
+      );
+    const observer = new MutationObserver(() => {
+      if (!checkVisible()) {
+        setIsTourMode(false);
+        observer.disconnect();
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    const timer = setTimeout(
+      () => {
+        setIsTourMode(false);
+        observer.disconnect();
+      },
+      3 * 60 * 1000,
+    );
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, []);
 
   // Mapear las notas iniciales al formato interno de trabajo
   const [records, setRecords] = useState(() =>
@@ -300,22 +330,34 @@ const ProfileNote = ({
       </div> */}
 
       {/* ── Indicador de porcentual total ───────────────────────────────── */}
-      <div className="flex items-center justify-between">
+      <div id="tour-pn-total" className="flex items-center justify-between">
         <span className="text-sm opacity-70">
           Porcentual total: {round2(porcentualActual)}%
           {round2(porcentualActual) !== 100 && (
             <span className="ml-2 text-error font-semibold">≠ 100%</span>
           )}
         </span>
-        <div className="w-48">
+        <div className="flex gap-2 items-center">
           <SimpleButton
             type="button"
-            onClick={handleAddNote}
-            msj="Agregar nota"
-            icon="Plus"
-            bg="bg-secondary"
+            onClick={startTour}
+            icon="HelpCircle"
+            msjtooltip="Iniciar tutorial"
+            noRounded={false}
+            bg="bg-info"
             text="text-surface"
+            className="w-auto px-3 py-1.5"
           />
+          <div id="tour-pn-add-btn" className="w-48">
+            <SimpleButton
+              type="button"
+              onClick={handleAddNote}
+              msj="Agregar nota"
+              icon="Plus"
+              bg="bg-secondary"
+              text="text-surface"
+            />
+          </div>
         </div>
       </div>
 
@@ -326,7 +368,7 @@ const ProfileNote = ({
             No hay notas cargadas. Agrega una nueva nota con el botón superior.
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
+          <div id="tour-pn-notes-list" className="flex flex-col gap-3">
             {records.map((rec, idx) => (
               <div
                 key={idx}
@@ -430,7 +472,7 @@ const ProfileNote = ({
               (actual: {round2(porcentualActual)}%)
             </p>
           )}
-          <div className="w-full md:w-1/2">
+          <div id="tour-pn-save-btn" className="w-full md:w-1/2">
             <SimpleButton
               msj="Guardar cambios"
               text="text-surface"

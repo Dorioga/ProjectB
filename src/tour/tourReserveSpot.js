@@ -1,15 +1,27 @@
-import { driver } from "driver.js";
+﻿import { driver } from "driver.js";
 import "driver.js/dist/driver.css";
 
 const tourReserveSpot = () => {
   const steps = [
-    // ─── Sección: Estudiante ───
+    // â”€â”€â”€ SecciÃ³n: Filtro municipio â”€â”€â”€
+    {
+      element: "#tour-rs-filter-section",
+      popover: {
+        title: "Selecciona tu municipio",
+        description:
+          "Primero elige el departamento y el municipio donde se encuentra la institución. Esto cargará la lista de sedes disponibles.",
+        side: "bottom",
+        align: "start",
+      },
+    },
+
+    // â”€â”€â”€ SecciÃ³n: Estudiante â”€â”€â”€
     {
       element: "#tour-rs-student-section",
       popover: {
         title: "Datos del estudiante",
         description:
-          "Completa aquí los datos personales del estudiante que desea reservar el cupo.",
+          "Completa aquí los datos personales y de matrícula del estudiante que desea reservar el cupo.",
         side: "top",
         align: "start",
       },
@@ -30,16 +42,6 @@ const tourReserveSpot = () => {
         title: "N.º de identificación",
         description:
           "Ingresa el número de documento del estudiante (obligatorio).",
-        side: "bottom",
-        align: "start",
-      },
-    },
-    {
-      element: "#tour-rs-student-nui",
-      popover: {
-        title: "NUI",
-        description:
-          "Número Único de Identificación del estudiante (si aplica).",
         side: "bottom",
         align: "start",
       },
@@ -126,160 +128,135 @@ const tourReserveSpot = () => {
       },
     },
 
-    // ─── Sección: Madre ───
+    // ───────────────────── Información de matrícula ─────────────────────
     {
-      element: "#tour-rs-mother-section",
+      element: "#tour-rs-student-sede",
       popover: {
-        title: "Datos de la madre",
+        title: "Sede",
         description:
-          "Completa los datos de la madre del estudiante. Marca el checkbox si es el acudiente principal.",
-        side: "top",
+          "Selecciona la sede a la que deseas inscribir al estudiante. Las opciones se cargan segú    n el municipio elegido.",
+        side: "bottom",
         align: "start",
       },
     },
     {
-      element: "#tour-rs-mother-primary",
+      element: "#tour-rs-student-jornada",
       popover: {
-        title: "Acudiente principal",
+        title: "Jornada",
         description:
-          "Activa esta casilla si la madre es el acudiente principal responsable del estudiante.",
-        side: "left",
-        align: "center",
+          "Selecciona la jornada escolar (mañana o tarde). Disponible una vez elegida la sede.",
+        side: "bottom",
+        align: "start",
       },
     },
     {
-      element: "#tour-rs-mother-doctype",
+      element: "#tour-rs-student-grado",
       popover: {
-        title: "Tipo de documento (madre)",
+        title: "Grado",
         description:
-          "Selecciona el tipo de documento de identidad de la madre.",
-        side: "bottom",
-        align: "start",
-      },
-    },
-    {
-      element: "#tour-rs-mother-identification",
-      popover: {
-        title: "N.º de identificación (madre)",
-        description: "Ingresa el número de documento de la madre.",
-        side: "bottom",
-        align: "start",
-      },
-    },
-    {
-      element: "#tour-rs-mother-firstname",
-      popover: {
-        title: "Primer nombre (madre)",
-        description: "Primer nombre de la madre.",
-        side: "bottom",
-        align: "start",
-      },
-    },
-    {
-      element: "#tour-rs-mother-firstlastname",
-      popover: {
-        title: "Primer apellido (madre)",
-        description: "Primer apellido de la madre.",
-        side: "bottom",
-        align: "start",
-      },
-    },
-    {
-      element: "#tour-rs-mother-telephone",
-      popover: {
-        title: "Teléfono (madre)",
-        description: "Número de contacto de la madre.",
+          "Selecciona el grado al que aspira ingresar el estudiante. Disponible una vez elegidas la sede y la jornada.",
         side: "bottom",
         align: "start",
       },
     },
 
-    // ─── Sección: Padre ───
+    // â”€â”€â”€ SecciÃ³n: Acudiente â”€â”€â”€
     {
-      element: "#tour-rs-father-section",
+      element: "#tour-rs-guardian-section",
       popover: {
-        title: "Datos del padre",
+        title: "Datos del acudiente",
         description:
-          "Completa los datos del padre del estudiante. Marca el checkbox si es el acudiente principal.",
+          "Completa los datos del acudiente o responsable del estudiante.",
         side: "top",
         align: "start",
       },
     },
     {
-      element: "#tour-rs-father-primary",
+      element: "#tour-rs-guardian-parentesco",
       popover: {
-        title: "Acudiente principal",
+        title: "Parentesco",
         description:
-          "Activa esta casilla si el padre es el acudiente principal responsable del estudiante.",
-        side: "left",
-        align: "center",
-      },
-    },
-    {
-      element: "#tour-rs-father-doctype",
-      popover: {
-        title: "Tipo de documento (padre)",
-        description: "Selecciona el tipo de documento de identidad del padre.",
+          "Indica la relaciÃ³n del acudiente con el estudiante (madre, padre, abuelo, tutor, etc.).",
         side: "bottom",
         align: "start",
       },
     },
     {
-      element: "#tour-rs-father-identification",
+      element: "#tour-rs-guardian-doctype",
       popover: {
-        title: "N.º de identificación (padre)",
-        description: "Ingresa el número de documento del padre.",
+        title: "Tipo de documento (acudiente)",
+        description:
+          "Selecciona el tipo de documento de identidad del acudiente.",
         side: "bottom",
         align: "start",
       },
     },
     {
-      element: "#tour-rs-father-firstname",
+      element: "#tour-rs-guardian-identification",
       popover: {
-        title: "Primer nombre (padre)",
-        description: "Primer nombre del padre.",
+        title: "N.Âº de identificaciÃ³n (acudiente)",
+        description: "Ingresa el nÃºmero de documento del acudiente.",
         side: "bottom",
         align: "start",
       },
     },
     {
-      element: "#tour-rs-father-firstlastname",
+      element: "#tour-rs-guardian-firstname",
       popover: {
-        title: "Primer apellido (padre)",
-        description: "Primer apellido del padre.",
+        title: "Primer nombre (acudiente)",
+        description: "Primer nombre del acudiente.",
         side: "bottom",
         align: "start",
       },
     },
     {
-      element: "#tour-rs-father-telephone",
+      element: "#tour-rs-guardian-firstlastname",
       popover: {
-        title: "Teléfono (padre)",
-        description: "Número de contacto del padre.",
+        title: "Primer apellido (acudiente)",
+        description: "Primer apellido del acudiente.",
+        side: "bottom",
+        align: "start",
+      },
+    },
+    {
+      element: "#tour-rs-guardian-telephone",
+      popover: {
+        title: "TelÃ©fono (acudiente)",
+        description: "NÃºmero de contacto del acudiente (obligatorio).",
         side: "bottom",
         align: "start",
       },
     },
 
-    // ─── Sección: Firma ───
+    // â”€â”€â”€ SecciÃ³n: Firma â”€â”€â”€
     {
       element: "#tour-rs-signature-section",
       popover: {
         title: "Firma del acudiente",
         description:
-          "Dibuja la firma del acudiente principal en este recuadro antes de enviar la reserva.",
+          "Dibuja la firma del acudiente en el recuadro. Luego pulsa 'Guardar firma' para confirmarla antes de enviar la reserva.",
         side: "top",
         align: "start",
       },
     },
 
-    // ─── Envío ───
+    // â”€â”€â”€ EnvÃ­o y PDF â”€â”€â”€
     {
       element: "#tour-rs-submit",
       popover: {
         title: "Reservar cupo",
         description:
-          "Haz clic aquí para enviar la solicitud de reserva una vez completado el formulario y guardada la firma.",
+          "Haz clic aquÃ­ para enviar la solicitud de reserva. El botÃ³n se activa una vez guardada la firma.",
+        side: "top",
+        align: "center",
+      },
+    },
+    {
+      element: "#tour-rs-pdf",
+      popover: {
+        title: "Descargar PDF",
+        description:
+          "Genera y descarga un comprobante en PDF con todos los datos de la reserva. Disponible cuando el formulario estÃ¡ completo y la firma guardada.",
         side: "top",
         align: "center",
       },

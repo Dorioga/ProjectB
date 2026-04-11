@@ -4,6 +4,7 @@ import JourneySelect from "../atoms/JourneySelect";
 import { createSede } from "../../services/schoolService";
 import { useNotify } from "../../lib/hooks/useNotify";
 import useAuth from "../../lib/hooks/useAuth";
+import tourRegisterSede from "../../tour/tourRegisterSede";
 
 const EMPTY_SEDE = {
   nombre_sede: "",
@@ -91,133 +92,152 @@ const RegisterSede = ({ onSuccess }) => {
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      {sedes.map((sede, index) => (
-        <div
-          key={index}
-          className="border rounded-lg p-4 bg-surface flex flex-col gap-4"
-        >
-          <div className="flex items-center justify-between">
-            <span className="font-semibold text-sm opacity-70">
-              Sede #{index + 1}
-            </span>
-            {sedes.length > 1 && (
-              <button
-                type="button"
-                onClick={() => handleRemoveSede(index)}
-                className="text-red-500 hover:text-red-700 text-xs font-medium"
-              >
-                Eliminar
-              </button>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Nombre sede */}
-            <div>
-              <label className="font-semibold text-sm">Nombre de la sede</label>
-              <input
-                type="text"
-                value={sede.nombre_sede}
-                onChange={(e) =>
-                  handleChange(index, "nombre_sede", e.target.value)
-                }
-                className="w-full p-2 border rounded bg-surface mt-1"
-                placeholder="Ej: Sede Central"
-                disabled={isSaving}
-              />
-              {errors[index]?.nombre_sede && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors[index].nombre_sede}
-                </p>
-              )}
-            </div>
-
-            {/* Dirección */}
-            <div>
-              <label className="font-semibold text-sm">Dirección</label>
-              <input
-                type="text"
-                value={sede.direccion}
-                onChange={(e) =>
-                  handleChange(index, "direccion", e.target.value)
-                }
-                className="w-full p-2 border rounded bg-surface mt-1"
-                placeholder="Ej: Carrera 4 # 10-20"
-                disabled={isSaving}
-              />
-              {errors[index]?.direccion && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors[index].direccion}
-                </p>
-              )}
-            </div>
-
-            {/* Teléfono */}
-            <div>
-              <label className="font-semibold text-sm">Teléfono</label>
-              <input
-                type="tel"
-                value={sede.telefono}
-                onChange={(e) =>
-                  handleChange(index, "telefono", e.target.value)
-                }
-                className="w-full p-2 border rounded bg-surface mt-1"
-                placeholder="Ej: 3001234567"
-                disabled={isSaving}
-              />
-              {errors[index]?.telefono && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors[index].telefono}
-                </p>
-              )}
-            </div>
-
-            {/* Jornada */}
-            <div>
-              <JourneySelect
-                label="Jornada"
-                labelClassName="font-semibold text-sm"
-                name={`fk_jornada_${index}`}
-                value={sede.fk_jornada ? String(sede.fk_jornada) : ""}
-                onChange={(e) =>
-                  handleChange(index, "fk_jornada", e.target.value)
-                }
-                className="w-full p-2 border rounded bg-surface mt-1"
-                disabled={isSaving}
-              />
-              {errors[index]?.fk_jornada && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors[index].fk_jornada}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      ))}
-
-      <div className="flex flex-wrap gap-3 justify-between items-center">
+    <>
+      <div className="flex justify-end mb-2">
         <SimpleButton
           type="button"
-          onClick={handleAddSede}
-          msj="Agregar otra sede"
-          icon="Plus"
-          bg="bg-secondary"
+          onClick={tourRegisterSede}
+          icon="HelpCircle"
+          bg="bg-info"
           text="text-surface"
-          disabled={isSaving}
-        />
-        <SimpleButton
-          type="button"
-          onClick={handleSubmit}
-          msj={isSaving ? "Guardando..." : "Guardar sedes"}
-          icon={isSaving ? "Loader2" : "Save"}
-          bg="bg-accent"
-          text="text-surface"
-          disabled={isSaving}
-          className={isSaving ? "animate-pulse" : ""}
+          msjtooltip="Iniciar tutorial"
+          noRounded={false}
         />
       </div>
-    </div>
+      <div id="tour-rsede-container" className="flex flex-col gap-6">
+        {sedes.map((sede, index) => (
+          <div
+            key={index}
+            id={index === 0 ? "tour-rsede-card" : undefined}
+            className="border rounded-lg p-4 bg-surface flex flex-col gap-4"
+          >
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-sm opacity-70">
+                Sede #{index + 1}
+              </span>
+              {sedes.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => handleRemoveSede(index)}
+                  className="text-red-500 hover:text-red-700 text-xs font-medium"
+                >
+                  Eliminar
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Nombre sede */}
+              <div id={index === 0 ? "tour-rsede-name" : undefined}>
+                <label className="font-semibold text-sm">
+                  Nombre de la sede
+                </label>
+                <input
+                  type="text"
+                  value={sede.nombre_sede}
+                  onChange={(e) =>
+                    handleChange(index, "nombre_sede", e.target.value)
+                  }
+                  className="w-full p-2 border rounded bg-surface mt-1"
+                  placeholder="Ej: Sede Central"
+                  disabled={isSaving}
+                />
+                {errors[index]?.nombre_sede && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors[index].nombre_sede}
+                  </p>
+                )}
+              </div>
+
+              {/* Dirección */}
+              <div id={index === 0 ? "tour-rsede-direccion" : undefined}>
+                <label className="font-semibold text-sm">Dirección</label>
+                <input
+                  type="text"
+                  value={sede.direccion}
+                  onChange={(e) =>
+                    handleChange(index, "direccion", e.target.value)
+                  }
+                  className="w-full p-2 border rounded bg-surface mt-1"
+                  placeholder="Ej: Carrera 4 # 10-20"
+                  disabled={isSaving}
+                />
+                {errors[index]?.direccion && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors[index].direccion}
+                  </p>
+                )}
+              </div>
+
+              {/* Teléfono */}
+              <div id={index === 0 ? "tour-rsede-telefono" : undefined}>
+                <label className="font-semibold text-sm">Teléfono</label>
+                <input
+                  type="tel"
+                  value={sede.telefono}
+                  onChange={(e) =>
+                    handleChange(index, "telefono", e.target.value)
+                  }
+                  className="w-full p-2 border rounded bg-surface mt-1"
+                  placeholder="Ej: 3001234567"
+                  disabled={isSaving}
+                />
+                {errors[index]?.telefono && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors[index].telefono}
+                  </p>
+                )}
+              </div>
+
+              {/* Jornada */}
+              <div id={index === 0 ? "tour-rsede-jornada" : undefined}>
+                <JourneySelect
+                  label="Jornada"
+                  labelClassName="font-semibold text-sm"
+                  name={`fk_jornada_${index}`}
+                  value={sede.fk_jornada ? String(sede.fk_jornada) : ""}
+                  onChange={(e) =>
+                    handleChange(index, "fk_jornada", e.target.value)
+                  }
+                  className="w-full p-2 border rounded bg-surface mt-1"
+                  disabled={isSaving}
+                />
+                {errors[index]?.fk_jornada && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors[index].fk_jornada}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+
+        <div
+          id="tour-rsede-actions"
+          className="flex flex-wrap gap-3 justify-between items-center"
+        >
+          <SimpleButton
+            type="button"
+            onClick={handleAddSede}
+            msj="Agregar otra sede"
+            icon="Plus"
+            bg="bg-secondary"
+            text="text-surface"
+            disabled={isSaving}
+          />
+          <SimpleButton
+            type="button"
+            onClick={handleSubmit}
+            msj={isSaving ? "Guardando..." : "Guardar sedes"}
+            icon={isSaving ? "Loader2" : "Save"}
+            bg="bg-accent"
+            text="text-surface"
+            disabled={isSaving}
+            className={isSaving ? "animate-pulse" : ""}
+          />
+        </div>
+      </div>
+    </>
   );
 };
 

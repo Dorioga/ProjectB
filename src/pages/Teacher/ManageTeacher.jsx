@@ -9,6 +9,7 @@ import Modal from "../../components/atoms/Modal";
 import RegisterTeacher from "./RegisterTeacher";
 import TeacherModal from "../../components/molecules/TeacherModal";
 import { useNotify } from "../../lib/hooks/useNotify";
+import tourManageTeacher from "../../tour/tourManageTeacher";
 
 const ManageTeacher = () => {
   const { idInstitution } = useAuth();
@@ -255,9 +256,17 @@ const ManageTeacher = () => {
 
   return (
     <div className=" p-6 h-full gap-4 flex flex-col">
-      <div className="w-full grid sm:grid-cols-2 lg:grid-cols-5 justify-between items-center bg-primary text-surface p-3 rounded-lg">
-        <h2 className="text-2xl font-bold lg:col-span-4">Datos de Docentes</h2>
-        <div className="">
+      <div
+        id="tour-mt-header"
+        className="w-full grid gap-2 grid-cols-1 lg:grid-cols-5 xl:grid-cols-4 justify-between items-center bg-primary text-surface p-3 rounded-lg"
+      >
+        <div className=" lg:col-span-3 xl:col-span-2 flex items-center">
+          <h2 className="text-2xl font-bold text-center">Datos de Docentes</h2>
+        </div>
+        <div
+          id="tour-mt-add-btn"
+          className=" grid grid-cols-2 col-span-2 xl:col-span-2 gap-2"
+        >
           <SimpleButton
             onClick={() => setIsAddOpen(true)}
             msj="Registrar docente"
@@ -267,11 +276,21 @@ const ManageTeacher = () => {
             noRounded={false}
             disabled={isTableLoading}
           />
+          <SimpleButton
+            type="button"
+            onClick={tourManageTeacher}
+            icon="HelpCircle"
+            msjtooltip="Iniciar tutorial"
+            noRounded={false}
+            bg="bg-info"
+            text="text-surface"
+            className="w-auto px-3 py-1.5"
+          />
         </div>
       </div>
 
       {/* Mantener la tabla montada siempre para evitar parpadeos. Mostrar un overlay mientras carga. */}
-      <div className="relative flex-1">
+      <div id="tour-mt-table" className="relative flex-1">
         <DataTable
           key="teachers-table"
           data={tableData || []}

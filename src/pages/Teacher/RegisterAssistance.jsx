@@ -519,14 +519,16 @@ const RegisterAssistance = () => {
         id="tour-filters-assistance"
         className="grid grid-cols-1 md:grid-cols-5 gap-4"
       >
-        <SedeSelect
-          value={sedeSelected}
-          onChange={handleSedeChange}
-          className="w-full p-2 border rounded bg-surface"
-          labelClassName="text-lg font-semibold"
-          data={teacherSedeData}
-          loading={loadingTeacherSedes}
-        />
+        <div id="tour-sede-assistance">
+          <SedeSelect
+            value={sedeSelected}
+            onChange={handleSedeChange}
+            className="w-full p-2 border rounded bg-surface"
+            labelClassName="text-lg font-semibold"
+            data={teacherSedeData}
+            loading={loadingTeacherSedes}
+          />
+        </div>
 
         {/* Orden para Docentes: Sede -> Grado -> Asignatura -> Jornada */}
         {isTeacher ? (
@@ -639,7 +641,7 @@ const RegisterAssistance = () => {
             className="w-full p-2 border rounded bg-surface"
           />
         </div>
-        <div>
+        <div id="tour-date-assistance">
           <label className="text-lg font-semibold block mb-1">
             Fecha de asistencia
           </label>

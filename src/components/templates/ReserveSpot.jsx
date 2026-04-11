@@ -903,7 +903,7 @@ const ReserveSpot = ({ mode = "Externo", onSuccess }) => {
       {loading && <Loader message="Enviando reserva de cupo…" />}
 
       {/* ─── Filtros previos: departamento y municipio ─── */}
-      <section className="w-full xl:w-9/12 border border-secondary/30 rounded-lg overflow-hidden">
+      <section id="tour-rs-filter-section" className="w-full xl:w-9/12 border border-secondary/30 rounded-lg overflow-hidden">
         <div className="bg-primary text-surface p-3">
           <h3 className="text-xl font-bold">Selecciona tu municipio</h3>
         </div>

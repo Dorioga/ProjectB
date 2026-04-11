@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import SimpleButton from "../atoms/SimpleButton";
 import useStudent from "../../lib/hooks/useStudent";
 import useAuth from "../../lib/hooks/useAuth";
 import { useNotification } from "../../lib/context/NotificationContext";
 import PdfObservador from "./PdfObservador";
+import tourProfileObserver from "../../tour/tourProfileObserver";
 
 /**
  * ProfileObserver – muestra los datos completos de un registro del observador,
@@ -38,6 +39,34 @@ const ProfileObserver = ({ data, onClose, onSaved }) => {
 
   const [newEntry, setNewEntry] = useState("");
   const [saving, setSaving] = useState(false);
+  const [isTourMode, setIsTourMode] = useState(false);
+
+  const startTour = useCallback(() => {
+    setIsTourMode(true);
+    tourProfileObserver();
+    const checkVisible = () =>
+      !!document.querySelector(
+        ".driver-popover, .driver-overlay, .driver-container, .driver",
+      );
+    const observer = new MutationObserver(() => {
+      if (!checkVisible()) {
+        setIsTourMode(false);
+        observer.disconnect();
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    const timer = setTimeout(
+      () => {
+        setIsTourMode(false);
+        observer.disconnect();
+      },
+      3 * 60 * 1000,
+    );
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, []);
 
   // ── Parseo de observaciones existentes ───────────────────────────────────
   const parseEntries = (raw) => {
@@ -156,7 +185,7 @@ const ProfileObserver = ({ data, onClose, onSaved }) => {
   return (
     <div className="flex flex-col gap-6 p-2">
       {/* ── Datos del estudiante ── */}
-      <section>
+      <section id="tour-po-student-info">
         <h3 className="font-bold text-base bg-primary text-surface rounded-lg p-2 ">
           Información del Estudiante
         </h3>
@@ -175,7 +204,7 @@ const ProfileObserver = ({ data, onClose, onSaved }) => {
       </section>
 
       {/* ── Datos del acudiente ── */}
-      <section>
+      <section id="tour-po-guardian-info">
         <h3 className="font-bold text-base bg-primary text-surface rounded-lg p-2 ">
           Información del Acudiente
         </h3>
@@ -192,7 +221,7 @@ const ProfileObserver = ({ data, onClose, onSaved }) => {
       </section>
 
       {/* ── Observaciones existentes ── */}
-      <section>
+      <section id="tour-po-history">
         <h3 className="font-bold text-base bg-primary text-surface rounded-lg p-2 ">
           Historial de Observaciones
           <span className="ml-2 text-xs font-normal text-gray-400 p-2">
@@ -217,7 +246,7 @@ const ProfileObserver = ({ data, onClose, onSaved }) => {
       </section>
 
       {/* ── Nueva observación ── */}
-      <section className="flex flex-col gap-2">
+      <section id="tour-po-new-observation" className="flex flex-col gap-2">
         <h3 className="font-bold text-base bg-primary text-surface rounded-lg p-2 ">
           Agregar Nueva Observación
         </h3>
@@ -232,8 +261,19 @@ const ProfileObserver = ({ data, onClose, onSaved }) => {
 
       {/* ── Acciones ── */}
       <div className="grid grid-cols-6 justify-end gap-3">
-        <div className="col-span-3"></div>
+        <div className="col-span-2"></div>
         <div className="">
+          <SimpleButton
+            type="button"
+            onClick={startTour}
+            icon="HelpCircle"
+            msjtooltip="Iniciar tutorial"
+            noRounded={false}
+            bg="bg-info"
+            text="text-surface"
+          />
+        </div>
+        <div id="tour-po-download" className="">
           <SimpleButton
             msj="Descargar PDF"
             type="button"
@@ -256,7 +296,7 @@ const ProfileObserver = ({ data, onClose, onSaved }) => {
             />
           </div>
         )}
-        <div className="">
+        <div id="tour-po-save" className="">
           <SimpleButton
             msj={saving ? "Guardando…" : "Guardar"}
             type="button"

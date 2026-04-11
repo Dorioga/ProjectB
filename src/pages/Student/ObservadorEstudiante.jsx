@@ -6,6 +6,7 @@ import { handleNumericInput } from "../../utils/formatUtils";
 import useAuth from "../../lib/hooks/useAuth";
 import useStudent from "../../lib/hooks/useStudent";
 import { useNotification } from "../../lib/context/NotificationContext";
+import tourObservadorEstudiante from "../../tour/tourObservadorEstudiante";
 
 // ─── Tarjeta de observación ───────────────────────────────────────────────────
 const ObservacionCard = ({ entry, index, onDelete }) => {
@@ -208,10 +209,21 @@ const ObservadorEstudiante = ({ onClose }) => {
 
   return (
     <div className="border p-6 rounded  h-full flex flex-col gap-6">
-      <h2 className="font-bold text-2xl">Observador del Estudiante</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="font-bold text-2xl">Observador del Estudiante</h2>
+        <SimpleButton
+          type="button"
+          onClick={tourObservadorEstudiante}
+          icon="HelpCircle"
+          bg="bg-info"
+          text="text-surface"
+          msjtooltip="Iniciar tutorial"
+          noRounded={false}
+        />
+      </div>
 
       {/* ── Búsqueda ── */}
-      <div className="flex flex-col gap-3 border-b pb-4">
+      <div id="tour-oe-search" className="flex flex-col gap-3 border-b pb-4">
         <div className="grid grid-cols-1 md:grid-cols-4 xl:grid-cols-8 gap-3 items-end">
           <div className="col-span-1 md:col-span-2 xl:col-span-3 flex flex-col gap-1">
             <label className="text-sm font-semibold">
@@ -272,7 +284,10 @@ const ObservadorEstudiante = ({ onClose }) => {
       {/* ── Datos del estudiante ── */}
       {student && (
         <>
-          <div className="bg-surface border rounded p-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div
+            id="tour-oe-student-info"
+            className="bg-surface border rounded p-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4"
+          >
             {/* Foto */}
             <div className="flex flex-col items-center justify-center">
               <img
@@ -327,7 +342,10 @@ const ObservadorEstudiante = ({ onClose }) => {
           </div>
 
           {/* ── Datos adicionales acudiente ── */}
-          <div className="bg-surface border rounded p-4 grid grid-cols-1 sm:grid-cols-4 gap-4 text-sm">
+          <div
+            id="tour-oe-acudiente"
+            className="bg-surface border rounded p-4 grid grid-cols-1 sm:grid-cols-4 gap-4 text-sm"
+          >
             <div className="flex flex-col gap-1">
               <label className="font-semibold text-xs text-gray-500 uppercase">
                 Dirección
@@ -389,11 +407,11 @@ const ObservadorEstudiante = ({ onClose }) => {
 
           {/* ── Formulario inline ── */}
           <form
+            id="tour-oe-form"
             onSubmit={handleFormSubmit}
             className="bg-surface border rounded p-4 flex flex-col gap-4"
           >
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-semibold">Observación</label>
+            <div id="tour-oe-observacion" className="flex flex-col gap-1">
               <textarea
                 name="observacion"
                 value={form.observacion}
@@ -444,7 +462,7 @@ const ObservadorEstudiante = ({ onClose }) => {
               </div>
             </div>
 
-            <div className="flex justify-end">
+            <div id="tour-oe-submit" className="flex justify-end">
               <div className="w-36">
                 <SimpleButton
                   msj={submitLoading ? "Guardando…" : "Guardar"}

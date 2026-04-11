@@ -17,6 +17,7 @@ import {
 import useSchool from "../../lib/hooks/useSchool";
 import { useNotify } from "../../lib/hooks/useNotify";
 import { upload } from "../../services/uploadService";
+import tourProfileSchool from "../../tour/tourProfileSchool";
 
 // Constantes
 const DEFAULT_PERFORMANCE_SCALE = [
@@ -410,6 +411,34 @@ const ProfileSchool = ({
     setScaleErrors(initErrors);
   }, [initialData]);
   const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
+  const [isTourMode, setIsTourMode] = useState(false);
+
+  const startTour = useCallback(() => {
+    setIsTourMode(true);
+    tourProfileSchool();
+    const checkVisible = () =>
+      !!document.querySelector(
+        ".driver-popover, .driver-overlay, .driver-container, .driver",
+      );
+    const observer = new MutationObserver(() => {
+      if (!checkVisible()) {
+        setIsTourMode(false);
+        observer.disconnect();
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    const timer = setTimeout(
+      () => {
+        setIsTourMode(false);
+        observer.disconnect();
+      },
+      3 * 60 * 1000,
+    );
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, []);
 
   // Estado para el sistema de evaluación (datos propios)
   const [evaluation, setEvaluation] = useState({
@@ -1165,26 +1194,43 @@ const ProfileSchool = ({
         onSubmit={handleSubmit}
         className="grid grid-cols-1 md:grid-cols-2 gap-4"
       >
-        <div className=" grid grid-cols-5 md:col-span-2  justify-between items-center mb-2">
-          <h2 className="text-xl font-semibold flex items-center col-span-4">
-            {title}
-            <span
-              className={`ml-3 inline-flex items-center px-2 py-1 rounded text-xs font-medium ${isEditing ? "bg-green-100 text-green-800" : "bg-gray-200 text-gray-700"}`}
-            >
-              {isEditing ? "Modo edición" : "Solo lectura"}
-            </span>
-          </h2>
-          <SimpleButton
-            type="button"
-            onClick={toggleEditing}
-            msj={isEditing ? "Cancelar" : "Editar"}
-            icon={isEditing ? "X" : "Pencil"}
-            bg={isEditing ? "bg-red-500" : "bg-warning"}
-            text={"text-surface"}
-          />
+        <div
+          id="tour-psc-header"
+          className=" grid grid-cols-5 md:col-span-2  justify-between items-center mb-2"
+        >
+          <div className="col-span-4 flex items-center gap-3">
+            <h2 className="text-xl font-semibold flex items-center">
+              {title}
+              <span
+                className={`ml-3 inline-flex items-center px-2 py-1 rounded text-xs font-medium ${isEditing ? "bg-green-100 text-green-800" : "bg-gray-200 text-gray-700"}`}
+              >
+                {isEditing ? "Modo edición" : "Solo lectura"}
+              </span>
+            </h2>
+            <SimpleButton
+              type="button"
+              onClick={startTour}
+              icon="HelpCircle"
+              msjtooltip="Iniciar tutorial"
+              noRounded={false}
+              bg="bg-info"
+              text="text-surface"
+              className="w-auto px-3 py-1.5"
+            />
+          </div>
+          <div id="tour-psc-edit-btn">
+            <SimpleButton
+              type="button"
+              onClick={toggleEditing}
+              msj={isEditing ? "Cancelar" : "Editar"}
+              icon={isEditing ? "X" : "Pencil"}
+              bg={isEditing ? "bg-red-500" : "bg-warning"}
+              text={"text-surface"}
+            />
+          </div>
         </div>
 
-        <div className="md:col-span-2">
+        <div id="tour-psc-name" className="md:col-span-2">
           <label className={getLabelClassName("", !isEditing)}>
             Nombre de la institución <span className="text-red-600">*</span>
           </label>
@@ -1205,7 +1251,7 @@ const ProfileSchool = ({
           )}
         </div>
 
-        <div className="md:col-span-2">
+        <div id="tour-psc-nit" className="md:col-span-2">
           <label className={getLabelClassName("", !isEditing)}>NIT</label>
           <input
             type="text"
@@ -1221,7 +1267,7 @@ const ProfileSchool = ({
           />
         </div>
 
-        <div className="md:col-span-2">
+        <div id="tour-psc-slogan" className="md:col-span-2">
           <label className={getLabelClassName("", !isEditing)}>Slogan</label>
           <input
             type="text"
@@ -1236,7 +1282,7 @@ const ProfileSchool = ({
           />
         </div>
 
-        <div className="md:col-span-2">
+        <div id="tour-psc-address" className="md:col-span-2">
           <label className={getLabelClassName("", !isEditing)}>
             Dirección <span className="text-red-600">*</span>
           </label>
@@ -1256,7 +1302,7 @@ const ProfileSchool = ({
           )}
         </div>
 
-        <div>
+        <div id="tour-psc-department-city">
           <DepartmentSelector
             name="department_id"
             label="Departamento"
@@ -1291,7 +1337,7 @@ const ProfileSchool = ({
           )}
         </div>
 
-        <div>
+        <div id="tour-psc-contact">
           <label className={getLabelClassName("", !isEditing)}>
             Teléfono <span className="text-red-600">*</span>
           </label>
@@ -1390,7 +1436,7 @@ const ProfileSchool = ({
           )}
         </div>
 
-        <div>
+        <div id="tour-psc-logo">
           <label>Logo de la institución</label>
           {isEditing ? (
             <div className="flex flex-col gap-2">
@@ -1413,7 +1459,7 @@ const ProfileSchool = ({
           )}
         </div>
 
-        <div>
+        <div id="tour-psc-theme-btn">
           <label>Tema</label>
           <SimpleButton
             type="button"
@@ -1470,7 +1516,10 @@ const ProfileSchool = ({
           )}
         </div>
 
-        <div className="md:col-span-2 mt-2 border-t pt-4">
+        <div
+          id="tour-psc-evaluation"
+          className="md:col-span-2 mt-2 border-t pt-4"
+        >
           <h3 className="text-lg font-semibold mb-2">Sistema de evaluación</h3>
 
           {isEditing ? (
@@ -1952,7 +2001,7 @@ const ProfileSchool = ({
         ) : null}
 
         {isEditing && (
-          <div className="md:col-span-2 mt-4">
+          <div id="tour-psc-save" className="md:col-span-2 mt-4">
             <SimpleButton
               type="submit"
               msj={loading ? "Procesando..." : primaryButtonLabel}

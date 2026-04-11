@@ -7,6 +7,7 @@ import Modal from "../../components/atoms/Modal";
 import ObservadorEstudiante from "./ObservadorEstudiante";
 import ProfileObserver from "../../components/molecules/ProfileObserver";
 import useAuth from "../../lib/hooks/useAuth";
+import tourManageObserver from "../../tour/tourManageObserver";
 
 const ManageObserver = () => {
   const { getObservationData } = useStudent();
@@ -60,6 +61,7 @@ const ManageObserver = () => {
       {
         accessorKey: "fecha_observacion",
         header: "Fecha de creación",
+        meta: { hideOnLG: true },
         cell: ({ getValue }) => {
           const v = getValue();
           if (!v) return "-";
@@ -110,11 +112,17 @@ const ManageObserver = () => {
   return (
     <div className="p-6 h-full gap-4 flex flex-col">
       {/* Título + botón registrar */}
-      <div className="w-full grid grid-cols-5 justify-between items-center bg-primary text-surface p-3 rounded-lg">
-        <h2 className="text-2xl col-span-3 lg:col-span-4 xl:col-span-3 2xl:col-span-4 font-bold">
-          Gestión de Observador
-        </h2>
-        <div className="col-span-2 lg:col-span-1 xl:col-span-2 2xl:col-span-1 flex justify-end">
+      <div
+        id="tour-mo-header"
+        className="w-full grid gap-2 grid-cols-1 lg:grid-cols-5 xl:grid-cols-4 justify-between items-center bg-primary text-surface p-3 rounded-lg"
+      >
+        <div className=" lg:col-span-3 xl:col-span-2 flex items-center gap-3">
+          <h2 className="text-2xl font-bold">Gestión de Observador</h2>
+        </div>
+        <div
+          id="tour-mo-add-btn"
+          className=" grid grid-cols-2 col-span-2 xl:col-span-2 gap-2"
+        >
           <SimpleButton
             onClick={() => setIsModalOpen(true)}
             msj="Registrar observación"
@@ -123,12 +131,25 @@ const ManageObserver = () => {
             text="text-surface"
             noRounded={false}
           />
+          <SimpleButton
+            type="button"
+            onClick={tourManageObserver}
+            icon="HelpCircle"
+            msjtooltip="Iniciar tutorial"
+            noRounded={false}
+            bg="bg-info"
+            text="text-surface"
+            className="w-auto px-3 py-1.5"
+          />
         </div>
       </div>
 
       {/* Búsqueda */}
       <div className="bg-surface p-4 rounded-lg shadow grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-        <div className="md:col-span-3 flex flex-col gap-1">
+        <div
+          id="tour-mo-search-input"
+          className="md:col-span-3 flex flex-col gap-1"
+        >
           <label className="text-sm font-semibold">
             Documento de identidad del estudiante
           </label>
@@ -142,7 +163,7 @@ const ManageObserver = () => {
             className="bg-surface rounded p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-secondary"
           />
         </div>
-        <div>
+        <div id="tour-mo-search-btn">
           <SimpleButton
             type="button"
             msj={isFetching ? "Buscando…" : "Buscar"}
@@ -157,7 +178,7 @@ const ManageObserver = () => {
       </div>
 
       {/* Tabla */}
-      <div className="relative flex-1 p-4">
+      <div id="tour-mo-table" className="relative flex-1 p-4">
         <DataTable
           key="observer-table"
           data={tableData}

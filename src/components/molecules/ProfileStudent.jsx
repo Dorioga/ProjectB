@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import PreviewIMG from "../atoms/PreviewIMG";
 import PeriodSelector from "../atoms/PeriodSelector";
 import SimpleButton from "../atoms/SimpleButton";
@@ -9,6 +9,7 @@ import PDFViewerModal from "./PDFViewerModal.jsx";
 import { formatDateToDisplay } from "../../utils/formatUtils";
 import { upload } from "../../services/uploadService";
 import { useNotify } from "../../lib/hooks/useNotify";
+import tourProfileStudent from "../../tour/tourProfileStudent";
 
 const ProfileStudent = ({
   data,
@@ -17,6 +18,34 @@ const ProfileStudent = ({
   initialEditing = false,
 }) => {
   const notify = useNotify();
+  const [isTourMode, setIsTourMode] = useState(false);
+
+  const startTour = useCallback(() => {
+    setIsTourMode(true);
+    tourProfileStudent();
+    const checkVisible = () =>
+      !!document.querySelector(
+        ".driver-popover, .driver-overlay, .driver-container, .driver",
+      );
+    const observer = new MutationObserver(() => {
+      if (!checkVisible()) {
+        setIsTourMode(false);
+        observer.disconnect();
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    const timer = setTimeout(
+      () => {
+        setIsTourMode(false);
+        observer.disconnect();
+      },
+      3 * 60 * 1000,
+    );
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, []);
 
   console.log(" 123 Data en ProfileStudent:", data);
   ///Preguntar el State
@@ -57,7 +86,7 @@ const ProfileStudent = ({
     first_lastname: data?.primer_apellido || data?.first_lastname || "",
     second_lastname: data?.segundo_apellido || data?.second_lastname || "",
     // Periodo de ingreso (editable)
-    periodo_ingreso: data?.periodo_ingreso || data?.fk_periodo_ingreso || "",
+    periodo_ingreso: data?.perido_ingreso || data?.fk_periodo_ingreso || "",
   });
 
   // Selectores para sede y jornada
@@ -104,12 +133,11 @@ const ProfileStudent = ({
 
     // Mapear state_process a process_id
     const processIdMap = {
-      Conforme: "2",
-      Completo: "2",
-      Retirado: "3",
-      SinExcusa: "4",
-      Excusa: "5",
-      Reasignado: "6",
+      Conforme: "1",
+      Excusa: "2",
+      SinExcusa: "3",
+      Retirado: "4",
+      Reasignado: "5",
     };
 
     // Mapear state_beca a fk_beca
@@ -178,12 +206,28 @@ const ProfileStudent = ({
             if (entry.field === "cedulaEstudiante") {
               updatedData.identification_link = "yes";
             } else if (entry.field === "soporteExcel") {
-              updatedData.piar_link = "yes";
+              updatedData.link_piar = "yes";
             }
           });
         }
       } catch (err) {
         console.error("Error subiendo archivos en ProfileStudent:", err);
+      }
+    }
+    const hasGuardianIdFile = Boolean(documentFiles.id_Acudiente);
+
+    if (hasGuardianIdFile) {
+      try {
+        const form = new FormData();
+        form.append("identificacion", data.numero_identificacion_acudiente);
+        form.append("cedulaAcudiente", documentFiles.id_Acudiente);
+
+        const res = await upload(form, "upload/acudientes");
+      } catch (err) {
+        console.error(
+          "Error subiendo cédula de acudiente en ProfileStudent:",
+          err,
+        );
       }
     }
 
@@ -245,8 +289,18 @@ const ProfileStudent = ({
   return (
     <div className="w-full flex flex-col items-center justify-center">
       <div className="w-11/12 flex flex-col gap-4">
-        <div className="w-full flex justify-end">
+        <div id="tour-ps-edit" className="w-full flex justify-end">
           <div className="flex gap-2">
+            <SimpleButton
+              type="button"
+              onClick={startTour}
+              icon="HelpCircle"
+              msjtooltip="Iniciar tutorial"
+              noRounded={false}
+              bg="bg-info"
+              text="text-surface"
+              className="w-auto px-3 py-1.5"
+            />
             {isEditing && (
               <SimpleButton
                 onClick={() => setIsEditing(false)}
@@ -266,7 +320,10 @@ const ProfileStudent = ({
             />
           </div>
         </div>
-        <div className="grid lg:grid-cols-3 gap-4 p-4 bg-bg rounded-lg shadow-md">
+        <div
+          id="tour-ps-basic-info"
+          className="grid lg:grid-cols-3 gap-4 p-4 bg-bg rounded-lg shadow-md"
+        >
           <div className="flex flex-col gap-2 items-center justify-center">
             <PreviewIMG path={photoPreview} size="profile" />
           </div>
@@ -371,7 +428,10 @@ const ProfileStudent = ({
             </div>
           </div>
         </div>
-        <div className="p-4 bg-bg rounded-lg shadow-md">
+        <div
+          id="tour-ps-school-info"
+          className="p-4 bg-bg rounded-lg shadow-md"
+        >
           <h2 className="text-2xl font-semibold pb-4">Información escolar</h2>
           <div className="flex flex-row gap-4 items-center">
             <label className="text-lg font-medium">Institución:</label>
@@ -401,7 +461,7 @@ const ProfileStudent = ({
             ) : (
               <p>
                 {data.nombre_periodo ||
-                  data.periodo_ingreso ||
+                  data.perido_ingreso ||
                   data.fk_periodo_ingreso ||
                   "No registrado"}
               </p>
@@ -413,7 +473,10 @@ const ProfileStudent = ({
             <p>{data.nombre_jornada_estudiante}</p>
           </div>
         </div>
-        <div className="p-4 bg-bg rounded-lg shadow-md">
+        <div
+          id="tour-ps-family-info"
+          className="p-4 bg-bg rounded-lg shadow-md"
+        >
           <h2 className="text-2xl font-semibold pb-4">Información familiar</h2>
           <div className="flex flex-row gap-4 items-center">
             <label className="text-lg font-medium">
@@ -446,7 +509,7 @@ const ProfileStudent = ({
             </p>
           </div>
         </div>
-        <div className="p-4 bg-bg rounded-lg shadow-md">
+        <div id="tour-ps-states" className="p-4 bg-bg rounded-lg shadow-md">
           <h2 className="text-2xl font-semibold pb-4">
             Estados del estudiante
           </h2>
@@ -550,10 +613,11 @@ const ProfileStudent = ({
                   }
                   className="border p-2 rounded bg-surface text-center"
                 >
-                  <option value="Conforme">Completo</option>
+                  <option value="Conforme">Conforme</option>
                   <option value="Retirado">Retirado</option>
                   <option value="SinExcusa">Sin Excusa</option>
                   <option value="Excusa">Excusa</option>
+                  <option value="Reasignado">Reasignado</option>
                 </select>
               ) : (
                 <span
@@ -584,7 +648,10 @@ const ProfileStudent = ({
             </div>
           </div>
         </div>
-        <div className="p-4 bg-bg rounded-lg shadow-md flex flex-col gap-2">
+        <div
+          id="tour-ps-documents"
+          className="p-4 bg-bg rounded-lg shadow-md flex flex-col gap-2"
+        >
           <h2 className="text-2xl font-semibold pb-4">Documentos Auditoria</h2>
 
           <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-4 items-center">
@@ -781,7 +848,7 @@ const ProfileStudent = ({
             )}
           </div>
         </div>
-        <div className="p-4 bg-bg rounded-lg shadow-md">
+        <div id="tour-ps-history" className="p-4 bg-bg rounded-lg shadow-md">
           <h2 className="text-2xl font-semibold pb-4">Historial</h2>
           <p>Fecha de ingreso: {data.fecha_ingreso}</p>
           <p>Última actualización: {data.ultima_actualizacion}</p>

@@ -6,8 +6,16 @@ import SignatureModal from "./SignatureModal";
 
 // Simple side profile component placeholder
 export const SideProfile = () => {
-  const { userName, nameRole, logout, registerSignature, nameSchool, rol } =
-    useAuth();
+  const {
+    userName,
+    nameRole,
+    logout,
+    registerSignature,
+    nameSchool,
+    rol,
+    director,
+    gradoAcargo,
+  } = useAuth();
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [signatureOpen, setSignatureOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -56,7 +64,10 @@ export const SideProfile = () => {
           {profileOpen && (
             <div className="absolute right-0 top-full  z-50 min-w-54 rounded-b-xl shadow-lg bg-primary  p-3 flex flex-col gap-2">
               {/* Acciones */}
-              {[5, 7, 2, "5", "7", "2"].includes(rol) && (
+              {([5, 2, "5", "2"].includes(rol) ||
+                (["7", 7].includes(rol) &&
+                  director != null &&
+                  gradoAcargo != null)) && (
                 <button
                   className="flex items-center gap-2 w-full text-left px-2 py-1.5 rounded-lg hover:bg-secondary transition-colors text-sm font-medium text-surface cursor-pointer"
                   onClick={() => {

@@ -1,11 +1,58 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import SimpleButton from "../atoms/SimpleButton";
+import tourProfileAssignature from "../../tour/tourProfileAssignature";
 
 const ProfileAssignature = ({ data, onSave, initialEditing = false }) => {
+  console.log("ProfileAssignature - data:", data);
   const safeData = data || {};
   const [isEditing, setIsEditing] = useState(Boolean(initialEditing));
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState({});
+  const [isTourMode, setIsTourMode] = useState(false);
+
+  const startTour = useCallback(() => {
+    setIsTourMode(true);
+    tourProfileAssignature();
+    const checkVisible = () =>
+      !!document.querySelector(
+        ".driver-popover, .driver-overlay, .driver-container, .driver",
+      );
+    const observer = new MutationObserver(() => {
+      if (!checkVisible()) {
+        setIsTourMode(false);
+        observer.disconnect();
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    const timer = setTimeout(
+      () => {
+        setIsTourMode(false);
+        observer.disconnect();
+      },
+      3 * 60 * 1000,
+    );
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, []);
+
+  const parseGrades = (d) => {
+    const nombres = (d.grados || "")
+      .split(",")
+      .map((g) => g.trim())
+      .filter(Boolean);
+    const ids = (d.ids_grados || "")
+      .split(",")
+      .map((id) => id.trim())
+      .filter(Boolean);
+    return nombres.map((nombre, i) => ({ id: ids[i] || "", nombre }));
+  };
+
+  const [grades, setGrades] = useState(() => parseGrades(safeData));
+  const [selectedGradeIds, setSelectedGradeIds] = useState(() =>
+    parseGrades(safeData).map((g) => g.id),
+  );
 
   const [form, setForm] = useState({
     name_asignature:
@@ -28,6 +75,9 @@ const ProfileAssignature = ({ data, onSave, initialEditing = false }) => {
       description: d.descripcion || d.description || "",
       estado: d.estado || "",
     });
+    const parsed = parseGrades(d);
+    setGrades(parsed);
+    setSelectedGradeIds(parsed.map((g) => g.id));
     // limpiar errores cuando cambian los datos
     setErrors({});
   }, [data]);
@@ -78,12 +128,17 @@ const ProfileAssignature = ({ data, onSave, initialEditing = false }) => {
       if (typeof onSave === "function") {
         setIsSaving(true);
         try {
+          const asignaturaId = safeData.id_asignatura || safeData.id;
           const payload = {
-            // payload con claves esperadas (campos en español)
             nombre_asignatura: String(form.name_asignature || "").trim(),
             codigo_asignatura: String(form.code_asignature || "").trim(),
             descripcion: String(form.description || "").trim(),
             estado: form.estado || "",
+            grados_asignatura: grades.map((g) => ({
+              fk_grade: Number(g.id),
+              fk_asignature: Number(asignaturaId),
+              estado: selectedGradeIds.includes(g.id) ? "Activo" : "Inactivo",
+            })),
           };
 
           // Llamar callback con payload (ManageAsignature espera solo payload)
@@ -119,7 +174,17 @@ const ProfileAssignature = ({ data, onSave, initialEditing = false }) => {
 
   return (
     <div className="w-full flex flex-col gap-4">
-      <div className="flex justify-end">
+      <div id="tour-pa-edit" className="flex justify-end gap-2">
+        <SimpleButton
+          type="button"
+          onClick={startTour}
+          icon="HelpCircle"
+          msjtooltip="Iniciar tutorial"
+          noRounded={false}
+          bg="bg-info"
+          text="text-surface"
+          className="w-auto px-3 py-1.5"
+        />
         <div className="w-40">
           <SimpleButton
             onClick={handleToggleEdit}
@@ -133,7 +198,7 @@ const ProfileAssignature = ({ data, onSave, initialEditing = false }) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
+        <div id="tour-pa-name">
           <label className="font-semibold">Nombre Asignatura</label>
           <input
             ref={nombreRef}
@@ -150,7 +215,7 @@ const ProfileAssignature = ({ data, onSave, initialEditing = false }) => {
             </div>
           )}
         </div>
-        <div>
+        <div id="tour-pa-status">
           <label className="font-semibold">Estado</label>
           <select
             name="estado"
@@ -168,7 +233,7 @@ const ProfileAssignature = ({ data, onSave, initialEditing = false }) => {
           )}
         </div>
 
-        <div>
+        <div id="tour-pa-code">
           <label className="font-semibold">Código</label>
           <input
             name="code_asignature"
@@ -184,7 +249,7 @@ const ProfileAssignature = ({ data, onSave, initialEditing = false }) => {
           )}
         </div>
 
-        <div className="md:col-span-3">
+        <div id="tour-pa-description" className="md:col-span-3">
           <label className="font-semibold">Descripción</label>
           <textarea
             name="description"
@@ -201,6 +266,39 @@ const ProfileAssignature = ({ data, onSave, initialEditing = false }) => {
             </div>
           )}
         </div>
+
+        {grades.length > 0 && (
+          <div id="tour-pa-grades" className="md:col-span-3">
+            <label className="font-semibold">Grados</label>
+            <div className="flex flex-wrap gap-3 mt-2">
+              {grades.map((g) => (
+                <label
+                  key={g.id}
+                  className={`flex items-center gap-2 cursor-pointer select-none px-3 py-1 rounded border ${
+                    selectedGradeIds.includes(g.id)
+                      ? "border-accent bg-accent/10"
+                      : "border-gray-300 bg-surface opacity-60"
+                  } ${!isEditing || isSaving ? "pointer-events-none" : ""}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedGradeIds.includes(g.id)}
+                    disabled={!isEditing || isSaving}
+                    onChange={() => {
+                      setSelectedGradeIds((prev) =>
+                        prev.includes(g.id)
+                          ? prev.filter((id) => id !== g.id)
+                          : [...prev, g.id],
+                      );
+                    }}
+                    className="accent-accent w-4 h-4"
+                  />
+                  <span className="text-sm font-medium">{g.nombre}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

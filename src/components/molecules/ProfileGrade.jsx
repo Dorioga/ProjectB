@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import SimpleButton from "../atoms/SimpleButton";
 import JourneySelect from "../atoms/JourneySelect";
+import tourProfileGrade from "../../tour/tourProfileGrade";
 
 const ProfileGrade = ({ data, onSave, initialEditing = false }) => {
   const safeData = data || {};
@@ -8,6 +9,34 @@ const ProfileGrade = ({ data, onSave, initialEditing = false }) => {
   const [isEditing, setIsEditing] = useState(Boolean(initialEditing));
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState({});
+  const [isTourMode, setIsTourMode] = useState(false);
+
+  const startTour = useCallback(() => {
+    setIsTourMode(true);
+    tourProfileGrade();
+    const checkVisible = () =>
+      !!document.querySelector(
+        ".driver-popover, .driver-overlay, .driver-container, .driver",
+      );
+    const observer = new MutationObserver(() => {
+      if (!checkVisible()) {
+        setIsTourMode(false);
+        observer.disconnect();
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    const timer = setTimeout(
+      () => {
+        setIsTourMode(false);
+        observer.disconnect();
+      },
+      3 * 60 * 1000,
+    );
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, []);
 
   const [form, setForm] = useState(() => {
     const wday =
@@ -109,7 +138,17 @@ const ProfileGrade = ({ data, onSave, initialEditing = false }) => {
 
   return (
     <div className="w-full flex flex-col gap-4">
-      <div className="flex justify-end">
+      <div id="tour-pg-edit" className="flex justify-end gap-2">
+        <SimpleButton
+          type="button"
+          onClick={startTour}
+          icon="HelpCircle"
+          msjtooltip="Iniciar tutorial"
+          noRounded={false}
+          bg="bg-info"
+          text="text-surface"
+          className="w-auto px-3 py-1.5"
+        />
         <div className="w-40">
           <SimpleButton
             onClick={handleToggleEdit}
@@ -148,7 +187,7 @@ const ProfileGrade = ({ data, onSave, initialEditing = false }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Nombre del grado */}
-        <div>
+        <div id="tour-pg-name">
           <label className="">Nombre del Grado</label>
           <input
             name="nombre_grado"
@@ -168,7 +207,7 @@ const ProfileGrade = ({ data, onSave, initialEditing = false }) => {
         </div>
 
         {/* Grupo */}
-        <div>
+        <div id="tour-pg-group">
           <label className="">Grupo</label>
           <input
             name="grupo"
@@ -186,7 +225,7 @@ const ProfileGrade = ({ data, onSave, initialEditing = false }) => {
         </div>
 
         {/* Jornada */}
-        <div>
+        <div id="tour-pg-journey">
           <JourneySelect
             name="idWorkDay"
             value={form.idWorkDay}
@@ -205,7 +244,7 @@ const ProfileGrade = ({ data, onSave, initialEditing = false }) => {
         </div>
 
         {/* Estado */}
-        <div>
+        <div id="tour-pg-status">
           <label className="">Estado</label>
           <select
             name="estado"
