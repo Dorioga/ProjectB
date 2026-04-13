@@ -19,10 +19,10 @@ const ProfileDBA = ({ purposeId, purposeName, onClose }) => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Modo edición global
-  const [isEditing, setIsEditing] = useState(false);
-  // Copia de trabajo: { [id_dba]: { nombre_dba, estado_dba } }
-  const [editValues, setEditValues] = useState({});
+  // ID de la fila en edición (null = ninguna)
+  const [editingId, setEditingId] = useState(null);
+  // Copia de trabajo para la fila activa: { nombre_dba, estado_dba }
+  const [editDraft, setEditDraft] = useState({});
 
   // ── Cargar DBA al montar ──────────────────────────────────────────────────
   const loadDbas = useCallback(async () => {
@@ -44,44 +44,41 @@ const ProfileDBA = ({ purposeId, purposeName, onClose }) => {
     loadDbas();
   }, [loadDbas]);
 
-  // ── Activar/cancelar edición ──────────────────────────────────────────────
-  const handleToggleEdit = () => {
-    if (!isEditing) {
-      // Inicializar copia de trabajo con valores actuales
-      const initial = {};
-      items.forEach((item) => {
-        initial[item.id_dba] = {
-          nombre_dba: item.nombre_dba ?? "",
-          estado_dba: item.estado_dba ?? "Activo",
-        };
-      });
-      setEditValues(initial);
-    }
-    setIsEditing((prev) => !prev);
+  // ── Activar edición de una fila ──────────────────────────────────────────
+  const handleStartEdit = (item) => {
+    setEditingId(item.id_dba);
+    setEditDraft({
+      nombre_dba: item.nombre_dba ?? "",
+      estado_dba: item.estado_dba ?? "Activo",
+    });
   };
 
-  // ── Cambio en un campo de edición ─────────────────────────────────────────
-  const handleFieldChange = (id, field, value) => {
-    setEditValues((prev) => ({
-      ...prev,
-      [id]: { ...prev[id], [field]: value },
-    }));
+  // ── Cancelar edición ──────────────────────────────────────────────────────
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditDraft({});
   };
 
-  // ── Guardar cambios (actualiza estado local; conectar a PATCH cuando esté disponible) ──
+  // ── Cambio en un campo de la fila activa ──────────────────────────────────
+  const handleFieldChange = (field, value) => {
+    setEditDraft((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // ── Guardar cambios de la fila activa ─────────────────────────────────────
   const handleSave = () => {
     setItems((prev) =>
-      prev.map((item) => {
-        const draft = editValues[item.id_dba];
-        if (!draft) return item;
-        return {
-          ...item,
-          nombre_dba: draft.nombre_dba,
-          estado_dba: draft.estado_dba,
-        };
-      }),
+      prev.map((item) =>
+        item.id_dba === editingId
+          ? {
+              ...item,
+              nombre_dba: editDraft.nombre_dba,
+              estado_dba: editDraft.estado_dba,
+            }
+          : item,
+      ),
     );
-    setIsEditing(false);
+    setEditingId(null);
+    setEditDraft({});
     notify.success("Cambios aplicados localmente.");
   };
 
@@ -109,38 +106,6 @@ const ProfileDBA = ({ purposeId, purposeName, onClose }) => {
             {purposeName ?? `ID ${purposeId}`}
           </p>
         </div>
-        <div className="flex gap-2">
-          {isEditing ? (
-            <>
-              <SimpleButton
-                type="button"
-                msj="Guardar"
-                icon="Save"
-                bg="bg-secondary"
-                text="text-surface"
-                onClick={handleSave}
-              />
-              <SimpleButton
-                type="button"
-                msj="Cancelar"
-                icon="X"
-                bg="bg-orange-500"
-                text="text-white"
-                onClick={handleToggleEdit}
-              />
-            </>
-          ) : (
-            <SimpleButton
-              type="button"
-              msj="Editar"
-              icon="Pencil"
-              bg="bg-primary"
-              text="text-surface"
-              onClick={handleToggleEdit}
-              disabled={loading || items.length === 0}
-            />
-          )}
-        </div>
       </div>
 
       {/* ── Lista de DBA ─────────────────────────────────────────────────── */}
@@ -159,13 +124,14 @@ const ProfileDBA = ({ purposeId, purposeName, onClose }) => {
                 <th className="px-3 py-2 text-left font-medium">Nombre DBA</th>
                 <th className="px-3 py-2 text-left font-medium">Estado</th>
                 <th className="px-3 py-2 text-left font-medium">Fecha</th>
+                <th className="px-3 py-2 text-left font-medium">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {items.map((item, idx) => {
-                const draft = editValues[item.id_dba];
+                const isRowEditing = editingId === item.id_dba;
                 const isInactivo =
-                  (isEditing ? draft?.estado_dba : item.estado_dba) ===
+                  (isRowEditing ? editDraft.estado_dba : item.estado_dba) ===
                   "Inactivo";
                 return (
                   <tr
@@ -183,16 +149,12 @@ const ProfileDBA = ({ purposeId, purposeName, onClose }) => {
 
                     {/* Nombre DBA */}
                     <td className="px-3 py-2 text-text">
-                      {isEditing ? (
+                      {isRowEditing ? (
                         <input
                           type="text"
-                          value={draft?.nombre_dba ?? ""}
+                          value={editDraft.nombre_dba}
                           onChange={(e) =>
-                            handleFieldChange(
-                              item.id_dba,
-                              "nombre_dba",
-                              e.target.value,
-                            )
+                            handleFieldChange("nombre_dba", e.target.value)
                           }
                           className="w-full min-w-[200px] border border-border rounded px-2 py-1 bg-surface text-text text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                         />
@@ -203,15 +165,11 @@ const ProfileDBA = ({ purposeId, purposeName, onClose }) => {
 
                     {/* Estado */}
                     <td className="px-3 py-2">
-                      {isEditing ? (
+                      {isRowEditing ? (
                         <select
-                          value={draft?.estado_dba ?? "Activo"}
+                          value={editDraft.estado_dba}
                           onChange={(e) =>
-                            handleFieldChange(
-                              item.id_dba,
-                              "estado_dba",
-                              e.target.value,
-                            )
+                            handleFieldChange("estado_dba", e.target.value)
                           }
                           className="border border-border rounded px-2 py-1 bg-surface text-text text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                         >
@@ -234,6 +192,40 @@ const ProfileDBA = ({ purposeId, purposeName, onClose }) => {
                     {/* Fecha */}
                     <td className="px-3 py-2 text-text/70 whitespace-nowrap">
                       {formatDate(item.fecha_dba)}
+                    </td>
+
+                    {/* Acciones */}
+                    <td className="px-3 py-2 whitespace-nowrap">
+                      {isRowEditing ? (
+                        <div className="flex gap-1">
+                          <SimpleButton
+                            type="button"
+                            msj="Guardar"
+                            icon="Save"
+                            bg="bg-secondary"
+                            text="text-surface"
+                            onClick={handleSave}
+                          />
+                          <SimpleButton
+                            type="button"
+                            msj="Cancelar"
+                            icon="X"
+                            bg="bg-orange-500"
+                            text="text-white"
+                            onClick={handleCancelEdit}
+                          />
+                        </div>
+                      ) : (
+                        <SimpleButton
+                          type="button"
+                          msj="Editar"
+                          icon="Pencil"
+                          bg="bg-primary"
+                          text="text-surface"
+                          onClick={() => handleStartEdit(item)}
+                          disabled={editingId !== null}
+                        />
+                      )}
                     </td>
                   </tr>
                 );
