@@ -343,3 +343,30 @@ export async function getStudentTransitionNotes(payload) {
 
   throw new Error("Respuesta inesperada de /student/note/transition.");
 }
+
+/**
+ * Obtiene los DBA de un propósito para una institución.
+ *
+ * Endpoint: POST /purpose/dba/institution
+ * Payload: { fk_bank_purpose: number }
+ */
+export async function getDbasByPurposeInstitution(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+  const res = await ApiClient.instance.post(
+    "/purpose/dba/institution",
+    payload,
+  );
+
+  const data = res;
+  console.log("DataService - getDbasByPurposeInstitution:", data);
+
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === "object" && Array.isArray(data.data))
+    return data.data;
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de getDbasByPurposeInstitution.");
+}

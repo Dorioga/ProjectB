@@ -245,6 +245,25 @@ export function DataProvider({ children }) {
     }
   }, []);
 
+  const [loadingGetDbasByPurpose, setLoadingGetDbasByPurpose] = useState(false);
+  const [errorGetDbasByPurpose, setErrorGetDbasByPurpose] = useState(null);
+
+  const getDbasByPurposeInstitution = useCallback(async (fkBankPurpose) => {
+    setLoadingGetDbasByPurpose(true);
+    setErrorGetDbasByPurpose(null);
+    try {
+      const res = await dataService.getDbasByPurposeInstitution({
+        fk_bank_purpose: Number(fkBankPurpose),
+      });
+      return res;
+    } catch (err) {
+      setErrorGetDbasByPurpose(err);
+      throw err;
+    } finally {
+      setLoadingGetDbasByPurpose(false);
+    }
+  }, []);
+
   const getTransitionNotes = useCallback(
     async ({ id_purpose, fk_grado, fk_periodo, fk_asignatura }) => {
       const res = await dataService.getTransitionNotes({
@@ -327,6 +346,10 @@ export function DataProvider({ children }) {
       loadingGetDba,
       errorGetDba,
 
+      getDbasByPurposeInstitution,
+      loadingGetDbasByPurpose,
+      errorGetDbasByPurpose,
+
       getTransitionNotes,
       getStudentTransitionNotes,
     }),
@@ -376,6 +399,10 @@ export function DataProvider({ children }) {
       getDbaByPurpose,
       loadingGetDba,
       errorGetDba,
+
+      getDbasByPurposeInstitution,
+      loadingGetDbasByPurpose,
+      errorGetDbasByPurpose,
 
       getTransitionNotes,
       getStudentTransitionNotes,
