@@ -1,6 +1,6 @@
 import { jsPDF } from "jspdf";
 import React, { useMemo, useState } from "react";
-import { getBoletin } from "../../services/studentService";
+import { getBoletin, getBoletinDocente } from "../../services/studentService";
 import useSchool from "../../lib/hooks/useSchool";
 import PeriodSelector from "../atoms/PeriodSelector";
 import SimpleButton from "../atoms/SimpleButton";
@@ -26,6 +26,7 @@ const colorEstado = (estado) => {
     (lower.includes("promovido") && !lower.includes("no"))
   )
     return "#15803d";
+  if (lower.includes("proceso")) return "#2563eb";
   return "#dc2626";
 };
 
@@ -148,6 +149,7 @@ const useBoletinProcessed = (data) => {
           estado: r.estado_periodo || null,
           logros: [],
           logro_nota_estudiante: r.logro_nota_estudiante || "",
+          notas: [],
         });
       }
       const per = asig.periodos.get(pid);
@@ -155,6 +157,15 @@ const useBoletinProcessed = (data) => {
       if (logro && !per.logros.includes(logro)) per.logros.push(logro);
       if (r.logro_nota_estudiante && !per.logro_nota_estudiante) {
         per.logro_nota_estudiante = r.logro_nota_estudiante;
+      }
+      if (r.valor_nota !== undefined && r.valor_nota !== null) {
+        const notaNombre = (r.nombre_nota_porcentaje ?? "") + "%";
+        const exists = per.notas.some(
+          (n) =>
+            n.nombre === notaNombre && String(n.valor) === String(r.valor_nota),
+        );
+        if (!exists)
+          per.notas.push({ nombre: notaNombre, valor: r.valor_nota });
       }
     }
     return Array.from(m.values());
@@ -184,6 +195,275 @@ const useBoletinProcessed = (data) => {
   }, [asignaturas]);
 
   return { periodos, asignaturas, promedioGeneral, resumenEstado };
+};
+
+/* ── Hook: procesamiento de boletín grado transición ── */
+const useBoletinTransicionProcessed = (data) => {
+  const asignaturas = useMemo(() => {
+    const m = new Map();
+    for (const r of data) {
+      const asigKey = String(r.id_asignatura);
+      if (!m.has(asigKey)) {
+        m.set(asigKey, {
+          id_asignatura: r.id_asignatura,
+          nombre_asignatura: r.nombre_asignatura ?? "-",
+          nombre_docente: r.nombre_docente ?? "-",
+          propositos: new Map(),
+        });
+      }
+      const asig = m.get(asigKey);
+      const propKey = String(r.id_proposito);
+      if (!asig.propositos.has(propKey)) {
+        asig.propositos.set(propKey, {
+          id_proposito: r.id_proposito,
+          nombre_proposito: r.nombre_proposito ?? "-",
+          dbas: [],
+        });
+      }
+      const prop = asig.propositos.get(propKey);
+      const alreadyExists = prop.dbas.some(
+        (d) => String(d.id_dba) === String(r.id_dba),
+      );
+      if (!alreadyExists) {
+        prop.dbas.push({
+          id_dba: r.id_dba,
+          nombre_dba: r.nombre_dba ?? "-",
+          descripcion_nota: r.descripcion_nota ?? "-",
+          comentario: r.comentario ?? "",
+          estado: r.estado ?? "",
+        });
+      }
+    }
+    return Array.from(m.values()).map((a) => ({
+      ...a,
+      propositos: Array.from(a.propositos.values()),
+    }));
+  }, [data]);
+
+  return { asignaturas };
+};
+
+/* ── Vista HTML: boletín grado transición ── */
+const BoletinTransicionView = ({ boletinData, info }) => {
+  const { asignaturas } = useBoletinTransicionProcessed(boletinData ?? []);
+
+  const colorNota = (nota) => {
+    if (!nota) return "#374151";
+    const n = nota.toLowerCase().trim();
+    if (n === "a") return "#15803d";
+    if (n === "b") return "#2563eb";
+    if (n === "c") return "#d97706";
+    return "#dc2626";
+  };
+
+  return (
+    <div
+      style={{
+        background: "#ffffff",
+        color: "#111827",
+        padding: "24px",
+        fontFamily: "Arial, Helvetica, sans-serif",
+        fontSize: "11px",
+      }}
+    >
+      {/* Encabezado */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "14px",
+          borderBottom: "2px solid #131a27",
+          paddingBottom: "12px",
+          marginBottom: "12px",
+        }}
+      >
+        {info.link_logo && (
+          <img
+            src={info.link_logo}
+            alt="Logo institución"
+            crossOrigin="anonymous"
+            style={{ width: 64, height: 64, objectFit: "contain" }}
+          />
+        )}
+        <div style={{ flex: 1, textAlign: "center" }}>
+          {info.nombre_institucion && (
+            <p
+              style={{
+                fontWeight: "bold",
+                fontSize: "13px",
+                textTransform: "uppercase",
+                margin: 0,
+              }}
+            >
+              {info.nombre_institucion}
+            </p>
+          )}
+          {info.nit && (
+            <p style={{ margin: "2px 0", color: "#6b7280", fontSize: "10px" }}>
+              NIT: {info.nit}
+            </p>
+          )}
+          {info.nombre_sede && (
+            <p style={{ margin: "2px 0", fontWeight: "600", fontSize: "11px" }}>
+              {info.nombre_sede}
+              {info.sede_tip ? ` — ${info.sede_tip}` : ""}
+            </p>
+          )}
+          {info.grado && (
+            <p style={{ margin: "2px 0", fontSize: "11px" }}>
+              <strong>Grado:</strong> {info.grado}
+            </p>
+          )}
+        </div>
+        <div style={{ textAlign: "right", fontSize: "10px", color: "#374151" }}>
+          <p style={{ margin: "2px 0" }}>
+            <strong>Fecha:</strong> {formatDate(info.fecha)}
+          </p>
+        </div>
+      </div>
+
+      {/* Título */}
+      <h2
+        style={{
+          textAlign: "center",
+          fontWeight: "bold",
+          textTransform: "uppercase",
+          fontSize: "13px",
+          marginBottom: "14px",
+          letterSpacing: "1px",
+        }}
+      >
+        Boletín de Notas — Grado Transición
+      </h2>
+
+      {/* Tabla por asignatura */}
+      {asignaturas.map((asig, asigIdx) => (
+        <div
+          key={asig.id_asignatura}
+          style={{ marginBottom: "20px", overflowX: "auto" }}
+        >
+          {/* Cabecera de asignatura */}
+          <div
+            style={{
+              backgroundColor: "#131a27",
+              color: "#ffffff",
+              padding: "6px 10px",
+              fontWeight: "bold",
+              fontSize: "12px",
+              display: "flex",
+              justifyContent: "space-between",
+            }}
+          >
+            <span>{asig.nombre_asignatura}</span>
+            <span style={{ fontSize: "10px", fontWeight: "normal" }}>
+              Docente: {asig.nombre_docente}
+            </span>
+          </div>
+
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ backgroundColor: "#1e2d42", color: "#e5e7eb" }}>
+                <th
+                  style={{
+                    ...S.thLeft,
+                    width: "38%",
+                    fontSize: "8px",
+                    color: "#94a3b8",
+                  }}
+                >
+                  Propósito / DBA
+                </th>
+                <th style={{ ...S.th, width: "15%", fontSize: "8px" }}>Nota</th>
+                <th style={{ ...S.thLeft, width: "47%", fontSize: "8px" }}>
+                  Comentario
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {asig.propositos.map((prop, propIdx) => (
+                <React.Fragment key={prop.id_proposito}>
+                  {/* Fila de propósito */}
+                  <tr style={{ backgroundColor: "#f0f4ff" }}>
+                    <td
+                      colSpan={3}
+                      style={{
+                        ...S.tdLeft,
+                        fontWeight: "bold",
+                        fontSize: "9px",
+                        color: "#1e3a5f",
+                        padding: "5px 8px",
+                        borderBottom: "1px solid #c7d2fe",
+                      }}
+                    >
+                      {prop.nombre_proposito}
+                    </td>
+                  </tr>
+                  {/* Filas de DBA */}
+                  {prop.dbas.map((dba, dbaIdx) => {
+                    const rowBg =
+                      (propIdx + dbaIdx) % 2 === 0 ? "#f9fafb" : "#ffffff";
+                    return (
+                      <tr key={dba.id_dba} style={{ backgroundColor: rowBg }}>
+                        <td
+                          style={{
+                            ...S.tdLeft,
+                            paddingLeft: "16px",
+                            fontSize: "9px",
+                          }}
+                        >
+                          {dba.nombre_dba}
+                        </td>
+                        <td
+                          style={{
+                            ...S.td,
+                            fontWeight: "bold",
+                            fontSize: "12px",
+                            color: colorNota(dba.descripcion_nota),
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          {dba.descripcion_nota?.toUpperCase() ?? "-"}
+                        </td>
+                        <td
+                          style={{
+                            ...S.tdLeft,
+                            fontSize: "9px",
+                            color: "#6b7280",
+                          }}
+                        >
+                          {dba.comentario || "-"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ))}
+
+      {/* Convención de notas */}
+      <div
+        style={{
+          marginTop: "16px",
+          paddingTop: "10px",
+          borderTop: "2px solid #131a27",
+          fontSize: "10px",
+          color: "#374151",
+        }}
+      >
+        <strong>Convención de notas:</strong>&nbsp;
+        <span style={{ color: "#15803d", fontWeight: "bold" }}>A</span> Superior
+        &nbsp;|&nbsp;
+        <span style={{ color: "#2563eb", fontWeight: "bold" }}>B</span> Alto
+        &nbsp;|&nbsp;
+        <span style={{ color: "#d97706", fontWeight: "bold" }}>C</span> Básico
+        &nbsp;|&nbsp;
+        <span style={{ color: "#dc2626", fontWeight: "bold" }}>D / F</span> Bajo
+      </div>
+    </div>
+  );
 };
 
 /* ══════════════════════════════════════════════════════════════
@@ -404,7 +684,7 @@ async function generateBoletinPDF(
       align: "center",
     });
   }
-  drawCell("Definitiva", totalCols - 2, y, rowH, {
+  drawCell("DF", totalCols - 2, y, rowH, {
     bold: true,
     color: headerColor,
     bg: headerBg,
@@ -416,14 +696,14 @@ async function generateBoletinPDF(
   });
   y += rowH;
 
-  /* Sub-cabecera (Nota, Recup, Escala, Estado) */
+  /* Sub-cabecera (NFP, Recup, Escala, Estado) */
   const subBg = [30, 45, 66];
   const subColor = [229, 231, 235];
   drawCell("", 0, y, subHeaderH, { bg: subBg });
   drawCell("", 1, y, subHeaderH, { bg: subBg });
   for (let pi = 0; pi < periodos.length; pi++) {
     const base = 2 + pi * 4;
-    drawCell("Nota", base, y, subHeaderH, {
+    drawCell("NFP", base, y, subHeaderH, {
       bold: true,
       fontSize: 5,
       color: subColor,
@@ -463,6 +743,8 @@ async function generateBoletinPDF(
       const per = asig.periodos.get(p.id);
       if (!per) continue;
       const items = [];
+      if (per.notas?.length > 0)
+        items.push(per.notas.map((n) => `${n.nombre}: ${n.valor}`).join(" | "));
       if (per.logros.length > 0)
         items.push(`Logros: ${per.logros.join(" | ")}`);
       if (per.logro_nota_estudiante)
@@ -509,11 +791,15 @@ async function generateBoletinPDF(
       fontSize: 7,
       bg: rowBg,
     });
+    const efDisplay = meta.periodId !== "4" ? "En proceso" : asig.estado_final;
+    const efHex = colorEstado(efDisplay);
     const efColor =
-      colorEstado(asig.estado_final) === "#15803d"
+      efHex === "#15803d"
         ? [21, 128, 61]
-        : [220, 38, 38];
-    drawCell(asig.estado_final, totalCols - 1, y, rowH, {
+        : efHex === "#2563eb"
+          ? [37, 99, 235]
+          : [220, 38, 38];
+    drawCell(efDisplay, totalCols - 1, y, rowH, {
       bold: true,
       color: efColor,
       bg: rowBg,
@@ -557,9 +843,12 @@ async function generateBoletinPDF(
     });
     y += 5;
   }
-  pdf.text(`Estado general: ${resumenEstado}`, pageW - margin, y, {
-    align: "right",
-  });
+  pdf.text(
+    `Estado general: ${meta.periodId !== "4" ? "En proceso" : resumenEstado}`,
+    pageW - margin,
+    y,
+    { align: "right" },
+  );
   y += 8;
 
   /* ── Convenciones ── */
@@ -611,7 +900,7 @@ async function generateBoletinPDF(
 /* ══════════════════════════════════════════════════════════════
    Componente principal: BoletinSelector
    ══════════════════════════════════════════════════════════════ */
-const BoletinSelector = ({ studentId }) => {
+const BoletinSelector = ({ studentId, isTransicion = false }) => {
   const { getInstitutionScales } = useSchool();
   const { rol } = useAuth();
   const currentYear = new Date().getFullYear();
@@ -628,7 +917,7 @@ const BoletinSelector = ({ studentId }) => {
   const [error, setError] = useState(null);
 
   const { periodos, asignaturas, promedioGeneral, resumenEstado } =
-    useBoletinProcessed(boletinData ?? []);
+    useBoletinProcessed(!isTransicion ? (boletinData ?? []) : []);
 
   const info = boletinData?.[0] ?? {};
   const totalCols = 2 + periodos.length * 4 + 2;
@@ -646,7 +935,8 @@ const BoletinSelector = ({ studentId }) => {
     setBoletinData(null);
     setLoading(true);
     try {
-      const result = await getBoletin({
+      const fetchFn = isTransicion ? getBoletinDocente : getBoletin;
+      const result = await fetchFn({
         studentId,
         periodId: Number(periodId),
         year: String(year),
@@ -766,416 +1056,444 @@ const BoletinSelector = ({ studentId }) => {
 
           {/* ── Vista HTML del boletín ── */}
           <div className="border rounded overflow-hidden shadow-sm">
-            <div
-              style={{
-                background: "#ffffff",
-                color: "#111827",
-                padding: "24px",
-                fontFamily: "Arial, Helvetica, sans-serif",
-                fontSize: "11px",
-              }}
-            >
-              {/* Encabezado */}
+            {isTransicion ? (
+              <BoletinTransicionView boletinData={boletinData} info={info} />
+            ) : (
               <div
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "14px",
-                  borderBottom: "2px solid #131a27",
-                  paddingBottom: "12px",
-                  marginBottom: "12px",
-                }}
-              >
-                {info.link_logo && (
-                  <img
-                    src={info.link_logo}
-                    alt="Logo institución"
-                    crossOrigin="anonymous"
-                    style={{ width: 64, height: 64, objectFit: "contain" }}
-                  />
-                )}
-                <div style={{ flex: 1, textAlign: "center" }}>
-                  <p
-                    style={{
-                      fontWeight: "bold",
-                      fontSize: "13px",
-                      textTransform: "uppercase",
-                      margin: 0,
-                    }}
-                  >
-                    {info.nombre_institucion ?? "-"}
-                  </p>
-                  <p
-                    style={{
-                      margin: "2px 0",
-                      color: "#6b7280",
-                      fontSize: "10px",
-                    }}
-                  >
-                    NIT: {info.nit ?? "-"}
-                  </p>
-                  <p
-                    style={{
-                      margin: "2px 0",
-                      fontWeight: "600",
-                      fontSize: "11px",
-                    }}
-                  >
-                    {info.nombre_sede ?? "-"} — {info.sede_tip ?? "-"}
-                  </p>
-                  {info.grado && (
-                    <p style={{ margin: "2px 0", fontSize: "11px" }}>
-                      <strong>Grado:</strong> {info.grado}
-                    </p>
-                  )}
-                </div>
-                <div
-                  style={{
-                    textAlign: "right",
-                    fontSize: "10px",
-                    color: "#374151",
-                  }}
-                >
-                  <p style={{ margin: "2px 0" }}>
-                    <strong>Fecha:</strong> {formatDate(info.fecha)}
-                  </p>
-                </div>
-              </div>
-
-              {/* Título */}
-              <h2
-                style={{
-                  textAlign: "center",
-                  fontWeight: "bold",
-                  textTransform: "uppercase",
-                  fontSize: "13px",
-                  marginBottom: "14px",
-                  letterSpacing: "1px",
-                }}
-              >
-                Boletín de Notas
-              </h2>
-
-              {/* Tabla */}
-              <div style={{ width: "100%", overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                  <thead>
-                    <tr
-                      style={{ backgroundColor: "#131a27", color: "#ffffff" }}
-                    >
-                      <th style={{ ...S.thLeft, verticalAlign: "middle" }}>
-                        Asignatura
-                      </th>
-                      <th style={{ ...S.thLeft, verticalAlign: "middle" }}>
-                        Docente
-                      </th>
-                      {periodos.map((p) => (
-                        <th
-                          key={p.id}
-                          colSpan={4}
-                          style={{ ...S.th, borderLeft: "2px solid #ffffff" }}
-                        >
-                          {p.nombre}
-                        </th>
-                      ))}
-                      <th style={{ ...S.th, verticalAlign: "middle" }}>
-                        Definitiva
-                      </th>
-                      <th style={{ ...S.th, verticalAlign: "middle" }}>
-                        Estado Final
-                      </th>
-                    </tr>
-                    <tr
-                      style={{ backgroundColor: "#1e2d42", color: "#e5e7eb" }}
-                    >
-                      <th
-                        style={{
-                          ...S.thLeft,
-                          fontSize: "8px",
-                          color: "#94a3b8",
-                        }}
-                      >
-                        &nbsp;
-                      </th>
-                      <th
-                        style={{
-                          ...S.thLeft,
-                          fontSize: "8px",
-                          color: "#94a3b8",
-                        }}
-                      >
-                        &nbsp;
-                      </th>
-                      {periodos.map((p) => (
-                        <React.Fragment key={p.id}>
-                          <th
-                            style={{
-                              ...S.th,
-                              borderLeft: "2px solid #374151",
-                              fontSize: "8px",
-                            }}
-                          >
-                            Nota
-                          </th>
-                          <th style={{ ...S.th, fontSize: "8px" }}>Recup.</th>
-                          <th style={{ ...S.th, fontSize: "8px" }}>Escala</th>
-                          <th style={{ ...S.th, fontSize: "8px" }}>Estado</th>
-                        </React.Fragment>
-                      ))}
-                      <th
-                        style={{ ...S.th, fontSize: "8px", color: "#94a3b8" }}
-                      >
-                        &nbsp;
-                      </th>
-                      <th
-                        style={{ ...S.th, fontSize: "8px", color: "#94a3b8" }}
-                      >
-                        &nbsp;
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {asignaturas.map((asig, idx) => {
-                      const rowBg = idx % 2 === 0 ? "#f9fafb" : "#ffffff";
-                      const logroBg = idx % 2 === 0 ? "#eef2ff" : "#f5f5f0";
-                      const tieneLogros = periodos.some((p) => {
-                        const per = asig.periodos.get(p.id);
-                        return (
-                          per &&
-                          (per.logros.length > 0 || per.logro_nota_estudiante)
-                        );
-                      });
-                      return (
-                        <React.Fragment key={asig.nombre_asignatura}>
-                          <tr style={{ backgroundColor: rowBg }}>
-                            <td style={S.tdBold}>{asig.nombre_asignatura}</td>
-                            <td
-                              style={{
-                                ...S.tdLeft,
-                                fontSize: "9px",
-                                color: "#6b7280",
-                              }}
-                            >
-                              {asig.nombre_docente}
-                            </td>
-                            {periodos.map((p) => {
-                              const per = asig.periodos.get(p.id);
-                              return (
-                                <React.Fragment key={p.id}>
-                                  <td
-                                    style={{
-                                      ...S.td,
-                                      borderLeft: "2px solid #d1d5db",
-                                      fontWeight: "600",
-                                    }}
-                                  >
-                                    {per?.nota ?? "-"}
-                                  </td>
-                                  <td style={S.td}>
-                                    {per?.recuperacion ?? "-"}
-                                  </td>
-                                  <td style={S.td}>{per?.escala ?? "-"}</td>
-                                  <td
-                                    style={{
-                                      ...S.td,
-                                      color: per
-                                        ? colorEstado(per.estado)
-                                        : "#374151",
-                                      fontWeight: "600",
-                                      fontSize: "9px",
-                                    }}
-                                  >
-                                    {per?.estado ?? "-"}
-                                  </td>
-                                </React.Fragment>
-                              );
-                            })}
-                            <td
-                              style={{
-                                ...S.td,
-                                fontWeight: "bold",
-                                fontSize: "11px",
-                              }}
-                            >
-                              {asig.definitiva}
-                            </td>
-                            <td
-                              style={{
-                                ...S.td,
-                                fontWeight: "600",
-                                color: colorEstado(asig.estado_final),
-                                fontSize: "9px",
-                              }}
-                            >
-                              {asig.estado_final}
-                            </td>
-                          </tr>
-                          {tieneLogros && (
-                            <tr style={{ backgroundColor: logroBg }}>
-                              <td
-                                colSpan={totalCols}
-                                style={{
-                                  padding: "3px 10px 5px",
-                                  borderBottom: "1px solid #e5e7eb",
-                                  fontSize: "9px",
-                                  fontStyle: "italic",
-                                  color: "#374151",
-                                }}
-                              >
-                                {periodos.map((p) => {
-                                  const per = asig.periodos.get(p.id);
-                                  if (!per) return null;
-                                  const items = [];
-                                  if (per.logros.length > 0)
-                                    items.push(
-                                      `Logros: ${per.logros.join(" | ")}`,
-                                    );
-                                  if (per.logro_nota_estudiante)
-                                    items.push(
-                                      `Logro estudiante: ${per.logro_nota_estudiante}`,
-                                    );
-                                  if (!items.length) return null;
-                                  return (
-                                    <span
-                                      key={p.id}
-                                      style={{ marginRight: "14px" }}
-                                    >
-                                      <strong>{p.nombre}: </strong>
-                                      {items.join(" — ")}
-                                    </span>
-                                  );
-                                })}
-                              </td>
-                            </tr>
-                          )}
-                        </React.Fragment>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Resumen */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  gap: "24px",
-                  marginTop: "14px",
-                  paddingTop: "10px",
-                  borderTop: "2px solid #131a27",
-                  fontWeight: "bold",
+                  background: "#ffffff",
+                  color: "#111827",
+                  padding: "24px",
+                  fontFamily: "Arial, Helvetica, sans-serif",
                   fontSize: "11px",
                 }}
               >
-                {promedioGeneral !== null && (
-                  <span>
-                    Promedio general:&nbsp;
-                    <span style={{ color: colorEstado(resumenEstado) }}>
-                      {promedioGeneral}
-                    </span>
-                  </span>
-                )}
-                <span>
-                  Estado general:&nbsp;
-                  <span style={{ color: colorEstado(resumenEstado) }}>
-                    {resumenEstado}
-                  </span>
-                </span>
-              </div>
-
-              {/* Convenciones */}
-              {escalas.length > 0 && (
-                <div style={{ marginTop: "20px" }}>
-                  <p
+                {/* Encabezado */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "14px",
+                    borderBottom: "2px solid #131a27",
+                    paddingBottom: "12px",
+                    marginBottom: "12px",
+                  }}
+                >
+                  {info.link_logo && (
+                    <img
+                      src={info.link_logo}
+                      alt="Logo institución"
+                      crossOrigin="anonymous"
+                      style={{ width: 64, height: 64, objectFit: "contain" }}
+                    />
+                  )}
+                  <div style={{ flex: 1, textAlign: "center" }}>
+                    <p
+                      style={{
+                        fontWeight: "bold",
+                        fontSize: "13px",
+                        textTransform: "uppercase",
+                        margin: 0,
+                      }}
+                    >
+                      {info.nombre_institucion ?? "-"}
+                    </p>
+                    <p
+                      style={{
+                        margin: "2px 0",
+                        color: "#6b7280",
+                        fontSize: "10px",
+                      }}
+                    >
+                      NIT: {info.nit ?? "-"}
+                    </p>
+                    <p
+                      style={{
+                        margin: "2px 0",
+                        fontWeight: "600",
+                        fontSize: "11px",
+                      }}
+                    >
+                      {info.nombre_sede ?? "-"} — {info.sede_tip ?? "-"}
+                    </p>
+                    {info.grado && (
+                      <p style={{ margin: "2px 0", fontSize: "11px" }}>
+                        <strong>Grado:</strong> {info.grado}
+                      </p>
+                    )}
+                  </div>
+                  <div
                     style={{
-                      fontWeight: "bold",
-                      fontSize: "11px",
-                      textTransform: "uppercase",
-                      marginBottom: "6px",
-                      letterSpacing: "0.5px",
-                    }}
-                  >
-                    Convenciones
-                  </p>
-                  <table
-                    style={{
-                      width: "100%",
-                      borderCollapse: "collapse",
+                      textAlign: "right",
                       fontSize: "10px",
+                      color: "#374151",
                     }}
                   >
+                    <p style={{ margin: "2px 0" }}>
+                      <strong>Fecha:</strong> {formatDate(info.fecha)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Título */}
+                <h2
+                  style={{
+                    textAlign: "center",
+                    fontWeight: "bold",
+                    textTransform: "uppercase",
+                    fontSize: "13px",
+                    marginBottom: "14px",
+                    letterSpacing: "1px",
+                  }}
+                >
+                  Boletín de Notas
+                </h2>
+
+                {/* Tabla */}
+                <div style={{ width: "100%", overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
                     <thead>
-                      <tr>
+                      <tr
+                        style={{ backgroundColor: "#131a27", color: "#ffffff" }}
+                      >
+                        <th style={{ ...S.thLeft, verticalAlign: "middle" }}>
+                          Asignatura
+                        </th>
+                        <th style={{ ...S.thLeft, verticalAlign: "middle" }}>
+                          Docente
+                        </th>
+                        {periodos.map((p) => (
+                          <th
+                            key={p.id}
+                            colSpan={4}
+                            style={{ ...S.th, borderLeft: "2px solid #ffffff" }}
+                          >
+                            {p.nombre}
+                          </th>
+                        ))}
+                        <th
+                          style={{ ...S.th, verticalAlign: "middle" }}
+                          title="Nota acumulada"
+                        >
+                          DF
+                        </th>
+                        <th style={{ ...S.th, verticalAlign: "middle" }}>
+                          Estado Final
+                        </th>
+                      </tr>
+                      <tr
+                        style={{ backgroundColor: "#1e2d42", color: "#e5e7eb" }}
+                      >
                         <th
                           style={{
-                            border: "1px solid #d1d5db",
-                            padding: "6px 10px",
-                            textAlign: "left",
-                            fontWeight: "bold",
-                            backgroundColor: "#f9fafb",
-                            width: "20%",
+                            ...S.thLeft,
+                            fontSize: "8px",
+                            color: "#94a3b8",
                           }}
                         >
-                          ESCALA
+                          &nbsp;
                         </th>
                         <th
                           style={{
-                            border: "1px solid #d1d5db",
-                            padding: "6px 10px",
-                            textAlign: "left",
-                            fontWeight: "bold",
-                            backgroundColor: "#f9fafb",
+                            ...S.thLeft,
+                            fontSize: "8px",
+                            color: "#94a3b8",
                           }}
                         >
-                          RANGO
+                          &nbsp;
+                        </th>
+                        {periodos.map((p) => (
+                          <React.Fragment key={p.id}>
+                            <th
+                              style={{
+                                ...S.th,
+                                borderLeft: "2px solid #374151",
+                                fontSize: "8px",
+                              }}
+                              title="Nota final periodo"
+                            >
+                              NFP
+                            </th>
+                            <th style={{ ...S.th, fontSize: "8px" }}>Recup.</th>
+                            <th style={{ ...S.th, fontSize: "8px" }}>Escala</th>
+                            <th style={{ ...S.th, fontSize: "8px" }}>Estado</th>
+                          </React.Fragment>
+                        ))}
+                        <th
+                          style={{ ...S.th, fontSize: "8px", color: "#94a3b8" }}
+                        >
+                          &nbsp;
+                        </th>
+                        <th
+                          style={{ ...S.th, fontSize: "8px", color: "#94a3b8" }}
+                        >
+                          &nbsp;
                         </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {escalas.map((e, i) => {
-                        const key = String(e.escala || "")
-                          .toLowerCase()
-                          .normalize("NFD")
-                          .replace(/[\u0300-\u036f]/g, "");
-                        const descripcion = getEscalaDescripcion(key);
+                      {asignaturas.map((asig, idx) => {
+                        const rowBg = idx % 2 === 0 ? "#f9fafb" : "#ffffff";
+                        const logroBg = idx % 2 === 0 ? "#eef2ff" : "#f5f5f0";
+                        const tieneLogros = periodos.some((p) => {
+                          const per = asig.periodos.get(p.id);
+                          return (
+                            per &&
+                            (per.logros.length > 0 ||
+                              per.logro_nota_estudiante ||
+                              per.notas?.length > 0)
+                          );
+                        });
                         return (
-                          <tr key={i}>
-                            <td
-                              style={{
-                                border: "1px solid #d1d5db",
-                                padding: "6px 10px",
-                                fontWeight: "bold",
-                              }}
-                            >
-                              {e.escala}
-                            </td>
-                            <td
-                              style={{
-                                border: "1px solid #d1d5db",
-                                padding: "6px 10px",
-                              }}
-                            >
-                              De {e.desde} a {e.hasta}
-                              {descripcion && (
-                                <span
+                          <React.Fragment key={asig.nombre_asignatura}>
+                            <tr style={{ backgroundColor: rowBg }}>
+                              <td style={S.tdBold}>{asig.nombre_asignatura}</td>
+                              <td
+                                style={{
+                                  ...S.tdLeft,
+                                  fontSize: "9px",
+                                  color: "#6b7280",
+                                }}
+                              >
+                                {asig.nombre_docente}
+                              </td>
+                              {periodos.map((p) => {
+                                const per = asig.periodos.get(p.id);
+                                return (
+                                  <React.Fragment key={p.id}>
+                                    <td
+                                      style={{
+                                        ...S.td,
+                                        borderLeft: "2px solid #d1d5db",
+                                        fontWeight: "600",
+                                      }}
+                                    >
+                                      {per?.nota ?? "-"}
+                                    </td>
+                                    <td style={S.td}>
+                                      {per?.recuperacion ?? "-"}
+                                    </td>
+                                    <td style={S.td}>{per?.escala ?? "-"}</td>
+                                    <td
+                                      style={{
+                                        ...S.td,
+                                        color: per
+                                          ? colorEstado(per.estado)
+                                          : "#374151",
+                                        fontWeight: "600",
+                                        fontSize: "9px",
+                                      }}
+                                    >
+                                      {per?.estado ?? "-"}
+                                    </td>
+                                  </React.Fragment>
+                                );
+                              })}
+                              <td
+                                style={{
+                                  ...S.td,
+                                  fontWeight: "bold",
+                                  fontSize: "11px",
+                                }}
+                              >
+                                {asig.definitiva}
+                              </td>
+                              <td
+                                style={{
+                                  ...S.td,
+                                  fontWeight: "600",
+                                  color: colorEstado(
+                                    periodId !== "4"
+                                      ? "En proceso"
+                                      : asig.estado_final,
+                                  ),
+                                  fontSize: "9px",
+                                }}
+                              >
+                                {periodId !== "4"
+                                  ? "En proceso"
+                                  : asig.estado_final}
+                              </td>
+                            </tr>
+                            {tieneLogros && (
+                              <tr style={{ backgroundColor: logroBg }}>
+                                <td
+                                  colSpan={totalCols}
                                   style={{
-                                    marginLeft: "4px",
+                                    padding: "3px 10px 5px",
+                                    borderBottom: "1px solid #e5e7eb",
+                                    fontSize: "9px",
+                                    fontStyle: "italic",
                                     color: "#374151",
                                   }}
                                 >
-                                  ({descripcion})
-                                </span>
-                              )}
-                            </td>
-                          </tr>
+                                  {periodos.map((p) => {
+                                    const per = asig.periodos.get(p.id);
+                                    if (!per) return null;
+                                    const items = [];
+                                    if (per.notas?.length > 0)
+                                      items.push(
+                                        per.notas
+                                          .map((n) => `${n.nombre}: ${n.valor}`)
+                                          .join(" | "),
+                                      );
+                                    if (per.logros.length > 0)
+                                      items.push(
+                                        `Logros: ${per.logros.join(" | ")}`,
+                                      );
+                                    if (per.logro_nota_estudiante)
+                                      items.push(
+                                        `Logro estudiante: ${per.logro_nota_estudiante}`,
+                                      );
+                                    if (!items.length) return null;
+                                    return (
+                                      <span
+                                        key={p.id}
+                                        style={{ marginRight: "14px" }}
+                                      >
+                                        <strong>{p.nombre}: </strong>
+                                        {items.join(" — ")}
+                                      </span>
+                                    );
+                                  })}
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
                         );
                       })}
                     </tbody>
                   </table>
                 </div>
-              )}
-            </div>
+
+                {/* Resumen */}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: "24px",
+                    marginTop: "14px",
+                    paddingTop: "10px",
+                    borderTop: "2px solid #131a27",
+                    fontWeight: "bold",
+                    fontSize: "11px",
+                  }}
+                >
+                  {promedioGeneral !== null && (
+                    <span>
+                      Promedio general:&nbsp;
+                      <span style={{ color: colorEstado(resumenEstado) }}>
+                        {promedioGeneral}
+                      </span>
+                    </span>
+                  )}
+                  <span>
+                    Estado general:&nbsp;
+                    <span
+                      style={{
+                        color: colorEstado(
+                          periodId !== "4" ? "En proceso" : resumenEstado,
+                        ),
+                      }}
+                    >
+                      {periodId !== "4" ? "En proceso" : resumenEstado}
+                    </span>
+                  </span>
+                </div>
+
+                {/* Convenciones */}
+                {escalas.length > 0 && (
+                  <div style={{ marginTop: "20px" }}>
+                    <p
+                      style={{
+                        fontWeight: "bold",
+                        fontSize: "11px",
+                        textTransform: "uppercase",
+                        marginBottom: "6px",
+                        letterSpacing: "0.5px",
+                      }}
+                    >
+                      Convenciones
+                    </p>
+                    <table
+                      style={{
+                        width: "100%",
+                        borderCollapse: "collapse",
+                        fontSize: "10px",
+                      }}
+                    >
+                      <thead>
+                        <tr>
+                          <th
+                            style={{
+                              border: "1px solid #d1d5db",
+                              padding: "6px 10px",
+                              textAlign: "left",
+                              fontWeight: "bold",
+                              backgroundColor: "#f9fafb",
+                              width: "20%",
+                            }}
+                          >
+                            ESCALA
+                          </th>
+                          <th
+                            style={{
+                              border: "1px solid #d1d5db",
+                              padding: "6px 10px",
+                              textAlign: "left",
+                              fontWeight: "bold",
+                              backgroundColor: "#f9fafb",
+                            }}
+                          >
+                            RANGO
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {escalas.map((e, i) => {
+                          const key = String(e.escala || "")
+                            .toLowerCase()
+                            .normalize("NFD")
+                            .replace(/[\u0300-\u036f]/g, "");
+                          const descripcion = getEscalaDescripcion(key);
+                          return (
+                            <tr key={i}>
+                              <td
+                                style={{
+                                  border: "1px solid #d1d5db",
+                                  padding: "6px 10px",
+                                  fontWeight: "bold",
+                                }}
+                              >
+                                {e.escala}
+                              </td>
+                              <td
+                                style={{
+                                  border: "1px solid #d1d5db",
+                                  padding: "6px 10px",
+                                }}
+                              >
+                                De {e.desde} a {e.hasta}
+                                {descripcion && (
+                                  <span
+                                    style={{
+                                      marginLeft: "4px",
+                                      color: "#374151",
+                                    }}
+                                  >
+                                    ({descripcion})
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </>
       )}

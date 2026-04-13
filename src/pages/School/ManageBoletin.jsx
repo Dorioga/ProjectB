@@ -376,6 +376,7 @@ const ManageBoletin = () => {
               selectedStudent.id_student ??
               selectedStudent.id
             }
+            isTransicion={isTransicion}
           />
         )}
       </Modal>

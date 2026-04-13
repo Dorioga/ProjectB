@@ -369,6 +369,25 @@ export async function getBoletin(payload) {
 }
 
 /**
+ * Obtiene el boletín de un estudiante de grado transición (vía docente).
+ *
+ * Endpoint: POST /docente/boletin
+ * @param {{ studentId: number|string, periodId: number, year: string, fk_rol: string }} payload
+ * @returns {Promise<Array>} Listado de registros del boletín.
+ */
+export async function getBoletinDocente(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+  const res = await ApiClient.instance.post("/docente/boletin", payload);
+  const data = res;
+  console.log("StudentService - getBoletinDocente:", data);
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+  throw new Error("Respuesta inesperada de /docente/boletin.");
+}
+
+/**
  * Obtiene la asistencia de un estudiante.
  *
  * Endpoint: POST /students/assistence
