@@ -39,6 +39,7 @@ import ManageObserver from "../pages/Student/ManageObserver";
 import AssistenceStudent from "../pages/Student/AssistenceStudent";
 import ReserveSpot from "../components/templates/ReserveSpot";
 import ManageDBA from "../pages/Teacher/ManageDBA";
+import ManageBoletin from "../pages/School/ManageBoletin";
 const GeneralRoutes = () => {
   return (
     <div id="body" className="w-full h-screen flex flex-col ">
@@ -94,6 +95,7 @@ const GeneralRoutes = () => {
             <Route path="assistenceStudent" element={<AssistenceStudent />} />
             <Route path="manageObserver" element={<ManageObserver />} />
             <Route path="manageDBA" element={<ManageDBA />} />
+            <Route path="manageBoletin" element={<ManageBoletin />} />
           </Route>
         </Routes>
       </div>

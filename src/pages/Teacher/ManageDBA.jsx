@@ -70,10 +70,10 @@ const ManageDBA = () => {
             purpose.nombre_proposito ?? purpose.nombre ?? `Propósito ${id}`;
           return (
             <SimpleButton
-              type="button"
               msj="Ver DBA"
               icon="Eye"
-              bg="bg-primary"
+              bg="bg-secondary"
+              noRounded={true}
               text="text-surface"
               onClick={() => setProfilePurpose({ id, nombre })}
             />
