@@ -18,6 +18,7 @@ const EMPTY_CONTEXT = {
   createNote: noop,
   createTransitionNote: noop,
   saveTransitionStudentNote: noop,
+  updateTransitionStudentNote: noop,
   updateNote: noop,
   createOrUpdateNote: noop,
   // generic loading/error flags

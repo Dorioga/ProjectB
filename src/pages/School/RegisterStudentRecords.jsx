@@ -35,6 +35,7 @@ const TransicionCognitivaCell = React.memo(function TransicionCognitivaCell({
   onAddItem,
   onDeleteItem,
   onSave,
+  onSaveItem,
   saving,
   onLoadDba,
   onLoadTransitionNotes,
@@ -49,6 +50,14 @@ const TransicionCognitivaCell = React.memo(function TransicionCognitivaCell({
   const [loadingTransitionNotes, setLoadingTransitionNotes] = useState(false);
   const [showItems, setShowItems] = useState(true);
   const [isOpen, setIsOpen] = useState(true);
+  // Edición por item: id del item que está siendo editado
+  const [editingItemId, setEditingItemId] = useState(null);
+  // Comentarios en borrador por item: { [itemId]: string }
+  const [editingComments, setEditingComments] = useState({});
+  // Estado en borrador por item: { [itemId]: "Activo"|"Inactivo" }
+  const [editingEstados, setEditingEstados] = useState({});
+  // Guardado en curso por item: id del item que se está guardando
+  const [savingItemId, setSavingItemId] = useState(null);
 
   const handlePurposeChange = async (e) => {
     const val = e.target.value;
@@ -106,6 +115,61 @@ const TransicionCognitivaCell = React.memo(function TransicionCognitivaCell({
   };
 
   const hasItems = Array.isArray(savedItems) && savedItems.length > 0;
+  const hasServerItems =
+    hasItems &&
+    savedItems.some((item) => item.id_nota_estudiante_transicion != null);
+  const hasNewItems =
+    hasItems &&
+    savedItems.some((item) => item.id_nota_estudiante_transicion == null);
+
+  const handleItemEdit = (item) => {
+    if (editingItemId === item.id) {
+      // Cancelar edición
+      setEditingItemId(null);
+      setEditingComments((prev) => {
+        const next = { ...prev };
+        delete next[item.id];
+        return next;
+      });
+      setEditingEstados((prev) => {
+        const next = { ...prev };
+        delete next[item.id];
+        return next;
+      });
+    } else {
+      setEditingItemId(item.id);
+      setEditingComments((prev) => ({
+        ...prev,
+        [item.id]: item.comment ?? "",
+      }));
+      setEditingEstados((prev) => ({
+        ...prev,
+        [item.id]: item.estado ?? "Activo",
+      }));
+    }
+  };
+
+  const handleItemSave = async (item) => {
+    const draftComment = editingComments[item.id] ?? item.comment ?? "";
+    const draftEstado = editingEstados[item.id] ?? item.estado ?? "Activo";
+    setSavingItemId(item.id);
+    try {
+      await onSaveItem(student, item, draftComment, draftEstado);
+      setEditingItemId(null);
+      setEditingComments((prev) => {
+        const next = { ...prev };
+        delete next[item.id];
+        return next;
+      });
+      setEditingEstados((prev) => {
+        const next = { ...prev };
+        delete next[item.id];
+        return next;
+      });
+    } finally {
+      setSavingItemId(null);
+    }
+  };
 
   return (
     <div className="text-sm p-2">
@@ -217,75 +281,201 @@ const TransicionCognitivaCell = React.memo(function TransicionCognitivaCell({
           {/* Lista de valores agregados */}
           {hasItems && (
             <div className="flex flex-col rounded-lg items-center justify-end  bg-secondary p-2 ">
-              <button
-                type="button"
-                onClick={() => setShowItems((v) => !v)}
-                className="flex items-center justify-between w-full text-xs font-semibold mb-2 hover:opacity-70"
-              >
-                <span className="font-semibold px-2 text-md">
-                  Valores agregados
-                </span>
-                <span>{showItems ? "∧" : "∨"}</span>
-              </button>
+              <div className="flex items-center justify-between w-full mb-2">
+                <button
+                  type="button"
+                  onClick={() => setShowItems((v) => !v)}
+                  className="flex items-center text-xs font-semibold hover:opacity-70"
+                >
+                  <span className="font-semibold px-2 text-md">
+                    Valores agregados
+                  </span>
+                  <span>{showItems ? "∧" : "∨"}</span>
+                </button>
+              </div>
               {showItems && (
-                <div className="flex flex-col gap-2">
-                  {savedItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className="border rounded p-2 bg-surface grid grid-cols-12 gap-2"
-                    >
-                      <div className="flex-1 text-md col-span-11 text-start flex-col gap-2">
-                        <div className="font-medium">
-                          <strong>Propósito:</strong>
-                          <span className="font-normal">
-                            {item.purposeText}
-                          </span>
+                <div className="flex flex-col gap-2 w-full">
+                  {savedItems.map((item) => {
+                    const isServerItem =
+                      item.id_nota_estudiante_transicion != null;
+                    const isItemEditing = editingItemId === item.id;
+                    const draftComment =
+                      editingComments[item.id] ?? item.comment ?? "";
+                    const draftEstado =
+                      editingEstados[item.id] ?? item.estado ?? "Activo";
+                    const isSavingItem = savingItemId === item.id;
+                    const isInactivo =
+                      (isItemEditing ? draftEstado : item.estado) ===
+                      "Inactivo";
+
+                    // Color del borde según origen y estado
+                    let borderClass = "border-l-4 border-l-yellow-400"; // nuevo
+                    if (isServerItem) {
+                      borderClass = isInactivo
+                        ? "border-l-4 border-l-gray-400 opacity-60"
+                        : "border-l-4 border-l-green-500";
+                    }
+
+                    return (
+                      <div
+                        key={item.id}
+                        className={`border rounded p-2 bg-surface flex flex-col gap-1 ${borderClass}`}
+                      >
+                        {/* Fila: badge + botones de acción */}
+                        <div className="flex items-center justify-between">
+                          <div>
+                            {isServerItem ? (
+                              isInactivo ? (
+                                <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
+                                  ✗ Inactivo
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+                                  ✓ Activo
+                                </span>
+                              )
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">
+                                ★ Nuevo
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {/* Botón editar/cancelar — solo para items del servidor */}
+                            {isServerItem && (
+                              <button
+                                type="button"
+                                onClick={() => handleItemEdit(item)}
+                                className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
+                                  isItemEditing
+                                    ? "bg-orange-500 text-surface"
+                                    : "bg-info text-surface"
+                                }`}
+                                title={isItemEditing ? "Cancelar" : "Editar"}
+                              >
+                                <Edit size={11} />
+                                {isItemEditing ? "Cancelar" : "Editar"}
+                              </button>
+                            )}
+                            {/* X: solo para items nuevos (sin id del servidor) */}
+                            {!isServerItem && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  onDeleteItem(studentKey, item.id)
+                                }
+                                className="text-gray-400 hover:bg-red-600 hover:text-white rounded-2xl p-1"
+                                title="Eliminar"
+                              >
+                                X
+                              </button>
+                            )}
+                          </div>
                         </div>
-                        {item.dbaText && (
-                          <div className="">
-                            <strong>DBA:</strong> {item.dbaText}
+
+                        {/* Contenido del item */}
+                        <div className="text-sm flex flex-col gap-0.5 text-start">
+                          <div>
+                            <strong>Propósito: </strong>
+                            <span className="font-normal">
+                              {item.purposeText}
+                            </span>
                           </div>
-                        )}
-                        {item.nivel && (
-                          <div className="">
-                            <strong>Asignación: </strong>
-                            {item.nivel}
-                          </div>
-                        )}
-                        {item.comment && (
-                          <div className="opacity-80">
-                            <strong>Comentario: </strong>
-                            {item.comment}
+                          {item.dbaText && (
+                            <div>
+                              <strong>DBA: </strong>
+                              {item.dbaText}
+                            </div>
+                          )}
+                          {item.nivel && (
+                            <div>
+                              <strong>Asignación: </strong>
+                              {item.nivel}
+                            </div>
+                          )}
+                          {/* Comentario + select de estado: visibles cuando se edita */}
+                          {isItemEditing ? (
+                            <div className="flex flex-col gap-2 mt-1">
+                              <div>
+                                <label className="text-xs font-medium block mb-0.5">
+                                  Estado
+                                </label>
+                                <select
+                                  value={draftEstado}
+                                  onChange={(e) =>
+                                    setEditingEstados((prev) => ({
+                                      ...prev,
+                                      [item.id]: e.target.value,
+                                    }))
+                                  }
+                                  className="w-full p-1.5 border rounded bg-surface text-sm"
+                                >
+                                  <option value="Activo">Activo</option>
+                                  <option value="Inactivo">Inactivo</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="text-xs font-medium block mb-0.5">
+                                  Comentario
+                                </label>
+                                <input
+                                  type="text"
+                                  value={draftComment}
+                                  onChange={(e) =>
+                                    setEditingComments((prev) => ({
+                                      ...prev,
+                                      [item.id]: e.target.value,
+                                    }))
+                                  }
+                                  className="w-full p-1.5 border rounded bg-surface text-sm"
+                                  placeholder="Descripción para el estudiante..."
+                                />
+                              </div>
+                            </div>
+                          ) : item.comment ? (
+                            <div className="opacity-80">
+                              <strong>Comentario: </strong>
+                              {item.comment}
+                            </div>
+                          ) : null}
+                        </div>
+
+                        {/* Botón guardar por item (solo cuando edita) */}
+                        {isItemEditing && (
+                          <div className="flex justify-end mt-1">
+                            <button
+                              type="button"
+                              onClick={() => handleItemSave(item)}
+                              disabled={isSavingItem}
+                              className="px-4 py-1 rounded bg-accent text-surface text-xs font-medium disabled:opacity-50"
+                            >
+                              {isSavingItem ? "Guardando..." : "Guardar"}
+                            </button>
                           </div>
                         )}
                       </div>
-                      <div className="flex items-center justify-center gap-1 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => onDeleteItem(studentKey, item.id)}
-                          className="text-gray-400 hover:bg-red-600 hover:text-white rounded-2xl  p-1"
-                          title="Eliminar"
-                        >
-                          X
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
           )}
 
-          {/* Botón Guardar */}
-          {hasItems && (
+          {/* Botón Guardar nuevos (batch para items sin id del servidor) */}
+          {hasNewItems && (
             <div className="flex justify-end mt-1">
               <button
                 type="button"
                 onClick={() => onSave(student)}
                 disabled={saving}
                 className="px-5 py-1.5 rounded bg-accent text-surface text-sm font-medium disabled:opacity-50"
+                title="Guardar todos los registros nuevos"
               >
-                {saving ? "Guardando..." : "Guardar"}
+                {saving
+                  ? "Guardando..."
+                  : hasServerItems
+                    ? "Guardar nuevos"
+                    : "Guardar"}
               </button>
             </div>
           )}
@@ -309,6 +499,7 @@ const RegisterStudentRecords = () => {
     getStudentGrades,
     createTransitionNote,
     saveTransitionStudentNote,
+    updateTransitionStudentNote,
   } = useSchool();
   const {
     getTeacherSede,
@@ -827,6 +1018,7 @@ const RegisterStudentRecords = () => {
               nivel: n.descripcion_nota ?? "",
               nivelId: n.id_nota_transicion ?? "",
               comment: n.comentario ?? "",
+              estado: n.estado ?? "Activo",
               id_nota_estudiante_transicion: n.id_nota_estudiante_transicion,
             }));
 
@@ -1578,30 +1770,38 @@ const RegisterStudentRecords = () => {
     async (student) => {
       const studentKey = getStudentKey(student);
       const items = transicionItemsByStudentRef.current?.[studentKey] ?? [];
-      if (!items.length) {
-        notify.info("Agrega al menos un propósito antes de guardar.");
+
+      // Separar items: nuevos (sin id del servidor) vs existentes (del servidor)
+      const newItems = items.filter(
+        (item) => item.id_nota_estudiante_transicion == null,
+      );
+
+      if (!newItems.length) {
+        notify.info("No hay registros nuevos para guardar.");
         return;
       }
+
       setTransicionSavingById((prev) => ({ ...prev, [studentKey]: true }));
       try {
         const fkEstudiante = Number(
           student?.id_estudiante ?? student?.id_student ?? student?.id,
         );
+        // Solo enviar los items nuevos (sin id_nota_estudiante_transicion)
         const payload = {
           fk_estudiante: fkEstudiante,
-          evaluaciones: items.map((item) => ({
+          evaluaciones: newItems.map((item) => ({
             fk_dba: Number(item.dbaId),
             fk_nota_transicion: Number(item.nivelId),
             comentario: item.comment || "",
           })),
         };
         console.log(
-          "TransicionSave payload:",
+          "TransicionSave payload (nuevos):",
           JSON.stringify(payload, null, 2),
         );
         await saveTransitionStudentNote(payload);
         notify.success(
-          `Notas de transición guardadas para ${getStudentName(student)}`,
+          `${newItems.length} nota(s) nueva(s) guardada(s) para ${getStudentName(student)}`,
         );
       } catch (err) {
         console.error("Error guardando notas transición:", err);
@@ -1611,6 +1811,50 @@ const RegisterStudentRecords = () => {
       }
     },
     [saveTransitionStudentNote, notify],
+  );
+
+  /**
+   * Guarda/actualiza un item individual de transición.
+   * - Si el item tiene id_nota_estudiante_transicion → PATCH al servidor
+   * - Si es nuevo (sin id del servidor) → actualiza solo el comentario en estado local
+   */
+  const handleTransicionSaveItem = useCallback(
+    async (student, item, draftComment, draftEstado) => {
+      const studentKey = getStudentKey(student);
+
+      if (item.id_nota_estudiante_transicion != null) {
+        // Item del servidor: enviar comentario y estado al endpoint PATCH
+        try {
+          await updateTransitionStudentNote(item.id_nota_estudiante_transicion, {
+            comentario: draftComment,
+            estado: draftEstado ?? "Activo",
+          });
+          // Actualizar en estado local
+          setTransicionItemsByStudent((prev) => ({
+            ...prev,
+            [studentKey]: (prev[studentKey] ?? []).map((i) =>
+              i.id === item.id
+                ? { ...i, comment: draftComment, estado: draftEstado ?? "Activo" }
+                : i,
+            ),
+          }));
+          notify.success("Registro actualizado correctamente.");
+        } catch (err) {
+          console.error("Error actualizando nota de transición:", err);
+          notify.error("No fue posible actualizar el registro.");
+          throw err;
+        }
+      } else {
+        // Item nuevo: solo actualizar comentario en estado local
+        setTransicionItemsByStudent((prev) => ({
+          ...prev,
+          [studentKey]: (prev[studentKey] ?? []).map((i) =>
+            i.id === item.id ? { ...i, comment: draftComment } : i,
+          ),
+        }));
+      }
+    },
+    [updateTransitionStudentNote, notify],
   );
 
   // Funciones para los botones de acciones
@@ -1729,6 +1973,7 @@ const RegisterStudentRecords = () => {
                 onAddItem={handleTransicionAdd}
                 onDeleteItem={handleTransicionDelete}
                 onSave={handleTransicionSave}
+                onSaveItem={handleTransicionSaveItem}
                 saving={saving}
                 onLoadDba={handleLoadDbas}
                 onLoadTransitionNotes={handleLoadTransitionNotes}
@@ -2128,6 +2373,7 @@ const RegisterStudentRecords = () => {
     handleTransicionAdd,
     handleTransicionDelete,
     handleTransicionSave,
+    handleTransicionSaveItem,
     handleLoadDbas,
     handleLoadTransitionNotes,
   ]);

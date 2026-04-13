@@ -509,6 +509,33 @@ export async function saveTransitionStudentNote(payload) {
 }
 
 /**
+ * Actualiza el comentario y estado de una nota de transición de estudiante existente.
+ * Endpoint esperado: PATCH /note/transition/:idTranNote
+ * @param {number|string} noteId - id_nota_estudiante_transicion
+ * @param {{ comentario: string, estado: "Activo"|"Inactivo" }} payload
+ */
+export async function updateTransitionStudentNote(noteId, payload) {
+  if (!noteId)
+    throw new Error("noteId es requerido para updateTransitionStudentNote.");
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+
+  const res = await ApiClient.instance.patch(
+    `/note/transition/${noteId}`,
+    payload,
+  );
+
+  const data = res;
+  console.log("SchoolService - updateTransitionStudentNote:", data);
+
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de updateTransitionStudentNote.");
+}
+
+/**
  * Actualiza una nota existente
  * Endpoint esperado: PATCH /note/:noteId
  * @param {number|string} noteId - ID de la nota a actualizar

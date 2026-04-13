@@ -492,6 +492,23 @@ export function SchoolProvider({ children }) {
     }
   }, []);
 
+  const updateTransitionStudentNote = useCallback(async (noteId, payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await schoolService.updateTransitionStudentNote(
+        noteId,
+        payload,
+      );
+      return result;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const updateNote = useCallback(async (noteId, payload) => {
     setLoading(true);
     setError(null);
@@ -632,6 +649,7 @@ export function SchoolProvider({ children }) {
       createNote,
       createTransitionNote,
       saveTransitionStudentNote,
+      updateTransitionStudentNote,
       updateNote,
       createOrUpdateNote,
       getInstitution,
@@ -690,6 +708,7 @@ export function SchoolProvider({ children }) {
       createNote,
       createTransitionNote,
       saveTransitionStudentNote,
+      updateTransitionStudentNote,
       updateNote,
       createOrUpdateNote,
       getInstitution,
