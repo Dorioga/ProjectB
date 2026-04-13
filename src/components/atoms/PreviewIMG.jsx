@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 
 const PreviewIMG = ({ path, size }) => {
-  const [src, setSrc] = useState(path || "/logo-school.svg");
+  const [src, setSrc] = useState(path || "/2.png");
 
   useEffect(() => {
-    setSrc(path || "/logo-school.svg");
+    setSrc(path || "/2.png");
   }, [path]);
 
   let imgSizeClass = "";
@@ -29,7 +29,7 @@ const PreviewIMG = ({ path, size }) => {
 
   const handleError = () => {
     // fallback to built-in svg logo when original source fails
-    if (src !== "/logo-school.svg") setSrc("/logo-school.svg");
+    if (src !== "/2.png") setSrc("/2.png");
   };
 
   return (

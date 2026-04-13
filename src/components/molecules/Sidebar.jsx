@@ -117,11 +117,11 @@ const Sidebar = () => {
                 return (
                   <li
                     key={id}
-                    className="rounded-lg  hover:bg-secondary cursor-pointer w-full px-2"
+                    className="rounded-lg hover:bg-secondary cursor-pointer w-full px-2"
                   >
                     <Link
                       to={item.link}
-                      className="flex w-full flex-row px-4 py-1 items-center gap-2"
+                      className="flex w-full flex-row px-4 py-1 items-center "
                     >
                       <IconComponent className="text-surface hover:text-primary text-2xl" />
                       {showContent && (

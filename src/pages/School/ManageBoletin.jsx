@@ -7,7 +7,6 @@ import JourneySelect from "../../components/atoms/JourneySelect";
 import GradeSelector from "../../components/atoms/GradeSelector";
 import PeriodSelector from "../../components/atoms/PeriodSelector";
 import Loader from "../../components/atoms/Loader";
-import AsignatureSelector from "../../components/molecules/AsignatureSelector";
 import BoletinSelector from "../../components/molecules/BoletinSelector";
 import useSchool from "../../lib/hooks/useSchool";
 import useTeacher from "../../lib/hooks/useTeacher";
@@ -17,7 +16,7 @@ import { useNotify } from "../../lib/hooks/useNotify";
 
 const ManageBoletin = () => {
   const { getStudentGrades } = useSchool();
-  const { getTeacherSede, getTeacherGrades, getTeacherSubjects } = useTeacher();
+  const { getTeacherSede, getTeacherGrades } = useTeacher();
   const { institutionSedes } = useData();
   const { idSede, nameSede, idDocente, token } = useAuth();
   const notify = useNotify();
@@ -26,9 +25,7 @@ const ManageBoletin = () => {
   const [sedeId, setSedeId] = useState("");
   const [workdayId, setWorkdayId] = useState("");
   const [gradeId, setGradeId] = useState("");
-  const [asignatureId, setAsignatureId] = useState("");
   const [periodId, setPeriodId] = useState("");
-  const [detectedJourney, setDetectedJourney] = useState(null);
   const [isTransicion, setIsTransicion] = useState(false);
 
   // ── Sedes del docente ────────────────────────────────────────────────────
@@ -58,14 +55,6 @@ const ManageBoletin = () => {
       ...(sedeId ? { idSede: Number(sedeId) } : { idSede: Number(idSede) }),
     }),
     [idDocente, sedeId, idSede],
-  );
-
-  const teacherSubjectsParams = useMemo(
-    () =>
-      gradeId && idDocente
-        ? { idGrade: Number(gradeId), idTeacher: Number(idDocente) }
-        : {},
-    [gradeId, idDocente],
   );
 
   const teacherSedeData = useMemo(() => {
@@ -252,15 +241,13 @@ const ManageBoletin = () => {
       </div>
 
       {/* ── Selectores en cascada ────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <SedeSelect
           value={sedeId}
           onChange={(e) => {
             setSedeId(e.target.value);
             setWorkdayId("");
             setGradeId("");
-            setAsignatureId("");
-            setDetectedJourney(null);
           }}
           labelClassName="text-lg font-semibold"
           data={teacherSedeData}
@@ -275,31 +262,12 @@ const ManageBoletin = () => {
               value={gradeId}
               onChange={(e) => {
                 setGradeId(e.target.value);
-                setAsignatureId("");
-                setDetectedJourney(null);
               }}
               sedeId={sedeId}
               workdayId={workdayId}
               customFetchMethod={getTeacherGrades}
               additionalParams={teacherGradesParams}
               disabled={!sedeId}
-            />
-            <AsignatureSelector
-              label="Asignatura"
-              labelClassName="text-lg font-semibold"
-              value={asignatureId}
-              onChange={(e) => setAsignatureId(e.target.value)}
-              sedeId={sedeId}
-              workdayId={workdayId}
-              customFetchMethod={getTeacherSubjects}
-              additionalParams={teacherSubjectsParams}
-              onJourneyDetected={(journey) => {
-                if (journey?.id) {
-                  setWorkdayId(String(journey.id));
-                  setDetectedJourney(journey);
-                }
-              }}
-              disabled={!gradeId}
             />
             <JourneySelect
               label="Jornada"
@@ -308,11 +276,8 @@ const ManageBoletin = () => {
               onChange={(e) => setWorkdayId(e.target.value)}
               filterValue={sedeWorkday}
               includeAmbas={false}
-              subjectJourney={detectedJourney}
-              useTeacherSubjects={!asignatureId && !!gradeId}
               sedeId={sedeId}
               idTeacher={idDocente}
-              lockByAsignature={true}
             />
           </>
         ) : (
@@ -323,24 +288,11 @@ const ManageBoletin = () => {
               value={workdayId}
               onChange={(e) => {
                 setWorkdayId(e.target.value);
-                setAsignatureId("");
                 setGradeId("");
               }}
               filterValue={sedeWorkday}
               includeAmbas={false}
               disabled={!sedeId}
-            />
-            <AsignatureSelector
-              label="Asignatura"
-              labelClassName="text-lg font-semibold"
-              value={asignatureId}
-              onChange={(e) => {
-                setAsignatureId(e.target.value);
-                setGradeId("");
-              }}
-              sedeId={sedeId}
-              workdayId={workdayId}
-              disabled={!workdayId}
             />
             <GradeSelector
               label="Grado"
@@ -349,7 +301,7 @@ const ManageBoletin = () => {
               onChange={(e) => setGradeId(e.target.value)}
               sedeId={sedeId}
               workdayId={workdayId}
-              disabled={!asignatureId}
+              disabled={!workdayId}
             />
           </>
         )}
