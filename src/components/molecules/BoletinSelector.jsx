@@ -4,6 +4,7 @@ import { getBoletin } from "../../services/studentService";
 import useSchool from "../../lib/hooks/useSchool";
 import PeriodSelector from "../atoms/PeriodSelector";
 import SimpleButton from "../atoms/SimpleButton";
+import useAuth from "../../lib/hooks/useAuth";
 
 /* ── Helpers ── */
 const formatDate = (isoDate) => {
@@ -612,12 +613,12 @@ async function generateBoletinPDF(
    ══════════════════════════════════════════════════════════════ */
 const BoletinSelector = ({ studentId }) => {
   const { getInstitutionScales } = useSchool();
+  const { rol } = useAuth();
   const currentYear = new Date().getFullYear();
   const yearOptions = useMemo(
     () => [currentYear, currentYear + 1, currentYear + 2],
     [currentYear],
   );
-
   const [periodId, setPeriodId] = useState("");
   const [year, setYear] = useState(String(currentYear));
   const [boletinData, setBoletinData] = useState(null);
@@ -649,6 +650,7 @@ const BoletinSelector = ({ studentId }) => {
         studentId,
         periodId: Number(periodId),
         year: String(year),
+        fk_rol: rol,
       });
       const rows = Array.isArray(result) ? result : [];
       setBoletinData(rows);

@@ -9,6 +9,7 @@ const StudentModal = ({
   onSave,
   initialEditing = false,
   isLoading = false,
+  showStates = true,
 }) => {
   // Determina el título del modal
   const modalTitle = student
@@ -24,13 +25,16 @@ const StudentModal = ({
       size="4xl"
     >
       <div className="relative">
-        {isLoading && <Loader message="Cargando datos..." size={56} />}
-
-        <ProfileStudent
-          data={student}
-          onSave={onSave}
-          initialEditing={initialEditing}
-        />
+        {isLoading || !student ? (
+          <Loader message="Cargando datos..." size={56} />
+        ) : (
+          <ProfileStudent
+            data={student}
+            onSave={onSave}
+            initialEditing={initialEditing}
+            showStates={showStates}
+          />
+        )}
       </div>
     </Modal>
   );

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import useAuth from "../../lib/hooks/useAuth";
 import PreviewIMG from "../atoms/PreviewIMG";
 import PeriodSelector from "../atoms/PeriodSelector";
 import SimpleButton from "../atoms/SimpleButton";
@@ -16,8 +17,13 @@ const ProfileStudent = ({
   state = false,
   onSave,
   initialEditing = false,
+  showStates = true,
 }) => {
   const notify = useNotify();
+  const { nameRole } = useAuth();
+  const isDocente = String(nameRole ?? "")
+    .toLowerCase()
+    .includes("docente");
   const [isTourMode, setIsTourMode] = useState(false);
 
   const startTour = useCallback(() => {
@@ -291,17 +297,19 @@ const ProfileStudent = ({
       <div className="w-11/12 flex flex-col gap-4">
         <div id="tour-ps-edit" className="w-full flex justify-end">
           <div className="flex gap-2">
-            <SimpleButton
-              type="button"
-              onClick={startTour}
-              icon="HelpCircle"
-              msjtooltip="Iniciar tutorial"
-              noRounded={false}
-              bg="bg-info"
-              text="text-surface"
-              className="w-auto px-3 py-1.5"
-            />
-            {isEditing && (
+            {!isDocente && (
+              <SimpleButton
+                type="button"
+                onClick={startTour}
+                icon="HelpCircle"
+                msjtooltip="Iniciar tutorial"
+                noRounded={false}
+                bg="bg-info"
+                text="text-surface"
+                className="w-auto px-3 py-1.5"
+              />
+            )}
+            {!isDocente && isEditing && (
               <SimpleButton
                 onClick={() => setIsEditing(false)}
                 msj="Cancelar"
@@ -310,14 +318,16 @@ const ProfileStudent = ({
                 text="text-surface"
               />
             )}
-            <SimpleButton
-              onClick={() => setIsEditing(true)}
-              msj="Editar"
-              bg="bg-primary"
-              icon="Pencil"
-              text="text-surface"
-              disabled={isEditing}
-            />
+            {!isDocente && (
+              <SimpleButton
+                onClick={() => setIsEditing(true)}
+                msj="Editar"
+                bg="bg-primary"
+                icon="Pencil"
+                text="text-surface"
+                disabled={isEditing}
+              />
+            )}
           </div>
         </div>
         <div
@@ -509,145 +519,151 @@ const ProfileStudent = ({
             </p>
           </div>
         </div>
-        <div id="tour-ps-states" className="p-4 bg-bg rounded-lg shadow-md">
-          <h2 className="text-2xl font-semibold pb-4">
-            Estados del estudiante
-          </h2>
+        {showStates && (
+          <div id="tour-ps-states" className="p-4 bg-bg rounded-lg shadow-md">
+            <h2 className="text-2xl font-semibold pb-4">
+              Estados del estudiante
+            </h2>
 
-          <div className="flex flex-col gap-3">
-            {/* Estado Primera Etapa */}
-            <div className="grid grid-cols-3 gap-4 items-center">
-              <label className="text-lg font-medium w-48">Primera Etapa:</label>
-              <span
-                className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
-                  editedData.state_first === "Registrado"
-                    ? "bg-green-100 text-green-800"
-                    : "bg-yellow-100 text-yellow-800"
-                }`}
-              >
-                {editedData.state_first}
-              </span>
-              {data.state_first === "Ausente" ||
-              data.nombre_primera_etapa === "Pendiente" ? (
-                <div className="">
-                  <SimpleButton
-                    onClick={() => setIsOpenCamera(true)}
-                    msj="Tomar foto"
-                    bg="bg-accent"
-                    icon="Camera"
-                    text="text-surface"
-                  />
-                </div>
-              ) : null}
-            </div>
-            {/* Estado Segunda Etapa */}
-            <div className="grid grid-cols-3 gap-4 items-center">
-              <label className="text-lg font-medium w-48">Segunda Etapa:</label>
-
-              <span
-                className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
-                  editedData.state_second === "Validado"
-                    ? "bg-green-100 text-green-800"
-                    : "bg-yellow-100 text-yellow-800"
-                }`}
-              >
-                {editedData.state_second}
-              </span>
-              {(data.state_first === "Registrado" ||
-                data.nombre_primera_etapa === "Registrado") &&
-                (data.state_second === "Ausente" ||
-                  data.nombre_segunda_etapa === "Pendiente") && (
+            <div className="flex flex-col gap-3">
+              {/* Estado Primera Etapa */}
+              <div className="grid grid-cols-3 gap-4 items-center">
+                <label className="text-lg font-medium w-48">
+                  Primera Etapa:
+                </label>
+                <span
+                  className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
+                    editedData.state_first === "Registrado"
+                      ? "bg-green-100 text-green-800"
+                      : "bg-yellow-100 text-yellow-800"
+                  }`}
+                >
+                  {editedData.state_first}
+                </span>
+                {data.state_first === "Ausente" ||
+                data.nombre_primera_etapa === "Pendiente" ? (
                   <div className="">
                     <SimpleButton
                       onClick={() => setIsOpenCamera(true)}
-                      msj="Tomar Foto"
+                      msj="Tomar foto"
                       bg="bg-accent"
                       icon="Camera"
                       text="text-surface"
                     />
                   </div>
+                ) : null}
+              </div>
+              {/* Estado Segunda Etapa */}
+              <div className="grid grid-cols-3 gap-4 items-center">
+                <label className="text-lg font-medium w-48">
+                  Segunda Etapa:
+                </label>
+
+                <span
+                  className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
+                    editedData.state_second === "Validado"
+                      ? "bg-green-100 text-green-800"
+                      : "bg-yellow-100 text-yellow-800"
+                  }`}
+                >
+                  {editedData.state_second}
+                </span>
+                {(data.state_first === "Registrado" ||
+                  data.nombre_primera_etapa === "Registrado") &&
+                  (data.state_second === "Ausente" ||
+                    data.nombre_segunda_etapa === "Pendiente") && (
+                    <div className="">
+                      <SimpleButton
+                        onClick={() => setIsOpenCamera(true)}
+                        msj="Tomar Foto"
+                        bg="bg-accent"
+                        icon="Camera"
+                        text="text-surface"
+                      />
+                    </div>
+                  )}
+              </div>
+
+              {/* Estado Institucional */}
+              <div className="grid grid-cols-3 gap-4 items-center">
+                <label className="text-lg font-medium w-48">
+                  Estado de la beca:
+                </label>
+
+                {isEditing ? (
+                  <select
+                    value={editedData.state_beca}
+                    onChange={(e) =>
+                      handleStateChange("state_beca", e.target.value)
+                    }
+                    className="border p-2 rounded bg-surface text-center"
+                  >
+                    <option value="Activo">Activo</option>
+                    <option value="Retirado">Retirado</option>
+                  </select>
+                ) : (
+                  <span
+                    className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
+                      editedData.state_beca === "Activo"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
+                    {editedData.state_beca}
+                  </span>
                 )}
-            </div>
+              </div>
 
-            {/* Estado Institucional */}
-            <div className="grid grid-cols-3 gap-4 items-center">
-              <label className="text-lg font-medium w-48">
-                Estado de la beca:
-              </label>
+              {/* Estado Proceso */}
+              <div className="grid grid-cols-3 gap-4 items-center">
+                <label className="text-lg font-medium w-48">
+                  Estado del proceso:
+                </label>
 
-              {isEditing ? (
-                <select
-                  value={editedData.state_beca}
-                  onChange={(e) =>
-                    handleStateChange("state_beca", e.target.value)
-                  }
-                  className="border p-2 rounded bg-surface text-center"
-                >
-                  <option value="Activo">Activo</option>
-                  <option value="Retirado">Retirado</option>
-                </select>
-              ) : (
-                <span
-                  className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
-                    editedData.state_beca === "Activo"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-gray-100 text-gray-800"
-                  }`}
-                >
-                  {editedData.state_beca}
-                </span>
-              )}
-            </div>
+                {isEditing ? (
+                  <select
+                    value={editedData.state_process}
+                    onChange={(e) =>
+                      handleStateChange("state_process", e.target.value)
+                    }
+                    className="border p-2 rounded bg-surface text-center"
+                  >
+                    <option value="Conforme">Conforme</option>
+                    <option value="Retirado">Retirado</option>
+                    <option value="SinExcusa">Sin Excusa</option>
+                    <option value="Excusa">Excusa</option>
+                    <option value="Reasignado">Reasignado</option>
+                  </select>
+                ) : (
+                  <span
+                    className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
+                      editedData.state_process === "Conforme"
+                        ? "bg-green-100 text-green-800"
+                        : editedData.state_process === "Retirado"
+                          ? "bg-gray-100 text-gray-800"
+                          : editedData.state_process === "Reasignado"
+                            ? "bg-indigo-100 text-indigo-800"
+                            : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    {editedData.state_process}
+                  </span>
+                )}
 
-            {/* Estado Proceso */}
-            <div className="grid grid-cols-3 gap-4 items-center">
-              <label className="text-lg font-medium w-48">
-                Estado del proceso:
-              </label>
-
-              {isEditing ? (
-                <select
-                  value={editedData.state_process}
-                  onChange={(e) =>
-                    handleStateChange("state_process", e.target.value)
-                  }
-                  className="border p-2 rounded bg-surface text-center"
-                >
-                  <option value="Conforme">Conforme</option>
-                  <option value="Retirado">Retirado</option>
-                  <option value="SinExcusa">Sin Excusa</option>
-                  <option value="Excusa">Excusa</option>
-                  <option value="Reasignado">Reasignado</option>
-                </select>
-              ) : (
-                <span
-                  className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
-                    editedData.state_process === "Conforme"
-                      ? "bg-green-100 text-green-800"
-                      : editedData.state_process === "Retirado"
-                        ? "bg-gray-100 text-gray-800"
-                        : editedData.state_process === "Reasignado"
-                          ? "bg-indigo-100 text-indigo-800"
-                          : "bg-red-100 text-red-800"
-                  }`}
-                >
-                  {editedData.state_process}
-                </span>
-              )}
-
-              {(editedData.state_process === "Excusa" ||
-                editedData.state_process === "SinExcusa") && (
-                <SimpleButton
-                  onClick={() => setIsOpenExcuse(true)}
-                  msj={isEditing ? "Cargar excusa" : "Ver excusa"}
-                  bg="bg-accent"
-                  icon="Save"
-                  text="text-surface"
-                />
-              )}
+                {(editedData.state_process === "Excusa" ||
+                  editedData.state_process === "SinExcusa") && (
+                  <SimpleButton
+                    onClick={() => setIsOpenExcuse(true)}
+                    msj={isEditing ? "Cargar excusa" : "Ver excusa"}
+                    bg="bg-accent"
+                    icon="Save"
+                    text="text-surface"
+                  />
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
         <div
           id="tour-ps-documents"
           className="p-4 bg-bg rounded-lg shadow-md flex flex-col gap-2"
@@ -686,10 +702,10 @@ const ProfileStudent = ({
           </div>
 
           {/* PIAR - checkbox + FileChooser (edit) / descarga (view) */}
-          <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-4 items-center">
+          <div className="w-full grid grid-cols-1 lg:grid-cols-4 gap-4 items-center">
             <label className="text-lg font-medium">Cuenta con PIAR:</label>
 
-            <div className="flex items-center gap-3">
+            <div className="flex w-full items-center justify-center gap-3 col-span-2">
               <input
                 type="checkbox"
                 checked={hasPiar}
@@ -706,33 +722,38 @@ const ProfileStudent = ({
               >
                 {hasPiar ? "Sí" : "No"}
               </span>
+              {hasPiar && (
+                <div className="flex">
+                  <FileChooser
+                    editing={isEditing}
+                    accept=".xlsx,.xls"
+                    onChange={(file) => handleDocumentChange("piar", file)}
+                    label={
+                      documentFiles.piar
+                        ? documentFiles.piar.name
+                        : "Cargar (.xlsx)"
+                    }
+                  />
+                </div>
+              )}
             </div>
 
-            {hasPiar && (
-              <div className="flex">
-                <FileChooser
-                  editing={isEditing}
-                  accept=".xlsx,.xls"
-                  onChange={(file) => handleDocumentChange("piar", file)}
-                  label={
-                    documentFiles.piar
-                      ? documentFiles.piar.name
-                      : "Cargar (.xlsx)"
-                  }
-                />
-              </div>
-            )}
             {!isEditing &&
             (String(data?.auDoc_piar || "").includes("https://") ||
               data?.link_piar) ? (
-              <a
-                className="text-primary underline"
-                href={data.auDoc_piar || data?.link_piar}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Descargar PIAR
-              </a>
+              <SimpleButton
+                onClick={() =>
+                  window.open(
+                    data.auDoc_piar || data?.link_piar,
+                    "_blank",
+                    "noreferrer",
+                  )
+                }
+                msj="Descargar PIAR"
+                bg="bg-accent"
+                icon="Download"
+                text="text-surface"
+              />
             ) : null}
           </div>
           <div

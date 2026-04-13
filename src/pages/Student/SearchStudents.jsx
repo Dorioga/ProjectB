@@ -8,10 +8,13 @@ import JourneySelect from "../../components/atoms/JourneySelect";
 import GradeSelector from "../../components/atoms/GradeSelector";
 import Loader from "../../components/atoms/Loader";
 import StudentModal from "../../components/molecules/StudentModal";
+import useAuth from "../../lib/hooks/useAuth";
 
 const SearchStudents = () => {
-  const { updateStudent } = useStudent();
-  const { getStudentGrades } = useSchool();
+  const { updateStudent, getStudent } = useStudent();
+  const { getStudentGrades, journeys } = useSchool();
+  const { nameSchool, idSede: authIdSede } = useAuth();
+  console.log("SearchStudents - nameSchool from auth:", nameSchool);
 
   // ── Filtros ──────────────────────────────────────────────────────────────
   const [sedeId, setSedeId] = useState("");
@@ -25,10 +28,82 @@ const SearchStudents = () => {
   // ── Modal ────────────────────────────────────────────────────────────────
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
 
-  const handleViewProfile = (student) => {
-    setSelectedStudent(student);
+  const handleViewProfile = async (student) => {
+    setIsLoadingProfile(true);
     setIsModalOpen(true);
+    try {
+      console.log(
+        "handleViewProfile - fetching full data for student:",
+        sedeId,
+      );
+      const fullData = await getStudent({
+        id_estudiante: student.id_estudiante,
+        fk_sede: Number(sedeId || authIdSede || 0),
+      });
+      // Fusionar: fullData tiene prioridad, pero la fila llena los campos de
+      // contexto escolar que el endpoint /student/data puede omitir.
+      const merged = {
+        // Campos del API primero
+        ...student,
+        ...(fullData ?? {}),
+        // Mapeos explícitos para la sección escolar de ProfileStudent
+        nombre_sede:
+          fullData?.nombre_sede ??
+          fullData?.name_school ??
+          student.nombre_sede ??
+          student.name_school ??
+          nameSchool ??
+          "",
+        nombre_grado: (() => {
+          const raw = student.nombre_grado ?? student.grado ?? "";
+          return raw.toString().split(" ")[0] ?? "";
+        })(),
+        grupo: (() => {
+          console.log(
+            "Merging grupo - fullData:",
+            fullData,
+            "student:",
+            student,
+          );
+          const raw = student?.grado ?? "";
+          const parts = raw.toString().split(" ");
+          return parts.length > 1
+            ? parts.slice(1).join(" ")
+            : (fullData?.grupo ??
+                fullData?.group_grade ??
+                student.grupo ??
+                student.group_grade ??
+                "");
+        })(),
+        nombre_jornada_estudiante: (() => {
+          const match = Array.isArray(journeys)
+            ? journeys.find((j) => String(j.value) === String(workdayId))
+            : null;
+          return (
+            match?.label ??
+            fullData?.nombre_jornada_estudiante ??
+            fullData?.jornada ??
+            student.nombre_jornada_estudiante ??
+            student.jornada ??
+            ""
+          );
+        })(),
+      };
+      setSelectedStudent(merged);
+    } catch (err) {
+      console.error("SearchStudents - handleViewProfile error:", err);
+      // Fallback: usar datos de la fila con mapeos de campos
+      setSelectedStudent({
+        ...student,
+        nombre_grado: student.nombre_grado ?? student.grado ?? "",
+        nombre_jornada_estudiante:
+          student.nombre_jornada_estudiante ?? student.jornada ?? "",
+      });
+    } finally {
+      setIsLoadingProfile(false);
+    }
   };
 
   // Limpiar tabla y grado cuando cambian sede o jornada
@@ -75,15 +150,11 @@ const SearchStudents = () => {
         header: "Nombre completo",
       },
       {
-        accessorKey: "nombre_grado",
+        accessorKey: "grado",
         header: "Grado",
         meta: { hideOnLG: true },
       },
-      {
-        accessorKey: "nombre_jornada",
-        header: "Jornada",
-        meta: { hideOnLG: true },
-      },
+
       {
         id: "actions",
         header: "Acciones",
@@ -163,9 +234,14 @@ const SearchStudents = () => {
 
       <StudentModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedStudent(null);
+        }}
         student={selectedStudent}
         onSave={handleSave}
+        isLoading={isLoadingProfile}
+        showStates={false}
       />
     </div>
   );
