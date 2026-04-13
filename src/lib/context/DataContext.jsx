@@ -44,7 +44,7 @@ export function DataProvider({ children }) {
     setErrorTypeIdentification(null);
     try {
       const res = await dataService.getTypeIdentification();
-      setTypeIdentification(Array.isArray(res) ? res : res?.data ?? []);
+      setTypeIdentification(Array.isArray(res) ? res : (res?.data ?? []));
       return res;
     } catch (err) {
       setErrorTypeIdentification(err);
@@ -59,7 +59,7 @@ export function DataProvider({ children }) {
     setErrorStatusBeca(null);
     try {
       const res = await dataService.getStatusBeca();
-      setStatusBeca(Array.isArray(res) ? res : res?.data ?? []);
+      setStatusBeca(Array.isArray(res) ? res : (res?.data ?? []));
       return res;
     } catch (err) {
       setErrorStatusBeca(err);
@@ -74,7 +74,7 @@ export function DataProvider({ children }) {
     setErrorRoles(null);
     try {
       const res = await dataService.getRol();
-      setRoles(Array.isArray(res) ? res : res?.data ?? []);
+      setRoles(Array.isArray(res) ? res : (res?.data ?? []));
       return res;
     } catch (err) {
       setErrorRoles(err);
@@ -90,7 +90,7 @@ export function DataProvider({ children }) {
     console.log("DataContext - loadDepartments called");
     try {
       const res = await dataService.getDepartments();
-      setDepartments(Array.isArray(res) ? res : res?.data ?? []);
+      setDepartments(Array.isArray(res) ? res : (res?.data ?? []));
       return res;
     } catch (err) {
       setErrorDepartments(err);
@@ -111,7 +111,7 @@ export function DataProvider({ children }) {
     setErrorCities(null);
     try {
       const res = await dataService.getCities(departmentId);
-      const citiesData = Array.isArray(res) ? res : res?.data ?? [];
+      const citiesData = Array.isArray(res) ? res : (res?.data ?? []);
 
       // Normalizar formato de municipios: id_municipio -> id, nombre -> name
       const normalizedCities = citiesData.map((city) => ({
@@ -153,7 +153,7 @@ export function DataProvider({ children }) {
       formData.append("idInstitution", String(idInstitucion));
 
       const res = await dataService.getInstitutionSede(formData);
-      const sedesData = Array.isArray(res) ? res : res?.data ?? [];
+      const sedesData = Array.isArray(res) ? res : (res?.data ?? []);
       console.log("DataContext - loadInstitutionSedes raw:", sedesData);
       // Normalizar formato: id_sede -> id, nombre_sede -> nombre
       const normalizedSedes = sedesData.map((sede) => ({
@@ -189,6 +189,94 @@ export function DataProvider({ children }) {
       setLoadingRegisterUser(false);
     }
   }, []);
+
+  const [loadingRegisterPurposes, setLoadingRegisterPurposes] = useState(false);
+  const [errorRegisterPurposes, setErrorRegisterPurposes] = useState(null);
+
+  const registerPurposes = useCallback(async (payload) => {
+    setLoadingRegisterPurposes(true);
+    setErrorRegisterPurposes(null);
+    try {
+      const res = await dataService.registerPurposes(payload);
+      return res;
+    } catch (err) {
+      setErrorRegisterPurposes(err);
+      throw err;
+    } finally {
+      setLoadingRegisterPurposes(false);
+    }
+  }, []);
+
+  const [loadingGetPurposes, setLoadingGetPurposes] = useState(false);
+  const [errorGetPurposes, setErrorGetPurposes] = useState(null);
+
+  const getPurposes = useCallback(async (idInstitucion) => {
+    setLoadingGetPurposes(true);
+    setErrorGetPurposes(null);
+    try {
+      const res = await dataService.getPurpose({
+        id_institucion: Number(idInstitucion),
+      });
+      return res;
+    } catch (err) {
+      setErrorGetPurposes(err);
+      throw err;
+    } finally {
+      setLoadingGetPurposes(false);
+    }
+  }, []);
+
+  const [loadingGetDba, setLoadingGetDba] = useState(false);
+  const [errorGetDba, setErrorGetDba] = useState(null);
+
+  const getDbaByPurpose = useCallback(async (idPurpose) => {
+    setLoadingGetDba(true);
+    setErrorGetDba(null);
+    try {
+      const res = await dataService.getDbaByPurpose({
+        id_purpose: Number(idPurpose),
+      });
+      return res;
+    } catch (err) {
+      setErrorGetDba(err);
+      throw err;
+    } finally {
+      setLoadingGetDba(false);
+    }
+  }, []);
+
+  const getTransitionNotes = useCallback(
+    async ({ id_purpose, fk_grado, fk_periodo, fk_asignatura }) => {
+      const res = await dataService.getTransitionNotes({
+        id_purpose: Number(id_purpose),
+        fk_grado: Number(fk_grado),
+        fk_periodo: Number(fk_periodo),
+        fk_asignatura: Number(fk_asignatura),
+      });
+      return res;
+    },
+    [],
+  );
+
+  const getStudentTransitionNotes = useCallback(
+    async ({
+      fk_estudiante,
+      fk_docente,
+      fk_asignatura,
+      fk_periodo,
+      fk_grado,
+    }) => {
+      const res = await dataService.getStudentTransitionNotes({
+        fk_estudiante: Number(fk_estudiante),
+        fk_docente: Number(fk_docente),
+        fk_asignatura: Number(fk_asignatura),
+        fk_periodo: Number(fk_periodo),
+        fk_grado: Number(fk_grado),
+      });
+      return res;
+    },
+    [],
+  );
 
   const value = useMemo(
     () => ({
@@ -226,6 +314,21 @@ export function DataProvider({ children }) {
       loadingInstitutionSedes,
       errorInstitutionSedes,
       loadInstitutionSedes,
+
+      registerPurposes,
+      loadingRegisterPurposes,
+      errorRegisterPurposes,
+
+      getPurposes,
+      loadingGetPurposes,
+      errorGetPurposes,
+
+      getDbaByPurpose,
+      loadingGetDba,
+      errorGetDba,
+
+      getTransitionNotes,
+      getStudentTransitionNotes,
     }),
     [
       typeIdentification,
@@ -262,7 +365,21 @@ export function DataProvider({ children }) {
       loadingInstitutionSedes,
       errorInstitutionSedes,
       loadInstitutionSedes,
-    ]
+
+      registerPurposes,
+      loadingRegisterPurposes,
+      errorRegisterPurposes,
+      getPurposes,
+      loadingGetPurposes,
+      errorGetPurposes,
+
+      getDbaByPurpose,
+      loadingGetDba,
+      errorGetDba,
+
+      getTransitionNotes,
+      getStudentTransitionNotes,
+    ],
   );
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

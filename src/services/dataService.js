@@ -149,7 +149,7 @@ export async function getCities(departmentId) {
 
   const res = await ApiClient.instance.post(
     "/municipalities/:departamentId",
-    payload
+    payload,
   );
 
   // ApiClient tiene interceptor que normalmente devuelve res.data.
@@ -217,4 +217,129 @@ export async function getSede(formData) {
   if (data !== undefined && data !== null) return data;
 
   throw new Error("Respuesta inesperada de sede.");
+}
+
+/**
+ * Registra propósitos (DBA) enviando datos JSON.
+ *
+ * Endpoint esperado: POST /purposes
+ * Payload:
+ * {
+ *   fk_institucion: number,
+ *   fk_docente: number,
+ *   propositos: [{ name_proposito: string, dba: [{ nombre_dba: string }] }]
+ * }
+ */
+export async function registerPurposes(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+  const res = await ApiClient.instance.post("/purposes", payload);
+
+  const data = res;
+  console.log("DataService - registerPurposes:", data);
+
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de registerPurposes.");
+}
+
+/**
+ * Obtiene los propósitos de una institución.
+ *
+ * Endpoint esperado: POST /purpose/institution
+ * Payload: { id_institucion: number }
+ */
+export async function getPurpose(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+  const res = await ApiClient.instance.post("/purpose/institution", payload);
+
+  const data = res;
+  console.log("DataService - getPurpose:", data);
+
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === "object" && Array.isArray(data.data))
+    return data.data;
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de getPurpose.");
+}
+
+/**
+ * Obtiene los DBA de un propósito.
+ *
+ * Endpoint esperado: POST /dba/purpose
+ * Payload: { id_purpose: number }
+ */
+export async function getDbaByPurpose(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+  const res = await ApiClient.instance.post("/dba/purpose", payload);
+
+  const data = res;
+  console.log("DataService - getDbaByPurpose:", data);
+
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === "object" && Array.isArray(data.data))
+    return data.data;
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de getDbaByPurpose.");
+}
+
+/**
+ * Obtiene las notas de transición por propósito, grado, periodo y asignatura.
+ *
+ * Endpoint esperado: POST /note/transition
+ * Payload: { id_purpose, fk_grado, fk_periodo, fk_asignatura }
+ */
+export async function getTransitionNotes(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+  const res = await ApiClient.instance.post("/note/transition", payload);
+
+  const data = res;
+  console.log("DataService - getTransitionNotes:", data);
+
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === "object" && Array.isArray(data.data))
+    return data.data;
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de /note/transition.");
+}
+
+/**
+ * Obtiene las notas de transición registradas para un estudiante específico.
+ *
+ * Endpoint esperado: POST /student/note/transition
+ * Payload: { fk_estudiante, fk_docente, fk_asignatura, fk_periodo, fk_grado }
+ */
+export async function getStudentTransitionNotes(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+  const res = await ApiClient.instance.post(
+    "/student/note/transition",
+    payload,
+  );
+
+  const data = res;
+  console.log("DataService - getStudentTransitionNotes:", data);
+
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === "object" && Array.isArray(data.data))
+    return data.data;
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de /student/note/transition.");
 }

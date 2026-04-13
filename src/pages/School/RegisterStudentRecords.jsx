@@ -24,6 +24,277 @@ import { useNotify } from "../../lib/hooks/useNotify";
 import { asignatureResponse } from "../../services/DataExamples/asignatureResponse";
 import { studentsResponse } from "../../services/DataExamples/studentsResponse";
 
+const NIVEL_OPTIONS = ["Superior", "Alto", "Básico", "Bajo"];
+
+const TransicionCognitivaCell = React.memo(function TransicionCognitivaCell({
+  student,
+  studentKey,
+  purposeOptions,
+  loadingPurposes,
+  savedItems,
+  onAddItem,
+  onDeleteItem,
+  onSave,
+  saving,
+  onLoadDba,
+  onLoadTransitionNotes,
+}) {
+  const [purposeId, setPurposeId] = useState("");
+  const [dbaId, setDbaId] = useState("");
+  const [nivel, setNivel] = useState("");
+  const [comment, setComment] = useState("");
+  const [dbaOptions, setDbaOptions] = useState([]);
+  const [loadingDba, setLoadingDba] = useState(false);
+  const [transitionNoteOptions, setTransitionNoteOptions] = useState([]);
+  const [loadingTransitionNotes, setLoadingTransitionNotes] = useState(false);
+  const [showItems, setShowItems] = useState(true);
+  const [isOpen, setIsOpen] = useState(true);
+
+  const handlePurposeChange = async (e) => {
+    const val = e.target.value;
+    setPurposeId(val);
+    setDbaId("");
+    setDbaOptions([]);
+    setNivel("");
+    setTransitionNoteOptions([]);
+    if (val) {
+      setLoadingDba(true);
+      setLoadingTransitionNotes(true);
+      try {
+        const [dbas, notes] = await Promise.all([
+          onLoadDba(val),
+          onLoadTransitionNotes
+            ? onLoadTransitionNotes(val)
+            : Promise.resolve([]),
+        ]);
+        setDbaOptions(Array.isArray(dbas) ? dbas : []);
+        setTransitionNoteOptions(Array.isArray(notes) ? notes : []);
+      } finally {
+        setLoadingDba(false);
+        setLoadingTransitionNotes(false);
+      }
+    }
+  };
+
+  const handleAdd = () => {
+    if (!purposeId) return;
+    const purposeObj = (purposeOptions || []).find(
+      (p) => String(p.id_proposito ?? p.id) === String(purposeId),
+    );
+    const dbaObj = (dbaOptions || []).find(
+      (d) => String(d.id_dba ?? d.id) === String(dbaId),
+    );
+    const noteObj = transitionNoteOptions.find(
+      (n) => String(n.id_nota_transicion) === String(nivel),
+    );
+    onAddItem(studentKey, {
+      purposeId,
+      purposeText:
+        purposeObj?.nombre_proposito ?? purposeObj?.nombre ?? String(purposeId),
+      purposeNum: purposeObj?.numero ?? "",
+      dbaId: dbaId || "",
+      dbaText: dbaObj?.nombre_dba ?? dbaObj?.nombre ?? "",
+      nivel: noteObj?.descripcion_nota ?? nivel,
+      nivelId: noteObj?.id_nota_transicion ?? nivel,
+      comment,
+    });
+    setPurposeId("");
+    setDbaId("");
+    setNivel("");
+    setDbaOptions([]);
+    setTransitionNoteOptions([]);
+  };
+
+  const hasItems = Array.isArray(savedItems) && savedItems.length > 0;
+
+  return (
+    <div className="text-sm p-2">
+      <button
+        type="button"
+        onClick={() => setIsOpen((v) => !v)}
+        className="flex items-center justify-end  bg-secondary rounded-lg w-full px-3 py-2 font-medium hover:opacity-70"
+      >
+        <span className="text-xs text-surface">{isOpen ? "▲" : "▼"}</span>
+      </button>
+      {isOpen && (
+        <div className="p-3 flex flex-col gap-2 ">
+          {/* Fila de controles de selección */}
+          <div className="grid grid-cols-4 gap-2 items-end">
+            <div className="flex flex-col">
+              <label className="text-xs mb-0.5 font-medium">Propósito</label>
+              <select
+                value={purposeId}
+                onChange={handlePurposeChange}
+                className="p-1.5 border rounded bg-surface text-sm min-w-[150px]"
+                disabled={loadingPurposes}
+              >
+                <option value="">
+                  {loadingPurposes ? "Cargando..." : "Seleccionar propósito"}
+                </option>
+                {(purposeOptions || []).map((p) => (
+                  <option
+                    key={p.id_proposito ?? p.id}
+                    value={p.id_proposito ?? p.id}
+                  >
+                    {p.nombre_proposito ??
+                      p.nombre ??
+                      `Propósito ${p.id_proposito ?? p.id}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex flex-col">
+              <label className="text-xs mb-0.5 font-medium">DBA</label>
+              <select
+                value={dbaId}
+                onChange={(e) => setDbaId(e.target.value)}
+                className="p-1.5 border rounded bg-surface text-sm min-w-[120px]"
+                disabled={!purposeId || loadingDba}
+              >
+                <option value="">
+                  {loadingDba ? "Cargando..." : "Seleccionar DBA"}
+                </option>
+                {(dbaOptions || []).map((d) => (
+                  <option key={d.id_dba ?? d.id} value={d.id_dba ?? d.id}>
+                    {d.nombre_dba ?? d.nombre ?? `DBA ${d.id_dba ?? d.id}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex flex-col">
+              <label className="text-xs mb-0.5 font-medium">Asignación</label>
+              <select
+                value={nivel}
+                onChange={(e) => setNivel(e.target.value)}
+                className="p-1.5 border rounded bg-surface text-sm min-w-[110px]"
+                disabled={!purposeId || loadingTransitionNotes}
+              >
+                <option value="">
+                  {loadingTransitionNotes
+                    ? "Cargando..."
+                    : "Seleccionar asignación"}
+                </option>
+                {transitionNoteOptions.map((n) => (
+                  <option
+                    key={n.id_nota_transicion}
+                    value={n.id_nota_transicion}
+                  >
+                    {n.descripcion_nota}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col">
+              <label className="text-xs mb-0.5 font-medium">&nbsp;</label>
+              <button
+                type="button"
+                onClick={handleAdd}
+                disabled={!purposeId || !dbaId || !nivel}
+                className="h-full rounded bg-primary text-surface flex items-center justify-center gap-1 font-bold disabled:opacity-40 px-3 py-1.5"
+                title="Agregar"
+              >
+                + Agregar
+              </button>
+            </div>
+          </div>
+
+          {/* Fila de comentario */}
+          <div>
+            <label className="text-xs mb-0.5 font-medium block">
+              Comentario
+            </label>
+            <input
+              type="text"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              className="w-full p-1.5 border rounded bg-surface text-sm"
+              placeholder="Descripción para el estudiante..."
+            />
+          </div>
+
+          {/* Lista de valores agregados */}
+          {hasItems && (
+            <div className="flex flex-col rounded-lg items-center justify-end  bg-secondary p-2 ">
+              <button
+                type="button"
+                onClick={() => setShowItems((v) => !v)}
+                className="flex items-center justify-between w-full text-xs font-semibold mb-2 hover:opacity-70"
+              >
+                <span className="font-semibold px-2 text-md">
+                  Valores agregados
+                </span>
+                <span>{showItems ? "∧" : "∨"}</span>
+              </button>
+              {showItems && (
+                <div className="flex flex-col gap-2">
+                  {savedItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="border rounded p-2 bg-surface grid grid-cols-12 gap-2"
+                    >
+                      <div className="flex-1 text-md col-span-11 text-start flex-col gap-2">
+                        <div className="font-medium">
+                          <strong>Propósito:</strong>
+                          <span className="font-normal">
+                            {item.purposeText}
+                          </span>
+                        </div>
+                        {item.dbaText && (
+                          <div className="">
+                            <strong>DBA:</strong> {item.dbaText}
+                          </div>
+                        )}
+                        {item.nivel && (
+                          <div className="">
+                            <strong>Asignación: </strong>
+                            {item.nivel}
+                          </div>
+                        )}
+                        {item.comment && (
+                          <div className="opacity-80">
+                            <strong>Comentario: </strong>
+                            {item.comment}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => onDeleteItem(studentKey, item.id)}
+                          className="text-gray-400 hover:bg-red-600 hover:text-white rounded-2xl  p-1"
+                          title="Eliminar"
+                        >
+                          X
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Botón Guardar */}
+          {hasItems && (
+            <div className="flex justify-end mt-1">
+              <button
+                type="button"
+                onClick={() => onSave(student)}
+                disabled={saving}
+                className="px-5 py-1.5 rounded bg-accent text-surface text-sm font-medium disabled:opacity-50"
+              >
+                {saving ? "Guardando..." : "Guardar"}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+});
+
 const normalize = (value) =>
   String(value ?? "")
     .trim()
@@ -36,6 +307,8 @@ const RegisterStudentRecords = () => {
     errorRecords,
     reloadRecords,
     getStudentGrades,
+    createTransitionNote,
+    saveTransitionStudentNote,
   } = useSchool();
   const {
     getTeacherSede,
@@ -47,7 +320,13 @@ const RegisterStudentRecords = () => {
     getLogroType,
     getAllLogros,
   } = useTeacher();
-  const { institutionSedes } = useData();
+  const {
+    institutionSedes,
+    getPurposes,
+    getDbaByPurpose,
+    getTransitionNotes,
+    getStudentTransitionNotes,
+  } = useData();
   const { idSede, nameSede, rol, idDocente, token, idInstitution } = useAuth();
   const notify = useNotify();
 
@@ -86,6 +365,16 @@ const RegisterStudentRecords = () => {
   const [loadingLogrosByStudent, setLoadingLogrosByStudent] = useState({});
   const [selectedLogroByStudent, setSelectedLogroByStudent] = useState({});
 
+  // --- Grado Transición ---
+  const [isTransicion, setIsTransicion] = useState(false);
+  const [purposeOptions, setPurposeOptions] = useState([]);
+  const [loadingPurposes, setLoadingPurposes] = useState(false);
+  const [dbaByPurposeCache, setDbaByPurposeCache] = useState({});
+  // { [studentKey]: [{id, purposeId, purposeText, purposeNum, dbaId, dbaText, nivel, comment}] }
+  const [transicionItemsByStudent, setTransicionItemsByStudent] = useState({});
+  // { [studentKey]: boolean }
+  const [transicionSavingById, setTransicionSavingById] = useState({});
+
   // === Refs para estado mutable en celdas (evitar pérdida de foco por recreación de columnas) ===
   const recordValuesByStudentRef = useRef(recordValuesByStudent);
   const commentsByIdRef = useRef(commentsById);
@@ -106,6 +395,12 @@ const RegisterStudentRecords = () => {
   const tipoLogroOptionsRef = useRef(tipoLogroOptions);
   const loadingTipoLogroOptionsRef = useRef(loadingTipoLogroOptions);
 
+  // Refs para Grado Transición
+  const isTransicionRef = useRef(isTransicion);
+  const transicionItemsByStudentRef = useRef(transicionItemsByStudent);
+  const transicionSavingByIdRef = useRef(transicionSavingById);
+  const dbaByPurposeCacheRef = useRef(dbaByPurposeCache);
+
   // Sincronizar refs en cada render
   recordValuesByStudentRef.current = recordValuesByStudent;
   commentsByIdRef.current = commentsById;
@@ -122,6 +417,12 @@ const RegisterStudentRecords = () => {
   selectedLogroByStudentRef.current = selectedLogroByStudent;
   tipoLogroOptionsRef.current = tipoLogroOptions;
   loadingTipoLogroOptionsRef.current = loadingTipoLogroOptions;
+
+  // Transición refs
+  isTransicionRef.current = isTransicion;
+  transicionItemsByStudentRef.current = transicionItemsByStudent;
+  transicionSavingByIdRef.current = transicionSavingById;
+  dbaByPurposeCacheRef.current = dbaByPurposeCache;
 
   // SedEs del docente (obtenidas vía getTeacherSede)
   const [teacherSedes, setTeacherSedes] = useState([]);
@@ -431,6 +732,26 @@ const RegisterStudentRecords = () => {
     setRecoveryNotesById({});
   }, [asignatureCode, journey]);
 
+  // Cargar propósitos cuando se activa el modo transición (o cambia la institución)
+  useEffect(() => {
+    if (!isTransicion || !fkInstitucion) {
+      if (!isTransicion) {
+        setPurposeOptions([]);
+        setDbaByPurposeCache({});
+        setTransicionItemsByStudent({});
+      }
+      return;
+    }
+    setLoadingPurposes(true);
+    getPurposes(fkInstitucion)
+      .then((res) => setPurposeOptions(Array.isArray(res) ? res : []))
+      .catch((err) => {
+        console.warn("Error cargando propósitos:", err);
+        setPurposeOptions([]);
+      })
+      .finally(() => setLoadingPurposes(false));
+  }, [isTransicion, fkInstitucion, getPurposes]);
+
   // Llamar a los servicios cuando se tengan los 4 campos requeridos (secuencial):
   // 1) cargar estudiantes del grado
   // 2) por cada estudiante llamar a getStudentNotes con fk_estudiante y consolidar
@@ -463,6 +784,60 @@ const RegisterStudentRecords = () => {
         : (studentsResponse?.data ?? []);
 
       setStudentsFromService(studentsArray);
+
+      // En modo transición: cargar notas previas por estudiante
+      if (isTransicionRef.current) {
+        setNotesFromService([]);
+        setRecordValuesByStudent({});
+        setNoteMetaByStudent({});
+        setRowEditById({});
+        setRowSavedById({});
+
+        const transicionPromises = (studentsArray || []).map((s) =>
+          getStudentTransitionNotes({
+            fk_estudiante: Number(s?.id_estudiante ?? s?.id_student ?? s?.id),
+            fk_docente: Number(idDocente),
+            fk_asignatura: Number(asignatureSelected),
+            fk_periodo: Number(periodSelected),
+            fk_grado: Number(gradeSelected),
+          }),
+        );
+
+        const transicionSettled = await Promise.allSettled(transicionPromises);
+        const newTransicionItems = {};
+
+        transicionSettled.forEach((res, idx) => {
+          const student = studentsArray[idx];
+          const studentKey = getStudentKey(student);
+          if (res.status !== "fulfilled") return;
+
+          const data = Array.isArray(res.value)
+            ? res.value
+            : (res.value?.data ?? []);
+
+          const items = (Array.isArray(data) ? data : [])
+            .filter((n) => n?.id_nota_estudiante_transicion != null)
+            .map((n) => ({
+              id: `server-${n.id_nota_estudiante_transicion}`,
+              purposeId: "",
+              purposeText: n.nombre_proposito ?? "",
+              purposeNum: "",
+              dbaId: "",
+              dbaText: n.nombre_dba ?? "",
+              nivel: n.descripcion_nota ?? "",
+              nivelId: n.id_nota_transicion ?? "",
+              comment: n.comentario ?? "",
+              id_nota_estudiante_transicion: n.id_nota_estudiante_transicion,
+            }));
+
+          if (items.length > 0) {
+            newTransicionItems[studentKey] = items;
+          }
+        });
+
+        setTransicionItemsByStudent(newTransicionItems);
+        return;
+      }
 
       // 2) Para cada estudiante pedir sus notas con fk_estudiante
       const notePromises = (studentsArray || []).map((s) =>
@@ -655,6 +1030,7 @@ const RegisterStudentRecords = () => {
     periodSelected,
     getStudentNotes,
     getStudentGrades,
+    getStudentTransitionNotes,
   ]);
 
   useEffect(() => {
@@ -1142,6 +1518,101 @@ const RegisterStudentRecords = () => {
     }, 0);
   }, [filteredStudents, recordValuesByStudent, recordsList]);
 
+  // --- Handlers para Grado Transición ---
+  const transitionNotesCacheRef = useRef({});
+
+  const handleLoadDbas = useCallback(
+    async (purposeId) => {
+      const cached = dbaByPurposeCacheRef.current?.[purposeId];
+      if (cached) return cached;
+      try {
+        const res = await getDbaByPurpose(purposeId);
+        const dbas = Array.isArray(res) ? res : [];
+        setDbaByPurposeCache((prev) => ({ ...prev, [purposeId]: dbas }));
+        return dbas;
+      } catch {
+        return [];
+      }
+    },
+    [getDbaByPurpose],
+  );
+
+  const handleLoadTransitionNotes = useCallback(
+    async (purposeId) => {
+      const cacheKey = `${purposeId}-${gradeSelected}-${periodSelected}-${asignatureSelected}`;
+      const cached = transitionNotesCacheRef.current?.[cacheKey];
+      if (cached) return cached;
+      try {
+        const res = await getTransitionNotes({
+          id_purpose: purposeId,
+          fk_grado: gradeSelected,
+          fk_periodo: periodSelected,
+          fk_asignatura: asignatureSelected,
+        });
+        const notes = Array.isArray(res) ? res : [];
+        transitionNotesCacheRef.current[cacheKey] = notes;
+        return notes;
+      } catch {
+        return [];
+      }
+    },
+    [getTransitionNotes, gradeSelected, periodSelected, asignatureSelected],
+  );
+
+  const handleTransicionAdd = useCallback((studentKey, item) => {
+    const newItem = { ...item, id: `${Date.now()}-${Math.random()}` };
+    setTransicionItemsByStudent((prev) => ({
+      ...prev,
+      [studentKey]: [...(prev[studentKey] ?? []), newItem],
+    }));
+  }, []);
+
+  const handleTransicionDelete = useCallback((studentKey, itemId) => {
+    setTransicionItemsByStudent((prev) => ({
+      ...prev,
+      [studentKey]: (prev[studentKey] ?? []).filter((i) => i.id !== itemId),
+    }));
+  }, []);
+
+  const handleTransicionSave = useCallback(
+    async (student) => {
+      const studentKey = getStudentKey(student);
+      const items = transicionItemsByStudentRef.current?.[studentKey] ?? [];
+      if (!items.length) {
+        notify.info("Agrega al menos un propósito antes de guardar.");
+        return;
+      }
+      setTransicionSavingById((prev) => ({ ...prev, [studentKey]: true }));
+      try {
+        const fkEstudiante = Number(
+          student?.id_estudiante ?? student?.id_student ?? student?.id,
+        );
+        const payload = {
+          fk_estudiante: fkEstudiante,
+          evaluaciones: items.map((item) => ({
+            fk_dba: Number(item.dbaId),
+            fk_nota_transicion: Number(item.nivelId),
+            comentario: item.comment || "",
+          })),
+        };
+        console.log(
+          "TransicionSave payload:",
+          JSON.stringify(payload, null, 2),
+        );
+        await saveTransitionStudentNote(payload);
+        notify.success(
+          `Notas de transición guardadas para ${getStudentName(student)}`,
+        );
+      } catch (err) {
+        console.error("Error guardando notas transición:", err);
+        notify.error("Error al guardar notas de transición");
+      } finally {
+        setTransicionSavingById((prev) => ({ ...prev, [studentKey]: false }));
+      }
+    },
+    [saveTransitionStudentNote, notify],
+  );
+
   // Funciones para los botones de acciones
   const handleAdd = async (student) => {
     await saveStudentNotes(student, { action: "add" });
@@ -1209,6 +1680,66 @@ const RegisterStudentRecords = () => {
 
   // Definir las columnas para DataTable
   const tableColumns = useMemo(() => {
+    // ── Modo Grado Transición: columna estudiante + dimensión cognitiva ──
+    if (isTransicion) {
+      return [
+        {
+          id: "studentInfo",
+          accessorFn: (student) =>
+            [
+              getStudentName(student),
+              student?.grado ?? student?.grade_scholar ?? "",
+            ]
+              .filter(Boolean)
+              .join(" "),
+          meta: { exportHeader: "Estudiante" },
+          header: (
+            <div className="lowercase first-letter:uppercase">Estudiante</div>
+          ),
+          cell: ({ row }) => {
+            const student = row.original;
+            const fullName = getStudentName(student);
+            return (
+              <div className="text-left p-3">
+                <div className="font-medium">{fullName || "Estudiante"}</div>
+                <div className="text-xs opacity-80">
+                  - Grado: {student?.grado || student?.grade_scholar || "-"}
+                </div>
+              </div>
+            );
+          },
+        },
+        {
+          id: "cognitiveDimension",
+          accessorFn: (student) => getStudentName(student),
+          meta: { exportHeader: "Nota" },
+          header: <div className="lowercase first-letter:uppercase">Nota</div>,
+          cell: ({ row }) => {
+            const student = row.original;
+            const studentKey = getStudentKey(student);
+            const savedItems = row.original.__transicionItems ?? [];
+            const saving = Boolean(row.original.__transicionSaving);
+            return (
+              <TransicionCognitivaCell
+                student={student}
+                studentKey={studentKey}
+                purposeOptions={purposeOptions}
+                loadingPurposes={loadingPurposes}
+                savedItems={savedItems}
+                onAddItem={handleTransicionAdd}
+                onDeleteItem={handleTransicionDelete}
+                onSave={handleTransicionSave}
+                saving={saving}
+                onLoadDba={handleLoadDbas}
+                onLoadTransitionNotes={handleLoadTransitionNotes}
+              />
+            );
+          },
+        },
+      ];
+    }
+
+    // ── Modo Normal ──
     const columns = [
       {
         id: "studentInfo",
@@ -1590,6 +2121,15 @@ const RegisterStudentRecords = () => {
     // Forzar re-registro de columnas cuando tipos de logro carguen
     // (cell renderer lee refs, pero el useMemo debe reejecutarse para reflejar cambios)
     tipoLogroOptions,
+    // Grado Transición
+    isTransicion,
+    purposeOptions,
+    loadingPurposes,
+    handleTransicionAdd,
+    handleTransicionDelete,
+    handleTransicionSave,
+    handleLoadDbas,
+    handleLoadTransitionNotes,
   ]);
 
   // Preparar los datos para DataTable
@@ -1604,11 +2144,19 @@ const RegisterStudentRecords = () => {
           ...s,
           // Incluye nota y estado para que el buscador global del DataTable los indexe
           __notaFinal: `${finalInfo.final} ${finalInfo.isComplete ? "Completo" : "Progreso"}`,
+          // Modo transición: incluir items/saving por fila para forzar re-render cuando cambian
+          __transicionItems: transicionItemsByStudent[getStudentKey(s)],
+          __transicionSaving: transicionSavingById[getStudentKey(s)],
         };
       },
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredStudents, recordValuesByStudent]);
+  }, [
+    filteredStudents,
+    recordValuesByStudent,
+    transicionItemsByStudent,
+    transicionSavingById,
+  ]);
 
   return (
     <div className=" p-2 w-full h-full gap-4 flex flex-col">
@@ -1633,6 +2181,23 @@ const RegisterStudentRecords = () => {
           text="text-surface"
           className="w-auto px-3 py-1.5"
         />
+      </div>
+
+      {/* Checkbox grado transición */}
+      <div className="flex items-center gap-2">
+        <input
+          id="checkbox-transicion"
+          type="checkbox"
+          checked={isTransicion}
+          onChange={(e) => setIsTransicion(e.target.checked)}
+          className="w-4 h-4 accent-primary cursor-pointer"
+        />
+        <label
+          htmlFor="checkbox-transicion"
+          className="text-sm font-medium cursor-pointer select-none"
+        >
+          Grado Transición
+        </label>
       </div>
 
       <div
@@ -1785,7 +2350,7 @@ const RegisterStudentRecords = () => {
         <div className="p-4">
           <Loader message="Cargando estructura de notas y estudiantes..." />
         </div>
-      ) : recordsList.length === 0 ? (
+      ) : !isTransicion && recordsList.length === 0 ? (
         <div className="text-sm opacity-80">No hay notas configuradas.</div>
       ) : null}
 
@@ -1804,7 +2369,7 @@ const RegisterStudentRecords = () => {
               <div id="tour-students-count" className="text-sm opacity-80">
                 Estudiantes:{" "}
                 <span className="font-medium">{filteredStudents.length}</span>
-                {recordsList.length > 0 ? (
+                {!isTransicion && recordsList.length > 0 ? (
                   <>
                     {" "}
                     · Completos:{" "}

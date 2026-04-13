@@ -461,6 +461,54 @@ export async function createNote(payload) {
 }
 
 /**
+ * Crea notas de Grado Transición.
+ *
+ * Endpoint esperado: POST /transition/note
+ * @param {{ notes: Array<{ id_proposito: number, descripcion: string, fk_asignature: number, fk_docente: number, fk_periodo: number, fk_grado: number }> }} payload
+ * @returns {Promise<Object>} Respuesta del servidor
+ */
+export async function createTransitionNote(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+
+  const res = await ApiClient.instance.post("/transition/note", payload);
+
+  const data = res;
+  console.log("SchoolService - createTransitionNote:", data);
+
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de createTransitionNote.");
+}
+
+/**
+ * Guarda la evaluación de transición por estudiante.
+ *
+ * Endpoint esperado: POST /notes/transition/student
+ * Payload: { fk_estudiante, evaluaciones: [{ fk_dba, fk_nota_transicion, comentario }] }
+ */
+export async function saveTransitionStudentNote(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+
+  const res = await ApiClient.instance.post(
+    "/notes/transition/student",
+    payload,
+  );
+
+  const data = res;
+  console.log("SchoolService - saveTransitionStudentNote:", data);
+
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de /notes/transition/student.");
+}
+
+/**
  * Actualiza una nota existente
  * Endpoint esperado: PATCH /note/:noteId
  * @param {number|string} noteId - ID de la nota a actualizar

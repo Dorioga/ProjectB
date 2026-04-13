@@ -14,7 +14,10 @@ const EMPTY_CONTEXT = {
   getGradeSede: noop,
   getTeacherSubjects: noop,
   getTeacherGrades: noop,
+  getStudentGrades: noop,
   createNote: noop,
+  createTransitionNote: noop,
+  saveTransitionStudentNote: noop,
   updateNote: noop,
   createOrUpdateNote: noop,
   // generic loading/error flags

@@ -460,6 +460,38 @@ export function SchoolProvider({ children }) {
     }
   }, []);
 
+  const createTransitionNote = useCallback(async (payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await schoolService.createTransitionNote(payload);
+      eventBus.emit(
+        "¡Notas de transición registradas exitosamente!",
+        "success",
+      );
+      return result;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const saveTransitionStudentNote = useCallback(async (payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await schoolService.saveTransitionStudentNote(payload);
+      return result;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const updateNote = useCallback(async (noteId, payload) => {
     setLoading(true);
     setError(null);
@@ -598,6 +630,8 @@ export function SchoolProvider({ children }) {
       updateSede,
       getGradeAsignature,
       createNote,
+      createTransitionNote,
+      saveTransitionStudentNote,
       updateNote,
       createOrUpdateNote,
       getInstitution,
@@ -654,6 +688,8 @@ export function SchoolProvider({ children }) {
       updateSede,
       getGradeAsignature,
       createNote,
+      createTransitionNote,
+      saveTransitionStudentNote,
       updateNote,
       createOrUpdateNote,
       getInstitution,
