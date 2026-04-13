@@ -1825,16 +1825,23 @@ const RegisterStudentRecords = () => {
       if (item.id_nota_estudiante_transicion != null) {
         // Item del servidor: enviar comentario y estado al endpoint PATCH
         try {
-          await updateTransitionStudentNote(item.id_nota_estudiante_transicion, {
-            comentario: draftComment,
-            estado: draftEstado ?? "Activo",
-          });
+          await updateTransitionStudentNote(
+            item.id_nota_estudiante_transicion,
+            {
+              comentario: draftComment,
+              estado: draftEstado ?? "Activo",
+            },
+          );
           // Actualizar en estado local
           setTransicionItemsByStudent((prev) => ({
             ...prev,
             [studentKey]: (prev[studentKey] ?? []).map((i) =>
               i.id === item.id
-                ? { ...i, comment: draftComment, estado: draftEstado ?? "Activo" }
+                ? {
+                    ...i,
+                    comment: draftComment,
+                    estado: draftEstado ?? "Activo",
+                  }
                 : i,
             ),
           }));
