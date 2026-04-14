@@ -130,7 +130,10 @@ const ManageDBA = () => {
       {/* ── Modal ProfileDBA ───────────────────────────────────────────────── */}
       <Modal
         isOpen={!!profilePurpose}
-        onClose={() => { setProfilePurpose(null); loadPurposes(); }}
+        onClose={() => {
+          setProfilePurpose(null);
+          loadPurposes();
+        }}
         title="Derechos Básicos de Aprendizaje"
         size="4xl"
       >
@@ -138,7 +141,10 @@ const ManageDBA = () => {
           <ProfileDBA
             purposeId={profilePurpose.id}
             purposeName={profilePurpose.nombre}
-            onClose={() => { setProfilePurpose(null); loadPurposes(); }}
+            onClose={() => {
+              setProfilePurpose(null);
+              loadPurposes();
+            }}
           />
         )}
       </Modal>
