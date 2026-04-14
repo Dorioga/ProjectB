@@ -197,6 +197,93 @@ const useBoletinProcessed = (data) => {
   return { periodos, asignaturas, promedioGeneral, resumenEstado };
 };
 
+/* ── Función pura equivalente a useBoletinProcessed (para uso en loops) ── */
+function computeBoletinData(data) {
+  const periodoMap = new Map();
+  for (const r of data) {
+    if (r.id_periodo && !periodoMap.has(r.id_periodo)) {
+      periodoMap.set(
+        r.id_periodo,
+        r.nombre_periodo || `Periodo ${r.id_periodo}`,
+      );
+    }
+  }
+  const periodos = Array.from(periodoMap.entries())
+    .sort((a, b) => Number(a[0]) - Number(b[0]))
+    .map(([id, nombre]) => ({ id, nombre }));
+
+  const asigMap = new Map();
+  for (const r of data) {
+    const key = r.nombre_asignatura;
+    if (!asigMap.has(key)) {
+      asigMap.set(key, {
+        nombre_asignatura: key,
+        nombre_docente: r.nombre_docente || "-",
+        definitiva: r.definitiva || "-",
+        estado_final: r.estado_final || "-",
+        periodos: new Map(),
+      });
+    }
+    const asig = asigMap.get(key);
+    if (r.definitiva) {
+      const newDef = parseFloat(r.definitiva);
+      const curDef = parseFloat(asig.definitiva);
+      if (!asig.definitiva || asig.definitiva === "-" || newDef > curDef)
+        asig.definitiva = r.definitiva;
+    }
+    if ((!asig.estado_final || asig.estado_final === "-") && r.estado_final)
+      asig.estado_final = r.estado_final;
+    const pid = r.id_periodo;
+    if (!asig.periodos.has(pid)) {
+      asig.periodos.set(pid, {
+        nota: r.nota_periodo_porcentual || null,
+        recuperacion: r.nota_recuperacion || null,
+        escala: r.escala_nota || null,
+        estado: r.estado_periodo || null,
+        logros: [],
+        logro_nota_estudiante: r.logro_nota_estudiante || "",
+        notas: [],
+      });
+    }
+    const per = asig.periodos.get(pid);
+    const logro = (r.logro || "").trim();
+    if (logro && !per.logros.includes(logro)) per.logros.push(logro);
+    if (r.logro_nota_estudiante && !per.logro_nota_estudiante)
+      per.logro_nota_estudiante = r.logro_nota_estudiante;
+    if (r.valor_nota !== undefined && r.valor_nota !== null) {
+      const notaNombre = (r.nombre_nota_porcentaje ?? "") + "%";
+      const exists = per.notas.some(
+        (n) =>
+          n.nombre === notaNombre && String(n.valor) === String(r.valor_nota),
+      );
+      if (!exists) per.notas.push({ nombre: notaNombre, valor: r.valor_nota });
+    }
+  }
+  const asignaturas = Array.from(asigMap.values());
+  const promedioGeneral = asignaturas.length
+    ? (
+        asignaturas.reduce((acc, a) => {
+          const v = parseFloat(a.definitiva);
+          return acc + (isNaN(v) ? 0 : v);
+        }, 0) / asignaturas.length
+      ).toFixed(2)
+    : null;
+  const resumenEstado = (() => {
+    if (!asignaturas.length) return "-";
+    const total = asignaturas.length;
+    const prom = asignaturas.filter(
+      (a) =>
+        a.estado_final &&
+        a.estado_final.toLowerCase().includes("promovido") &&
+        !a.estado_final.toLowerCase().includes("no"),
+    ).length;
+    if (prom === total) return "Promovido";
+    if (prom === 0) return "No promovido";
+    return `${prom} de ${total} asignaturas promovidas`;
+  })();
+  return { periodos, asignaturas, promedioGeneral, resumenEstado };
+}
+
 /* ── Hook: procesamiento de boletín grado transición ── */
 const useBoletinTransicionProcessed = (data) => {
   const asignaturas = useMemo(() => {
@@ -208,36 +295,46 @@ const useBoletinTransicionProcessed = (data) => {
           id_asignatura: r.id_asignatura,
           nombre_asignatura: r.nombre_asignatura ?? "-",
           nombre_docente: r.nombre_docente ?? "-",
-          propositos: new Map(),
+          filas: [],
         });
       }
       const asig = m.get(asigKey);
-      const propKey = String(r.id_proposito);
-      if (!asig.propositos.has(propKey)) {
-        asig.propositos.set(propKey, {
+      const existingIdx = asig.filas.findIndex(
+        (d) =>
+          String(d.id_dba) === String(r.id_dba) &&
+          String(d.id_proposito) === String(r.id_proposito),
+      );
+      if (existingIdx === -1) {
+        asig.filas.push({
+          id_dba: r.id_dba,
           id_proposito: r.id_proposito,
           nombre_proposito: r.nombre_proposito ?? "-",
-          dbas: [],
-        });
-      }
-      const prop = asig.propositos.get(propKey);
-      const alreadyExists = prop.dbas.some(
-        (d) => String(d.id_dba) === String(r.id_dba),
-      );
-      if (!alreadyExists) {
-        prop.dbas.push({
-          id_dba: r.id_dba,
           nombre_dba: r.nombre_dba ?? "-",
-          descripcion_nota: r.descripcion_nota ?? "-",
+          descripcion_notas: r.descripcion_nota
+            ? r.descripcion_nota
+                .split("|")
+                .map((s) => s.trim())
+                .filter(Boolean)
+            : [],
+          descripcion_nota_elegida: r.descripcion_nota_elegida ?? "-",
           comentario: r.comentario ?? "",
           estado: r.estado ?? "",
         });
+      } else {
+        const notasParsed = r.descripcion_nota
+          ? r.descripcion_nota
+              .split("|")
+              .map((s) => s.trim())
+              .filter(Boolean)
+          : [];
+        for (const nota of notasParsed) {
+          if (!asig.filas[existingIdx].descripcion_notas.includes(nota)) {
+            asig.filas[existingIdx].descripcion_notas.push(nota);
+          }
+        }
       }
     }
-    return Array.from(m.values()).map((a) => ({
-      ...a,
-      propositos: Array.from(a.propositos.values()),
-    }));
+    return Array.from(m.values());
   }, [data]);
 
   return { asignaturas };
@@ -365,79 +462,100 @@ const BoletinTransicionView = ({ boletinData, info }) => {
               <tr style={{ backgroundColor: "#1e2d42", color: "#e5e7eb" }}>
                 <th
                   style={{
-                    ...S.thLeft,
-                    width: "38%",
+                    ...S.th,
+                    width: "20%",
                     fontSize: "8px",
                     color: "#94a3b8",
                   }}
                 >
-                  Propósito / DBA
+                  Propósito
                 </th>
-                <th style={{ ...S.th, width: "15%", fontSize: "8px" }}>Nota</th>
-                <th style={{ ...S.thLeft, width: "47%", fontSize: "8px" }}>
+                <th
+                  style={{
+                    ...S.th,
+                    width: "25%",
+                    fontSize: "8px",
+                    color: "#94a3b8",
+                  }}
+                >
+                  DBA
+                </th>
+                <th style={{ ...S.th, width: "10%", fontSize: "8px" }}>
+                  Valor asignado
+                </th>
+                <th style={{ ...S.th, width: "20%", fontSize: "8px" }}>
+                  Otros posibles valores
+                </th>
+                <th style={{ ...S.th, width: "25%", fontSize: "8px" }}>
                   Comentario
                 </th>
               </tr>
             </thead>
             <tbody>
-              {asig.propositos.map((prop, propIdx) => (
-                <React.Fragment key={prop.id_proposito}>
-                  {/* Fila de propósito */}
-                  <tr style={{ backgroundColor: "#f0f4ff" }}>
+              {asig.filas.map((fila, filaIdx) => {
+                const rowBg = filaIdx % 2 === 0 ? "#f9fafb" : "#ffffff";
+                return (
+                  <tr
+                    key={`${fila.id_proposito}-${fila.id_dba}`}
+                    style={{ backgroundColor: rowBg }}
+                  >
                     <td
-                      colSpan={3}
                       style={{
                         ...S.tdLeft,
-                        fontWeight: "bold",
                         fontSize: "9px",
-                        color: "#1e3a5f",
-                        padding: "5px 8px",
-                        borderBottom: "1px solid #c7d2fe",
+                        padding: "6px 10px",
                       }}
                     >
-                      {prop.nombre_proposito}
+                      {fila.nombre_proposito}
+                    </td>
+                    <td
+                      style={{
+                        ...S.tdLeft,
+                        fontSize: "9px",
+                        padding: "6px 10px",
+                      }}
+                    >
+                      {fila.nombre_dba}
+                    </td>
+                    <td
+                      style={{
+                        ...S.td,
+                        fontWeight: "bold",
+                        fontSize: "12px",
+                        color: colorNota(fila.descripcion_nota_elegida),
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      {fila.descripcion_nota_elegida?.toUpperCase() ?? "-"}
+                    </td>
+                    <td
+                      style={{
+                        ...S.td,
+                        fontSize: "12px",
+                        padding: "6px 10px",
+                        textAlign: "left",
+                      }}
+                    >
+                      {fila.descripcion_notas.length > 0
+                        ? fila.descripcion_notas.map((n, i) => (
+                            <div key={i} style={{ lineHeight: "1.6" }}>
+                              - {n}
+                            </div>
+                          ))
+                        : "-"}
+                    </td>
+                    <td
+                      style={{
+                        ...S.td,
+                        fontSize: "12px",
+                        color: "#6b7280",
+                      }}
+                    >
+                      {fila.comentario || "-"}
                     </td>
                   </tr>
-                  {/* Filas de DBA */}
-                  {prop.dbas.map((dba, dbaIdx) => {
-                    const rowBg =
-                      (propIdx + dbaIdx) % 2 === 0 ? "#f9fafb" : "#ffffff";
-                    return (
-                      <tr key={dba.id_dba} style={{ backgroundColor: rowBg }}>
-                        <td
-                          style={{
-                            ...S.tdLeft,
-                            paddingLeft: "16px",
-                            fontSize: "9px",
-                          }}
-                        >
-                          {dba.nombre_dba}
-                        </td>
-                        <td
-                          style={{
-                            ...S.td,
-                            fontWeight: "bold",
-                            fontSize: "12px",
-                            color: colorNota(dba.descripcion_nota),
-                            textTransform: "uppercase",
-                          }}
-                        >
-                          {dba.descripcion_nota?.toUpperCase() ?? "-"}
-                        </td>
-                        <td
-                          style={{
-                            ...S.tdLeft,
-                            fontSize: "9px",
-                            color: "#6b7280",
-                          }}
-                        >
-                          {dba.comentario || "-"}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </React.Fragment>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -467,40 +585,14 @@ const BoletinTransicionView = ({ boletinData, info }) => {
 };
 
 /* ══════════════════════════════════════════════════════════════
-   Generación de PDF estructurado con jsPDF
+   Encabezado PDF compartido
    ══════════════════════════════════════════════════════════════ */
 
-async function generateBoletinPDF(
-  info,
-  periodos,
-  asignaturas,
-  promedioGeneral,
-  resumenEstado,
-  escalas,
-  meta,
-) {
-  const pdf = new jsPDF({
-    orientation: "portrait",
-    unit: "mm",
-    format: "a4",
-    compress: true,
-  });
+async function drawPDFHeader(pdf, info, title) {
   const pageW = pdf.internal.pageSize.getWidth();
-  const pageH = pdf.internal.pageSize.getHeight();
   const margin = 8;
-  const contentW = pageW - margin * 2;
   let y = margin;
 
-  const addPageIfNeeded = (needed) => {
-    if (y + needed > pageH - margin) {
-      pdf.addPage();
-      y = margin;
-      return true;
-    }
-    return false;
-  };
-
-  /* ── Encabezado ── */
   const logoSize = 18;
   const logoX = margin;
   let logoData = null;
@@ -579,11 +671,49 @@ async function generateBoletinPDF(
   pdf.line(margin, y, pageW - margin, y);
   y += 4;
 
-  /* ── Título ── */
+  /* Título */
   pdf.setFontSize(11);
   pdf.setFont("helvetica", "bold");
-  pdf.text("BOLETÍN DE NOTAS", pageW / 2, y + 4, { align: "center" });
+  pdf.text(title, pageW / 2, y + 4, { align: "center" });
   y += 10;
+
+  return y;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Generación de PDF estructurado con jsPDF
+   ══════════════════════════════════════════════════════════════ */
+
+async function generateBoletinPDF(
+  info,
+  periodos,
+  asignaturas,
+  promedioGeneral,
+  resumenEstado,
+  escalas,
+  meta,
+) {
+  const pdf = new jsPDF({
+    orientation: "portrait",
+    unit: "mm",
+    format: "a4",
+    compress: true,
+  });
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+  const margin = 8;
+  const contentW = pageW - margin * 2;
+
+  let y = await drawPDFHeader(pdf, info, "BOLETÍN DE NOTAS");
+
+  const addPageIfNeeded = (needed) => {
+    if (y + needed > pageH - margin) {
+      pdf.addPage();
+      y = margin;
+      return true;
+    }
+    return false;
+  };
 
   /* ── Tabla de notas ── */
   // Columnas: Asignatura | Docente | [por cada periodo: Nota, Recup, Escala, Estado] | Definitiva | Estado Final
@@ -898,9 +1028,268 @@ async function generateBoletinPDF(
 }
 
 /* ══════════════════════════════════════════════════════════════
+   Generación de PDF — Boletín Transición
+   ══════════════════════════════════════════════════════════════ */
+
+async function generateBoletinTransicionPDF(info, boletinData, meta) {
+  /* ── Procesar datos (misma lógica que useBoletinTransicionProcessed) ── */
+  const asigMap = new Map();
+  for (const r of boletinData) {
+    const asigKey = String(r.id_asignatura);
+    if (!asigMap.has(asigKey)) {
+      asigMap.set(asigKey, {
+        id_asignatura: r.id_asignatura,
+        nombre_asignatura: r.nombre_asignatura ?? "-",
+        nombre_docente: r.nombre_docente ?? "-",
+        filas: [],
+      });
+    }
+    const asig = asigMap.get(asigKey);
+    const existingIdx = asig.filas.findIndex(
+      (d) =>
+        String(d.id_dba) === String(r.id_dba) &&
+        String(d.id_proposito) === String(r.id_proposito),
+    );
+    if (existingIdx === -1) {
+      asig.filas.push({
+        id_dba: r.id_dba,
+        id_proposito: r.id_proposito,
+        nombre_proposito: r.nombre_proposito ?? "-",
+        nombre_dba: r.nombre_dba ?? "-",
+        descripcion_notas: r.descripcion_nota
+          ? r.descripcion_nota
+              .split("|")
+              .map((s) => s.trim())
+              .filter(Boolean)
+          : [],
+        descripcion_nota_elegida: r.descripcion_nota_elegida ?? "-",
+        comentario: r.comentario ?? "",
+        estado: r.estado ?? "",
+      });
+    } else {
+      const notasParsed = r.descripcion_nota
+        ? r.descripcion_nota
+            .split("|")
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : [];
+      for (const nota of notasParsed) {
+        if (!asig.filas[existingIdx].descripcion_notas.includes(nota)) {
+          asig.filas[existingIdx].descripcion_notas.push(nota);
+        }
+      }
+    }
+  }
+  const asignaturas = Array.from(asigMap.values());
+
+  /* ── Configuración PDF ── */
+  const pdf = new jsPDF({
+    orientation: "portrait",
+    unit: "mm",
+    format: "a4",
+    compress: true,
+  });
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+  const margin = 8;
+  const contentW = pageW - margin * 2;
+
+  let y = await drawPDFHeader(pdf, info, "BOLETÍN DE NOTAS — GRADO TRANSICIÓN");
+
+  const addPageIfNeeded = (needed) => {
+    if (y + needed > pageH - margin) {
+      pdf.addPage();
+      y = margin;
+      return true;
+    }
+    return false;
+  };
+
+  /* ── Helper: dibujar texto multilínea en celda ── */
+  const drawMultiCell = (text, cx, cy, w, h, opts = {}) => {
+    const {
+      bold = false,
+      fontSize = 6,
+      align = "left",
+      color = [0, 0, 0],
+      bg = null,
+    } = opts;
+    if (bg) {
+      pdf.setFillColor(...bg);
+      pdf.rect(cx, cy, w, h, "F");
+    }
+    pdf.setDrawColor(180, 180, 180);
+    pdf.setLineWidth(0.2);
+    pdf.rect(cx, cy, w, h, "D");
+    pdf.setFontSize(fontSize);
+    pdf.setFont("helvetica", bold ? "bold" : "normal");
+    pdf.setTextColor(...color);
+    const lines = pdf.splitTextToSize(String(text ?? "-"), w - 2);
+    const lineH = fontSize * 0.45;
+    const blockH = lines.length * lineH;
+    let startY = cy + (h - blockH) / 2 + lineH * 0.8;
+    for (const line of lines) {
+      if (startY > cy + h - 1) break;
+      const tx = align === "center" ? cx + w / 2 : cx + 1;
+      pdf.text(line, tx, startY, {
+        align: align === "center" ? "center" : "left",
+      });
+      startY += lineH;
+    }
+  };
+
+  /* ── Anchos de columnas ── */
+  const colW = [
+    contentW * 0.18, // Propósito
+    contentW * 0.25, // DBA
+    contentW * 0.1, // Valor asignado
+    contentW * 0.22, // Otros posibles valores
+    contentW * 0.25, // Comentario
+  ];
+  const colX = [margin];
+  for (let i = 1; i < 5; i++) colX.push(colX[i - 1] + colW[i - 1]);
+
+  /* ── Tablas por asignatura ── */
+  for (const asig of asignaturas) {
+    /* Barra de asignatura */
+    addPageIfNeeded(16);
+    pdf.setFillColor(19, 26, 39);
+    pdf.rect(margin, y, contentW, 7, "F");
+    pdf.setFontSize(9);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(255, 255, 255);
+    pdf.text(asig.nombre_asignatura, margin + 3, y + 5);
+    pdf.setFontSize(7);
+    pdf.setFont("helvetica", "normal");
+    pdf.text(`Docente: ${asig.nombre_docente}`, pageW - margin - 3, y + 5, {
+      align: "right",
+    });
+    y += 7;
+
+    /* Cabecera de tabla */
+    const headerH = 6;
+    const headers = [
+      "Propósito",
+      "DBA",
+      "Valor asignado",
+      "Otros posibles valores",
+      "Comentario",
+    ];
+    const headerBg = [30, 45, 66];
+    const headerColor = [229, 231, 235];
+    for (let c = 0; c < 5; c++) {
+      drawMultiCell(headers[c], colX[c], y, colW[c], headerH, {
+        bold: true,
+        fontSize: 6,
+        align: "center",
+        color: headerColor,
+        bg: headerBg,
+      });
+    }
+    y += headerH;
+
+    /* Filas de datos */
+    for (let fi = 0; fi < asig.filas.length; fi++) {
+      const fila = asig.filas[fi];
+      const rowBg = fi % 2 === 0 ? [249, 250, 251] : [255, 255, 255];
+
+      /* Calcular alto dinámico de la fila */
+      pdf.setFontSize(6);
+      const propLines = pdf.splitTextToSize(fila.nombre_proposito, colW[0] - 2);
+      const dbaLines = pdf.splitTextToSize(fila.nombre_dba, colW[1] - 2);
+      const notasText =
+        fila.descripcion_notas.length > 0
+          ? fila.descripcion_notas.join("\n")
+          : "-";
+      const notasLines = pdf.splitTextToSize(notasText, colW[3] - 2);
+      const comentLines = pdf.splitTextToSize(
+        fila.comentario || "-",
+        colW[4] - 2,
+      );
+      const maxLines = Math.max(
+        propLines.length,
+        dbaLines.length,
+        notasLines.length,
+        comentLines.length,
+        1,
+      );
+      const lineH = 6 * 0.45;
+      const rowH = Math.max(6, maxLines * lineH + 3);
+
+      addPageIfNeeded(rowH);
+
+      drawMultiCell(fila.nombre_proposito, colX[0], y, colW[0], rowH, {
+        bg: rowBg,
+      });
+      drawMultiCell(fila.nombre_dba, colX[1], y, colW[1], rowH, {
+        bg: rowBg,
+      });
+      drawMultiCell(
+        (fila.descripcion_nota_elegida ?? "-").toUpperCase(),
+        colX[2],
+        y,
+        colW[2],
+        rowH,
+        { bold: true, fontSize: 7, align: "center", bg: rowBg },
+      );
+      drawMultiCell(notasText, colX[3], y, colW[3], rowH, {
+        bg: rowBg,
+      });
+      drawMultiCell(fila.comentario || "-", colX[4], y, colW[4], rowH, {
+        color: [107, 114, 128],
+        bg: rowBg,
+      });
+      y += rowH;
+    }
+
+    y += 4;
+  }
+
+  /* ── Convención de notas ── */
+  addPageIfNeeded(14);
+  pdf.setDrawColor(19, 26, 39);
+  pdf.setLineWidth(0.5);
+  pdf.line(margin, y, pageW - margin, y);
+  y += 5;
+  pdf.setFontSize(8);
+  pdf.setFont("helvetica", "bold");
+  pdf.setTextColor(0, 0, 0);
+  const conv = [
+    { letter: "A", label: "Superior", color: [21, 128, 61] },
+    { letter: "B", label: "Alto", color: [37, 99, 235] },
+    { letter: "C", label: "Básico", color: [217, 119, 6] },
+    { letter: "D / F", label: "Bajo", color: [220, 38, 38] },
+  ];
+  let convText = "Convención de notas:  ";
+  pdf.text("Convención de notas:", margin, y);
+  let cx = margin + pdf.getTextWidth("Convención de notas:  ");
+  for (let i = 0; i < conv.length; i++) {
+    const c = conv[i];
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(...c.color);
+    pdf.text(c.letter, cx, y);
+    cx += pdf.getTextWidth(c.letter) + 1;
+    pdf.setFont("helvetica", "normal");
+    pdf.setTextColor(55, 65, 81);
+    const sep = i < conv.length - 1 ? `${c.label}   |   ` : c.label;
+    pdf.text(sep, cx, y);
+    cx += pdf.getTextWidth(sep) + 1;
+  }
+
+  pdf.save(
+    `Boletin_Transicion_${meta.studentId}_${meta.year}_P${meta.periodId}.pdf`,
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
    Componente principal: BoletinSelector
    ══════════════════════════════════════════════════════════════ */
-const BoletinSelector = ({ studentId, isTransicion = false }) => {
+const BoletinSelector = ({
+  studentId,
+  isTransicion = false,
+  mode = "single",
+  students = [],
+}) => {
   const { getInstitutionScales } = useSchool();
   const { rol } = useAuth();
   const currentYear = new Date().getFullYear();
@@ -915,6 +1304,8 @@ const BoletinSelector = ({ studentId, isTransicion = false }) => {
   const [loading, setLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [error, setError] = useState(null);
+  // Progreso para modo "all": null = no iniciado, { current, total, errors[] }
+  const [progress, setProgress] = useState(null);
 
   const { periodos, asignaturas, promedioGeneral, resumenEstado } =
     useBoletinProcessed(!isTransicion ? (boletinData ?? []) : []);
@@ -964,23 +1355,186 @@ const BoletinSelector = ({ studentId, isTransicion = false }) => {
     if (!boletinData?.length) return;
     setExportLoading(true);
     try {
-      await generateBoletinPDF(
-        info,
-        periodos,
-        asignaturas,
-        promedioGeneral,
-        resumenEstado,
-        escalas,
-        {
-          studentId,
-          year,
-          periodId,
-        },
-      );
+      const metaObj = { studentId, year, periodId };
+      if (isTransicion) {
+        await generateBoletinTransicionPDF(info, boletinData, metaObj);
+      } else {
+        await generateBoletinPDF(
+          info,
+          periodos,
+          asignaturas,
+          promedioGeneral,
+          resumenEstado,
+          escalas,
+          metaObj,
+        );
+      }
     } finally {
       setExportLoading(false);
     }
   };
+
+  // ── Descarga en lote (mode="all") ─────────────────────────────────────────
+  const handleDescargarTodos = async () => {
+    if (!periodId) {
+      setError("Selecciona un período.");
+      return;
+    }
+    if (!year) {
+      setError("Selecciona un año.");
+      return;
+    }
+    if (!students.length) {
+      setError("No hay estudiantes para descargar.");
+      return;
+    }
+    setError(null);
+    setProgress({ current: 0, total: students.length, errors: [] });
+    for (let i = 0; i < students.length; i++) {
+      const student = students[i];
+      const sid = student.id_estudiante ?? student.id_student ?? student.id;
+      try {
+        const fetchFn = isTransicion ? getBoletinDocente : getBoletin;
+        const result = await fetchFn({
+          studentId: sid,
+          periodId: Number(periodId),
+          year: String(year),
+          fk_rol: rol,
+        });
+        const rows = Array.isArray(result) ? result : [];
+        if (rows.length > 0) {
+          const info0 = rows[0];
+          const metaObj = { studentId: sid, year, periodId };
+          if (isTransicion) {
+            await generateBoletinTransicionPDF(info0, rows, metaObj);
+          } else {
+            let escalas0 = [];
+            if (info0.id_institucion) {
+              try {
+                escalas0 = await getInstitutionScales(info0.id_institucion);
+              } catch {
+                /* silent */
+              }
+            }
+            const {
+              periodos: p,
+              asignaturas: a,
+              promedioGeneral: pg,
+              resumenEstado: re,
+            } = computeBoletinData(rows);
+            await generateBoletinPDF(info0, p, a, pg, re, escalas0, metaObj);
+          }
+        }
+      } catch (err) {
+        const name =
+          `${student.nombre_estudiante ?? student.nombre ?? "Estudiante"} ${student.apellido_estudiante ?? student.apellido ?? ""}`.trim();
+        setProgress((prev) => ({
+          ...prev,
+          errors: [
+            ...prev.errors,
+            { name, error: err?.message ?? "Error desconocido" },
+          ],
+        }));
+      }
+      setProgress((prev) => ({ ...prev, current: prev.current + 1 }));
+    }
+  };
+
+  // ── Render modo ALL ───────────────────────────────────────────────────────
+  if (mode === "all") {
+    const done = progress !== null && progress.current === progress.total;
+    const inProgress = progress !== null && !done;
+    return (
+      <div className="w-full flex flex-col gap-4">
+        <p className="text-sm text-text/60">
+          Se generará un boletín PDF por cada uno de los{" "}
+          <strong>{students.length}</strong> estudiantes del curso.
+        </p>
+        {/* Filtros */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+          <PeriodSelector
+            value={periodId}
+            onChange={(e) => setPeriodId(e.target.value)}
+            disabled={inProgress}
+          />
+          <div>
+            <label
+              htmlFor="allBoletinYear"
+              className="block text-sm font-medium"
+            >
+              Año
+            </label>
+            <select
+              id="allBoletinYear"
+              value={year}
+              onChange={(e) => setYear(e.target.value)}
+              disabled={inProgress}
+              className="w-full p-2 border rounded bg-surface"
+              aria-label="Año del boletín"
+            >
+              <option value="">Selecciona un año</option>
+              {yearOptions.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
+          </div>
+          <SimpleButton
+            msj={done ? "Descargar de nuevo" : "Descargar todos"}
+            icon="Download"
+            bg="bg-secondary"
+            text="text-surface"
+            type="button"
+            disabled={inProgress}
+            onClick={() => {
+              setProgress(null);
+              handleDescargarTodos();
+            }}
+          />
+        </div>
+        {error && (
+          <p className="text-sm rounded p-2 border border-red-200 bg-red-50 text-error">
+            {error}
+          </p>
+        )}
+        {progress !== null && (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-3">
+              <div className="flex-1 bg-surface2 rounded-full h-2 overflow-hidden">
+                <div
+                  className="bg-secondary h-2 rounded-full transition-all duration-300"
+                  style={{
+                    width: `${(progress.current / progress.total) * 100}%`,
+                  }}
+                />
+              </div>
+              <span className="text-sm whitespace-nowrap">
+                {progress.current} / {progress.total}
+              </span>
+            </div>
+            {done && (
+              <p className="text-sm text-green-700 font-medium">
+                ✓ Descarga completada
+                {progress.errors.length > 0 &&
+                  ` (${progress.errors.length} con error)`}
+                .
+              </p>
+            )}
+            {progress.errors.length > 0 && (
+              <ul className="text-xs text-error list-disc pl-4">
+                {progress.errors.map((e, i) => (
+                  <li key={i}>
+                    {e.name}: {e.error}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="w-full flex flex-col gap-4">

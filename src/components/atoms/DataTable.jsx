@@ -29,8 +29,10 @@ const DataTable = ({
   loading = false,
   loaderMessage = "Cargando...",
   loaderSize = 96,
+  // optional initial sorting: [{ id: 'column_key', desc: false }]
+  initialSorting = [],
 }) => {
-  const [sorting, setSorting] = useState([]);
+  const [sorting, setSorting] = useState(initialSorting);
   const [globalFilter, setGlobalFilter] = useState("");
   const tableRef = useRef(null);
   const [isOpen, setIsOpen] = useState(false);

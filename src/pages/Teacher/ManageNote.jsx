@@ -5,6 +5,7 @@ import Modal from "../../components/atoms/Modal";
 import RegisterRecords from "../GradeRecords/RegisterRecords";
 import RegisterStudentRecords from "../School/RegisterStudentRecords";
 import ProfileNote from "../../components/molecules/ProfileNote";
+import ProfileNoteTransition from "../../components/molecules/ProfileNoteTransition";
 import SedeSelect from "../../components/atoms/SedeSelect";
 import JourneySelect from "../../components/atoms/JourneySelect";
 import GradeSelector from "../../components/atoms/GradeSelector";
@@ -22,6 +23,7 @@ const ManageNote = () => {
     getTeacherSede,
     getTeacherGrades,
     getTeacherSubjects,
+    getTransitionNotes,
   } = useTeacher();
   const { idSede, nameSede, idDocente, token } = useAuth();
   const notify = useNotify();
@@ -54,6 +56,9 @@ const ManageNote = () => {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isAssignOpen, setIsAssignOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isTransicion, setIsTransicion] = useState(false);
+  const [isTransicionModalOpen, setIsTransicionModalOpen] = useState(false);
+  const [selectedTransicionRow, setSelectedTransicionRow] = useState(null);
 
   // Params para GradeSelector
   const teacherGradesParams = useMemo(
@@ -143,8 +148,16 @@ const ManageNote = () => {
         fk_asignatura: Number(asignatureId),
       };
       console.log("ManageNote - payload:", payload);
-      const res = await getNotesTeacherRef.current(payload);
-      const data = Array.isArray(res) ? res : (res?.data ?? []);
+
+      let data;
+      if (isTransicion) {
+        const res = await getTransitionNotes(payload);
+        data = Array.isArray(res) ? res : (res?.data ?? []);
+      } else {
+        const res = await getNotesTeacherRef.current(payload);
+        data = Array.isArray(res) ? res : (res?.data ?? []);
+      }
+
       setTableData(data);
       if (data.length === 0)
         notifyRef.current.info(
@@ -157,7 +170,14 @@ const ManageNote = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [gradeId, asignatureId, periodId, idDocente]);
+  }, [
+    gradeId,
+    asignatureId,
+    periodId,
+    idDocente,
+    isTransicion,
+    getTransitionNotes,
+  ]);
 
   // Invocación automática cuando cambian los filtros necesarios
   useEffect(() => {
@@ -169,10 +189,15 @@ const ManageNote = () => {
     setTableData([]);
   }, [sedeId, workdayId]);
 
-  // ── Columnas de la tabla ─────────────────────────────────────────────────
-  const columns = useMemo(
+  // ── Columnas de la tabla (transición vs normal) ─────────────────────────
+  const columnsNormal = useMemo(
     () => [
-      { accessorKey: "id_nota", header: "ID", meta: { hideOnLG: true } },
+      {
+        accessorKey: "id_nota",
+        header: "ID",
+        meta: { hideOnLG: true },
+        sortingFn: "alphanumeric",
+      },
       { accessorKey: "nombre_nota", header: "Nombre" },
       { accessorKey: "porcentaje", header: "Porcentaje (%)" },
       { accessorKey: "logro", header: "Logro", meta: { hideOnLG: true } },
@@ -180,6 +205,40 @@ const ManageNote = () => {
     ],
     [],
   );
+
+  const columnsTransicion = useMemo(
+    () => [
+      {
+        accessorKey: "id_nota_transicion",
+        header: "ID",
+        meta: { hideOnLG: true },
+        sortingFn: "alphanumeric",
+      },
+      { accessorKey: "nombre_proposito", header: "Propósito" },
+      { accessorKey: "descripcion_nota", header: "Descripción" },
+      {
+        id: "actions",
+        header: "Acciones",
+        cell: ({ row }) => (
+          <SimpleButton
+            type="button"
+            msj="Editar"
+            icon="Pencil"
+            bg="bg-accent"
+            text="text-surface"
+            noRounded={true}
+            onClick={() => {
+              setSelectedTransicionRow(row.original);
+              setIsTransicionModalOpen(true);
+            }}
+          />
+        ),
+      },
+    ],
+    [],
+  );
+
+  const columns = isTransicion ? columnsTransicion : columnsNormal;
 
   return (
     <div className="p-6 h-full gap-4 flex flex-col">
@@ -305,23 +364,41 @@ const ManageNote = () => {
             autoLoad={true}
           />
         </div>
+
+        {/* Checkbox Grado Transición */}
+        <div className="flex items-end pb-1">
+          <label className="flex items-center gap-2 cursor-pointer select-none text-sm font-medium">
+            <input
+              type="checkbox"
+              checked={isTransicion}
+              onChange={(e) => {
+                setIsTransicion(e.target.checked);
+                setTableData([]);
+              }}
+              className="w-4 h-4 accent-primary"
+            />
+            Grado Transición
+          </label>
+        </div>
       </div>
 
       {/* ── Tabla de resultados ──────────────────────────────────────────── */}
       <div id="tour-mn-table" className="flex-1 mt-4">
         {" "}
         {tableData.length > 0 && !isLoading && (
-          <div className="flex justify-end mb-2">
-            <div id="tour-mn-edit-btn" className="w-40">
-              <SimpleButton
-                type="button"
-                onClick={() => setIsEditOpen(true)}
-                msj="Editar notas"
-                icon="Pencil"
-                bg="bg-secondary"
-                text="text-surface"
-              />
-            </div>
+          <div className="flex justify-end mb-2 gap-2">
+            {!isTransicion && (
+              <div id="tour-mn-edit-btn" className="w-40">
+                <SimpleButton
+                  type="button"
+                  onClick={() => setIsEditOpen(true)}
+                  msj="Editar notas"
+                  icon="Pencil"
+                  bg="bg-secondary"
+                  text="text-surface"
+                />
+              </div>
+            )}
           </div>
         )}{" "}
         {isLoading ? (
@@ -331,6 +408,12 @@ const ManageNote = () => {
             data={tableData}
             columns={columns}
             fileName="Export_Notas"
+            initialSorting={[
+              {
+                id: isTransicion ? "id_nota_transicion" : "id_nota",
+                desc: false,
+              },
+            ]}
           />
         )}
       </div>
@@ -371,6 +454,26 @@ const ManageNote = () => {
           initialNotes={tableData}
           onClose={() => {
             setIsEditOpen(false);
+            fetchNotes();
+          }}
+        />
+      </Modal>
+
+      <Modal
+        isOpen={isTransicionModalOpen}
+        onClose={() => {
+          setIsTransicionModalOpen(false);
+          setSelectedTransicionRow(null);
+          fetchNotes();
+        }}
+        title="Editar nota de Transición"
+        size="4xl"
+      >
+        <ProfileNoteTransition
+          initialNotes={selectedTransicionRow ? [selectedTransicionRow] : []}
+          onClose={() => {
+            setIsTransicionModalOpen(false);
+            setSelectedTransicionRow(null);
             fetchNotes();
           }}
         />

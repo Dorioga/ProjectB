@@ -443,3 +443,48 @@ export async function getAssistanceBySedeAsignatures(payload) {
 export async function allteacher(payload) {
   return getTeachers(payload);
 }
+
+/**
+ * Obtiene notas de transición del docente
+ * Endpoint: POST /transition/notes/data
+ * payload: { fk_docente, fk_grade, fk_periodo, fk_asignatura }
+ */
+export async function getTransitionNotes(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto para getTransitionNotes.");
+  }
+  try {
+    const res = await ApiClient.instance.post(
+      "/transition/notes/data",
+      payload,
+    );
+    const data = Array.isArray(res) ? res : (res?.data ?? res);
+    return data;
+  } catch (error) {
+    console.error("teacherService - getTransitionNotes error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Actualiza una nota de transición del docente
+ * Endpoint: PATCH /docente/note/transition/:idTranNoteDoc
+ * payload: { descripcion_nota, estado_nota }
+ */
+export async function updateNoteTransition(idTranNoteDoc, payload) {
+  if (!idTranNoteDoc) throw new Error("idTranNoteDoc es requerido.");
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto para updateNoteTransition.");
+  }
+  try {
+    const res = await ApiClient.instance.patch(
+      `/docente/note/transition/${idTranNoteDoc}`,
+      payload,
+    );
+    const data = res?.data ?? res;
+    return data;
+  } catch (error) {
+    console.error("teacherService - updateNoteTransition error:", error);
+    throw error;
+  }
+}

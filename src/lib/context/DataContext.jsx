@@ -297,6 +297,16 @@ export function DataProvider({ children }) {
     [],
   );
 
+  const transitionPurpose = useCallback(async (idPurpose, body) => {
+    const res = await dataService.transitionPurpose(idPurpose, body);
+    return res;
+  }, []);
+
+  const transitionDba = useCallback(async (idDba, body) => {
+    const res = await dataService.transitionDba(idDba, body);
+    return res;
+  }, []);
+
   const value = useMemo(
     () => ({
       typeIdentification,
@@ -352,6 +362,8 @@ export function DataProvider({ children }) {
 
       getTransitionNotes,
       getStudentTransitionNotes,
+      transitionPurpose,
+      transitionDba,
     }),
     [
       typeIdentification,
@@ -406,6 +418,8 @@ export function DataProvider({ children }) {
 
       getTransitionNotes,
       getStudentTransitionNotes,
+      transitionPurpose,
+      transitionDba,
     ],
   );
 

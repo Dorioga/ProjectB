@@ -370,3 +370,36 @@ export async function getDbasByPurposeInstitution(payload) {
 
   throw new Error("Respuesta inesperada de getDbasByPurposeInstitution.");
 }
+
+/**
+ * Actualiza un propósito (nombre y estado).
+ *
+ * Endpoint: PATCH /purpose/transition/:idPurpose
+ * Body: { nombre_proposito: string, estado_proposito: string }
+ */
+export async function transitionPurpose(idPurpose, body) {
+  const res = await ApiClient.instance.patch(
+    `/purpose/transition/${idPurpose}`,
+    body,
+  );
+  const data = res;
+  console.log("DataService - transitionPurpose:", data);
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+  throw new Error("Respuesta inesperada de transitionPurpose.");
+}
+
+/**
+ * Actualiza un DBA (nombre y estado).
+ *
+ * Endpoint: PATCH /DBA/transition/:idDBA
+ * Body: { nombre_dba: string, estado_dba: string }
+ */
+export async function transitionDba(idDba, body) {
+  const res = await ApiClient.instance.patch(`/DBA/transition/${idDba}`, body);
+  const data = res;
+  console.log("DataService - transitionDba:", data);
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+  throw new Error("Respuesta inesperada de transitionDba.");
+}

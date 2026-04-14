@@ -3,29 +3,23 @@ import DataTable from "../../components/atoms/DataTable";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import Modal from "../../components/atoms/Modal";
 import SedeSelect from "../../components/atoms/SedeSelect";
-import JourneySelect from "../../components/atoms/JourneySelect";
 import GradeSelector from "../../components/atoms/GradeSelector";
-import PeriodSelector from "../../components/atoms/PeriodSelector";
 import Loader from "../../components/atoms/Loader";
 import BoletinSelector from "../../components/molecules/BoletinSelector";
 import useSchool from "../../lib/hooks/useSchool";
 import useTeacher from "../../lib/hooks/useTeacher";
 import useAuth from "../../lib/hooks/useAuth";
-import useData from "../../lib/hooks/useData";
 import { useNotify } from "../../lib/hooks/useNotify";
 
 const ManageBoletin = () => {
   const { getStudentGrades } = useSchool();
   const { getTeacherSede, getTeacherGrades } = useTeacher();
-  const { institutionSedes } = useData();
   const { idSede, nameSede, idDocente, token } = useAuth();
   const notify = useNotify();
 
   // ── Filtros ─────────────────────────────────────────────────────────────
   const [sedeId, setSedeId] = useState("");
-  const [workdayId, setWorkdayId] = useState("");
   const [gradeId, setGradeId] = useState("");
-  const [periodId, setPeriodId] = useState("");
   const [isTransicion, setIsTransicion] = useState(false);
 
   // ── Sedes del docente ────────────────────────────────────────────────────
@@ -39,7 +33,7 @@ const ManageBoletin = () => {
   // ── Modal boletín ─────────────────────────────────────────────────────────
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [isBoletinOpen, setIsBoletinOpen] = useState(false);
-
+  const [isAllBoletinOpen, setIsAllBoletinOpen] = useState(false);
   // Refs para evitar stale closures en callbacks
   const notifyRef = useRef(notify);
   useEffect(() => {
@@ -62,18 +56,6 @@ const ManageBoletin = () => {
     if (idSede && nameSede) return [{ id: idSede, name: nameSede }];
     return null;
   }, [idSede, nameSede, teacherSedes]);
-
-  const sedeWorkday = useMemo(() => {
-    if (!sedeId) return null;
-    const candidates = [
-      ...(Array.isArray(institutionSedes) ? institutionSedes : []),
-      ...(Array.isArray(teacherSedes) ? teacherSedes : []),
-    ];
-    const sede = candidates.find(
-      (s) => String(s?.id ?? s?.id_sede) === String(sedeId),
-    );
-    return sede?.fk_workday ? String(sede.fk_workday) : null;
-  }, [sedeId, institutionSedes, teacherSedes]);
 
   // ── Cargar sedes del docente ─────────────────────────────────────────────
   useEffect(() => {
@@ -111,12 +93,6 @@ const ManageBoletin = () => {
     };
   }, [idDocente, getTeacherSede, token]);
 
-  // ── Auto-seleccionar jornada si es única ─────────────────────────────────
-  useEffect(() => {
-    if (!sedeWorkday || sedeWorkday === "3") return;
-    setWorkdayId(sedeWorkday);
-  }, [sedeWorkday]);
-
   // ── Cargar estudiantes ───────────────────────────────────────────────────
   const fetchStudents = useCallback(async () => {
     if (!gradeId) {
@@ -149,7 +125,7 @@ const ManageBoletin = () => {
   // Limpiar tabla cuando cambien filtros padres
   useEffect(() => {
     setStudents([]);
-  }, [sedeId, workdayId]);
+  }, [sedeId]);
 
   // ── Columnas de la tabla ─────────────────────────────────────────────────
   const columns = useMemo(
@@ -200,8 +176,8 @@ const ManageBoletin = () => {
   );
 
   const handleDownloadCurso = useCallback(() => {
-    console.log("descargando", students.length, "boletines del curso...");
-  }, [students]);
+    setIsAllBoletinOpen(true);
+  }, []);
 
   const canShowTable = Boolean(sedeId && gradeId);
 
@@ -241,12 +217,11 @@ const ManageBoletin = () => {
       </div>
 
       {/* ── Selectores en cascada ────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <SedeSelect
           value={sedeId}
           onChange={(e) => {
             setSedeId(e.target.value);
-            setWorkdayId("");
             setGradeId("");
           }}
           labelClassName="text-lg font-semibold"
@@ -255,64 +230,26 @@ const ManageBoletin = () => {
         />
 
         {isTeacher ? (
-          <>
-            <GradeSelector
-              label="Grado"
-              labelClassName="text-lg font-semibold"
-              value={gradeId}
-              onChange={(e) => {
-                setGradeId(e.target.value);
-              }}
-              sedeId={sedeId}
-              workdayId={workdayId}
-              customFetchMethod={getTeacherGrades}
-              additionalParams={teacherGradesParams}
-              disabled={!sedeId}
-            />
-            <JourneySelect
-              label="Jornada"
-              labelClassName="text-lg font-semibold"
-              value={workdayId}
-              onChange={(e) => setWorkdayId(e.target.value)}
-              filterValue={sedeWorkday}
-              includeAmbas={false}
-              sedeId={sedeId}
-              idTeacher={idDocente}
-            />
-          </>
+          <GradeSelector
+            label="Grado"
+            labelClassName="text-lg font-semibold"
+            value={gradeId}
+            onChange={(e) => setGradeId(e.target.value)}
+            sedeId={sedeId}
+            customFetchMethod={getTeacherGrades}
+            additionalParams={teacherGradesParams}
+            disabled={!sedeId}
+          />
         ) : (
-          <>
-            <JourneySelect
-              label="Jornada"
-              labelClassName="text-lg font-semibold"
-              value={workdayId}
-              onChange={(e) => {
-                setWorkdayId(e.target.value);
-                setGradeId("");
-              }}
-              filterValue={sedeWorkday}
-              includeAmbas={false}
-              disabled={!sedeId}
-            />
-            <GradeSelector
-              label="Grado"
-              labelClassName="text-lg font-semibold"
-              value={gradeId}
-              onChange={(e) => setGradeId(e.target.value)}
-              sedeId={sedeId}
-              workdayId={workdayId}
-              disabled={!workdayId}
-            />
-          </>
+          <GradeSelector
+            label="Grado"
+            labelClassName="text-lg font-semibold"
+            value={gradeId}
+            onChange={(e) => setGradeId(e.target.value)}
+            sedeId={sedeId}
+            disabled={!sedeId}
+          />
         )}
-
-        <PeriodSelector
-          label="Período"
-          labelClassName="text-lg font-semibold"
-          value={periodId}
-          onChange={(e) => setPeriodId(e.target.value)}
-          autoLoad={true}
-        />
       </div>
 
       {/* ── Mensajes de guía ──────────────────────────────────────────────── */}
@@ -377,8 +314,23 @@ const ManageBoletin = () => {
               selectedStudent.id
             }
             isTransicion={isTransicion}
+            mode="single"
           />
         )}
+      </Modal>
+
+      {/* ── Modal Boletines del Curso ───────────────────────────────────────── */}
+      <Modal
+        isOpen={isAllBoletinOpen}
+        onClose={() => setIsAllBoletinOpen(false)}
+        title="Boletines del Curso"
+        size="4xl"
+      >
+        <BoletinSelector
+          mode="all"
+          students={students}
+          isTransicion={isTransicion}
+        />
       </Modal>
     </div>
   );

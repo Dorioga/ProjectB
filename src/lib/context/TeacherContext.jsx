@@ -339,6 +339,44 @@ export function TeacherProvider({ children }) {
     }
   }, []);
 
+  const getTransitionNotes = useCallback(async (payload = {}) => {
+    setLoadingTeachers(true);
+    setErrorTeachers(null);
+    try {
+      const res = await teacherService.getTransitionNotes(payload);
+      return res;
+    } catch (err) {
+      setErrorTeachers(err);
+      throw err;
+    } finally {
+      setLoadingTeachers(false);
+    }
+  }, []);
+
+  const updateNoteTransition = useCallback(
+    async (idTranNoteDoc, payload = {}) => {
+      setLoadingTeachers(true);
+      setErrorTeachers(null);
+      try {
+        const res = await teacherService.updateNoteTransition(
+          idTranNoteDoc,
+          payload,
+        );
+        eventBus.emit(
+          "¡Nota de transición actualizada exitosamente!",
+          "success",
+        );
+        return res;
+      } catch (err) {
+        setErrorTeachers(err);
+        throw err;
+      } finally {
+        setLoadingTeachers(false);
+      }
+    },
+    [],
+  );
+
   const assignSede = useCallback(async (payload) => {
     try {
       const res = await teacherService.createTeacherSede(payload);
@@ -413,6 +451,8 @@ export function TeacherProvider({ children }) {
       getAllStudentTeacher,
       // notas docente
       getNotesTeacher,
+      getTransitionNotes,
+      updateNoteTransition,
     }),
     [
       teachers,
@@ -447,6 +487,8 @@ export function TeacherProvider({ children }) {
       getAssistanceBySedeAsignatures,
       getAllStudentTeacher,
       getNotesTeacher,
+      getTransitionNotes,
+      updateNoteTransition,
     ],
   );
 
