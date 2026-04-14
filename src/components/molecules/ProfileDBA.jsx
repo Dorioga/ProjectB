@@ -19,8 +19,9 @@ const ProfileDBA = ({ purposeId, purposeName, onClose }) => {
     getPurposes,
     transitionPurpose,
     transitionDba,
+    registerPurposes,
   } = useData();
-  const { idInstitution } = useAuth();
+  const { idInstitution, idDocente } = useAuth();
   const notify = useNotify();
 
   const [items, setItems] = useState([]);
@@ -42,6 +43,12 @@ const ProfileDBA = ({ purposeId, purposeName, onClose }) => {
   // Copia de trabajo para la fila activa: { nombre_dba, estado_dba }
   const [editDraft, setEditDraft] = useState({});
   const [savingDba, setSavingDba] = useState(false);
+
+  // ── Agregar nuevos DBA ────────────────────────────────────────────────────
+  const [showAddDba, setShowAddDba] = useState(false);
+  const [newDbaCount, setNewDbaCount] = useState("");
+  const [newDbaList, setNewDbaList] = useState([]);
+  const [savingNewDba, setSavingNewDba] = useState(false);
 
   // ── Cargar DBA al montar ──────────────────────────────────────────────────
   const loadDbas = useCallback(async () => {
@@ -198,6 +205,73 @@ const ProfileDBA = ({ purposeId, purposeName, onClose }) => {
     }
   };
 
+  // ── Generar campos de nuevos DBA ──────────────────────────────────────────
+  const handleGenerateNewDba = () => {
+    const n = parseInt(newDbaCount, 10);
+    if (!n || n < 1 || n > 50) {
+      notify.warning("Ingresa una cantidad válida (1–50).");
+      return;
+    }
+    setNewDbaList(Array.from({ length: n }, () => ({ nombre: "" })));
+  };
+
+  const handleNewDbaChange = (idx, value) => {
+    setNewDbaList((prev) => {
+      const next = [...prev];
+      next[idx] = { nombre: value };
+      return next;
+    });
+  };
+
+  const handleSaveNewDba = async () => {
+    if (newDbaList.length === 0) {
+      notify.warning("Genera al menos un DBA antes de guardar.");
+      return;
+    }
+    for (let i = 0; i < newDbaList.length; i++) {
+      if (!newDbaList[i].nombre.trim()) {
+        notify.warning(`El DBA #${i + 1} no tiene nombre.`);
+        return;
+      }
+    }
+    setSavingNewDba(true);
+    try {
+      const found = purposes.find(
+        (p) => (p.id_proposito ?? p.id) === purposeId,
+      );
+      const nombreProposito =
+        found?.nombre_proposito ?? found?.nombre ?? displayName;
+      await registerPurposes({
+        fk_institucion: idInstitution ? Number(idInstitution) : undefined,
+        fk_docente: idDocente ? Number(idDocente) : undefined,
+        propositos: [
+          {
+            name_proposito: nombreProposito,
+            dba: newDbaList.map((d) => ({ nombre_dba: d.nombre.trim() })),
+          },
+        ],
+      });
+      notify.success(
+        `${newDbaList.length} DBA agregado${newDbaList.length !== 1 ? "s" : ""} correctamente.`,
+      );
+      setShowAddDba(false);
+      setNewDbaCount("");
+      setNewDbaList([]);
+      await loadDbas();
+    } catch (err) {
+      console.error("ProfileDBA - error agregando DBA:", err);
+      notify.error(err?.message || "Error al agregar los DBA.");
+    } finally {
+      setSavingNewDba(false);
+    }
+  };
+
+  const handleCancelNewDba = () => {
+    setShowAddDba(false);
+    setNewDbaCount("");
+    setNewDbaList([]);
+  };
+
   // ── Formato de fecha ──────────────────────────────────────────────────────
   const formatDate = (raw) => {
     if (!raw) return "—";
@@ -299,6 +373,88 @@ const ProfileDBA = ({ purposeId, purposeName, onClose }) => {
             </div>
           )}
         </div>
+      </div>
+
+      {/* ── Agregar nuevos DBA ─────────────────────────────────────────── */}
+      <div className="border border-border rounded-lg p-3 flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-semibold">Agregar DBA</p>
+          {!showAddDba && (
+            <SimpleButton
+              type="button"
+              msj="Agregar"
+              icon="Plus"
+              bg="bg-primary"
+              text="text-surface"
+              onClick={() => {
+                setShowAddDba(true);
+                loadPurposes();
+              }}
+            />
+          )}
+        </div>
+        {showAddDba && (
+          <div className="flex flex-col gap-3">
+            <div className="flex gap-2 items-center">
+              <input
+                type="number"
+                min={1}
+                max={50}
+                value={newDbaCount}
+                onChange={(e) => setNewDbaCount(e.target.value)}
+                placeholder="Cantidad de DBA"
+                className="border border-border rounded px-2 py-1 text-sm bg-surface text-text w-40 focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+              <SimpleButton
+                type="button"
+                msj="Generar"
+                icon="RefreshCw"
+                bg="bg-secondary"
+                text="text-surface"
+                onClick={handleGenerateNewDba}
+                disabled={savingNewDba}
+              />
+            </div>
+            {newDbaList.length > 0 && (
+              <div className="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1">
+                {newDbaList.map((d, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <span className="text-xs text-text/50 w-6 shrink-0">
+                      {idx + 1}.
+                    </span>
+                    <input
+                      type="text"
+                      value={d.nombre}
+                      onChange={(e) => handleNewDbaChange(idx, e.target.value)}
+                      placeholder={`Nombre DBA ${idx + 1}`}
+                      className="flex-1 border border-border rounded px-2 py-1 text-sm bg-surface text-text focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <SimpleButton
+                type="button"
+                msj="Guardar"
+                icon="Save"
+                bg="bg-secondary"
+                text="text-surface"
+                onClick={handleSaveNewDba}
+                disabled={savingNewDba || newDbaList.length === 0}
+              />
+              <SimpleButton
+                type="button"
+                msj="Cancelar"
+                icon="X"
+                bg="bg-orange-500"
+                text="text-white"
+                onClick={handleCancelNewDba}
+                disabled={savingNewDba}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Lista de DBA ─────────────────────────────────────────────────── */}

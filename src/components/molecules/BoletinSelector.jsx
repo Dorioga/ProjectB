@@ -560,26 +560,6 @@ const BoletinTransicionView = ({ boletinData, info }) => {
           </table>
         </div>
       ))}
-
-      {/* Convención de notas */}
-      <div
-        style={{
-          marginTop: "16px",
-          paddingTop: "10px",
-          borderTop: "2px solid #131a27",
-          fontSize: "10px",
-          color: "#374151",
-        }}
-      >
-        <strong>Convención de notas:</strong>&nbsp;
-        <span style={{ color: "#15803d", fontWeight: "bold" }}>A</span> Superior
-        &nbsp;|&nbsp;
-        <span style={{ color: "#2563eb", fontWeight: "bold" }}>B</span> Alto
-        &nbsp;|&nbsp;
-        <span style={{ color: "#d97706", fontWeight: "bold" }}>C</span> Básico
-        &nbsp;|&nbsp;
-        <span style={{ color: "#dc2626", fontWeight: "bold" }}>D / F</span> Bajo
-      </div>
     </div>
   );
 };
@@ -1243,37 +1223,6 @@ async function generateBoletinTransicionPDF(info, boletinData, meta) {
     }
 
     y += 4;
-  }
-
-  /* ── Convención de notas ── */
-  addPageIfNeeded(14);
-  pdf.setDrawColor(19, 26, 39);
-  pdf.setLineWidth(0.5);
-  pdf.line(margin, y, pageW - margin, y);
-  y += 5;
-  pdf.setFontSize(8);
-  pdf.setFont("helvetica", "bold");
-  pdf.setTextColor(0, 0, 0);
-  const conv = [
-    { letter: "A", label: "Superior", color: [21, 128, 61] },
-    { letter: "B", label: "Alto", color: [37, 99, 235] },
-    { letter: "C", label: "Básico", color: [217, 119, 6] },
-    { letter: "D / F", label: "Bajo", color: [220, 38, 38] },
-  ];
-  let convText = "Convención de notas:  ";
-  pdf.text("Convención de notas:", margin, y);
-  let cx = margin + pdf.getTextWidth("Convención de notas:  ");
-  for (let i = 0; i < conv.length; i++) {
-    const c = conv[i];
-    pdf.setFont("helvetica", "bold");
-    pdf.setTextColor(...c.color);
-    pdf.text(c.letter, cx, y);
-    cx += pdf.getTextWidth(c.letter) + 1;
-    pdf.setFont("helvetica", "normal");
-    pdf.setTextColor(55, 65, 81);
-    const sep = i < conv.length - 1 ? `${c.label}   |   ` : c.label;
-    pdf.text(sep, cx, y);
-    cx += pdf.getTextWidth(sep) + 1;
   }
 
   pdf.save(
