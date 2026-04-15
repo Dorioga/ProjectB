@@ -114,11 +114,16 @@ const DashHome = () => {
   const sedesFromStudents = useMemo(() => {
     const map = new Map();
     (sourceStudents || []).forEach((s) => {
-      const id = s?.id_sede ?? s?.idSede ?? s?.school_id ?? "";
+      const rawId = s?.id_sede ?? s?.idSede ?? s?.school_id;
       const name = (s?.nombre_sede || s?.name_school || s?.school || "")
         .toString()
         .trim();
-      if (id && name) map.set(String(id), { id: String(id), name });
+      // Usar nombre como clave si no hay id; admitir id === 0
+      const key =
+        rawId !== null && rawId !== undefined && rawId !== ""
+          ? String(rawId)
+          : name;
+      if (name) map.set(key, { id: key, name });
     });
     return Array.from(map.values());
   }, [sourceStudents]);
@@ -182,16 +187,17 @@ const DashHome = () => {
         const sid = String(
           student.id_sede ?? student.idSede ?? student.school_id ?? "",
         ).trim();
+        const sName = String(
+          student.nombre_sede || student.name_school || student.school || "",
+        )
+          .trim()
+          .toLowerCase();
+        const sel = String(selectedSede).trim();
         if (sid) {
-          if (sid !== String(selectedSede)) return false;
+          // Comparar primero por id; si no coincide, comparar por nombre
+          if (sid !== sel && sName !== sel.toLowerCase()) return false;
         } else {
-          const schoolName = String(
-            student.name_school || student.nombre_sede || student.school || "",
-          )
-            .trim()
-            .toLowerCase();
-          if (!schoolName.includes(String(selectedSede).trim().toLowerCase()))
-            return false;
+          if (!sName.includes(sel.toLowerCase())) return false;
         }
       }
 
