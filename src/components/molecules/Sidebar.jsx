@@ -4,9 +4,7 @@ import { Link } from "react-router-dom";
 import { User, LogOut } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import PreviewIMG from "../atoms/PreviewIMG";
-import PdfReportCard from "./PdfReportCard";
-import reportCardResponse from "../../services/DataExamples/reportCardResponse";
-import ChangePasswordModal from "./ChangePasswordModal";
+
 import Modal from "../atoms/Modal";
 import BoletinSelector from "./BoletinSelector";
 const Sidebar = () => {
@@ -60,17 +58,6 @@ const Sidebar = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, [closeSidebar]);
 
-  const displayName = String(userName ?? "").trim();
-
-  // handler to export a sample report card PDF using example data
-  const handleExportPdf = async () => {
-    try {
-      await PdfReportCard(reportCardResponse);
-    } catch (err) {
-      console.error("Error generating PDF report card:", err);
-    }
-  };
-
   return (
     <>
       <div
@@ -94,16 +81,9 @@ const Sidebar = () => {
           </div>
           {showContent && (
             <div className="flex flex-col items-center justify-center text-center gap-2 px-2 transition-all duration-300 ease-in-out">
-              <PreviewIMG
-                path={imgSchool || "/LogoGuadalupe.png"}
-                size={"logo"}
-              />
-              {/* <div className="text-surface font-bold text-sm px-2">
-              {nameSchool || "NEXUS"}
-            </div> */}
-              <div className="text-surface text-sm px-2">
-                {nameSede || "Software"}
-              </div>
+              <PreviewIMG path={imgSchool || "/2.png"} size={"logo"} />
+
+              <div className="text-surface text-sm px-2">{nameSede}</div>
             </div>
           )}
         </div>
