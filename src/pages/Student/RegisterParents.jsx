@@ -68,8 +68,9 @@ const RegisterParents = ({ fkEstudiante, onSuccess }) => {
         numero_identificacion_estu: Number(value),
         fk_institucion: Number(idInstitution),
       });
-      console.log("Estudiante encontrado:", found);
+      console.log("Estudiante encontrado:", found.fk_sede);
       setFoundStudentId(found.id_estudiante);
+      setResolvedSede(found.fk_sede);
       setSearchStatus("found");
       setErrors((prev) => ({ ...prev, fk_estudiante: "" }));
       notify.success(`Estudiante encontrado: ${found.nombre ?? ""}.`);
@@ -159,7 +160,7 @@ const RegisterParents = ({ fkEstudiante, onSuccess }) => {
       email: form.email.trim(),
       identification: form.identification.trim(),
       identificationtype: Number(form.identificationtype),
-      sede: Number(resolvedSede),
+      sede: resolvedSede,
       password: sha256(form.password.trim()),
       fk_estudiante: Number(foundStudentId),
     };

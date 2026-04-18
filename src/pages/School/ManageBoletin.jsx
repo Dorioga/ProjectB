@@ -20,8 +20,6 @@ const ManageBoletin = () => {
   // ── Filtros ─────────────────────────────────────────────────────────────
   const [sedeId, setSedeId] = useState("");
   const [gradeId, setGradeId] = useState("");
-  const [isTransicion, setIsTransicion] = useState(false);
-
   // ── Sedes del docente ────────────────────────────────────────────────────
   const [teacherSedes, setTeacherSedes] = useState([]);
   const [loadingTeacherSedes, setLoadingTeacherSedes] = useState(false);
@@ -199,23 +197,6 @@ const ManageBoletin = () => {
         />
       </div>
 
-      {/* ── Checkbox Grado Transición ────────────────────────────────────── */}
-      <div className="flex items-center gap-2">
-        <input
-          id="checkbox-transicion"
-          type="checkbox"
-          checked={isTransicion}
-          onChange={(e) => setIsTransicion(e.target.checked)}
-          className="w-4 h-4 accent-primary cursor-pointer"
-        />
-        <label
-          htmlFor="checkbox-transicion"
-          className="text-sm font-medium cursor-pointer select-none"
-        >
-          Grado Transición
-        </label>
-      </div>
-
       {/* ── Selectores en cascada ────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <SedeSelect
@@ -313,7 +294,7 @@ const ManageBoletin = () => {
               selectedStudent.id_student ??
               selectedStudent.id
             }
-            isTransicion={isTransicion}
+            studentInfo={selectedStudent}
             mode="single"
           />
         )}
@@ -326,11 +307,7 @@ const ManageBoletin = () => {
         title="Boletines del Curso"
         size="4xl"
       >
-        <BoletinSelector
-          mode="all"
-          students={students}
-          isTransicion={isTransicion}
-        />
+        <BoletinSelector mode="all" students={students} />
       </Modal>
     </div>
   );

@@ -828,6 +828,7 @@ const ProfileTeacher = ({
       return;
     }
 
+    setIsSaving(true);
     try {
       // Enviar una petición por cada sede nueva (serialmente)
       for (const s of newSede) {
@@ -862,6 +863,8 @@ const ProfileTeacher = ({
     } catch (err) {
       notify.error("Error al registrar la sede. Intenta nuevamente.");
       throw err;
+    } finally {
+      setIsSaving(false);
     }
   };
   const handleRegisterAsignature = async () => {
@@ -887,6 +890,7 @@ const ProfileTeacher = ({
       })),
     };
 
+    setIsSaving(true);
     try {
       await createTeacherAsignature(payload);
 
@@ -900,6 +904,8 @@ const ProfileTeacher = ({
     } catch (err) {
       notify.error("Error al registrar las asignaturas. Intenta nuevamente.");
       throw err;
+    } finally {
+      setIsSaving(false);
     }
   };
   return (
@@ -1401,10 +1407,11 @@ const ProfileTeacher = ({
                 <div id="tour-profile-register-asignature">
                   <SimpleButton
                     onClick={handleRegisterAsignature}
-                    msj="Registrar Asignaturas"
+                    msj={isSaving ? "Registrando..." : "Registrar Asignaturas"}
                     icon="Save"
                     bg="bg-accent"
                     text="text-surface"
+                    disabled={isSaving}
                   />
                 </div>
               </div>
@@ -1506,10 +1513,11 @@ const ProfileTeacher = ({
               <div id="tour-profile-register-sede">
                 <SimpleButton
                   onClick={handleRegisterSede}
-                  msj="Registrar Sedes"
+                  msj={isSaving ? "Registrando..." : "Registrar Sedes"}
                   icon="Save"
                   bg="bg-accent"
                   text="text-surface"
+                  disabled={isSaving}
                 />
               </div>
             </div>

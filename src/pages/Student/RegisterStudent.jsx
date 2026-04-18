@@ -20,6 +20,7 @@ const RegisterStudent = ({ onSuccess }) => {
   const { institutionSedes } = useData();
   const notify = useNotify();
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     first_name: "",
     second_name: "",
@@ -119,6 +120,7 @@ const RegisterStudent = ({ onSuccess }) => {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       // ── PASO 1: construir el FormData con los archivos y enviarlo ──────────
       const form = new FormData();
@@ -252,6 +254,8 @@ const RegisterStudent = ({ onSuccess }) => {
       notify.error(
         err?.message || "Error al registrar el estudiante. Intenta nuevamente.",
       );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -631,16 +635,21 @@ const RegisterStudent = ({ onSuccess }) => {
           id="tour-rst-submit"
           className="md:col-span-3 mt-4 flex flex-col items-center gap-4"
         >
-          {loading && <Loader message="Registrando estudiante..." />}
-
-          {!loading && (
-            <SimpleButton
-              msj="Registrar estudiante"
-              text={"text-surface"}
-              bg={"bg-secondary"}
-              icon={"Save"}
-            />
+          {(isSubmitting || loading) && (
+            <Loader message="Registrando estudiante..." />
           )}
+
+          <SimpleButton
+            msj={
+              isSubmitting || loading
+                ? "Registrando..."
+                : "Registrar estudiante"
+            }
+            text={"text-surface"}
+            bg={"bg-secondary"}
+            icon={"Save"}
+            disabled={isSubmitting || loading}
+          />
         </div>
       </form>
     </div>

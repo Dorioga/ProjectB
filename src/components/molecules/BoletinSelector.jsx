@@ -411,6 +411,42 @@ const BoletinTransicionView = ({ boletinData, info }) => {
               <strong>Grado:</strong> {info.grado}
             </p>
           )}
+          {(info.nombre_estudiante || info.apellido_estudiante) && (
+            <p
+              style={{
+                margin: "6px 0 0",
+                fontWeight: "bold",
+                fontSize: "12px",
+                borderTop: "1px solid #d1d5db",
+                paddingTop: "4px",
+              }}
+            >
+              {[info.nombre_estudiante, info.apellido_estudiante]
+                .filter(Boolean)
+                .join(" ")}
+            </p>
+          )}
+          {(info.numero_identificacion || info.identificacion) && (
+            <p style={{ margin: "2px 0", fontSize: "10px", color: "#374151" }}>
+              <strong>Doc:</strong>{" "}
+              {info.numero_identificacion ?? info.identificacion}
+            </p>
+          )}
+          {(info.nombre_jornada || info.grupo) && (
+            <p style={{ margin: "2px 0", fontSize: "10px" }}>
+              {info.nombre_jornada && (
+                <span>
+                  <strong>Jornada:</strong> {info.nombre_jornada}
+                </span>
+              )}
+              {info.nombre_jornada && info.grupo && <span> — </span>}
+              {info.grupo && (
+                <span>
+                  <strong>Grupo:</strong> {info.grupo}
+                </span>
+              )}
+            </p>
+          )}
         </div>
         <div style={{ textAlign: "right", fontSize: "10px", color: "#374151" }}>
           <p style={{ margin: "2px 0" }}>
@@ -640,6 +676,39 @@ async function drawPDFHeader(pdf, info, title) {
     align: "right",
   });
   y += 6;
+
+  /* Datos del estudiante */
+  const _nombreCompleto = [info.nombre_estudiante, info.apellido_estudiante]
+    .filter(Boolean)
+    .join(" ");
+  if (_nombreCompleto) {
+    pdf.setFontSize(10);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(0, 0, 0);
+    pdf.text(_nombreCompleto.toUpperCase(), textCenter, y + 3, {
+      align: "center",
+    });
+    y += 5;
+  }
+  const _docId = info.numero_identificacion ?? info.identificacion ?? null;
+  if (_docId) {
+    pdf.setFontSize(8);
+    pdf.setFont("helvetica", "normal");
+    pdf.text(`Doc: ${_docId}`, textCenter, y + 3, { align: "center" });
+    y += 4;
+  }
+  const _jornGrupo = [
+    info.nombre_jornada ? `Jornada: ${info.nombre_jornada}` : null,
+    info.grupo ? `Grupo: ${info.grupo}` : null,
+  ]
+    .filter(Boolean)
+    .join("  —  ");
+  if (_jornGrupo) {
+    pdf.setFontSize(8);
+    pdf.setFont("helvetica", "normal");
+    pdf.text(_jornGrupo, textCenter, y + 3, { align: "center" });
+    y += 4;
+  }
 
   if (logoData) {
     pdf.addImage(logoData, "JPEG", logoX, margin, logoSize, logoSize);
@@ -1235,7 +1304,7 @@ async function generateBoletinTransicionPDF(info, boletinData, meta) {
    ══════════════════════════════════════════════════════════════ */
 const BoletinSelector = ({
   studentId,
-  isTransicion = false,
+  studentInfo: studentInfoProp,
   mode = "single",
   students = [],
 }) => {
@@ -1255,11 +1324,28 @@ const BoletinSelector = ({
   const [error, setError] = useState(null);
   // Progreso para modo "all": null = no iniciado, { current, total, errors[] }
   const [progress, setProgress] = useState(null);
+  const [isTransicion, setIsTransicion] = useState(false);
 
   const { periodos, asignaturas, promedioGeneral, resumenEstado } =
     useBoletinProcessed(!isTransicion ? (boletinData ?? []) : []);
 
-  const info = boletinData?.[0] ?? {};
+  const rawInfo = boletinData?.[0] ?? {};
+  const info = {
+    ...rawInfo,
+    nombre_estudiante:
+      rawInfo.nombre_estudiante ??
+      studentInfoProp?.nombre_estudiante ??
+      studentInfoProp?.nombre,
+    apellido_estudiante:
+      rawInfo.apellido_estudiante ??
+      studentInfoProp?.apellido_estudiante ??
+      studentInfoProp?.apellido,
+    numero_identificacion:
+      rawInfo.numero_identificacion ??
+      studentInfoProp?.numero_identificacion ??
+      studentInfoProp?.identificacion,
+  };
+  console.log("Boletin info:", info);
   const totalCols = 2 + periodos.length * 4 + 2;
 
   const handleConsultar = async () => {
@@ -1352,7 +1438,21 @@ const BoletinSelector = ({
         });
         const rows = Array.isArray(result) ? result : [];
         if (rows.length > 0) {
-          const info0 = rows[0];
+          const info0 = {
+            ...rows[0],
+            nombre_estudiante:
+              rows[0].nombre_estudiante ??
+              student.nombre_estudiante ??
+              student.nombre,
+            apellido_estudiante:
+              rows[0].apellido_estudiante ??
+              student.apellido_estudiante ??
+              student.apellido,
+            numero_identificacion:
+              rows[0].numero_identificacion ??
+              student.numero_identificacion ??
+              student.identificacion,
+          };
           const metaObj = { studentId: sid, year, periodId };
           if (isTransicion) {
             await generateBoletinTransicionPDF(info0, rows, metaObj);
@@ -1487,6 +1587,27 @@ const BoletinSelector = ({
 
   return (
     <div className="w-full flex flex-col gap-4">
+      {/* ── Checkbox Grado Transición ── */}
+      <div className="flex items-center gap-2">
+        <input
+          id="boletin-checkbox-transicion"
+          type="checkbox"
+          checked={isTransicion}
+          onChange={(e) => {
+            setIsTransicion(e.target.checked);
+            setBoletinData(null);
+          }}
+          disabled={loading}
+          className="w-4 h-4 accent-primary cursor-pointer"
+        />
+        <label
+          htmlFor="boletin-checkbox-transicion"
+          className="text-sm font-medium cursor-pointer select-none"
+        >
+          Grado Transición
+        </label>
+      </div>
+
       {/* ── Filtros ── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
         <PeriodSelector
@@ -1617,11 +1738,54 @@ const BoletinSelector = ({
                         fontSize: "11px",
                       }}
                     >
-                      {info.nombre_sede ?? "-"} — {info.sede_tip ?? "-"}
+                      {info.nombre_sede ?? "-"}
+                      {info.sede_tip ? ` — ${info.sede_tip}` : ""}
                     </p>
                     {info.grado && (
                       <p style={{ margin: "2px 0", fontSize: "11px" }}>
                         <strong>Grado:</strong> {info.grado}
+                      </p>
+                    )}
+                    {(info.nombre_estudiante || info.apellido_estudiante) && (
+                      <p
+                        style={{
+                          margin: "6px 0 0",
+                          fontWeight: "bold",
+                          fontSize: "12px",
+                          borderTop: "1px solid #d1d5db",
+                          paddingTop: "4px",
+                        }}
+                      >
+                        {[info.nombre_estudiante, info.apellido_estudiante]
+                          .filter(Boolean)
+                          .join(" ")}
+                      </p>
+                    )}
+                    {(info.numero_identificacion || info.identificacion) && (
+                      <p
+                        style={{
+                          margin: "2px 0",
+                          fontSize: "10px",
+                          color: "#374151",
+                        }}
+                      >
+                        <strong>Doc:</strong>{" "}
+                        {info.numero_identificacion ?? info.identificacion}
+                      </p>
+                    )}
+                    {(info.nombre_jornada || info.grupo) && (
+                      <p style={{ margin: "2px 0", fontSize: "10px" }}>
+                        {info.nombre_jornada && (
+                          <span>
+                            <strong>Jornada:</strong> {info.nombre_jornada}
+                          </span>
+                        )}
+                        {info.nombre_jornada && info.grupo && <span> — </span>}
+                        {info.grupo && (
+                          <span>
+                            <strong>Grupo:</strong> {info.grupo}
+                          </span>
+                        )}
                       </p>
                     )}
                   </div>

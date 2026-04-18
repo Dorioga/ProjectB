@@ -63,6 +63,7 @@ const ProfileStudent = ({
   }, [initialEditing]);
 
   const [isOpenCamera, setIsOpenCamera] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isOpenExcuse, setIsOpenExcuse] = useState(false);
   const [isOpenDocument, setIsOpenDocument] = useState(false);
   const [documentSelected, setDocumentSelected] = useState({
@@ -123,7 +124,12 @@ const ProfileStudent = ({
 
   const toggleEditing = async () => {
     if (isEditing) {
-      await handleSaveChanges();
+      setIsSubmitting(true);
+      try {
+        await handleSaveChanges();
+      } finally {
+        setIsSubmitting(false);
+      }
     }
     setIsEditing(!isEditing);
   };
@@ -880,10 +886,11 @@ const ProfileStudent = ({
           <div className="w-full flex justify-end pb-4">
             <SimpleButton
               onClick={toggleEditing}
-              msj="Guardar"
+              msj={isSubmitting ? "Guardando..." : "Guardar"}
               bg="bg-accent"
               icon="Save"
               text="text-surface"
+              disabled={isSubmitting}
             />
           </div>
         )}
