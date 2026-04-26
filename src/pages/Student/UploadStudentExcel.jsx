@@ -76,14 +76,26 @@ const UploadStudentExcel = ({ onSuccess } = {}) => {
 
       if (errores.length === 0 && typeof onSuccess === "function") onSuccess();
     } catch (err) {
-      const msg =
-        err?.message ||
-        err?.data?.mensaje ||
-        err?.response?.data?.message ||
-        "No fue posible subir el archivo.";
-      setStatus({ type: "error", message: msg });
-      setUploadResult(null);
-      notify.error(msg);
+      const errBody = err?.response?.data ?? err?.data ?? {};
+      if (
+        errBody?.code === "VALIDATION_ERROR" &&
+        Array.isArray(errBody?.data?.errores)
+      ) {
+        const msg =
+          errBody.message ||
+          `${errBody.data.errores.length} fila(s) con errores.`;
+        setUploadResult({ message: msg, errores: errBody.data.errores });
+        setStatus({ type: "error", message: msg });
+        notify.error(msg);
+      } else {
+        const msg =
+          errBody?.message ||
+          err?.message ||
+          "No fue posible subir el archivo.";
+        setStatus({ type: "error", message: msg });
+        setUploadResult(null);
+        notify.error(msg);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -194,7 +206,11 @@ const UploadStudentExcel = ({ onSuccess } = {}) => {
                     <td className="px-3 py-2 font-mono">
                       {e.documento ?? "—"}
                     </td>
-                    <td className="px-3 py-2 text-black">{e.error ?? "—"}</td>
+                    <td className="px-3 py-2 text-black">
+                      {Array.isArray(e.errores)
+                        ? e.errores.join(" | ")
+                        : (e.error ?? "—")}
+                    </td>
                   </tr>
                 ))}
               </tbody>

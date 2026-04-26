@@ -2,6 +2,7 @@ import React, {
   useState,
   useRef,
   useCallback,
+  useContext,
   useEffect,
   useMemo,
 } from "react";
@@ -39,9 +40,14 @@ import CitySelector from "../molecules/CitySelector";
 import Loader from "../atoms/Loader";
 import * as schoolService from "../../services/schoolService";
 import { upload } from "../../services/uploadService";
+import {
+  getStudentGuardian,
+  getDataStudentGuardian,
+} from "../../services/studentService";
 import useSchool from "../../lib/hooks/useSchool";
 import { useNotify } from "../../lib/hooks/useNotify";
 import useData from "../../lib/hooks/useData";
+import { AuthContext } from "../../lib/context/AuthContext";
 
 // ───────────────────── Constantes ─────────────────────
 
@@ -237,10 +243,129 @@ const ReserveSpot = ({ mode = "Externo", onSuccess }) => {
     loadingValuesReservations,
     loadValuesReservations,
     registerSlot,
+    registerSlotsInternal,
   } = useSchool();
+
+  // ─── Auth (opcional: solo disponible en rutas autenticadas) ───
+  const authCtx = useContext(AuthContext);
+  const rol = authCtx?.rol;
+  const idPersona = authCtx?.idPersona;
+  const isGuardian = rol === 5 || rol === "5";
+
+  // ─── Origen de la reserva ───
+  // Si el usuario tiene rol asignado proviene del dashboard (Interna);
+  // si no existe rol (acceso por link externo) es Externa.
+  const esInterno = !!rol;
 
   const [student, setStudent] = useState(INITIAL_STUDENT);
   const [guardian, setGuardian] = useState(INITIAL_GUARDIAN);
+
+  // ─── Estudiantes del acudiente (rol 5) ───
+  const [guardianStudents, setGuardianStudents] = useState([]);
+  const [loadingGuardianStudents, setLoadingGuardianStudents] = useState(false);
+  const [selectedGuardianStudentId, setSelectedGuardianStudentId] =
+    useState("");
+  const [loadingReservationData, setLoadingReservationData] = useState(false);
+  const [guardianLinkFirma, setGuardianLinkFirma] = useState("");
+  const [guardianId, setGuardianId] = useState(null);
+
+  useEffect(() => {
+    if (!isGuardian || !idPersona) return;
+    let cancelled = false;
+    const load = async () => {
+      setLoadingGuardianStudents(true);
+      try {
+        const data = await getStudentGuardian({
+          idPersonaGuardian: Number(idPersona),
+        });
+        if (!cancelled) setGuardianStudents(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error(
+          "ReserveSpot - error al cargar estudiantes del acudiente:",
+          err,
+        );
+        if (!cancelled) setGuardianStudents([]);
+      } finally {
+        if (!cancelled) setLoadingGuardianStudents(false);
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [isGuardian, idPersona]);
+
+  const handleGuardianStudentSelect = useCallback(
+    async (e) => {
+      const id = e.target.value;
+      setSelectedGuardianStudentId(id);
+      if (!id || !idPersona) {
+        setGuardianLinkFirma("");
+        setGuardianId(null);
+        setSignatureSaved(false);
+        return;
+      }
+
+      setLoadingReservationData(true);
+      try {
+        const data = await getDataStudentGuardian({
+          idPersonaGuardian: Number(idPersona),
+          idEstudiante: Number(id),
+        });
+
+        if (!data) return;
+
+        // ── Pre-llenar datos del estudiante ──
+        setStudent((prev) => ({
+          ...prev,
+          first_name: data.pnombre_estudiante ?? "",
+          second_name: data.snombre_estudiante ?? "",
+          first_lastname: data.papellido_estudiante ?? "",
+          second_lastname: data.sapellido_estudiante ?? "",
+          identification: data.identificacion_estudiante ?? "",
+          identificationtype: data.t_identificacion_estudiante
+            ? String(data.t_identificacion_estudiante)
+            : "",
+          gender: data.genero ?? "",
+          fecha_nacimiento: data.fecha_nacimiento
+            ? data.fecha_nacimiento.split("T")[0]
+            : "",
+          telephone: data.telefono ?? "",
+          email: data.correo ?? "",
+          sede: data.fk_sede ? String(data.fk_sede) : "",
+          jornada: data.fk_jornada ? String(data.fk_jornada) : "",
+          grade: data.id_grado ? String(data.id_grado) : "",
+        }));
+
+        // ── Pre-llenar datos del acudiente ──
+        setGuardian((prev) => ({
+          ...prev,
+          first_name: data.primero_nombre ?? "",
+          second_name: data.segundo_nombre ?? "",
+          first_lastname: data.primer_apellido ?? "",
+          second_lastname: data.segundo_apellido ?? "",
+          identification: data.numero_identificacion ?? "",
+          identificationtype: data.fk_tipo_identificacion
+            ? String(data.fk_tipo_identificacion)
+            : "",
+          telephone: data.telefono_acudiente ?? "",
+          email: data.correo_acudiente ?? "",
+        }));
+
+        // ── Guardar link_firma e id del acudiente (uso en reservas internas) ──
+        const firmaUrl = data.link_firma ?? "";
+        setGuardianLinkFirma(firmaUrl);
+        setGuardianId(data.id_acudiente ?? null);
+        // Si hay firma registrada, considerarla guardada automáticamente
+        if (firmaUrl) setSignatureSaved(true);
+      } catch (err) {
+        console.error("ReserveSpot - error al cargar datos de reserva:", err);
+      } finally {
+        setLoadingReservationData(false);
+      }
+    },
+    [idPersona],
+  );
 
   // ─── Filtros previos al formulario (dept + municipio) ───
   const [filterDept, setFilterDept] = useState("");
@@ -475,7 +600,8 @@ const ReserveSpot = ({ mode = "Externo", onSuccess }) => {
       student.jornada &&
       student.grade;
 
-    if (!studentOk || !signatureSaved) return false;
+    if (!studentOk || !(signatureSaved || (esInterno && guardianLinkFirma)))
+      return false;
 
     return !!(
       guardian.parentesco &&
@@ -485,7 +611,7 @@ const ReserveSpot = ({ mode = "Externo", onSuccess }) => {
       guardian.identification.trim() &&
       guardian.identificationtype
     );
-  }, [student, guardian, signatureSaved]);
+  }, [student, guardian, signatureSaved, esInterno, guardianLinkFirma]);
 
   // ─── Helpers para etiquetas de opciones ───
   const getLabel = useCallback((options, value) => {
@@ -779,7 +905,7 @@ const ReserveSpot = ({ mode = "Externo", onSuccess }) => {
       e.guardian_identificationtype = "Selecciona tipo de documento.";
 
     // Firma
-    if (!signatureSaved)
+    if (!signatureSaved && !(esInterno && guardianLinkFirma))
       e.signature = "Debe dibujar y guardar la firma del acudiente.";
 
     return e;
@@ -799,6 +925,49 @@ const ReserveSpot = ({ mode = "Externo", onSuccess }) => {
     setLoading(true);
 
     try {
+      // ── Resolver link de firma según el origen de la reserva ──
+      let linkFirma = "";
+      if (!esInterno) {
+        // Externa: subir la firma dibujada y obtener la URL resultante
+        if (signatureDataPng) {
+          console.log(
+            "Subiendo firma del acudiente (PNG)...",
+            signatureDataPng,
+          );
+          const fd = new FormData();
+          fd.append("imageBase64", signatureDataPng);
+          fd.append("folder", "acudientes");
+          fd.append("identificacion", guardian.identification.trim());
+          const uploadRes = await upload(fd, "uploadfirma/acudientes");
+          const rawData = uploadRes?.data ?? uploadRes;
+          if (Array.isArray(rawData)) {
+            const entry =
+              rawData.find((e) => e?.field === "imageBase64") ?? rawData[0];
+            linkFirma =
+              entry?.files?.[0]?.folder ??
+              entry?.files?.[0]?.url ??
+              entry?.files?.[0]?.path ??
+              entry?.folder ??
+              entry?.url ??
+              entry?.link ??
+              entry?.path ??
+              "";
+          } else if (typeof rawData === "string" && rawData) {
+            linkFirma = rawData;
+          } else if (rawData && typeof rawData === "object") {
+            linkFirma =
+              rawData.url ??
+              rawData.link ??
+              rawData.path ??
+              rawData.folder ??
+              "";
+          }
+        }
+      } else {
+        // Interna: usar el link_firma devuelto por getDataStudentGuardian
+        linkFirma = guardianLinkFirma;
+      }
+
       // ── Construir objeto de datos plano (no FormData) ──
       const payload = {
         primer_nombre_estu: student.first_name.trim(),
@@ -829,24 +998,29 @@ const ReserveSpot = ({ mode = "Externo", onSuccess }) => {
           ? Number(guardian.identificationtype)
           : null,
         numero_identificacion_acu: guardian.identification.trim(),
-        tipo: mode === "Externo" ? "Externo" : "Interno",
+        ...(linkFirma ? { link_firma: linkFirma } : {}),
       };
 
-      // Firma del acudiente: subir vía uploadService a /uploadfirma/acudientes
-      if (signatureDataPng) {
-        console.log("Subiendo firma del acudiente (PNG)...", signatureDataPng);
-        const fd = new FormData();
-        fd.append("imageBase64", signatureDataPng);
-        fd.append("folder", "acudientes");
-        fd.append("identificacion", guardian.identification.trim());
-        await upload(fd, "uploadfirma/acudientes");
+      // ── Registrar reserva de cupo ──
+      if (esInterno) {
+        const internalPayload = {
+          fk_estudiante: Number(selectedGuardianStudentId),
+          fk_acudiente:
+            guardianId != null ? Number(guardianId) : Number(idPersona),
+          fk_sede: student.sede ? Number(student.sede) : null,
+          fk_grado: student.grade ? Number(student.grade) : null,
+          fk_jornada: student.jornada ? Number(student.jornada) : null,
+          parentesco: guardian.parentesco,
+        };
+        console.log(
+          "=== ReserveSpot payload enviado a /slots-internal ===",
+          internalPayload,
+        );
+        await registerSlotsInternal(internalPayload);
+      } else {
+        await registerSlot(payload);
+        console.log("=== ReserveSpot payload enviado a /slots ===", payload);
       }
-
-      // ── Registrar reserva de cupo en /slots ──
-      await registerSlot(payload);
-
-      // ── Log para depuración ──
-      console.log("=== ReserveSpot payload enviado a /slots ===", payload);
 
       notify.success("Reserva de cupo enviada correctamente.");
 
@@ -902,8 +1076,43 @@ const ReserveSpot = ({ mode = "Externo", onSuccess }) => {
 
       {loading && <Loader message="Enviando reserva de cupo…" />}
 
+      {/* ─── Selector de estudiante (solo rol 5 - acudiente) ─── */}
+      {isGuardian && (
+        <section className="w-full xl:w-9/12 border border-secondary/30 rounded-lg overflow-hidden">
+          <div className="bg-primary text-surface p-3">
+            <h3 className="text-xl font-bold">Selecciona un estudiante</h3>
+          </div>
+          <div className="p-4">
+            {loadingGuardianStudents ? (
+              <Loader message="Cargando estudiantes…" />
+            ) : (
+              <Field
+                label="Estudiante"
+                error={errors.selectedGuardianStudentId}
+              >
+                <select
+                  value={selectedGuardianStudentId}
+                  onChange={handleGuardianStudentSelect}
+                  className={inputClass}
+                >
+                  <option value="">Selecciona un estudiante</option>
+                  {guardianStudents.map((s) => (
+                    <option key={s.id_estudiante} value={s.id_estudiante}>
+                      {s.concat_ws}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            )}
+          </div>
+        </section>
+      )}
+
       {/* ─── Filtros previos: departamento y municipio ─── */}
-      <section id="tour-rs-filter-section" className="w-full xl:w-9/12 border border-secondary/30 rounded-lg overflow-hidden">
+      <section
+        id="tour-rs-filter-section"
+        className="w-full xl:w-9/12 border border-secondary/30 rounded-lg overflow-hidden"
+      >
         <div className="bg-primary text-surface p-3">
           <h3 className="text-xl font-bold">Selecciona tu municipio</h3>
         </div>
@@ -1036,8 +1245,8 @@ const ReserveSpot = ({ mode = "Externo", onSuccess }) => {
                   className={inputClass}
                 >
                   <option value="">Selecciona</option>
-                  <option value="Masculino">Masculino</option>
-                  <option value="Femenino">Femenino</option>
+                  <option value="MASCULINO">MASCULINO</option>
+                  <option value="FEMENINO">FEMENINO</option>
                 </select>
               </Field>
             </div>
@@ -1205,65 +1414,88 @@ const ReserveSpot = ({ mode = "Externo", onSuccess }) => {
           </div>
 
           <div className="p-4 space-y-3">
-            <p className="text-sm text-on-surface/70">
-              Por favor dibuje la firma del acudiente en el recuadro a
-              continuación.
-            </p>
-
-            <div className="w-full max-w-sm">
-              <SignatureCanvas
-                ref={sigCanvas}
-                penColor="black"
-                canvasProps={{
-                  className: "signature-canvas border w-full rounded h-24",
-                  style: { width: "100%" },
-                }}
-                onEnd={handleSignatureEnd}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 flex-wrap">
-              <div>
-                <SimpleButton
-                  msj="Limpiar"
-                  onClick={handleClearSignature}
-                  bg="bg-gray-300"
-                  text="text-black"
-                  hover="hover:bg-gray-400"
-                />
-              </div>
-              <div className="relative inline-block">
-                <SimpleButton
-                  msj="Guardar firma"
-                  onClick={handleSaveSignature}
-                  disabled={!signatureData || savingSig}
-                  bg="bg-secondary"
-                  text="text-surface"
-                  hover="hover:bg-secondary/80"
-                />
-                {savingSig && (
-                  <span className="absolute right-0 top-0">
-                    <Loader />
-                  </span>
+            {esInterno ? (
+              // ── Interno: mostrar la imagen de firma registrada ──
+              <div className="space-y-2">
+                <p className="text-sm text-on-surface/70">
+                  Firma registrada del acudiente.
+                </p>
+                {guardianLinkFirma ? (
+                  <img
+                    src={guardianLinkFirma}
+                    alt="Firma del acudiente"
+                    className="border rounded max-h-24 max-w-sm object-contain bg-white"
+                  />
+                ) : (
+                  <p className="text-xs text-warning">
+                    No hay firma registrada para este acudiente.
+                  </p>
                 )}
               </div>
-            </div>
+            ) : (
+              // ── Externo: canvas de firma ──
+              <>
+                <p className="text-sm text-on-surface/70">
+                  Por favor dibuje la firma del acudiente en el recuadro a
+                  continuación.
+                </p>
 
-            {!signatureData && (
-              <p className="text-xs text-error">
-                Debe dibujar la firma para poder enviar la reserva.
-              </p>
-            )}
-            {signatureData && !signatureSaved && (
-              <p className="text-xs text-warning">
-                Después de dibujar la firma, pulse{" "}
-                <strong>Guardar firma</strong> para confirmarla.
-              </p>
-            )}
-            {signatureSaved && (
-              <p className="text-xs text-green-600 font-medium">
-                Firma guardada correctamente.
-              </p>
+                <div className="w-full max-w-sm">
+                  <SignatureCanvas
+                    ref={sigCanvas}
+                    penColor="black"
+                    canvasProps={{
+                      className: "signature-canvas border w-full rounded h-24",
+                      style: { width: "100%" },
+                    }}
+                    onEnd={handleSignatureEnd}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 flex-wrap">
+                  <div>
+                    <SimpleButton
+                      msj="Limpiar"
+                      onClick={handleClearSignature}
+                      bg="bg-gray-300"
+                      text="text-black"
+                      hover="hover:bg-gray-400"
+                    />
+                  </div>
+                  <div className="relative inline-block">
+                    <SimpleButton
+                      msj="Guardar firma"
+                      onClick={handleSaveSignature}
+                      disabled={!signatureData || savingSig}
+                      bg="bg-secondary"
+                      text="text-surface"
+                      hover="hover:bg-secondary/80"
+                    />
+                    {savingSig && (
+                      <span className="absolute right-0 top-0">
+                        <Loader />
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {!signatureData && (
+                  <p className="text-xs text-error">
+                    Debe dibujar la firma para poder enviar la reserva.
+                  </p>
+                )}
+                {signatureData && !signatureSaved && (
+                  <p className="text-xs text-warning">
+                    Después de dibujar la firma, pulse{" "}
+                    <strong>Guardar firma</strong> para confirmarla.
+                  </p>
+                )}
+                {signatureSaved && (
+                  <p className="text-xs text-green-600 font-medium">
+                    Firma guardada correctamente.
+                  </p>
+                )}
+              </>
             )}
             {errors.signature && (
               <p className="text-xs text-error">{errors.signature}</p>

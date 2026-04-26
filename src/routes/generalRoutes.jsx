@@ -40,6 +40,7 @@ import AssistenceStudent from "../pages/Student/AssistenceStudent";
 import ReserveSpot from "../components/templates/ReserveSpot";
 import ManageDBA from "../pages/Teacher/ManageDBA";
 import ManageBoletin from "../pages/School/ManageBoletin";
+import Slots from "../pages/Dashboard/Slots";
 const GeneralRoutes = () => {
   return (
     <div id="body" className="w-full h-screen flex flex-col ">
@@ -60,16 +61,16 @@ const GeneralRoutes = () => {
             <Route path="home" element={<DashHome />} />
             <Route path="registerUser" element={<RegisterUser />} />
             <Route path="studentSchool" element={<AllStudent />} />
-            <Route path="singleStudent" element={<SingleStudent />} />
+            {/* <Route path="singleStudent" element={<SingleStudent />} /> */}
             <Route path="searchStudents" element={<SearchStudents />} />
-            <Route path="uploadStudentExcel" element={<UploadStudentExcel />} />
-            <Route path="uploadStudentPDF" element={<UploadStudentPDF />} />
-            <Route path="reports" element={<Reports />} />
-            <Route path="auditory" element={<Auditory />} />
+            {/* <Route path="uploadStudentExcel" element={<UploadStudentExcel />} /> */}
+            {/* <Route path="uploadStudentPDF" element={<UploadStudentPDF />} /> */}
+            {/* <Route path="reports" element={<Reports />} />
+            <Route path="auditory" element={<Auditory />} /> */}
             <Route path="profileSchool" element={<ProfileSchoolPage />} />
             <Route path="profileTeacher" element={<ProfileTeacherPage />} />
             <Route path="profileStudent" element={<ProfileStudentPage />} />
-            <Route path="registerAsignature" element={<RegisterAsignature />} />
+            {/* <Route path="registerAsignature" element={<RegisterAsignature />} />
             <Route path="registerRecords" element={<RegisterRecords />} />
             <Route path="registerTeacher" element={<RegisterTeacher />} />
             <Route path="registerAssistance" element={<RegisterAssistance />} />
@@ -77,8 +78,8 @@ const GeneralRoutes = () => {
             <Route
               path="registerStudentRecords"
               element={<RegisterStudentRecords />}
-            />
-            <Route path="registerStudent" element={<RegisterStudent />} />
+            /> */}
+            {/* <Route path="registerStudent" element={<RegisterStudent />} /> */}
             <Route path="registerParents" element={<RegisterParents />} />
             <Route path="reserveSpot" element={<ReserveSpot />} />
             <Route path="manageTeacher" element={<ManageTeacher />} />
@@ -96,6 +97,7 @@ const GeneralRoutes = () => {
             <Route path="manageObserver" element={<ManageObserver />} />
             <Route path="manageDBA" element={<ManageDBA />} />
             <Route path="manageBoletin" element={<ManageBoletin />} />
+            <Route path="slots" element={<Slots />} />
           </Route>
         </Routes>
       </div>

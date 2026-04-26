@@ -156,6 +156,10 @@ export function SchoolProvider({ children }) {
     return authService.registerSlot(payload);
   }, []);
 
+  const registerSlotsInternal = useCallback(async (payload) => {
+    return authService.registerSlotsInternal(payload);
+  }, []);
+
   const loadRecords = useCallback(async (params = {}) => {
     setLoadingRecords(true);
     setErrorRecords(null);
@@ -664,6 +668,7 @@ export function SchoolProvider({ children }) {
       errorValuesReservations,
       loadValuesReservations,
       registerSlot,
+      registerSlotsInternal,
     }),
     [
       schools,
@@ -672,6 +677,7 @@ export function SchoolProvider({ children }) {
       errorValuesReservations,
       loadValuesReservations,
       registerSlot,
+      registerSlotsInternal,
       loading,
       error,
       sedes,

@@ -335,6 +335,41 @@ export async function getStudentObserver(payload) {
   return data;
 }
 
+/**
+ * Obtiene los estudiantes asociados a un acudiente.
+ *
+ * Endpoint: POST /guardian-student
+ * @param {{ idPersonaGuardian: number }} payload
+ * @returns {Promise<Array<{ id_estudiante: string, concat_ws: string }>>}
+ */
+export async function getStudentGuardian(payload) {
+  if (!payload?.idPersonaGuardian) {
+    throw new Error("idPersonaGuardian es requerido.");
+  }
+  const res = await ApiClient.instance.post("/guardian-student", payload);
+  const data = Array.isArray(res) ? res : (res?.data ?? []);
+  console.log("StudentService - getStudentGuardian:", data);
+  return data;
+}
+
+/**
+ * Obtiene los datos completos del acudiente y estudiante para pre-llenar la reserva.
+ *
+ * Endpoint: POST /guardian-reservations
+ * @param {{ idPersonaGuardian: number, idEstudiante: number }} payload
+ * @returns {Promise<Object>} Datos del estudiante y del acudiente.
+ */
+export async function getDataStudentGuardian(payload) {
+  if (!payload?.idPersonaGuardian || !payload?.idEstudiante) {
+    throw new Error("idPersonaGuardian e idEstudiante son requeridos.");
+  }
+  const res = await ApiClient.instance.post("/guardian-reservations", payload);
+  const raw = Array.isArray(res) ? res : (res?.data ?? []);
+  const data = Array.isArray(raw) ? raw[0] : raw;
+  console.log("StudentService - getGuardianReservations:", data);
+  return data;
+}
+
 export async function getStudentNotesById(studentId) {
   console.log(
     "StudentService - getStudentNotesById llamado con studentId:",

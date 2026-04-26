@@ -62,7 +62,7 @@ const DashHome = () => {
           const res = await getAllStudentTeacher(payload);
           arr = Array.isArray(res) ? res : (res?.data ?? []);
           console.log("Home - getAllStudentTeacher response:", arr);
-        } else if (idInstitution) {
+        } else if (idInstitution && !(rol === 5 || rol === "5")) {
           const res = await fetchAllStudents({ institucion: idInstitution });
           arr = Array.isArray(res) ? res : (res?.data ?? []);
           console.log("Home - fetchAllStudents response:", arr);
@@ -85,6 +85,7 @@ const DashHome = () => {
     isTeacher,
     idDocente,
     getAllStudentTeacher,
+    rol,
   ]);
 
   // Fuente de datos para la UI: preferimos `allStudents` (fetchAllStudents); si está vacío, usar lista vacía

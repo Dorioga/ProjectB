@@ -127,6 +127,19 @@ export async function registerSlot(payload) {
 }
 
 /**
+ * Registra una reserva de cupo desde el dashboard (flujo interno).
+ * POST /slots-internal
+ * @param {Object} payload - { fk_estudiante, fk_acudiente, fk_sede, fk_grado, fk_jornada, parentesco }
+ * @returns {Promise} Respuesta del servidor.
+ */
+export async function registerSlotsInternal(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Payload inválido para registerSlotsInternal");
+  }
+  return ApiClient.instance.post("/slots-internal", payload);
+}
+
+/**
  * Solicita la recuperación de contraseña según el rol del usuario.
  * POST /recoverypassword
  * @param {Object} payload - { email?, lastName?, identificationNumber?, idRol }

@@ -164,7 +164,7 @@ const SearchStudents = () => {
               className="h-full"
               onClick={() => handleViewProfile(row.original)}
               noRounded={true}
-              bg="bg-primary"
+              bg="bg-secondary"
               text="text-surface"
               msj="Ver perfil"
               icon="User"
