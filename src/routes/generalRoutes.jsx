@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import LandingPage from "../pages/LandingPage";
 import Login from "../pages/Login/Login";
 import ForgotPassword from "../pages/Login/ForgotPassword";
 import RequireAuth from "../components/RequireAuth";
@@ -41,12 +42,13 @@ import ReserveSpot from "../components/templates/ReserveSpot";
 import ManageDBA from "../pages/Teacher/ManageDBA";
 import ManageBoletin from "../pages/School/ManageBoletin";
 import Slots from "../pages/Dashboard/Slots";
+import ControlNotas from "../pages/Dashboard/ControlNotas";
 const GeneralRoutes = () => {
   return (
     <div id="body" className="w-full h-screen flex flex-col ">
       <div className="flex grow">
         <Routes>
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reserveSpot" element={<ReserveSpot />} />
@@ -98,6 +100,7 @@ const GeneralRoutes = () => {
             <Route path="manageDBA" element={<ManageDBA />} />
             <Route path="manageBoletin" element={<ManageBoletin />} />
             <Route path="slots" element={<Slots />} />
+            <Route path="controlNotas" element={<ControlNotas />} />
           </Route>
         </Routes>
       </div>

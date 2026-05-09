@@ -488,3 +488,44 @@ export async function updateNoteTransition(idTranNoteDoc, payload) {
     throw error;
   }
 }
+
+/**
+ * Control de notas creadas por sede y período
+ * Endpoint: POST /note/controle/create
+ * payload: { id_sede, id_periodo }
+ */
+export async function ControlCreateNote(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto para ControlCreateNote.");
+  }
+  try {
+    const res = await ApiClient.instance.post("/note/controle/create", payload);
+    const data = Array.isArray(res) ? res : (res?.data ?? res);
+    return data;
+  } catch (error) {
+    console.error("teacherService - ControlCreateNote error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Control de notas asignadas por sede y período
+ * Endpoint: POST /note/controle/assignment
+ * payload: { id_sede, id_periodo }
+ */
+export async function ControlAsignNote(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto para ControlAsignNote.");
+  }
+  try {
+    const res = await ApiClient.instance.post(
+      "/note/controle/assignment",
+      payload,
+    );
+    const data = Array.isArray(res) ? res : (res?.data ?? res);
+    return data;
+  } catch (error) {
+    console.error("teacherService - ControlAsignNote error:", error);
+    throw error;
+  }
+}

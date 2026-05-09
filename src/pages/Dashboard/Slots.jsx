@@ -1,4 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
 import {
   BarChart,
   Bar,
@@ -92,7 +94,7 @@ const TABLE_COLUMNS = [
 ];
 
 const Slots = () => {
-  const { idInstitution } = useAuth();
+  const { idInstitution, nameSchool, imgSchool, nameSede } = useAuth();
 
   const currentYear = new Date().getFullYear();
   const defaultYear = YEAR_OPTIONS.includes(currentYear)
@@ -105,10 +107,210 @@ const Slots = () => {
   const [hasLoaded, setHasLoaded] = useState(false);
   const [error, setError] = useState(null);
 
+  const reportRef = useRef(null);
+  const [exporting, setExporting] = useState(false);
+
   const [filterSede, setFilterSede] = useState("");
   const [filterJornada, setFilterJornada] = useState("");
   const [filterGrado, setFilterGrado] = useState("");
   const [filterTipo, setFilterTipo] = useState("");
+
+  const handleExportPDF = async () => {
+    if (!reportRef.current) return;
+    setExporting(true);
+    try {
+      const element = reportRef.current;
+      const margin = 15; // mm
+
+      // ── Configuración del PDF (tamaño carta) ───────────────────────────
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "letter",
+        compress: true,
+      });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const contentW = pageW - margin * 2;
+
+      // ── Cargar logo ────────────────────────────────────────────────────
+      let logoData = null;
+      if (imgSchool) {
+        try {
+          logoData = await new Promise((resolve) => {
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = () => {
+              const maxDim = 128;
+              let w = img.width,
+                h = img.height;
+              if (w > maxDim || h > maxDim) {
+                const ratio = Math.min(maxDim / w, maxDim / h);
+                w = Math.round(w * ratio);
+                h = Math.round(h * ratio);
+              }
+              const c = document.createElement("canvas");
+              c.width = w;
+              c.height = h;
+              const ctx = c.getContext("2d");
+              ctx.fillStyle = "#ffffff";
+              ctx.fillRect(0, 0, w, h);
+              ctx.drawImage(img, 0, 0, w, h);
+              resolve(c.toDataURL("image/jpeg", 0.6));
+            };
+            img.onerror = () => resolve(null);
+            img.src = imgSchool;
+          });
+        } catch {
+          logoData = null;
+        }
+      }
+
+      // ── Dibujar encabezado ─────────────────────────────────────────────
+      const logoSize = 22;
+      let y = margin;
+      const textCenter = pageW / 2;
+
+      // Nombre institución
+      pdf.setFontSize(13);
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(19, 26, 39);
+      pdf.text((nameSchool ?? "Institución").toUpperCase(), textCenter, y + 5, {
+        align: "center",
+      });
+      y += 8;
+
+      // Sede
+      if (nameSede) {
+        pdf.setFontSize(9);
+        pdf.setFont("helvetica", "normal");
+        pdf.setTextColor(60, 60, 60);
+        pdf.text(nameSede, textCenter, y + 3, { align: "center" });
+        y += 5;
+      }
+
+      // Fecha de generación
+      const fechaGenerado = new Date().toLocaleDateString("es-CO", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+      pdf.setFontSize(8);
+      pdf.setFont("helvetica", "italic");
+      pdf.setTextColor(100, 100, 100);
+      pdf.text(`Generado: ${fechaGenerado}`, pageW - margin, margin + 3, {
+        align: "right",
+      });
+
+      // Logo (si existe, sobre el margen superior izquierdo)
+      if (logoData) {
+        pdf.addImage(logoData, "JPEG", margin, margin, logoSize, logoSize);
+        y = Math.max(y, margin + logoSize + 3);
+      }
+
+      // Línea separadora gruesa
+      pdf.setDrawColor(19, 26, 39);
+      pdf.setLineWidth(0.8);
+      pdf.line(margin, y, pageW - margin, y);
+      y += 5;
+
+      // Título del reporte
+      pdf.setFontSize(12);
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(19, 26, 39);
+      pdf.text(`REPORTE DE CUPOS — AÑO ${selectedYear}`, textCenter, y + 4, {
+        align: "center",
+      });
+      y += 9;
+
+      // Línea separadora delgada
+      pdf.setDrawColor(180, 180, 180);
+      pdf.setLineWidth(0.3);
+      pdf.line(margin, y, pageW - margin, y);
+      y += 6;
+
+      // ── Fix oklch: resolver colores antes de clonar ────────────────────
+      const colorCache = new Map();
+      function resolveColor(cssColor) {
+        if (!cssColor || !cssColor.includes("oklch")) return cssColor;
+        if (colorCache.has(cssColor)) return colorCache.get(cssColor);
+        try {
+          const c = document.createElement("canvas");
+          c.width = c.height = 1;
+          const ctx = c.getContext("2d");
+          ctx.fillStyle = cssColor;
+          ctx.fillRect(0, 0, 1, 1);
+          const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
+          const resolved = `rgba(${r},${g},${b},${(a / 255).toFixed(3)})`;
+          colorCache.set(cssColor, resolved);
+          return resolved;
+        } catch {
+          return cssColor;
+        }
+      }
+      const COLOR_PROPS = [
+        "color",
+        "backgroundColor",
+        "borderTopColor",
+        "borderRightColor",
+        "borderBottomColor",
+        "borderLeftColor",
+        "outlineColor",
+        "caretColor",
+        "fill",
+        "stroke",
+      ];
+      const originalEls = Array.from(element.querySelectorAll("*"));
+      const computedColors = originalEls.map((el) => {
+        const cs = window.getComputedStyle(el);
+        const entry = {};
+        COLOR_PROPS.forEach((p) => {
+          const v = cs[p];
+          if (v && v.includes("oklch")) entry[p] = resolveColor(v);
+        });
+        return entry;
+      });
+
+      // ── Capturar gráficas + tabla con html2canvas ──────────────────────
+      const contentCanvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+        onclone: (_clonedDoc, clonedElement) => {
+          const clonedEls = Array.from(clonedElement.querySelectorAll("*"));
+          clonedEls.forEach((el, i) => {
+            const fixes = computedColors[i];
+            if (!fixes) return;
+            Object.entries(fixes).forEach(([prop, val]) => {
+              el.style[prop] = val;
+            });
+          });
+        },
+      });
+
+      const imgData = contentCanvas.toDataURL("image/png");
+      const imgH = (contentCanvas.height * contentW) / contentCanvas.width;
+
+      // ── Insertar imagen con paginación ─────────────────────────────────
+      // Página 1: el espacio disponible empieza en y (debajo del encabezado)
+      pdf.addImage(imgData, "PNG", margin, y, contentW, imgH);
+
+      let shown = pageH - y - margin; // mm de imagen ya visibles en pág. 1
+      while (shown < imgH) {
+        pdf.addPage();
+        // Desplazamos la imagen hacia arriba para mostrar el siguiente trozo
+        pdf.addImage(imgData, "PNG", margin, margin - shown, contentW, imgH);
+        shown += pageH - margin * 2;
+      }
+
+      pdf.save(`cupos-${selectedYear}.pdf`);
+    } catch (err) {
+      console.error("Error al exportar PDF:", err);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const handleSearch = async () => {
     setLoading(true);
@@ -210,6 +412,31 @@ const Slots = () => {
         >
           {loading ? "Cargando..." : "Consultar"}
         </button>
+
+        {hasLoaded && filteredSlots.length > 0 && (
+          <button
+            onClick={handleExportPDF}
+            disabled={exporting || loading}
+            className="px-5 py-2 rounded-lg bg-primary disabled:opacity-50 text-surface text-sm font-medium transition-colors flex items-center gap-2"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="12" y1="18" x2="12" y2="12" />
+              <line x1="9" y1="15" x2="15" y2="15" />
+            </svg>
+            {exporting ? "Exportando..." : "Exportar PDF"}
+          </button>
+        )}
       </div>
 
       {/* Filtros secundarios (se muestran una vez cargados los datos) */}
@@ -303,7 +530,7 @@ const Slots = () => {
               No hay cupos que coincidan con los filtros seleccionados.
             </div>
           ) : (
-            <div className="flex flex-col gap-6 p-0">
+            <div ref={reportRef} className="flex flex-col gap-6 p-0">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <ChartCard
                   title="Cupos por Sede"
@@ -339,6 +566,7 @@ const Slots = () => {
                     data={filteredSlots}
                     columns={TABLE_COLUMNS}
                     fileName={`cupos-${selectedYear}`}
+                    pageSize={100}
                   />
                 </div>
               </div>

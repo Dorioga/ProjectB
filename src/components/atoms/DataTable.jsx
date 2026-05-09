@@ -9,7 +9,7 @@ import {
   flexRender,
 } from "@tanstack/react-table";
 import * as XLSX from "xlsx";
-import { FileUp } from "lucide-react";
+import { FileUp, ChevronDown, ChevronRight } from "lucide-react";
 import SimpleButton from "./SimpleButton";
 import Loader from "./Loader";
 import DocumentModal from "../molecules/DocumentModal";
@@ -31,12 +31,17 @@ const DataTable = ({
   loaderSize = 96,
   // optional initial sorting: [{ id: 'column_key', desc: false }]
   initialSorting = [],
+  // optional: accessor key to group rows by (accordion mode, disables pagination)
+  groupBy = null,
+  // optional: function (rows) => ReactNode — extra summary shown in the accordion header
+  groupSummary = null,
 }) => {
   const [sorting, setSorting] = useState(initialSorting);
   const [globalFilter, setGlobalFilter] = useState("");
   const tableRef = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
   const [downloadTypeMode, setDownloadTypeMode] = useState("all");
+  const [closedGroups, setClosedGroups] = useState(new Set());
 
   // Función de filtro personalizada que busca todos los términos en toda la fila
   const globalFilterFn = (row, columnId, filterValue) => {
@@ -107,6 +112,11 @@ const DataTable = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, refreshKey]);
+
+  // Reiniciar grupos cerrados cuando cambian los datos o el filtro
+  useEffect(() => {
+    if (groupBy) setClosedGroups(new Set());
+  }, [data, globalFilter, groupBy]);
 
   const handleExport = () => {
     // Obtener todas las filas filtradas
@@ -281,7 +291,121 @@ const DataTable = ({
             ))}
           </thead>
           <tbody>
-            {table.getRowModel().rows.length === 0 ? (
+            {groupBy ? (
+              (() => {
+                const filteredRows = table.getSortedRowModel().rows;
+                const colCount =
+                  table.getHeaderGroups()?.[0]?.headers?.length || 1;
+                if (filteredRows.length === 0) {
+                  return (
+                    <tr>
+                      <td
+                        colSpan={colCount}
+                        className="p-6 text-center text-gray-500"
+                      >
+                        Sin datos
+                      </td>
+                    </tr>
+                  );
+                }
+                const groupMap = new Map();
+                filteredRows.forEach((row) => {
+                  const key = String(row.getValue(groupBy) ?? "(Sin valor)");
+                  if (!groupMap.has(key)) groupMap.set(key, []);
+                  groupMap.get(key).push(row);
+                });
+                return Array.from(groupMap.entries()).flatMap(
+                  ([groupKey, rows]) => {
+                    const isOpen = !closedGroups.has(groupKey);
+                    return [
+                      <tr
+                        key={`group-${groupKey}`}
+                        className="bg-blue-50 border-b cursor-pointer select-none hover:bg-blue-100 transition-colors"
+                        onClick={() =>
+                          setClosedGroups((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(groupKey)) next.delete(groupKey);
+                            else next.add(groupKey);
+                            return next;
+                          })
+                        }
+                      >
+                        <td colSpan={colCount} className="px-4 py-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              {isOpen ? (
+                                <ChevronDown
+                                  size={16}
+                                  className="text-primary"
+                                />
+                              ) : (
+                                <ChevronRight
+                                  size={16}
+                                  className="text-primary"
+                                />
+                              )}
+                              <span className="font-semibold text-sm text-gray-800">
+                                {groupKey}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              {groupSummary && groupSummary(rows)}
+                              <span className="text-xs text-gray-500 font-medium">
+                                {rows.length}{" "}
+                                {rows.length === 1 ? "registro" : "registros"}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>,
+                      ...(isOpen
+                        ? rows.map((row) => (
+                            <tr
+                              key={row.id}
+                              className={`border-b bg-surface hover:bg-gray-50 transition-colors duration-300 ${
+                                typeof rowClassName === "function"
+                                  ? rowClassName(row)
+                                  : (rowClassName ?? "")
+                              }`}
+                            >
+                              {row.getVisibleCells().map((cell) => (
+                                <td
+                                  key={cell.id}
+                                  className={`p-0 h-full text-center ${
+                                    cell.column.columnDef.meta?.hideOnSM
+                                      ? "hidden sm:table-cell"
+                                      : ""
+                                  }${
+                                    cell.column.columnDef.meta?.hideOnMD
+                                      ? "hidden md:table-cell"
+                                      : ""
+                                  } 
+                                  ${
+                                    cell.column.columnDef.meta?.hideOnLG
+                                      ? "hidden lg:table-cell"
+                                      : ""
+                                  }${
+                                    cell.column.columnDef.meta?.hideOnXL
+                                      ? "hidden xl:table-cell"
+                                      : ""
+                                  }`}
+                                >
+                                  <div className=" p-0 block">
+                                    {flexRender(
+                                      cell.column.columnDef.cell,
+                                      cell.getContext(),
+                                    )}
+                                  </div>
+                                </td>
+                              ))}
+                            </tr>
+                          ))
+                        : []),
+                    ];
+                  },
+                );
+              })()
+            ) : table.getRowModel().rows.length === 0 ? (
               <tr>
                 <td
                   colSpan={table.getHeaderGroups()?.[0]?.headers?.length || 1}

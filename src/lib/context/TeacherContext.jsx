@@ -413,6 +413,24 @@ export function TeacherProvider({ children }) {
     [assignAsignature],
   );
 
+  const controlCreateNote = useCallback(async (payload = {}) => {
+    try {
+      const res = await teacherService.ControlCreateNote(payload);
+      return res;
+    } catch (err) {
+      throw err;
+    }
+  }, []);
+
+  const controlAsignNote = useCallback(async (payload = {}) => {
+    try {
+      const res = await teacherService.ControlAsignNote(payload);
+      return res;
+    } catch (err) {
+      throw err;
+    }
+  }, []);
+
   const value = useMemo(
     () => ({
       teachers,
@@ -453,6 +471,9 @@ export function TeacherProvider({ children }) {
       getNotesTeacher,
       getTransitionNotes,
       updateNoteTransition,
+      // control notas
+      controlCreateNote,
+      controlAsignNote,
     }),
     [
       teachers,
@@ -489,6 +510,8 @@ export function TeacherProvider({ children }) {
       getNotesTeacher,
       getTransitionNotes,
       updateNoteTransition,
+      controlCreateNote,
+      controlAsignNote,
     ],
   );
 

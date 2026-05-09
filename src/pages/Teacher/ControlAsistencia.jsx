@@ -197,9 +197,22 @@ const ControlAsistencia = () => {
         header: "Asignatura",
       },
       {
-        accessorKey: "docente",
-        header: "Docente",
+        accessorKey: "fecha",
+        header: "Fecha",
+        cell: ({ getValue }) => {
+          const val = getValue();
+          if (!val) return "-";
+          const date = new Date(val);
+          if (isNaN(date.getTime())) return val;
+          return date.toLocaleDateString("es-CO", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            timeZone: "UTC",
+          });
+        },
       },
+
       {
         accessorKey: "estado_asistencia",
         header: "Estado Asistencia",
@@ -302,6 +315,26 @@ const ControlAsistencia = () => {
             fileName="Export_Control_Asistencia"
             showDownloadButtons={tableData.length > 0}
             pageSize={50}
+            groupBy="docente"
+            groupSummary={(rows) => {
+              const conAsistencia = rows.filter(
+                (r) =>
+                  String(r.original.estado_asistencia ?? "")
+                    .toLowerCase()
+                    .trim() !== "sin asistencia",
+              ).length;
+              const sinAsistencia = rows.length - conAsistencia;
+              return (
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-xs font-semibold bg-green-100 text-green-700">
+                    Con asistencia: {conAsistencia}
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-xs font-semibold bg-red-100 text-red-700">
+                    Sin asistencia: {sinAsistencia}
+                  </span>
+                </div>
+              );
+            }}
           />
         )}
 
