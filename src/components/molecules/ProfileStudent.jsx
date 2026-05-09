@@ -20,10 +20,11 @@ const ProfileStudent = ({
   showStates = true,
 }) => {
   const notify = useNotify();
-  const { nameRole } = useAuth();
+  const { nameRole, rol } = useAuth();
   const isDocente = String(nameRole ?? "")
     .toLowerCase()
     .includes("docente");
+  const isRol6 = String(rol) === "6";
   const [isTourMode, setIsTourMode] = useState(false);
 
   const startTour = useCallback(() => {
@@ -324,7 +325,7 @@ const ProfileStudent = ({
                 text="text-surface"
               />
             )}
-            {!isDocente && (
+            {!isDocente && !isRol6 && (
               <SimpleButton
                 onClick={() => setIsEditing(true)}
                 msj="Editar"
@@ -486,7 +487,7 @@ const ProfileStudent = ({
 
           <div className="flex flex-row gap-4 items-center">
             <label className="text-lg font-medium">Jornada:</label>
-            <p>{data.nombre_jornada_estudiante}</p>
+            <p>{data.nombre_jornada}</p>
           </div>
         </div>
         <div
@@ -546,8 +547,8 @@ const ProfileStudent = ({
                 >
                   {editedData.state_first}
                 </span>
-                {data.state_first === "Ausente" ||
-                data.nombre_primera_etapa === "Pendiente" ? (
+                {!isRol6 && (data.state_first === "Ausente" ||
+data.nombre_primera_etapa === "Pendiente") ? (
                   <div className="">
                     <SimpleButton
                       onClick={() => setIsOpenCamera(true)}
@@ -574,7 +575,8 @@ const ProfileStudent = ({
                 >
                   {editedData.state_second}
                 </span>
-                {(data.state_first === "Registrado" ||
+                {!isRol6 &&
+                  (data.state_first === "Registrado" ||
                   data.nombre_primera_etapa === "Registrado") &&
                   (data.state_second === "Ausente" ||
                     data.nombre_segunda_etapa === "Pendiente") && (
