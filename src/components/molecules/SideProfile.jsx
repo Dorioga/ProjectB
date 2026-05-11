@@ -27,7 +27,7 @@ export const SideProfile = () => {
   const [cutInfo, setCutInfo] = useState(null);
 
   useEffect(() => {
-    if (!idInstitution) return;
+    if (!idInstitution || [5, 6, "5", "6"].includes(rol)) return;
     let cancelled = false;
     notifyValidator({ fk_institucion: Number(idInstitution) })
       .then((data) => {

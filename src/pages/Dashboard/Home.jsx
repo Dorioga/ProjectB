@@ -62,7 +62,10 @@ const DashHome = () => {
           const res = await getAllStudentTeacher(payload);
           arr = Array.isArray(res) ? res : (res?.data ?? []);
           console.log("Home - getAllStudentTeacher response:", arr);
-        } else if (idInstitution && !(rol === 5 || rol === "5")) {
+        } else if (
+          idInstitution &&
+          !(rol === 5 || rol === "5" || rol === 6 || rol === "6")
+        ) {
           const res = await fetchAllStudents({ institucion: idInstitution });
           arr = Array.isArray(res) ? res : (res?.data ?? []);
           console.log("Home - fetchAllStudents response:", arr);
