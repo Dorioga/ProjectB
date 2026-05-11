@@ -1151,10 +1151,11 @@ async function generateBoletinPDF(
     }
   }
 
-  const nombreArchivo = [info.nombre_estudiante, info.apellido_estudiante]
-    .filter(Boolean)
-    .join("_")
-    .replace(/\s+/g, "_") || meta.studentId;
+  const nombreArchivo =
+    [info.nombre_estudiante, info.apellido_estudiante]
+      .filter(Boolean)
+      .join("_")
+      .replace(/\s+/g, "_") || meta.studentId;
   pdf.save(`Boletin_${nombreArchivo}_${meta.year}_P${meta.periodId}.pdf`);
 }
 
@@ -1376,10 +1377,11 @@ async function generateBoletinTransicionPDF(info, boletinData, meta) {
     y += 4;
   }
 
-  const nombreArchivoT = [info.nombre_estudiante, info.apellido_estudiante]
-    .filter(Boolean)
-    .join("_")
-    .replace(/\s+/g, "_") || meta.studentId;
+  const nombreArchivoT =
+    [info.nombre_estudiante, info.apellido_estudiante]
+      .filter(Boolean)
+      .join("_")
+      .replace(/\s+/g, "_") || meta.studentId;
   pdf.save(
     `Boletin_Transicion_${nombreArchivoT}_${meta.year}_P${meta.periodId}.pdf`,
   );
