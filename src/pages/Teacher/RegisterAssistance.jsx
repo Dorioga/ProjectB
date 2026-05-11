@@ -254,8 +254,13 @@ const RegisterAssistance = () => {
         });
         return next;
       });
-      // opcional: limpiar seleccion
-      setAttendanceByStudent({});
+      // Reinicializar todos como PRESENTE para que al reactivar el modo edición
+      // los checkboxes aparezcan marcados por defecto.
+      const reset = {};
+      (studentsFromService || []).forEach((s) => {
+        reset[getStudentKey(s)] = "PRESENTE";
+      });
+      setAttendanceByStudent(reset);
     } catch (err) {
       console.error("RegisterAssistance - error registrando asistencia:", err);
       notify.error(err?.message || "Error al registrar asistencia");
@@ -432,19 +437,14 @@ const RegisterAssistance = () => {
     }));
   };
 
-  const handleToggleAttendance = (studentKey, option) => (e) => {
-    const checked = Boolean(e.target.checked);
+  const handleToggleAttendance = (studentKey, option) => () => {
     // al modificar la asistencia, marcar la fila como 'no guardada'
     setRowSavedById((prev) => ({ ...(prev ?? {}), [studentKey]: false }));
     setAttendanceByStudent((prev) => {
       const next = { ...(prev ?? {}) };
-      if (!checked) {
-        if (next[studentKey] === option) {
-          next[studentKey] = "";
-        }
-        return next;
-      }
-      next[studentKey] = option;
+      // Toggle basado en el estado previo, no en e.target.checked,
+      // para evitar que clics rápidos lean el DOM antes de que React reconcilie.
+      next[studentKey] = next[studentKey] === option ? "" : option;
       return next;
     });
   };

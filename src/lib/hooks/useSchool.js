@@ -16,6 +16,7 @@ const EMPTY_CONTEXT = {
   getTeacherGrades: noop,
   getStudentGrades: noop,
   createNote: noop,
+  validatorNotes: noop,
   createTransitionNote: noop,
   saveTransitionStudentNote: noop,
   updateTransitionStudentNote: noop,

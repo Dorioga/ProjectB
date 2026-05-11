@@ -14,10 +14,11 @@ import tourRegisterRecords from "../../tour/tourRegisterRecords";
 // Función auxiliar para redondeo consistente
 const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
 
-const RegisterRecords = () => {
+const RegisterRecords = ({ onClose }) => {
   const {
     createNote,
     createTransitionNote,
+    validatorNotes,
     loading: loadingSchool,
   } = useSchool();
   const { getTeacherGrades, getTeacherSubjects, getTeacherSede } = useTeacher();
@@ -46,6 +47,12 @@ const RegisterRecords = () => {
   const [propositoSelected, setPropositoSelected] = useState("");
   const [propositos, setPropositos] = useState([]);
   const [loadingPropositos, setLoadingPropositos] = useState(false);
+
+  // ── Modal de notas existentes ──
+  const [existingNotesModal, setExistingNotesModal] = useState(false);
+  const [validatingNotes, setValidatingNotes] = useState(false);
+  // true solo cuando la validación ya corrió y no hay notas existentes
+  const [notesValidated, setNotesValidated] = useState(false);
   // Cargar propósitos cuando se activa Grado Transición
   useEffect(() => {
     if (!isTransicion || !idInstitution) return;
@@ -65,6 +72,63 @@ const RegisterRecords = () => {
       mounted = false;
     };
   }, [isTransicion, idInstitution, getPurposes]);
+
+  // ── Validar notas existentes cuando los 4 campos están completos ──
+  useEffect(() => {
+    // Si algún selector se vacía, ocultar el formulario hasta nueva validación
+    if (
+      !gradeSelected ||
+      !periodSelected ||
+      !asignatureSelected ||
+      !idDocente
+    ) {
+      setNotesValidated(false);
+      setExistingNotesModal(false);
+      return;
+    }
+    let cancelled = false;
+    const validate = async () => {
+      setValidatingNotes(true);
+      setNotesValidated(false);
+      try {
+        const result = await validatorNotes({
+          fk_grade: Number(gradeSelected),
+          fk_period: Number(periodSelected),
+          fk_asignatura: Number(asignatureSelected),
+          fk_docente: Number(idDocente),
+        });
+        if (cancelled) return;
+        if (Array.isArray(result) && result.length > 0) {
+          setExistingNotesModal(true);
+          setNotesValidated(false);
+          // Limpiar campos de notas para que no se puedan crear duplicadas
+          setNumberRecords(0);
+          setAuxRecords([]);
+        } else {
+          setExistingNotesModal(false);
+          setNotesValidated(true);
+        }
+      } catch {
+        // En caso de error del servicio mostrar el formulario igualmente
+        if (!cancelled) {
+          setExistingNotesModal(false);
+          setNotesValidated(true);
+        }
+      } finally {
+        if (!cancelled) setValidatingNotes(false);
+      }
+    };
+    validate();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    gradeSelected,
+    periodSelected,
+    asignatureSelected,
+    idDocente,
+    validatorNotes,
+  ]);
 
   // SedEs del docente (obtenidas vía getTeacherSede)
   const [teacherSedes, setTeacherSedes] = useState([]);
@@ -465,6 +529,39 @@ const RegisterRecords = () => {
 
   return (
     <div className="p-2 h-full gap-4 flex flex-col">
+      {/* ── Modal: Notas existentes ── */}
+      {existingNotesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-surface rounded-xl shadow-xl p-8 max-w-sm w-full flex flex-col items-center gap-4">
+            <div className="text-4xl">⚠️</div>
+            <h2 className="text-lg font-bold text-center text-primary">
+              Notas existentes
+            </h2>
+            <p className="text-sm text-center text-text/80">
+              Ya existen notas registradas para esta combinación. Por favor
+              <strong> edita</strong> las notas existentes para agregar o
+              modificarlas.
+            </p>
+            <SimpleButton
+              msj="Entendido"
+              bg="bg-secondary"
+              text="text-surface"
+              type="button"
+              onClick={() => {
+                setExistingNotesModal(false);
+                onClose?.();
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ── Indicador de validación ── */}
+      {validatingNotes && (
+        <p className="text-xs text-muted text-center animate-pulse">
+          Verificando notas existentes...
+        </p>
+      )}
       <div className="w-full grid grid-cols-5 justify-between items-center  text-surface rounded-lg">
         <h2 className="col-span-4 text-2xl font-bold"></h2>
         <SimpleButton
@@ -607,218 +704,231 @@ const RegisterRecords = () => {
           />
         </div>
         {/* ── Grado Transición ─────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          <div className="flex flex-row items-center gap-2">
-            <input
-              id="gradeTransicion"
-              type="checkbox"
-              checked={isTransicion}
-              onChange={(e) => {
-                setIsTransicion(e.target.checked);
-                if (!e.target.checked) {
-                  setPropositoSelected("");
-                  setPropositos([]);
-                }
-              }}
-            />
-            <label htmlFor="gradeTransicion" className="text-lg font-semibold">
-              Grado Transición
-            </label>{" "}
-          </div>
-
-          {isTransicion && (
-            <div className="flex flex-col col-span-2">
-              <label className="text-lg font-semibold">
-                Propósito de la nota
-              </label>
-              <select
-                value={propositoSelected}
-                onChange={(e) => setPropositoSelected(e.target.value)}
-                className="p-2 border rounded bg-surface text-sm"
-                disabled={loadingPropositos}
-              >
-                <option value="">
-                  {loadingPropositos ? "Cargando..." : "Seleccionar propósito"}
-                </option>
-                {propositos.map((p) => (
-                  <option key={p.id_proposito} value={p.id_proposito}>
-                    {p.nombre_proposito}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-        </div>
-
-        <div id="tour-num-records" className="w-full md:w-2/3 lg:w-2/5">
-          <label className="text-lg font-semibold">
-            ¿Cuántas notas deseas registrar?
-          </label>
-          <input
-            type="number"
-            min={1}
-            className="w-full p-2 border rounded bg-surface"
-            value={numberRecords || ""}
-            onChange={(e) => setNumberRecords(Number(e.target.value))}
-            disabled={!canSetNumberRecords}
-          />
-          {!canSetNumberRecords ? (
-            <div className="text-xs opacity-70 mt-1">
-              Selecciona sede, asignatura y periodo para habilitar este campo.
-            </div>
-          ) : null}
-        </div>
-        {!isTransicion && (
-          <div id="tour-final-test" className="flex items-center gap-2">
-            <input
-              id="useFinalTest"
-              type="checkbox"
-              checked={isTest}
-              onChange={(e) => setIsTest(e.target.checked)}
-            />
-            <label htmlFor="useFinalTest" className="text-lg font-semibold">
-              Usar examen final como 20%
-            </label>
-          </div>
-        )}
-
-        <div className="text-sm opacity-80">
-          Porcentual total para notas: {porcentualTotal}%
-        </div>
-
-        {Array.isArray(auxRecords) && auxRecords.length > 0 ? (
-          <div id="tour-records-list" className="flex flex-col gap-3">
-            {auxRecords.map((rec, idx) => (
-              <div
-                key={idx}
-                className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-primary border-gray-300 rounded-lg p-5"
-              >
-                <h2 className=" text-lg text-surface font-bold text-center md:text-left  md:col-span-3">
-                  Nota {idx + 1}
-                </h2>
-                <div className="w-full flex flex-col gap-1 rounded-t-lg">
-                  <label className="text-sm font-semibold bg-secondary text-surface p-2 w-full rounded-t-lg">
-                    Descripción
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full p-2 border rounded bg-surface tour-note-name"
-                    value={rec?.name ?? ""}
-                    onChange={(e) =>
-                      handleRecordChange(idx, "name", e.target.value)
+        {notesValidated && !existingNotesModal && (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              <div className="flex flex-row items-center gap-2">
+                <input
+                  id="gradeTransicion"
+                  type="checkbox"
+                  checked={isTransicion}
+                  onChange={(e) => {
+                    setIsTransicion(e.target.checked);
+                    if (!e.target.checked) {
+                      setPropositoSelected("");
+                      setPropositos([]);
                     }
-                  />
-                </div>
+                  }}
+                />
+                <label
+                  htmlFor="gradeTransicion"
+                  className="text-lg font-semibold"
+                >
+                  Valoración Cualitativa
+                </label>{" "}
+              </div>
 
-                {!isTransicion && (
-                  <div className="w-full flex flex-col gap-1 rounded-t-lg">
-                    <div className="flex flex-row bg-secondary justify-between rounded-t-lg pr-4">
-                      <label className="text-sm font-semibold  text-surface p-2 w-full ">
+              {isTransicion && (
+                <div className="flex flex-col col-span-2">
+                  <label className="text-lg font-semibold">
+                    Propósito de la nota
+                  </label>
+                  <select
+                    value={propositoSelected}
+                    onChange={(e) => setPropositoSelected(e.target.value)}
+                    className="p-2 border rounded bg-surface text-sm"
+                    disabled={loadingPropositos}
+                  >
+                    <option value="">
+                      {loadingPropositos
+                        ? "Cargando..."
+                        : "Seleccionar propósito"}
+                    </option>
+                    {propositos.map((p) => (
+                      <option key={p.id_proposito} value={p.id_proposito}>
+                        {p.nombre_proposito}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
+            <div id="tour-num-records" className="w-full md:w-2/3 lg:w-2/5">
+              <label className="text-lg font-semibold">
+                ¿Cuántas notas deseas registrar?
+              </label>
+              <input
+                type="number"
+                min={1}
+                className="w-full p-2 border rounded bg-surface"
+                value={numberRecords || ""}
+                onChange={(e) => setNumberRecords(Number(e.target.value))}
+                disabled={!canSetNumberRecords}
+              />
+              {!canSetNumberRecords ? (
+                <div className="text-xs opacity-70 mt-1">
+                  Selecciona sede, asignatura y periodo para habilitar este
+                  campo.
+                </div>
+              ) : null}
+            </div>
+            {!isTransicion && (
+              <div id="tour-final-test" className="flex items-center gap-2">
+                <input
+                  id="useFinalTest"
+                  type="checkbox"
+                  checked={isTest}
+                  onChange={(e) => setIsTest(e.target.checked)}
+                />
+                <label htmlFor="useFinalTest" className="text-lg font-semibold">
+                  Usar examen final como 20%
+                </label>
+              </div>
+            )}
+
+            <div className="text-sm opacity-80">
+              Porcentual total para notas: {porcentualTotal}%
+            </div>
+
+            {Array.isArray(auxRecords) && auxRecords.length > 0 ? (
+              <div id="tour-records-list" className="flex flex-col gap-3">
+                {auxRecords.map((rec, idx) => (
+                  <div
+                    key={idx}
+                    className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-primary border-gray-300 rounded-lg p-5"
+                  >
+                    <h2 className=" text-lg text-surface font-bold text-center md:text-left  md:col-span-3">
+                      Nota {idx + 1}
+                    </h2>
+                    <div className="w-full flex flex-col gap-1 rounded-t-lg">
+                      <label className="text-sm font-semibold bg-secondary text-surface p-2 w-full rounded-t-lg">
+                        Descripción
+                      </label>
+                      <input
+                        type="text"
+                        className="w-full p-2 border rounded bg-surface tour-note-name"
+                        value={rec?.name ?? ""}
+                        onChange={(e) =>
+                          handleRecordChange(idx, "name", e.target.value)
+                        }
+                      />
+                    </div>
+
+                    {!isTransicion && (
+                      <div className="w-full flex flex-col gap-1 rounded-t-lg">
+                        <div className="flex flex-row bg-secondary justify-between rounded-t-lg pr-4">
+                          <label className="text-sm font-semibold  text-surface p-2 w-full ">
+                            Porcentual (%)
+                          </label>
+
+                          <div className="flex flex-row">
+                            <input
+                              type="checkbox"
+                              className="tour-note-lock "
+                              checked={Boolean(rec?.locked)}
+                              onChange={() => togglePorcentualLock(idx)}
+                              title="Fijar porcentaje"
+                            />{" "}
+                            <label className="text-sm font-semibold  text-surface p-2 w-full ">
+                              Fijar
+                            </label>
+                          </div>
+                        </div>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min={0}
+                          className="w-full p-2 border rounded bg-surface tour-note-porcentual"
+                          value={rec?.porcentual ?? 0}
+                          onChange={(e) =>
+                            handlePorcentualChange(idx, e.target.value)
+                          }
+                        />
+                      </div>
+                    )}
+
+                    {!isTransicion && (
+                      <div className="w-full flex flex-col gap-1 rounded-t-lg">
+                        <label className="text-sm font-semibold bg-secondary text-surface p-2 w-full rounded-t-lg text-center">
+                          Objetivo de la nota
+                        </label>
+                        <input
+                          type="text"
+                          className="w-full p-2 border rounded bg-surface tour-note-goal"
+                          value={rec?.goal ?? ""}
+                          onChange={(e) =>
+                            handleRecordChange(idx, "goal", e.target.value)
+                          }
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {isTest ? (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-primary border-gray-300 rounded-lg p-5">
+                    <h2 className=" text-lg text-surface font-bold text-center md:text-left  md:col-span-3">
+                      Examen Final
+                    </h2>
+                    <div className="w-full flex flex-col gap-1 rounded-t-lg">
+                      <label className="text-sm font-semibold bg-secondary text-surface p-2 w-full rounded-t-lg ">
+                        Nombre
+                      </label>
+                      <input
+                        type="text"
+                        className="w-full p-2 border rounded bg-surface"
+                        value="Examen final"
+                        readOnly
+                      />
+                    </div>
+
+                    <div className="w-full flex flex-col gap-1 rounded-t-lg">
+                      <label className="text-sm font-semibold bg-secondary text-surface p-2 w-full rounded-t-lg">
                         Porcentual (%)
                       </label>
-
-                      <div className="flex flex-row">
-                        <input
-                          type="checkbox"
-                          className="tour-note-lock "
-                          checked={Boolean(rec?.locked)}
-                          onChange={() => togglePorcentualLock(idx)}
-                          title="Fijar porcentaje"
-                        />{" "}
-                        <label className="text-sm font-semibold  text-surface p-2 w-full ">
-                          Fijar
-                        </label>
-                      </div>
+                      <input
+                        type="number"
+                        step="1"
+                        min={1}
+                        max={99}
+                        className="w-full p-2 border rounded bg-surface"
+                        value={finalTest.porcentual}
+                        onChange={(e) => {
+                          const val = Math.min(
+                            99,
+                            Math.max(1, Number(e.target.value) || 1),
+                          );
+                          setFinalTest((prev) => ({
+                            ...prev,
+                            porcentual: val,
+                          }));
+                        }}
+                      />
                     </div>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min={0}
-                      className="w-full p-2 border rounded bg-surface tour-note-porcentual"
-                      value={rec?.porcentual ?? 0}
-                      onChange={(e) =>
-                        handlePorcentualChange(idx, e.target.value)
-                      }
-                    />
+
+                    <div className="w-full flex flex-col gap-1 rounded-t-lg">
+                      <label className="text-sm font-semibold bg-secondary text-surface p-2 w-full rounded-t-lg ">
+                        Objetivo de la nota
+                      </label>
+                      <input
+                        type="text"
+                        className="w-full p-2 border rounded bg-surface"
+                        value={finalTest.goal}
+                        onChange={(e) =>
+                          setFinalTest((prev) => ({
+                            ...prev,
+                            goal: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
                   </div>
-                )}
-
-                {!isTransicion && (
-                  <div className="w-full flex flex-col gap-1 rounded-t-lg">
-                    <label className="text-sm font-semibold bg-secondary text-surface p-2 w-full rounded-t-lg text-center">
-                      Objetivo de la nota
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full p-2 border rounded bg-surface tour-note-goal"
-                      value={rec?.goal ?? ""}
-                      onChange={(e) =>
-                        handleRecordChange(idx, "goal", e.target.value)
-                      }
-                    />
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {isTest ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-primary border-gray-300 rounded-lg p-5">
-                <h2 className=" text-lg text-surface font-bold text-center md:text-left  md:col-span-3">
-                  Examen Final
-                </h2>
-                <div className="w-full flex flex-col gap-1 rounded-t-lg">
-                  <label className="text-sm font-semibold bg-secondary text-surface p-2 w-full rounded-t-lg ">
-                    Nombre
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full p-2 border rounded bg-surface"
-                    value="Examen final"
-                    readOnly
-                  />
-                </div>
-
-                <div className="w-full flex flex-col gap-1 rounded-t-lg">
-                  <label className="text-sm font-semibold bg-secondary text-surface p-2 w-full rounded-t-lg">
-                    Porcentual (%)
-                  </label>
-                  <input
-                    type="number"
-                    step="1"
-                    min={1}
-                    max={99}
-                    className="w-full p-2 border rounded bg-surface"
-                    value={finalTest.porcentual}
-                    onChange={(e) => {
-                      const val = Math.min(
-                        99,
-                        Math.max(1, Number(e.target.value) || 1),
-                      );
-                      setFinalTest((prev) => ({ ...prev, porcentual: val }));
-                    }}
-                  />
-                </div>
-
-                <div className="w-full flex flex-col gap-1 rounded-t-lg">
-                  <label className="text-sm font-semibold bg-secondary text-surface p-2 w-full rounded-t-lg ">
-                    Objetivo de la nota
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full p-2 border rounded bg-surface"
-                    value={finalTest.goal}
-                    onChange={(e) =>
-                      setFinalTest((prev) => ({
-                        ...prev,
-                        goal: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
+                ) : null}
               </div>
             ) : null}
-          </div>
-        ) : null}
+          </>
+        )}
 
         <div id="tour-submit" className="mt-2 flex justify-center">
           <div className="w-full md:w-1/2">

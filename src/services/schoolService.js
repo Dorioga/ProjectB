@@ -437,6 +437,65 @@ export async function getGradeAsignature(payload) {
   throw new Error(data?.message || "Respuesta inesperada de grade_asignature.");
 }
 /**
+ * Valida si ya existen notas creadas para una combinación de grado, período, asignatura y docente.
+ *
+ * Endpoint: POST /note/validator
+ * @param {{ fk_grade: number, fk_period: number, fk_asignatura: number, fk_docente: number }} payload
+ * @returns {Promise<Array>} Array de notas existentes (vacío si no hay)
+ */
+export async function validatorNotes(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+  const res = await ApiClient.instance.post("/note/validator", payload);
+  const data = res;
+  if (data && typeof data === "object" && "data" in data) {
+    // Si el servidor responde con code "error" o data null → sin notas existentes
+    if (data.code === "error" || data.data === null) return [];
+    return Array.isArray(data.data) ? data.data : [];
+  }
+  return [];
+}
+
+/**
+ * Obtiene información de corte de periodo activo para la institución.
+ *
+ * Endpoint: POST /notify/validator
+ * @param {{ fk_institucion: number }} payload
+ * @returns {Promise<Array>} Lista de cortes activos
+ */
+export async function notifyValidator(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+  const res = await ApiClient.instance.post("/notify/validator", payload);
+  const data = res;
+  if (data && typeof data === "object" && "data" in data) {
+    return Array.isArray(data.data) ? data.data : [];
+  }
+  return [];
+}
+
+/**
+ * Registra una fecha de corte de período.
+ *
+ * Endpoint: POST /date_cut_period/add
+ * @param {{ fecha_corte: string, fk_periodo: number, fk_institucion: number }} payload
+ * @returns {Promise<Object>} Respuesta del servidor
+ */
+export async function addDateCutPeriod(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+  const res = await ApiClient.instance.post("/date_cut_period/add", payload);
+  const data = res;
+  if (data && typeof data === "object" && data.code === "ERROR") {
+    throw new Error(data.message ?? "Error al registrar corte de periodo");
+  }
+  return data;
+}
+
+/**
  * Crea una nueva nota.
  *
  * Endpoint esperado: POST /notes

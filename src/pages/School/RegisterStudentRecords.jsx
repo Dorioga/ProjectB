@@ -2449,7 +2449,7 @@ const RegisterStudentRecords = () => {
           htmlFor="checkbox-transicion"
           className="text-sm font-medium cursor-pointer select-none"
         >
-          Grado Transición
+          Valoración Cualitativa
         </label>
       </div>
 

@@ -7,6 +7,7 @@ import PreviewIMG from "../atoms/PreviewIMG";
 
 import Modal from "../atoms/Modal";
 import BoletinSelector from "./BoletinSelector";
+import FechaCorteModal from "./FechaCorteModal";
 const Sidebar = () => {
   const {
     userName,
@@ -25,6 +26,7 @@ const Sidebar = () => {
   } = useAuth();
 
   const [boletinModalOpen, setBoletinModalOpen] = useState(false);
+  const [fechaCorteModalOpen, setFechaCorteModalOpen] = useState(false);
 
   // showContent se activa DESPUÉS de que termina la animación de apertura (300ms)
   // y se desactiva inmediatamente al cerrar para ocultar el contenido al instante
@@ -124,7 +126,7 @@ const Sidebar = () => {
                 )}
               </div>
             </li> */}
-            {String(rol) === "6" && (
+            {(String(rol) === "6" || String(rol) === "5") && (
               <li
                 onClick={() => setBoletinModalOpen(true)}
                 className="rounded-lg hover:bg-secondary cursor-pointer w-full px-2"
@@ -133,6 +135,21 @@ const Sidebar = () => {
                   <LucideIcons.BookOpen className=" text-surface hover:text-primary text-2xl" />
                   {showContent && (
                     <span className="px-2 text-md text-surface">Boletín</span>
+                  )}
+                </div>
+              </li>
+            )}
+            {String(rol) === "3" && (
+              <li
+                onClick={() => setFechaCorteModalOpen(true)}
+                className="rounded-lg hover:bg-secondary cursor-pointer w-full px-2"
+              >
+                <div className="flex w-full flex-row px-4 py-1 items-center gap-2">
+                  <LucideIcons.CalendarCheck className="text-surface hover:text-primary text-2xl" />
+                  {showContent && (
+                    <span className="px-2 text-md text-surface">
+                      Fecha Corte
+                    </span>
                   )}
                 </div>
               </li>
@@ -159,6 +176,11 @@ const Sidebar = () => {
       >
         <BoletinSelector studentId={idEstudiante} />
       </Modal>
+
+      <FechaCorteModal
+        isOpen={fechaCorteModalOpen}
+        onClose={() => setFechaCorteModalOpen(false)}
+      />
     </>
   );
 };

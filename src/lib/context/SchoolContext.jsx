@@ -446,6 +446,15 @@ export function SchoolProvider({ children }) {
     }
   }, []);
 
+  const validatorNotes = useCallback(async (payload) => {
+    try {
+      return await schoolService.validatorNotes(payload);
+    } catch (err) {
+      console.error("SchoolContext - validatorNotes error:", err);
+      throw err;
+    }
+  }, []);
+
   const createNote = useCallback(async (payload) => {
     setLoading(true);
     setError(null);
@@ -652,6 +661,7 @@ export function SchoolProvider({ children }) {
       getGradeAsignature,
       createNote,
       createTransitionNote,
+      validatorNotes,
       saveTransitionStudentNote,
       updateTransitionStudentNote,
       updateNote,
@@ -713,6 +723,7 @@ export function SchoolProvider({ children }) {
       getGradeAsignature,
       createNote,
       createTransitionNote,
+      validatorNotes,
       saveTransitionStudentNote,
       updateTransitionStudentNote,
       updateNote,

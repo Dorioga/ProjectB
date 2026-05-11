@@ -377,7 +377,7 @@ const ManageNote = () => {
               }}
               className="w-4 h-4 accent-primary"
             />
-            Grado Transición
+            Valoración Cualitativa
           </label>
         </div>
       </div>

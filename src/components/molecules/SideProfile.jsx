@@ -3,6 +3,7 @@ import useAuth from "../../lib/hooks/useAuth";
 import { LogOut, User, ChevronDown, ChevronUp } from "lucide-react";
 import ChangePasswordModal from "./ChangePasswordModal";
 import SignatureModal from "./SignatureModal";
+import { notifyValidator } from "../../services/schoolService";
 
 // Simple side profile component placeholder
 export const SideProfile = () => {
@@ -15,11 +16,30 @@ export const SideProfile = () => {
     rol,
     director,
     gradoAcargo,
+    idInstitution,
   } = useAuth();
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [signatureOpen, setSignatureOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  // ── Corte de periodo activo ──
+  const [cutInfo, setCutInfo] = useState(null);
+
+  useEffect(() => {
+    if (!idInstitution) return;
+    let cancelled = false;
+    notifyValidator({ fk_institucion: Number(idInstitution) })
+      .then((data) => {
+        if (!cancelled && Array.isArray(data) && data.length > 0) {
+          setCutInfo(data[0]);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [idInstitution]);
 
   // Cerrar al hacer clic fuera
   useEffect(() => {
@@ -34,7 +54,24 @@ export const SideProfile = () => {
 
   return (
     <aside className="rounded flex flex-row items-center justify-between gap-2 w-full px-4">
-      <h2 className="text-surface font-semibold">{nameSchool}</h2>
+      <div className="flex flex-col">
+        <h2 className="text-surface font-semibold">{nameSchool}</h2>
+        {cutInfo &&
+          !["5", "6", 5, 6].includes(rol) &&
+          (() => {
+            const fecha = new Date(cutInfo.fecha_corte);
+            const fechaFormateada = fecha.toLocaleDateString("es-CO", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+            });
+            return (
+              <span className="text-surface text-xs font-semibold">
+                Corte periodo {cutInfo.fk_periodo}: {fechaFormateada}
+              </span>
+            );
+          })()}
+      </div>
 
       <div className="flex flex-row justify-end items-center gap-4">
         {/* Botón toggle de perfil */}

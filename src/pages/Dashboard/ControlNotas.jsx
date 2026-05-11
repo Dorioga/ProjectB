@@ -89,6 +89,7 @@ const ControlNotas = () => {
         accessorKey: "docente",
         header: "Docente",
         meta: { hideOnLG: true },
+        accessorFn: (row) => row.docente || "SIN DOCENTE",
       },
       {
         accessorKey: "nombre_grado",
@@ -140,15 +141,12 @@ const ControlNotas = () => {
         header: "Estado",
         cell: ({ row }) => {
           const estado = row.original.estado_notas ?? "—";
-          const isCreated = estado !== "SIN NOTAS CREADAS";
+          let cls = "bg-green-100 text-green-700";
+          if (estado === "SIN NOTAS CREADAS") cls = "bg-red-100 text-red-700";
+          else if (estado === "SIN DOCENTE")
+            cls = "bg-yellow-100 text-yellow-700";
           return (
-            <span
-              className={`px-2 py-1 block text-xs font-semibold ${
-                isCreated
-                  ? "bg-green-100 text-green-700"
-                  : "bg-red-100 text-red-700"
-              }`}
-            >
+            <span className={`px-2 py-1 block text-xs font-semibold ${cls}`}>
               {estado}
             </span>
           );
@@ -165,6 +163,7 @@ const ControlNotas = () => {
         accessorKey: "docente",
         header: "Docente",
         meta: { hideOnLG: true },
+        accessorFn: (row) => row.docente || "SIN DOCENTE",
       },
       {
         accessorKey: "nombre",
@@ -197,15 +196,14 @@ const ControlNotas = () => {
         header: "Estado",
         cell: ({ row }) => {
           const estado = row.original.estado_calificacion ?? "—";
-          const isComplete = estado !== "SIN NOTAS CREADAS";
+          let cls = "bg-green-100 text-green-700";
+          if (estado === "SIN NOTAS CREADAS") cls = "bg-red-100 text-red-700";
+          else if (estado === "SIN NINGUNA NOTA")
+            cls = "bg-orange-100 text-orange-700";
+          else if (estado === "EN PROCESO")
+            cls = "bg-yellow-100 text-yellow-700";
           return (
-            <span
-              className={`px-2 py-1 block text-xs font-semibold ${
-                isComplete
-                  ? "bg-green-100 text-green-700"
-                  : "bg-red-100 text-red-700"
-              }`}
-            >
+            <span className={`px-2 py-1 block text-xs font-semibold ${cls}`}>
               {estado}
             </span>
           );
@@ -270,7 +268,7 @@ const ControlNotas = () => {
             <button
               id="tour-cn-tab-create"
               onClick={() => setActiveTab(TAB_CREATE)}
-              className={`px-5 py-2 text-sm font-semibold  transition-colors rounded-tl rounded-tr ${
+              className={`px-5 py-2 text-sm font-semibold transition-colors rounded-tl rounded-tr cursor-pointer ${
                 activeTab === TAB_CREATE
                   ? "bg-primary text-white border-2 border-primary"
                   : "bg-secondary text-primary hover:bg-gray-100"
@@ -281,10 +279,10 @@ const ControlNotas = () => {
             <button
               id="tour-cn-tab-assign"
               onClick={() => setActiveTab(TAB_ASSIGN)}
-              className={`px-5 py-2 text-sm font-semibold transition-colors rounded-tl rounded-tr ${
+              className={`px-5 py-2 text-sm font-semibold transition-colors rounded-tl rounded-tr cursor-pointer ${
                 activeTab === TAB_ASSIGN
                   ? "bg-primary text-white border-2 border-primary"
-                  : "bg-secondary text-primary hover:bg-gray-100  "
+                  : "bg-secondary text-primary hover:bg-gray-100"
               }`}
             >
               Registro Notas Asignadas
