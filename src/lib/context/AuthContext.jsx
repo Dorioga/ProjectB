@@ -319,11 +319,9 @@ export function AuthProvider({ children }) {
       setError(null);
       try {
         const res = await authService.login(credentials);
-        console.log("AuthContext - Login response:", res);
 
         // La respuesta viene en res.data
         const data = res?.data || res;
-        console.log("AuthContext - Datos del usuario extraídos:", data);
         // Validación adicional: Verificar datos mínimos requeridos
         if (!data || !data.accessToken) {
           throw new Error(
@@ -342,14 +340,9 @@ export function AuthProvider({ children }) {
           // Token temporal solo para llamadas API (no se guarda en estado/localStorage)
           setAuthToken(t);
           try {
-            console.log(
-              "AuthContext - Verificando aceptación de términos para rol",
-              data.id_persona,
-            );
             const termsRes = await authService.valuesAccessData({
               idPersona: data?.id_persona,
             });
-            console.log("AuthContext - Respuesta de términos:", termsRes);
             if (termsRes?.code === "ERROR") {
               // Guardar datos completos en ref SIN persistir en localStorage
               pendingLoginDataRef.current = { ...data, accessToken: t };
@@ -406,11 +399,6 @@ export function AuthProvider({ children }) {
             const instRes = await authService.getTeacherInstitution({
               idSede: Number(idSedeValue),
             });
-            console.log(
-              "AuthContext - getTeacherInstitution response:",
-              instRes,
-            );
-
             // El endpoint devuelve { code, data: [{ id_institucion }] }
             // O puede retornar el arreglo directamente.
             const maybeArray =
@@ -428,13 +416,9 @@ export function AuthProvider({ children }) {
               maybeObject?.id_institucion ??
               maybeObject?.fk_institucion ??
               null;
-            console.log("AuthContext - fkInstitucion resuelto:", fk);
             setFkInstitucion(fk);
-          } catch (err) {
-            console.warn(
-              "AuthContext - no se pudo obtener fk_institucion:",
-              err,
-            );
+          } catch {
+            // no se pudo obtener fk_institucion
           }
         }
 
