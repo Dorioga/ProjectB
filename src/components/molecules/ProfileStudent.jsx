@@ -7,6 +7,7 @@ import FileChooser from "../atoms/FileChooser";
 import CameraModal from "./CameraModal";
 import ExcuseModal from "./ExcuseModal";
 import PDFViewerModal from "./PDFViewerModal.jsx";
+import MatriculaModal from "./MatriculaModal.jsx";
 import { formatDateToDisplay } from "../../utils/formatUtils";
 import { upload } from "../../services/uploadService";
 import { useNotify } from "../../lib/hooks/useNotify";
@@ -67,6 +68,7 @@ const ProfileStudent = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isOpenExcuse, setIsOpenExcuse] = useState(false);
   const [isOpenDocument, setIsOpenDocument] = useState(false);
+  const [isOpenMatricula, setIsOpenMatricula] = useState(false);
   const [documentSelected, setDocumentSelected] = useState({
     file: null,
     name: "",
@@ -547,8 +549,9 @@ const ProfileStudent = ({
                 >
                   {editedData.state_first}
                 </span>
-                {!isRol6 && (data.state_first === "Ausente" ||
-data.nombre_primera_etapa === "Pendiente") ? (
+                {!isRol6 &&
+                (data.state_first === "Ausente" ||
+                  data.nombre_primera_etapa === "Pendiente") ? (
                   <div className="">
                     <SimpleButton
                       onClick={() => setIsOpenCamera(true)}
@@ -577,7 +580,7 @@ data.nombre_primera_etapa === "Pendiente") ? (
                 </span>
                 {!isRol6 &&
                   (data.state_first === "Registrado" ||
-                  data.nombre_primera_etapa === "Registrado") &&
+                    data.nombre_primera_etapa === "Registrado") &&
                   (data.state_second === "Ausente" ||
                     data.nombre_segunda_etapa === "Pendiente") && (
                     <div className="">
@@ -692,21 +695,32 @@ data.nombre_primera_etapa === "Pendiente") ? (
                 : "No cargado"}
             </span>
 
-            {String(data?.auDoc_matricula || "").includes("https://") && (
-              <SimpleButton
-                onClick={() => {
-                  setIsOpenDocument(true);
-                  setDocumentSelected({
-                    file: data.auDoc_matricula,
-                    name: "Documento Matricula",
-                  });
-                }}
-                msj="Ver Documento"
-                bg="bg-accent"
-                icon="View"
-                text="text-surface"
-              />
-            )}
+            <div className="flex gap-2">
+              {String(data?.auDoc_matricula || "").includes("https://") && (
+                <SimpleButton
+                  onClick={() => {
+                    setIsOpenDocument(true);
+                    setDocumentSelected({
+                      file: data.auDoc_matricula,
+                      name: "Documento Matricula",
+                    });
+                  }}
+                  msj="Ver Documento"
+                  bg="bg-accent"
+                  icon="View"
+                  text="text-surface"
+                />
+              )}
+              {[3, 5, 6].includes(Number(rol)) && (
+                <SimpleButton
+                  onClick={() => setIsOpenMatricula(true)}
+                  msj="Ficha de matrícula"
+                  bg="bg-primary"
+                  icon="ClipboardList"
+                  text="text-surface"
+                />
+              )}
+            </div>
           </div>
 
           {/* PIAR - checkbox + FileChooser (edit) / descarga (view) */}
@@ -914,6 +928,11 @@ data.nombre_primera_etapa === "Pendiente") ? (
         onClose={() => setIsOpenDocument(false)}
         pdfUrl={documentSelected.file}
         title={documentSelected.name}
+      />
+      <MatriculaModal
+        isOpen={isOpenMatricula}
+        onClose={() => setIsOpenMatricula(false)}
+        data={data}
       />
     </div>
   );

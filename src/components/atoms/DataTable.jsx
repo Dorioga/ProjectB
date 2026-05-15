@@ -35,6 +35,10 @@ const DataTable = ({
   groupBy = null,
   // optional: function (rows) => ReactNode — extra summary shown in the accordion header
   groupSummary = null,
+  // optional: si true, exporta a Excel sin fila de encabezados
+  exportWithoutHeaders = false,
+  // optional: string[] — filas de encabezado institucional que se insertan antes de los datos en el Excel
+  exportHeaderRows = null,
 }) => {
   const [sorting, setSorting] = useState(initialSorting);
   const [globalFilter, setGlobalFilter] = useState("");
@@ -161,8 +165,22 @@ const DataTable = ({
       return rowData;
     });
 
-    // Crear el worksheet desde los datos JSON
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    // Crear el worksheet — con o sin encabezado institucional
+    let worksheet;
+    if (exportHeaderRows && exportHeaderRows.length > 0) {
+      // Convertir cada string en una fila AOA de una sola celda
+      const headerAOA = exportHeaderRows.map((row) => [row]);
+      headerAOA.push([]); // fila vacía separadora
+      worksheet = XLSX.utils.aoa_to_sheet(headerAOA);
+      XLSX.utils.sheet_add_json(worksheet, exportData, {
+        origin: headerAOA.length,
+        skipHeader: exportWithoutHeaders,
+      });
+    } else {
+      worksheet = XLSX.utils.json_to_sheet(exportData, {
+        skipHeader: exportWithoutHeaders,
+      });
+    }
 
     // Prevenir inyección de fórmulas en Excel: forzar tipo string en celdas
     // cuyos valores comiencen con caracteres interpretados como fórmulas (=, -, +, @)

@@ -49,7 +49,8 @@ const getLastDayOfMonth = () => {
 const ManageAssistance = () => {
   const { getAssistanceValues, getTeacherSede, getTeacherGrades } =
     useTeacher();
-  const { idSede, nameSede, idDocente, token, rol, idInstitution } = useAuth();
+  const { idSede, nameSede, idDocente, token, rol, idInstitution, nameSchool } =
+    useAuth();
   const { loadInstitutionSedes } = useData();
   const notify = useNotify();
 
@@ -75,6 +76,22 @@ const ManageAssistance = () => {
   const [periodId, setPeriodId] = useState("");
   const [startDate, setStartDate] = useState(getFirstDayOfMonth());
   const [endDate, setEndDate] = useState(getLastDayOfMonth());
+
+  // Filas de encabezado institucional para la exportación Excel
+  const exportHeaderRows = useMemo(() => {
+    const fechaExport = new Date().toLocaleDateString("es-CO", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+    return [
+      nameSchool ? nameSchool.toUpperCase() : "INSTITUCIÓN",
+      nameSede ? `Sede: ${nameSede}` : "",
+      `Período: ${formatDate(startDate)} — ${formatDate(endDate)}`,
+      `Fecha de exportación: ${fechaExport}`,
+      "GESTIÓN DE ASISTENCIAS",
+    ].filter(Boolean);
+  }, [nameSchool, nameSede, startDate, endDate]);
 
   // ── Sedes del docente ─────────────────────────────────────────────────────
   const [teacherSedes, setTeacherSedes] = useState([]);
@@ -471,6 +488,8 @@ const ManageAssistance = () => {
             fileName="Export_Asistencias"
             showDownloadButtons={tableData.length > 0}
             pageSize={20}
+            exportWithoutHeaders={true}
+            exportHeaderRows={exportHeaderRows}
           />
         )}
 

@@ -255,7 +255,7 @@ const ManageNote = () => {
             <SimpleButton
               type="button"
               onClick={() => setIsAddOpen(true)}
-              msj="Registrar nota"
+              msj="Crear Nota"
               icon="Plus"
               bg="bg-secondary"
               text="text-surface"
@@ -265,7 +265,7 @@ const ManageNote = () => {
             <SimpleButton
               type="button"
               onClick={() => setIsAssignOpen(true)}
-              msj="Asignar notas"
+              msj="Registrar Notas"
               icon="ClipboardList"
               bg="bg-secondary"
               text="text-surface"
@@ -421,7 +421,7 @@ const ManageNote = () => {
       <Modal
         isOpen={isAddOpen}
         onClose={() => setIsAddOpen(false)}
-        title="Registrar nota"
+        title="Crear Nota"
         size="7xl"
       >
         <RegisterRecords onClose={() => setIsAddOpen(false)} />
@@ -430,7 +430,7 @@ const ManageNote = () => {
       <Modal
         isOpen={isAssignOpen}
         onClose={() => setIsAssignOpen(false)}
-        title="Asignar notas"
+        title="Registrar Notas"
         size="7xl"
       >
         <RegisterStudentRecords onClose={() => setIsAssignOpen(false)} />
