@@ -167,6 +167,24 @@ export async function createStudent(payload) {
 }
 
 /**
+ * Obtiene el código QR de un estudiante.
+ * Endpoint: POST /student/data/qr
+ * @param {{ id_estudiante: number, fk_sede: number }} payload
+ * @returns {Promise<string>} Valor del QR
+ */
+export async function getQR(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+  const res = await ApiClient.instance.post("/student/data/qr", payload);
+  const data = res;
+  console.log("StudentService - getQR:", data);
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+  throw new Error("Respuesta inesperada de /student/data/qr.");
+}
+
+/**
  * Registra un nuevo estudiante.
  *
  * Endpoint esperado: POST /register_student

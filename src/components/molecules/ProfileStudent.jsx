@@ -8,6 +8,7 @@ import CameraModal from "./CameraModal";
 import ExcuseModal from "./ExcuseModal";
 import PDFViewerModal from "./PDFViewerModal.jsx";
 import MatriculaModal from "./MatriculaModal.jsx";
+import CarnetModal from "./CarnetModal.jsx";
 import { formatDateToDisplay } from "../../utils/formatUtils";
 import { upload } from "../../services/uploadService";
 import { useNotify } from "../../lib/hooks/useNotify";
@@ -69,6 +70,7 @@ const ProfileStudent = ({
   const [isOpenExcuse, setIsOpenExcuse] = useState(false);
   const [isOpenDocument, setIsOpenDocument] = useState(false);
   const [isOpenMatricula, setIsOpenMatricula] = useState(false);
+  const [isOpenCarnet, setIsOpenCarnet] = useState(false);
   const [documentSelected, setDocumentSelected] = useState({
     file: null,
     name: "",
@@ -337,6 +339,13 @@ const ProfileStudent = ({
                 disabled={isEditing}
               />
             )}
+            <SimpleButton
+              onClick={() => setIsOpenCarnet(true)}
+              msj="Carnét"
+              bg="bg-accent"
+              icon="CreditCard"
+              text="text-surface"
+            />
           </div>
         </div>
         <div
@@ -933,6 +942,23 @@ const ProfileStudent = ({
         isOpen={isOpenMatricula}
         onClose={() => setIsOpenMatricula(false)}
         data={data}
+      />
+      <CarnetModal
+        isOpen={isOpenCarnet}
+        onClose={() => setIsOpenCarnet(false)}
+        data={{
+          ...data,
+          first_name: editedData.first_name,
+          second_name: editedData.second_name,
+          first_lastname: editedData.first_lastname,
+          second_lastname: editedData.second_lastname,
+          url_photo: photoPreview || data.link_foto || data.url_photo,
+          identification: data.numero_identificacion || data.identification,
+          genre: data.genero || data.genre,
+          grade_scholar: data.nombre_grado || data.grade_scholar,
+          group_grade: data.grupo || data.group_grade,
+          name_school: data.nombre_sede || data.name_school,
+        }}
       />
     </div>
   );

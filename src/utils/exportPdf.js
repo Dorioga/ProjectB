@@ -16,8 +16,60 @@ async function waitForFonts() {
 }
 
 /**
- * Exporta un elemento a PNG y descarga el archivo.
+ * Resuelve colores modernos (oklch, lab, etc.) a rgb usando el Canvas 2D,
+ * que sí soporta todos los espacios de color CSS Level 4.
+ * html2canvas sólo entiende rgb/rgba/#hex, por eso es necesario este paso.
  */
+function buildOnClone() {
+  const colorProps = [
+    "color",
+    "backgroundColor",
+    "borderTopColor",
+    "borderRightColor",
+    "borderBottomColor",
+    "borderLeftColor",
+    "outlineColor",
+    "caretColor",
+  ];
+  // Canvas 2D normaliza cualquier formato CSS de color a #rrggbb / rgba(...)
+  const offscreen = document.createElement("canvas");
+  offscreen.width = 1;
+  offscreen.height = 1;
+  const ctx2d = offscreen.getContext("2d");
+  const resolveColor = (raw) => {
+    if (!raw || raw === "transparent" || raw === "initial" || raw === "inherit")
+      return raw;
+    try {
+      ctx2d.clearRect(0, 0, 1, 1);
+      ctx2d.fillStyle = raw;
+      const normalized = ctx2d.fillStyle;
+      // Chrome moderno acepta oklch/lab/etc. en Canvas pero NO los normaliza
+      // al leer fillStyle — hay que dibujar un píxel y leer los datos RGBA.
+      if (/oklch|oklab|lab\(|lch\(|color\(/i.test(normalized)) {
+        ctx2d.fillRect(0, 0, 1, 1);
+        const [r, g, b, a] = ctx2d.getImageData(0, 0, 1, 1).data;
+        return a < 255
+          ? `rgba(${r},${g},${b},${(a / 255).toFixed(3)})`
+          : `rgb(${r},${g},${b})`;
+      }
+      return normalized; // ya es #rrggbb o rgba(...)
+    } catch {
+      return raw;
+    }
+  };
+  return (clonedDoc, clonedElement) => {
+    const win = clonedDoc.defaultView ?? window;
+    const els = [clonedElement, ...clonedElement.querySelectorAll("*")];
+    els.forEach((el) => {
+      const computed = win.getComputedStyle(el);
+      colorProps.forEach((prop) => {
+        const val = computed[prop];
+        if (val) el.style[prop] = resolveColor(val);
+      });
+    });
+  };
+}
+
 export async function exportElementToPNG(
   element,
   filename = "export.png",
@@ -39,6 +91,7 @@ export async function exportElementToPNG(
     backgroundColor: bg,
     useCORS,
     logging,
+    onclone: buildOnClone(),
   });
   const dataUrl = canvas.toDataURL("image/png");
   const link = document.createElement("a");
@@ -73,9 +126,22 @@ export async function exportCardToPDF(frontEl, backEl, opts = {}) {
   await waitForFonts();
   const bg = backgroundColor ?? getCurrentTheme()["color-surface"] ?? "#ffffff";
 
+  const onclone = buildOnClone();
   const [frontCanvas, backCanvas] = await Promise.all([
-    html2canvas(frontEl, { scale, backgroundColor: bg, useCORS, logging }),
-    html2canvas(backEl, { scale, backgroundColor: bg, useCORS, logging }),
+    html2canvas(frontEl, {
+      scale,
+      backgroundColor: bg,
+      useCORS,
+      logging,
+      onclone,
+    }),
+    html2canvas(backEl, {
+      scale,
+      backgroundColor: bg,
+      useCORS,
+      logging,
+      onclone,
+    }),
   ]);
 
   const frontImg = frontCanvas.toDataURL("image/png");

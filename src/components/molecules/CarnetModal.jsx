@@ -1,143 +1,136 @@
-import React, { useRef } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import Modal from "../atoms/Modal";
-// Si tu hook es export default, usa esta importación.
-// Si es export nombrado, cambia a: import { useAuth } from "../../lib/hooks/useAuth";
 import PreviewIMG from "../atoms/PreviewIMG";
-import { exportCardToPDF, exportElementToPNG } from "../../utils/exportPdf";
-import useSchool from "../../lib/hooks/useSchool";
+import { exportElementToPNG } from "../../utils/exportPdf";
+import { QRCodeCanvas } from "qrcode.react";
+import { getQR } from "../../services/studentService";
 
 const CarnetModal = ({ isOpen, onClose, data }) => {
   const cardRef = useRef(null);
-  const printRef = useRef(null);
-  const frontRef = useRef(null);
-  const backRef = useRef(null);
-  const { pathSignature } = useSchool();
-  let fullName =
-    data.first_name +
-    " " +
-    data.second_name +
-    " " +
-    data.first_lastname +
-    " " +
-    data.second_lastname;
-  const handleDownloadPDF = async (dosPaginas = true) => {
-    await exportCardToPDF(frontRef.current, backRef.current, {
-      twoPages: dosPaginas,
-      fileName: `Carnet-${data?.identification || "estudiante"}.pdf`,
-    });
-  };
-  const handleDownloadPNG = async (side) => {
+  const [qrValue, setQrValue] = useState("");
+  const [qrLoading, setQrLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen || !data?.id_estudiante) return;
+    const fk_sede = data.fk_sede ?? data.id_sede ?? data.sede_id;
+    if (!fk_sede) return;
+    setQrLoading(true);
+    getQR({ id_estudiante: data.id_estudiante, fk_sede })
+      .then((res) => setQrValue(res?.QR ?? res?.qr ?? ""))
+      .catch(() => setQrValue(""))
+      .finally(() => setQrLoading(false));
+  }, [
+    isOpen,
+    data?.id_estudiante,
+    data?.fk_sede,
+    data?.id_sede,
+    data?.sede_id,
+  ]);
+
+  const fullName = [
+    data?.first_name,
+    data?.second_name,
+    data?.first_lastname,
+    data?.second_lastname,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const handleDownloadPNG = async () => {
     await exportElementToPNG(
-      side === "front" ? frontRef.current : backRef.current,
-      `Carnet-${data?.identification || "estudiante"}-${side}.png`,
+      cardRef.current,
+      `Carnet-${data?.identification || "estudiante"}.png`,
+      { scale: 3, backgroundColor: "#ffffff", useCORS: true },
     );
   };
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Carné del estudiante">
-      {/* Estilos de impresión: sólo imprime el contenedor del carné */}
-      <div className="flex flex-col gap-4  rounded-lg " ref={cardRef}>
-        {data ? (
-          <div className="flex flex-col gap-4">
-            <div
-              className="grid grid-cols-5 border rounded  aspect-86/54 "
-              ref={frontRef}
-            >
-              <div className="col-span-5 grid grid-cols-3 py-2 px-4 bg-primary border rounded">
-                <PreviewIMG path={"/logo-school.svg"} size={"logo"} />
-                <h2 className=" col-span-2 text-lg font-bold text-center text-surface">
-                  {data.name_school}
-                </h2>
-              </div>
-              <div className="col-span-2 py-2 px-1">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Carnét del estudiante"
+      size="xl"
+    >
+      {data ? (
+        <>
+          {/* CARNET */}
+          <div
+            ref={cardRef}
+            className="flex rounded-2xl overflow-hidden shadow-xl bg-white"
+          >
+            {/* IZQUIERDA */}
+            <div className="w-2/5 bg-primary text-surface flex flex-col items-center justify-center gap-4 p-6">
+              <h2 className="text-center font-bold text-sm uppercase leading-tight">
+                {data.name_school || "Institución Educativa"}
+              </h2>
+              <div className="w-28 h-28 rounded-full bg-white overflow-hidden flex items-center justify-center shrink-0">
                 <PreviewIMG path={data.url_photo} size="profile" />
               </div>
-              <div className="col-span-3 px-1 py-2 text-center">
-                <div>
-                  <h3 className="font-semibold">Nombre completo</h3>
-                  <p>{fullName}</p>
-                </div>
-                <div>
-                  <h3 className="font-semibold">Género</h3>
-                  <p>{data.genre}</p>
-                </div>
-                <div>
-                  <h3 className="font-semibold">Documento de identidad</h3>
-                  <p>{data.identification}</p>
-                </div>
-                <div>
-                  <h3 className="font-semibold">Grado y curso</h3>
-                  <p>
-                    {data.grade_scholar} {data.group_grade}
-                  </p>
-                </div>
-              </div>
+              <h3 className="text-center font-semibold text-sm">{fullName}</h3>
+              <p className="text-sm opacity-80">Carnet Estudiantil</p>
             </div>
-            <div
-              className="grid grid-cols-2 border rounded  aspect-86/54  "
-              ref={backRef}
-            >
-              <div className="py-2 px-1 flex items-center justify-center">
-                <PreviewIMG
-                  path={
-                    "https://cdn.pixabay.com/photo/2023/02/28/01/51/qr-code-7819654_1280.jpg"
-                  }
-                  size="carnet"
-                />
+
+            {/* DERECHA */}
+            <div className="flex-1 flex flex-col justify-between p-6">
+              <div className="flex flex-col gap-1">
+                <h2 className="text-primary font-bold text-base mb-2">
+                  Información del Estudiante
+                </h2>
+                <p className="text-primary text-sm">
+                  <strong>Documento:</strong> {data.identification}
+                </p>
+                <p className="text-primary text-sm">
+                  <strong>Género:</strong> {data.genre}
+                </p>
+                <p className="text-primary text-sm">
+                  <strong>Curso:</strong> {data.grade_scholar}{" "}
+                  {data.group_grade}
+                </p>
+                <p className="text-primary text-sm">
+                  <strong>Estado:</strong> {data.status_beca}
+                </p>
               </div>
-              <div className=" px-1 py-2 text-center gap-2 flex items-center flex-col ">
-                <div className="py-2">
-                  <h3 className="font-bold text-3xl">Información</h3>
-                  <p className="text-center">
-                    Este carné es personal e intransferible; el uso inadecuado
-                    de este documento es responsabilidad del titular.
-                  </p>
-                </div>
-                <div className="w-full">
-                  <div className="h-16 border  rounded-2xl flex items-end justify-center p-1">
-                    {/* <PreviewIMG
-                      path={pathSignature}
-                      size="banner"
-                      className="h-16"
-                    /> */}
-                    <h3 className="font-semibold ">Firma</h3>
+
+              {/* QR */}
+              <div className="flex justify-around items-center mt-4">
+                <p className="text-xs text-gray-500 max-w-[150px]">
+                  Escanee este código para registrar ingresos y salidas del
+                  estudiante.
+                </p>
+                {qrLoading ? (
+                  <div className="w-28 h-28 flex items-center justify-center text-sm text-gray-400">
+                    Cargando...
                   </div>
-                </div>
-                <div className=" rounded-2xl  text-3xl text-accent  flex justify-center items-center">
-                  <h3 className="font-bold">{data.state_bd}</h3>
-                </div>
+                ) : qrValue ? (
+                  <QRCodeCanvas value={qrValue} size={120} level="H" />
+                ) : (
+                  <div className="w-28 h-28 flex items-center justify-center text-xs text-gray-400 border rounded">
+                    Sin QR
+                  </div>
+                )}
               </div>
             </div>
           </div>
-        ) : (
-          <p>No hay datos disponibles para el carné.</p>
-        )}
-      </div>
-      <div className="grid grid-cols-4 gap-4 mt-4">
-        <button
-          onClick={() => handleDownloadPDF(true)}
-          className="px-4 py-2 bg-primary text-surface rounded"
-        >
-          PDF (2 páginas)
-        </button>
-        <button
-          onClick={() => handleDownloadPDF(false)}
-          className="px-4 py-2 bg-primary/80 text-surface rounded"
-        >
-          PDF (1 página)
-        </button>
-        <button
-          onClick={() => handleDownloadPNG("front")}
-          className="px-4 py-2 bg-secondary text-surface rounded"
-        >
-          PNG (frente)
-        </button>
-        <button
-          onClick={() => handleDownloadPNG("back")}
-          className="px-4 py-2 bg-secondary text-surface rounded"
-        >
-          PNG (atrás)
-        </button>
-      </div>
+
+          {/* BOTONES */}
+          <div className="flex justify-center gap-3 mt-4">
+            <button
+              onClick={handleDownloadPNG}
+              className="px-5 py-3 bg-green-600 text-white rounded-xl cursor-pointer hover:bg-green-700 transition-colors"
+            >
+              Descargar Carnet PNG
+            </button>
+            <button
+              onClick={onClose}
+              className="px-5 py-3 bg-red-600 text-white rounded-xl cursor-pointer hover:bg-red-700 transition-colors"
+            >
+              Cerrar
+            </button>
+          </div>
+        </>
+      ) : (
+        <p>No hay datos disponibles para el carné.</p>
+      )}
     </Modal>
   );
 };
