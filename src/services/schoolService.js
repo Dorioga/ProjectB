@@ -740,3 +740,55 @@ export async function allstudent(payload) {
 
   throw new Error("Respuesta inesperada de /institution/students.");
 }
+
+/**
+ * Registra la entrada de un estudiante mediante código QR del carnet.
+ * El backend envía automáticamente una notificación WS al acudiente.
+ *
+ * Endpoint: POST /student/validator/qr
+ * @param {{ qr: string }} payload - Código QR decodificado del carnet
+ * @returns {Promise<Object>} Respuesta del servidor con fecha/hora y datos del registro
+ */
+export async function entradaQR(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+  if (!payload.qr) {
+    throw new Error("El campo 'qr' es requerido para entradaQR.");
+  }
+
+  const res = await ApiClient.instance.post("/student/validator/qr", payload);
+  const data = res;
+  console.log("SchoolService - entradaQR:", data);
+
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de /student/validator/qr.");
+}
+
+/**
+ * Registra la salida de un estudiante mediante código QR del carnet.
+ * El backend envía automáticamente una notificación WS al acudiente.
+ *
+ * Endpoint: POST /student/exit/qr
+ * @param {{ qr: string }} payload - Código QR decodificado del carnet
+ * @returns {Promise<Object>} Respuesta del servidor con fecha/hora y datos del registro
+ */
+export async function salidaQR(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+  if (!payload.qr) {
+    throw new Error("El campo 'qr' es requerido para salidaQR.");
+  }
+
+  const res = await ApiClient.instance.post("/student/exit/qr", payload);
+  const data = res;
+  console.log("SchoolService - salidaQR:", data);
+
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de /student/exit/qr.");
+}

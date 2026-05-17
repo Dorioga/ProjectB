@@ -43,6 +43,7 @@ import ManageDBA from "../pages/Teacher/ManageDBA";
 import ManageBoletin from "../pages/School/ManageBoletin";
 import Slots from "../pages/Dashboard/Slots";
 import ControlNotas from "../pages/Dashboard/ControlNotas";
+import ControlAccesoSalida from "../pages/School/ControlAccesoSalida";
 const GeneralRoutes = () => {
   return (
     <div id="body" className="w-full h-screen flex flex-col ">
@@ -101,6 +102,7 @@ const GeneralRoutes = () => {
             <Route path="manageBoletin" element={<ManageBoletin />} />
             <Route path="slots" element={<Slots />} />
             <Route path="controlNotas" element={<ControlNotas />} />
+            <Route path="controlAccesoSalida" element={<ControlAccesoSalida />} />
           </Route>
         </Routes>
       </div>
