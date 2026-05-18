@@ -5,7 +5,12 @@ import SimpleButton from "../atoms/SimpleButton";
 
 const SCANNER_ID = "qr-scanner-region";
 
-const QRScannerModal = ({ isOpen, onClose, onScan, title = "Escanear QR del carnet" }) => {
+const QRScannerModal = ({
+  isOpen,
+  onClose,
+  onScan,
+  title = "Escanear QR del carnet",
+}) => {
   const scannerRef = useRef(null);
   const [error, setError] = useState(null);
   const [scanning, setScanning] = useState(false);

@@ -102,7 +102,10 @@ const GeneralRoutes = () => {
             <Route path="manageBoletin" element={<ManageBoletin />} />
             <Route path="slots" element={<Slots />} />
             <Route path="controlNotas" element={<ControlNotas />} />
-            <Route path="controlAccesoSalida" element={<ControlAccesoSalida />} />
+            <Route
+              path="controlAccesoSalida"
+              element={<ControlAccesoSalida />}
+            />
           </Route>
         </Routes>
       </div>

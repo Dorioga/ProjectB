@@ -48,10 +48,7 @@ const ControlAccesoSalida = () => {
           fecha: res?.fecha ?? fecha,
           hora: res?.hora ?? hora,
           estudiante:
-            res?.nombre_estudiante ??
-            res?.name ??
-            res?.student ??
-            "Estudiante",
+            res?.nombre_estudiante ?? res?.name ?? res?.student ?? "Estudiante",
           mensaje:
             res?.mensaje ??
             res?.message ??
@@ -134,7 +131,9 @@ const ControlAccesoSalida = () => {
       {loading && (
         <div className="flex items-center gap-3 text-primary">
           <Loader />
-          <span className="text-sm">Registrando y notificando al acudiente...</span>
+          <span className="text-sm">
+            Registrando y notificando al acudiente...
+          </span>
         </div>
       )}
 
