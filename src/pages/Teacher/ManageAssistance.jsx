@@ -12,6 +12,7 @@ import useAuth from "../../lib/hooks/useAuth";
 import useData from "../../lib/hooks/useData";
 import { useNotify } from "../../lib/hooks/useNotify";
 import tourManageAssistance from "../../tour/tourManageAssistance";
+import { exportAttendancePDF } from "../../utils/exportPdf";
 
 /**
  * Formatea una fecha ISO a dd/mm/yyyy
@@ -77,22 +78,6 @@ const ManageAssistance = () => {
   const [startDate, setStartDate] = useState(getFirstDayOfMonth());
   const [endDate, setEndDate] = useState(getLastDayOfMonth());
 
-  // Filas de encabezado institucional para la exportación Excel
-  const exportHeaderRows = useMemo(() => {
-    const fechaExport = new Date().toLocaleDateString("es-CO", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-    return [
-      nameSchool ? nameSchool.toUpperCase() : "INSTITUCIÓN",
-      nameSede ? `Sede: ${nameSede}` : "",
-      `Período: ${formatDate(startDate)} — ${formatDate(endDate)}`,
-      `Fecha de exportación: ${fechaExport}`,
-      "GESTIÓN DE ASISTENCIAS",
-    ].filter(Boolean);
-  }, [nameSchool, nameSede, startDate, endDate]);
-
   // ── Sedes del docente ─────────────────────────────────────────────────────
   const [teacherSedes, setTeacherSedes] = useState([]);
   const [loadingTeacherSedes, setLoadingTeacherSedes] = useState(false);
@@ -102,6 +87,30 @@ const ManageAssistance = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
+
+  // Filas de encabezado institucional para la exportación Excel
+  const exportHeaderRows = useMemo(() => {
+    const fechaExport = new Date().toLocaleDateString("es-CO", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+    const firstRow = tableData[0] || {};
+    const gradeExport = [firstRow.nombre_grado, firstRow.grupo]
+      .filter(Boolean)
+      .join(" ");
+    const journeyExport = firstRow.nombre_jornada || "";
+    return [
+      nameSchool ? nameSchool.toUpperCase() : "INSTITUCIÓN",
+      nameSede ? `Sede: ${nameSede}` : "",
+      gradeExport ? `Grado: ${gradeExport}` : "",
+      journeyExport ? `Jornada: ${journeyExport}` : "",
+      `Período: ${formatDate(startDate)} — ${formatDate(endDate)}`,
+      `Fecha de exportación: ${fechaExport}`,
+      "GESTIÓN DE ASISTENCIAS",
+    ].filter(Boolean);
+  }, [nameSchool, nameSede, startDate, endDate, tableData]);
 
   // Params para GradeSelector del docente (mismo patrón que ManageLogro)
   const teacherGradesParams = useMemo(
@@ -261,6 +270,34 @@ const ManageAssistance = () => {
     getAssistanceValues,
     notify,
   ]);
+
+  // Exportar PDF de asistencias
+  const handleExportPDF = useCallback(async () => {
+    if (!tableData.length) return;
+    setIsExportingPDF(true);
+    try {
+      const firstRow = tableData[0] || {};
+      const gradeLabel = [firstRow.nombre_grado, firstRow.grupo]
+        .filter(Boolean)
+        .join(" ");
+      const journeyLabel = firstRow.nombre_jornada || "";
+      const sedeLabel = firstRow.nombre_sede || nameSede || "";
+      await exportAttendancePDF(tableData, {
+        nameSchool: nameSchool || "Institución",
+        nameSede: sedeLabel,
+        gradeLabel,
+        journeyLabel,
+        startDate,
+        endDate,
+        fileName: `Asistencias_${gradeLabel || "grado"}_${startDate}_${endDate}.pdf`,
+      });
+    } catch (err) {
+      console.error("ManageAssistance - exportPDF error:", err);
+      notify.error("Error al generar el PDF de asistencias.");
+    } finally {
+      setIsExportingPDF(false);
+    }
+  }, [tableData, nameSchool, nameSede, startDate, endDate, notify]);
 
   // Limpiar filtros y tabla
   const handleClear = () => {
@@ -481,16 +518,33 @@ const ManageAssistance = () => {
             )}
           </div>
         ) : (
-          <DataTable
-            key="assistance-table"
-            data={tableData}
-            columns={columns}
-            fileName="Export_Asistencias"
-            showDownloadButtons={tableData.length > 0}
-            pageSize={20}
-            exportWithoutHeaders={true}
-            exportHeaderRows={exportHeaderRows}
-          />
+          <>
+            {tableData.length > 0 && (
+              <div className="flex justify-end mb-2">
+                <SimpleButton
+                  type="button"
+                  msj={isExportingPDF ? "Generando PDF..." : "Exportar PDF"}
+                  icon="FileText"
+                  bg="bg-red-600"
+                  text="text-white"
+                  noRounded={false}
+                  disabled={isExportingPDF}
+                  onClick={handleExportPDF}
+                  msjtooltip="Genera tabla Estudiante × Fecha segmentada por asignatura"
+                />
+              </div>
+            )}
+            <DataTable
+              key="assistance-table"
+              data={tableData}
+              columns={columns}
+              fileName="Export_Asistencias"
+              showDownloadButtons={tableData.length > 0}
+              pageSize={20}
+              exportWithoutHeaders={true}
+              exportHeaderRows={exportHeaderRows}
+            />
+          </>
         )}
 
         {hasSearched && !isLoading && tableData.length === 0 && (

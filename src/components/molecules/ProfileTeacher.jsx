@@ -1384,11 +1384,7 @@ const ProfileTeacher = ({
               <div id="tour-profile-toggle-asignatures">
                 <SimpleButton
                   onClick={() => setShowAsignatureGrades((prev) => !prev)}
-                  msj={
-                    showAsignatureGrades
-                      ? "Ocultar asignaturas"
-                      : "Agregar asignaturas"
-                  }
+                  msj="Agregar asignaturas"
                   icon={showAsignatureGrades ? "Minus" : "Plus"}
                   bg="bg-accent"
                   text="text-surface"
@@ -1411,7 +1407,12 @@ const ProfileTeacher = ({
                     icon="Save"
                     bg="bg-accent"
                     text="text-surface"
-                    disabled={isSaving}
+                    disabled={isSaving || newAsignatures.length === 0}
+                    msjtooltip={
+                      newAsignatures.length === 0
+                        ? "Agrega al menos una asignatura primero"
+                        : undefined
+                    }
                   />
                 </div>
               </div>
