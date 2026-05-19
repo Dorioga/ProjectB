@@ -950,8 +950,7 @@ const ProfileStudent = ({
           ...data,
           // Normalizar id_estudiante y fk_sede explícitamente para que el QR
           // funcione sin importar la nomenclatura que devuelva el API.
-          id_estudiante:
-            data?.id_estudiante ?? data?.id_student ?? undefined,
+          id_estudiante: data?.id_estudiante ?? data?.id_student ?? undefined,
           fk_sede:
             data?.fk_sede ??
             data?.id_sede ??
