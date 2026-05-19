@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from "react";
-import { LogIn, LogOut, CheckCircle, Clock } from "lucide-react";
+import { LogIn, LogOut, CheckCircle, Clock, MessageCircle } from "lucide-react";
 import { entradaQR, salidaQR } from "../../services/schoolService";
 import { useNotify } from "../../lib/hooks/useNotify";
 import QRScannerModal from "../../components/molecules/QRScannerModal";
@@ -14,6 +14,9 @@ const ControlAccesoSalida = () => {
 
   // Registro de la última operación exitosa
   const [ultimoRegistro, setUltimoRegistro] = useState(null);
+
+  // URL de WhatsApp para notificar al acudiente
+  const [whatsappURL, setWhatsappURL] = useState(null);
 
   // Ref para evitar doble llamada si el scanner dispara dos veces
   const procesandoRef = useRef(false);
@@ -55,6 +58,18 @@ const ControlAccesoSalida = () => {
             `${accionActiva === "entrada" ? "Entrada" : "Salida"} registrada. Notificación enviada al acudiente.`,
         });
 
+        // Construir URL de WhatsApp si el backend devuelve mensaje y teléfono
+        const mensaje = res?.mensaje;
+        const telefono = res?.telefono_acudiente;
+        if (mensaje && telefono) {
+          const url =
+            `https://api.whatsapp.com/send?phone=57${telefono}` +
+            `&text=${encodeURIComponent(mensaje)}`;
+          setWhatsappURL(url);
+        } else {
+          setWhatsappURL(null);
+        }
+
         notify.success(
           `${accionActiva === "entrada" ? "Entrada" : "Salida"} registrada correctamente. El acudiente fue notificado.`,
         );
@@ -76,11 +91,13 @@ const ControlAccesoSalida = () => {
 
   const abrirEntrada = () => {
     procesandoRef.current = false;
+    setWhatsappURL(null);
     setAccionActiva("entrada");
   };
 
   const abrirSalida = () => {
     procesandoRef.current = false;
+    setWhatsappURL(null);
     setAccionActiva("salida");
   };
 
@@ -171,6 +188,19 @@ const ControlAccesoSalida = () => {
           <p className="text-sm text-green-700 border-t border-green-200 pt-2">
             {ultimoRegistro.mensaje}
           </p>
+
+          {whatsappURL && (
+            <button
+              type="button"
+              onClick={() => {
+                window.open(whatsappURL, "_blank", "noopener,noreferrer");
+              }}
+              className="flex items-center justify-center gap-2 w-full rounded-xl py-2.5 bg-[#25D366] text-white font-semibold text-sm hover:bg-[#1ebe5d] transition-colors"
+            >
+              <MessageCircle size={18} />
+              Enviar WhatsApp al acudiente
+            </button>
+          )}
         </div>
       )}
 

@@ -152,15 +152,13 @@ const useBoletinProcessed = (data) => {
           escala: r.escala_nota || null,
           estado: r.estado_periodo || null,
           logros: [],
-          logro_nota_estudiante: r.logro_nota_estudiante || "",
           notas: [],
         });
       }
       const per = asig.periodos.get(pid);
-      const logro = (r.logro || "").trim();
-      if (logro && !per.logros.includes(logro)) per.logros.push(logro);
-      if (r.logro_nota_estudiante && !per.logro_nota_estudiante) {
-        per.logro_nota_estudiante = r.logro_nota_estudiante;
+      if (r.nombre_tipo && r.descripcion) {
+        const logroEntry = `${r.nombre_tipo}: ${r.descripcion}`;
+        if (!per.logros.includes(logroEntry)) per.logros.push(logroEntry);
       }
       if (r.valor_nota !== undefined && r.valor_nota !== null) {
         const notaNombre = (r.nombre_nota_porcentaje ?? "") + "%";
@@ -245,15 +243,14 @@ function computeBoletinData(data) {
         escala: r.escala_nota || null,
         estado: r.estado_periodo || null,
         logros: [],
-        logro_nota_estudiante: r.logro_nota_estudiante || "",
         notas: [],
       });
     }
     const per = asig.periodos.get(pid);
-    const logro = (r.logro || "").trim();
-    if (logro && !per.logros.includes(logro)) per.logros.push(logro);
-    if (r.logro_nota_estudiante && !per.logro_nota_estudiante)
-      per.logro_nota_estudiante = r.logro_nota_estudiante;
+    if (r.nombre_tipo && r.descripcion) {
+      const logroEntry = `${r.nombre_tipo}: ${r.descripcion}`;
+      if (!per.logros.includes(logroEntry)) per.logros.push(logroEntry);
+    }
     if (r.valor_nota !== undefined && r.valor_nota !== null) {
       const notaNombre = (r.nombre_nota_porcentaje ?? "") + "%";
       const exists = per.notas.some(
@@ -815,24 +812,32 @@ async function generateBoletinPDF(
   }
 
   /* ── Tabla de notas ── */
-  // Columnas: Asignatura | Docente | [por cada periodo: Nota, Recup, Escala, Estado] | Definitiva | Estado Final
-  const periodCols = periodos.length * 4;
-  const fixedCols = 4; // Asignatura + Docente + Definitiva + Estado Final
+  // Columnas: Asignatura | Docente | [por cada periodo: Nota, Recup, Escala, Estado, Logro]
+  const periodCols = periodos.length * 5;
+  const fixedCols = 2; // Asignatura + Docente
   const totalCols = fixedCols + periodCols;
 
   // Anchos proporcionales
   const asigW = contentW * 0.14;
-  const docenteW = contentW * 0.12;
-  const defW = contentW * 0.06;
-  const estadoFW = contentW * 0.08;
-  const remainW = contentW - asigW - docenteW - defW - estadoFW;
-  const perSubW = periodos.length > 0 ? remainW / (periodos.length * 4) : 0;
+  const docenteW = contentW * 0.17;
+  const remainW = contentW - asigW - docenteW;
+  // Subcolumnas: IHS, Recup, Escala usan smallSubW; Estado usa estadoSubW más ancho; Logro ocupa el resto
+  const smallSubW =
+    periodos.length > 0 ? (remainW * 0.2) / (periodos.length * 3) : 0;
+  const estadoSubW =
+    periodos.length > 0 ? (remainW * 0.18) / periodos.length : 0;
+  const logroSubW =
+    periodos.length > 0
+      ? (remainW -
+          smallSubW * 3 * periodos.length -
+          estadoSubW * periodos.length) /
+        periodos.length
+      : 0;
 
   const colWidths = [asigW, docenteW];
   for (let i = 0; i < periodos.length; i++) {
-    colWidths.push(perSubW, perSubW, perSubW, perSubW);
+    colWidths.push(smallSubW, smallSubW, smallSubW, estadoSubW, logroSubW);
   }
-  colWidths.push(defW, estadoFW);
 
   const colX = (colIdx) => {
     let x = margin;
@@ -880,6 +885,31 @@ async function generateBoletinPDF(
     });
   };
 
+  const drawCellMultiline = (text, col, cy, h, opts = {}) => {
+    const { bold = false, fontSize = 5, color = [0, 0, 0], bg = null } = opts;
+    const cx = colX(col);
+    const w = colWidths[col];
+    const isWhiteBg = bg && bg[0] === 255 && bg[1] === 255 && bg[2] === 255;
+    if (bg && !isWhiteBg) {
+      pdf.setFillColor(...bg);
+      pdf.rect(cx, cy, w, h, "F");
+    }
+    pdf.setDrawColor(180, 180, 180);
+    pdf.setLineWidth(0.2);
+    pdf.rect(cx, cy, w, h, "D");
+    pdf.setFontSize(fontSize);
+    pdf.setFont("helvetica", bold ? "bold" : "normal");
+    pdf.setTextColor(...color);
+    const lines = pdf.splitTextToSize(String(text ?? "-"), w - 1.5);
+    const lineH = fontSize * 0.45;
+    const blockH = lines.length * lineH;
+    let startY = cy + (h - blockH) / 2 + lineH * 0.8;
+    for (const line of lines) {
+      pdf.text(line, cx + 0.8, startY);
+      startY += lineH;
+    }
+  };
+
   /* Fila de cabecera principal */
   addPageIfNeeded(rowH + subHeaderH);
   const headerBg = [19, 26, 39];
@@ -899,9 +929,9 @@ async function generateBoletinPDF(
 
   // Cabeceras agrupadas por periodo (colspan manual)
   for (let pi = 0; pi < periodos.length; pi++) {
-    const startCol = 2 + pi * 4;
+    const startCol = 2 + pi * 5;
     const cx = colX(startCol);
-    const groupW = perSubW * 4;
+    const groupW = smallSubW * 3 + estadoSubW + logroSubW;
     pdf.setFillColor(...headerBg);
     pdf.rect(cx, y, groupW, rowH, "F");
     pdf.setDrawColor(180, 180, 180);
@@ -913,16 +943,6 @@ async function generateBoletinPDF(
       align: "center",
     });
   }
-  drawCell("DF", totalCols - 2, y, rowH, {
-    bold: true,
-    color: headerColor,
-    bg: headerBg,
-  });
-  drawCell("Estado Final", totalCols - 1, y, rowH, {
-    bold: true,
-    color: headerColor,
-    bg: headerBg,
-  });
   y += rowH;
 
   /* Sub-cabecera (NFP, Recup, Escala, Estado) */
@@ -931,8 +951,8 @@ async function generateBoletinPDF(
   drawCell("", 0, y, subHeaderH, { bg: subBg });
   drawCell("", 1, y, subHeaderH, { bg: subBg });
   for (let pi = 0; pi < periodos.length; pi++) {
-    const base = 2 + pi * 4;
-    drawCell("NFP", base, y, subHeaderH, {
+    const base = 2 + pi * 5;
+    drawCell("Nota", base, y, subHeaderH, {
       bold: true,
       fontSize: 5,
       color: subColor,
@@ -956,9 +976,13 @@ async function generateBoletinPDF(
       color: subColor,
       bg: subBg,
     });
+    drawCell("Logro", base + 4, y, subHeaderH, {
+      bold: true,
+      fontSize: 5,
+      color: subColor,
+      bg: subBg,
+    });
   }
-  drawCell("", totalCols - 2, y, subHeaderH, { bg: subBg });
-  drawCell("", totalCols - 1, y, subHeaderH, { bg: subBg });
   y += subHeaderH;
 
   /* Filas de datos */
@@ -966,147 +990,174 @@ async function generateBoletinPDF(
     const asig = asignaturas[idx];
     const rowBg = idx % 2 === 0 ? [249, 250, 251] : [255, 255, 255];
 
-    // Calcular si tiene logros
-    const logrosTexts = [];
-    for (const p of periodos) {
-      const per = asig.periodos.get(p.id);
-      if (!per) continue;
-      const items = [];
-      if (per.notas?.length > 0)
-        items.push(per.notas.map((n) => `${n.nombre}: ${n.valor}`).join(" | "));
-      if (per.logros.length > 0)
-        items.push(`Logros: ${per.logros.join(" | ")}`);
-      if (per.logro_nota_estudiante)
-        items.push(`Logro estudiante: ${per.logro_nota_estudiante}`);
-      if (items.length) logrosTexts.push(`${p.nombre}: ${items.join(" — ")}`);
+    // Altura dinámica según longitud del logro y nombre del docente
+    let computedRowH = rowH;
+    pdf.setFontSize(5.5);
+    const docenteLines = pdf.splitTextToSize(
+      asig.nombre_docente || "-",
+      docenteW - 1.5,
+    );
+    const docenteNeeded = docenteLines.length * (5.5 * 0.45) + 2;
+    if (docenteNeeded > computedRowH) computedRowH = docenteNeeded;
+    for (let pi = 0; pi < periodos.length; pi++) {
+      const per = asig.periodos.get(periodos[pi].id);
+      const logroText = per?.logros?.join(" | ") || "-";
+      const logroColW = colWidths[2 + pi * 5 + 4];
+      pdf.setFontSize(5);
+      const lines = pdf.splitTextToSize(logroText, logroColW - 1.5);
+      const needed = lines.length * (5 * 0.45) + 2;
+      if (needed > computedRowH) computedRowH = needed;
+      const estadoText = per?.estado || "-";
+      const estadoColW = colWidths[2 + pi * 5 + 3];
+      const estadoLines = pdf.splitTextToSize(estadoText, estadoColW - 1.5);
+      const estadoNeeded = estadoLines.length * (5 * 0.45) + 2;
+      if (estadoNeeded > computedRowH) computedRowH = estadoNeeded;
     }
+    addPageIfNeeded(computedRowH);
 
-    const logroRowH = logrosTexts.length > 0 ? 5 : 0;
-    addPageIfNeeded(rowH + logroRowH);
-
-    drawCell(asig.nombre_asignatura, 0, y, rowH, {
+    drawCell(asig.nombre_asignatura, 0, y, computedRowH, {
       bold: true,
       fontSize: 6,
       align: "left",
       bg: rowBg,
     });
-    drawCell(asig.nombre_docente, 1, y, rowH, {
+    drawCellMultiline(asig.nombre_docente, 1, y, computedRowH, {
       fontSize: 5.5,
-      align: "left",
       color: [107, 114, 128],
       bg: rowBg,
     });
 
     for (let pi = 0; pi < periodos.length; pi++) {
       const per = asig.periodos.get(periodos[pi].id);
-      const base = 2 + pi * 4;
-      drawCell(per?.nota ?? "-", base, y, rowH, { bold: true, bg: rowBg });
-      drawCell(per?.recuperacion ?? "-", base + 1, y, rowH, { bg: rowBg });
-      drawCell(per?.escala ?? "-", base + 2, y, rowH, { bg: rowBg });
+      const base = 2 + pi * 5;
+      drawCell(per?.nota ?? "-", base, y, computedRowH, {
+        bold: true,
+        bg: rowBg,
+      });
+      drawCell(per?.recuperacion ?? "-", base + 1, y, computedRowH, {
+        bg: rowBg,
+      });
+      drawCell(per?.escala ?? "-", base + 2, y, computedRowH, { bg: rowBg });
       const estColor = per?.estado
         ? colorEstado(per.estado) === "#15803d"
           ? [21, 128, 61]
           : [220, 38, 38]
         : [55, 65, 81];
-      drawCell(per?.estado ?? "-", base + 3, y, rowH, {
+      drawCellMultiline(per?.estado ?? "-", base + 3, y, computedRowH, {
         bold: true,
         color: estColor,
         bg: rowBg,
       });
+      {
+        const cx = colX(base + 4);
+        const w = colWidths[base + 4];
+        const isWhiteBg =
+          rowBg[0] === 255 && rowBg[1] === 255 && rowBg[2] === 255;
+        if (!isWhiteBg) {
+          pdf.setFillColor(...rowBg);
+          pdf.rect(cx, y, w, computedRowH, "F");
+        }
+        pdf.setDrawColor(180, 180, 180);
+        pdf.setLineWidth(0.2);
+        pdf.rect(cx, y, w, computedRowH, "D");
+        const logros = per?.logros ?? [];
+        const lineH = 5 * 0.45;
+        if (logros.length === 0) {
+          pdf.setFontSize(5);
+          pdf.setFont("helvetica", "normal");
+          pdf.setTextColor(0, 0, 0);
+          pdf.text("-", cx + 1, y + 4);
+        } else {
+          let textY = y + 2;
+          for (const logro of logros) {
+            const sep = logro.indexOf(": ");
+            if (sep === -1) {
+              pdf.setFontSize(5);
+              pdf.setFont("helvetica", "normal");
+              pdf.setTextColor(0, 0, 0);
+              for (const ln of pdf.splitTextToSize(logro, w - 1.5)) {
+                pdf.text(ln, cx + 1, textY + lineH * 0.8);
+                textY += lineH;
+              }
+            } else {
+              const tipo = logro.slice(0, sep);
+              const desc = logro.slice(sep + 2);
+              pdf.setFontSize(5);
+              pdf.setFont("helvetica", "bold");
+              pdf.setTextColor(19, 26, 39);
+              for (const ln of pdf.splitTextToSize(tipo, w - 1.5)) {
+                pdf.text(ln, cx + 1, textY + lineH * 0.8);
+                textY += lineH;
+              }
+              pdf.setFont("helvetica", "normal");
+              pdf.setTextColor(55, 65, 81);
+              for (const ln of pdf.splitTextToSize(desc, w - 1.5)) {
+                pdf.text(ln, cx + 1, textY + lineH * 0.8);
+                textY += lineH;
+              }
+            }
+            textY += lineH * 0.5;
+          }
+        }
+        // Observaciones de énfasis siempre al fondo de la celda de logro
+        {
+          const obsY = y + computedRowH - 6;
+          pdf.setDrawColor(200, 200, 200);
+          pdf.setLineWidth(0.15);
+          pdf.line(cx + 1, obsY, cx + w - 1, obsY);
+          pdf.setFontSize(5);
+          pdf.setFont("helvetica", "bold");
+          pdf.setTextColor(19, 26, 39);
+          pdf.text("Obs. énfasis:", cx + 1, obsY + 3.5);
+        }
+      }
     }
 
-    drawCell(asig.definitiva, totalCols - 2, y, rowH, {
-      bold: true,
-      fontSize: 7,
-      bg: rowBg,
-    });
-    const efDisplay = meta.periodId !== "4" ? "En proceso" : asig.estado_final;
-    const efHex = colorEstado(efDisplay);
-    const efColor =
-      efHex === "#15803d"
-        ? [21, 128, 61]
-        : efHex === "#2563eb"
-          ? [37, 99, 235]
-          : [220, 38, 38];
-    drawCell(efDisplay, totalCols - 1, y, rowH, {
-      bold: true,
-      color: efColor,
-      bg: rowBg,
-    });
-    y += rowH;
-
-    /* Fila de logros */
-    if (logrosTexts.length > 0) {
-      const logroBg = idx % 2 === 0 ? [238, 242, 255] : [245, 245, 240];
-      const lx = colX(0);
-      pdf.setFillColor(...logroBg);
-      pdf.rect(lx, y, contentW, logroRowH, "F");
-      pdf.setDrawColor(180, 180, 180);
-      pdf.rect(lx, y, contentW, logroRowH, "D");
-      pdf.setFontSize(5);
-      pdf.setFont("helvetica", "italic");
-      pdf.setTextColor(55, 65, 81);
-      const logroLine = logrosTexts.join("   |   ");
-      const maxW = contentW - 2;
-      let display = logroLine;
-      while (pdf.getTextWidth(display) > maxW && display.length > 1)
-        display = display.slice(0, -1);
-      pdf.text(display, lx + 1, y + logroRowH / 2 + 1.2);
-      y += logroRowH;
-    }
+    y += computedRowH;
   }
 
-  /* ── Observaciones y firmas ── */
+  /* ── Sección inferior boletín (4 filas) ── */
   y += 4;
-  const obsTableH = 24;
-  addPageIfNeeded(obsTableH + 2);
-  const obsCol1W = contentW * 0.5;
-  const obsCol2W = contentW * 0.5;
+  const labelColW = contentW * 0.35;
+  const contentColW = contentW - labelColW;
   pdf.setDrawColor(17, 24, 39);
   pdf.setLineWidth(0.4);
-  pdf.rect(margin, y, obsCol1W, obsTableH, "D");
-  pdf.rect(margin + obsCol1W, y, obsCol2W, obsTableH, "D");
-  pdf.setFontSize(8);
-  pdf.setFont("helvetica", "bold");
-  pdf.setTextColor(0, 0, 0);
-  pdf.text("OBSERVACIONES GENERALES:", margin + 2, y + 5);
-  // Firmas al fondo de la segunda celda
-  pdf.setFontSize(7);
-  pdf.text(
-    "FIRMA DEL DOCENTE.",
-    margin + obsCol1W + obsCol2W * 0.18,
-    y + obsTableH - 3,
-  );
-  pdf.text(
-    "FIRMA DEL RECTOR.",
-    margin + obsCol1W + obsCol2W * 0.62,
-    y + obsTableH - 3,
-  );
-  y += obsTableH + 4;
 
-  /* ── Resumen ── */
-  y += 3;
-  addPageIfNeeded(10);
-  pdf.setDrawColor(19, 26, 39);
-  pdf.setLineWidth(0.5);
-  pdf.line(margin, y, pageW - margin, y);
-  y += 5;
-  pdf.setFontSize(9);
+  const drawLabelRow = (label, rowH) => {
+    addPageIfNeeded(rowH);
+    pdf.rect(margin, y, labelColW, rowH, "D");
+    pdf.rect(margin + labelColW, y, contentColW, rowH, "D");
+    pdf.setFontSize(7);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(0, 0, 0);
+    pdf.text(label, margin + 2, y + 5);
+    y += rowH;
+  };
+
+  // Fila 1: Desempeño convivencial
+  drawLabelRow("DESEMPEÑO CONVIVENCIAL:", 18);
+  // Fila 2: Histórico de periodo
+  drawLabelRow("HISTÓRICO DE PERIODO:", 18);
+  // Fila 3: Observaciones generales
+  drawLabelRow("OBSERVACIONES GENERALES:", 22);
+  // Fila 4: Firma del director de grupo (celda completa)
+  addPageIfNeeded(18);
+  pdf.rect(margin, y, contentW, 18, "D");
+  const signLineW = 60;
+  const signX = margin + (contentW - signLineW) / 2;
+  pdf.setDrawColor(17, 24, 39);
+  pdf.setLineWidth(0.3);
+  pdf.line(signX, y + 13, signX + signLineW, y + 13);
+  pdf.setFontSize(7);
   pdf.setFont("helvetica", "bold");
   pdf.setTextColor(0, 0, 0);
-  if (promedioGeneral !== null) {
-    pdf.text(`Promedio general: ${promedioGeneral}`, pageW - margin, y, {
-      align: "right",
-    });
-    y += 5;
-  }
   pdf.text(
-    `Estado general: ${meta.periodId !== "4" ? "En proceso" : resumenEstado}`,
-    pageW - margin,
-    y,
-    { align: "right" },
+    "FIRMA DEL DIRECTOR DE GRUPO",
+    margin + contentW / 2,
+    y + 16,
+    { align: "center" },
   );
-  y += 8;
+  y += 18 + 4;
 
   /* ── Convenciones ── */
   if (escalas.length > 0) {
@@ -1475,7 +1526,6 @@ const BoletinSelector = ({
       studentInfoProp?.identificacion,
   };
   console.log("Boletin info:", info);
-  const totalCols = 2 + periodos.length * 4 + 2;
 
   const handleConsultar = async () => {
     if (!periodId) {
@@ -1987,16 +2037,6 @@ const BoletinSelector = ({
 
                 {/* ── Tabla por asignatura ── */}
                 {asignaturas.map((asig, idx) => {
-                  const logroBg = idx % 2 === 0 ? "#eef2ff" : "#f5f5f0";
-                  const tieneLogros = periodos.some((p) => {
-                    const per = asig.periodos.get(p.id);
-                    return (
-                      per &&
-                      (per.logros.length > 0 ||
-                        per.logro_nota_estudiante ||
-                        per.notas?.length > 0)
-                    );
-                  });
                   return (
                     <div
                       key={asig.nombre_asignatura}
@@ -2025,7 +2065,7 @@ const BoletinSelector = ({
                             {periodos.map((p) => (
                               <th
                                 key={p.id}
-                                colSpan={4}
+                                colSpan={5}
                                 style={{
                                   ...S.th,
                                   borderLeft: "2px solid #ffffff",
@@ -2034,15 +2074,6 @@ const BoletinSelector = ({
                                 {p.nombre}
                               </th>
                             ))}
-                            <th
-                              style={{ ...S.th, verticalAlign: "middle" }}
-                              title="Nota acumulada"
-                            >
-                              DF
-                            </th>
-                            <th style={{ ...S.th, verticalAlign: "middle" }}>
-                              Estado Final
-                            </th>
                           </tr>
                           <tr
                             style={{
@@ -2078,7 +2109,7 @@ const BoletinSelector = ({
                                   }}
                                   title="Nota final periodo"
                                 >
-                                  NFP
+                                  Nota
                                 </th>
                                 <th style={{ ...S.th, fontSize: "8px" }}>
                                   Recup.
@@ -2089,26 +2120,11 @@ const BoletinSelector = ({
                                 <th style={{ ...S.th, fontSize: "8px" }}>
                                   Estado
                                 </th>
+                                <th style={{ ...S.th, fontSize: "8px" }}>
+                                  Logro
+                                </th>
                               </React.Fragment>
                             ))}
-                            <th
-                              style={{
-                                ...S.th,
-                                fontSize: "8px",
-                                color: "#94a3b8",
-                              }}
-                            >
-                              &nbsp;
-                            </th>
-                            <th
-                              style={{
-                                ...S.th,
-                                fontSize: "8px",
-                                color: "#94a3b8",
-                              }}
-                            >
-                              &nbsp;
-                            </th>
                           </tr>
                         </thead>
                         <tbody>
@@ -2152,105 +2168,123 @@ const BoletinSelector = ({
                                   >
                                     {per?.estado ?? "-"}
                                   </td>
+                                  <td
+                                    style={{
+                                      ...S.tdLeft,
+                                      fontSize: "8px",
+                                      color: "#374151",
+                                      fontStyle: "italic",
+                                    }}
+                                  >
+                                    {per?.logros?.length
+                                      ? per.logros.map((l, i) => {
+                                          const sep = l.indexOf(": ");
+                                          if (sep === -1)
+                                            return <div key={i}>{l}</div>;
+                                          return (
+                                            <div key={i}>
+                                              <span
+                                                style={{
+                                                  fontWeight: 900,
+                                                  fontStyle: "normal",
+                                                }}
+                                              >
+                                                {l.slice(0, sep)}
+                                              </span>
+                                              {l.slice(sep)}
+                                            </div>
+                                          );
+                                        })
+                                      : "-"}
+                                    <div
+                                      style={{
+                                        marginTop: "4px",
+                                        fontWeight: "bold",
+                                        fontStyle: "normal",
+                                        color: "#111827",
+                                        fontSize: "8px",
+                                        borderTop: "1px solid #e5e7eb",
+                                        paddingTop: "2px",
+                                      }}
+                                    >
+                                      Observaciones de énfasis:
+                                    </div>
+                                  </td>
                                 </React.Fragment>
                               );
                             })}
-                            <td
-                              style={{
-                                ...S.td,
-                                fontWeight: "bold",
-                                fontSize: "11px",
-                              }}
-                            >
-                              {asig.definitiva}
-                            </td>
-                            <td
-                              style={{
-                                ...S.td,
-                                fontWeight: "600",
-                                color: colorEstado(
-                                  periodId !== "4"
-                                    ? "En proceso"
-                                    : asig.estado_final,
-                                ),
-                                fontSize: "9px",
-                              }}
-                            >
-                              {periodId !== "4"
-                                ? "En proceso"
-                                : asig.estado_final}
-                            </td>
                           </tr>
-                          {tieneLogros && (
-                            <tr style={{ backgroundColor: logroBg }}>
-                              <td
-                                colSpan={totalCols}
-                                style={{
-                                  padding: "3px 10px 5px",
-                                  borderBottom: "1px solid #e5e7eb",
-                                  fontSize: "9px",
-                                  fontStyle: "italic",
-                                  color: "#374151",
-                                }}
-                              >
-                                {periodos.map((p) => {
-                                  const per = asig.periodos.get(p.id);
-                                  if (!per) return null;
-                                  const items = [];
-                                  if (per.notas?.length > 0)
-                                    items.push(
-                                      per.notas
-                                        .map((n) => `${n.nombre}: ${n.valor}`)
-                                        .join(" | "),
-                                    );
-                                  if (per.logros.length > 0)
-                                    items.push(
-                                      `Logros: ${per.logros.join(" | ")}`,
-                                    );
-                                  if (per.logro_nota_estudiante)
-                                    items.push(
-                                      `Logro estudiante: ${per.logro_nota_estudiante}`,
-                                    );
-                                  if (!items.length) return null;
-                                  return (
-                                    <span
-                                      key={p.id}
-                                      style={{ marginRight: "14px" }}
-                                    >
-                                      <strong>{p.nombre}: </strong>
-                                      {items.join(" — ")}
-                                    </span>
-                                  );
-                                })}
-                              </td>
-                            </tr>
-                          )}
                         </tbody>
                       </table>
                     </div>
                   );
                 })}
 
-                {/* ── Observaciones y firmas ── */}
+                {/* ── Sección inferior boletín ── */}
                 <table
                   style={{
                     width: "100%",
                     borderCollapse: "collapse",
                     marginTop: "16px",
                     border: "1px solid #111827",
+                    fontSize: "11px",
                   }}
                 >
                   <tbody>
+                    {/* Fila 1: Desempeño convivencial */}
                     <tr>
                       <td
                         style={{
                           border: "1px solid #111827",
-                          padding: "8px",
-                          width: "50%",
-                          height: "80px",
-                          verticalAlign: "top",
+                          padding: "6px 8px",
+                          width: "35%",
                           fontWeight: "bold",
-                          fontSize: "11px",
+                          verticalAlign: "top",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        DESEMPEÑO CONVIVENCIAL:
+                      </td>
+                      <td
+                        style={{
+                          border: "1px solid #111827",
+                          padding: "6px 8px",
+                          height: "50px",
+                          verticalAlign: "top",
+                        }}
+                      />
+                    </tr>
+                    {/* Fila 2: Histórico de periodo */}
+                    <tr>
+                      <td
+                        style={{
+                          border: "1px solid #111827",
+                          padding: "6px 8px",
+                          fontWeight: "bold",
+                          verticalAlign: "top",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        HISTÓRICO DE PERIODO:
+                      </td>
+                      <td
+                        style={{
+                          border: "1px solid #111827",
+                          padding: "6px 8px",
+                          height: "50px",
+                          verticalAlign: "top",
+                        }}
+                      />
+                    </tr>
+                    {/* Fila 3: Observaciones generales */}
+                    <tr>
+                      <td
+                        style={{
+                          border: "1px solid #111827",
+                          padding: "6px 8px",
+                          fontWeight: "bold",
+                          verticalAlign: "top",
+                          whiteSpace: "nowrap",
                         }}
                       >
                         OBSERVACIONES GENERALES:
@@ -2258,61 +2292,49 @@ const BoletinSelector = ({
                       <td
                         style={{
                           border: "1px solid #111827",
-                          padding: "8px",
+                          padding: "6px 8px",
+                          height: "70px",
+                          verticalAlign: "top",
+                        }}
+                      />
+                    </tr>
+                    {/* Fila 4: Firma del director de grupo */}
+                    <tr>
+                      <td
+                        colSpan={2}
+                        style={{
+                          border: "1px solid #111827",
+                          padding: "6px 8px",
+                          height: "50px",
                           verticalAlign: "bottom",
                         }}
                       >
                         <div
                           style={{
                             display: "flex",
-                            justifyContent: "space-around",
-                            fontWeight: "bold",
-                            fontSize: "10px",
-                            paddingTop: "48px",
+                            justifyContent: "center",
+                            alignItems: "flex-end",
+                            height: "100%",
+                            paddingBottom: "4px",
                           }}
                         >
-                          <span>FIRMA DEL DOCENTE.</span>
-                          <span>FIRMA DEL RECTOR.</span>
+                          <div style={{ textAlign: "center" }}>
+                            <div
+                              style={{
+                                borderBottom: "1px solid #111827",
+                                minWidth: "200px",
+                                marginBottom: "4px",
+                              }}
+                            />
+                            <span style={{ fontWeight: "bold", fontSize: "10px" }}>
+                              FIRMA DEL DIRECTOR DE GRUPO
+                            </span>
+                          </div>
                         </div>
                       </td>
                     </tr>
                   </tbody>
                 </table>
-
-                {/* ── Resumen ── */}
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    gap: "24px",
-                    marginTop: "14px",
-                    paddingTop: "10px",
-                    borderTop: "2px solid #131a27",
-                    fontWeight: "bold",
-                    fontSize: "11px",
-                  }}
-                >
-                  {promedioGeneral !== null && (
-                    <span>
-                      Promedio general:&nbsp;
-                      <span style={{ color: colorEstado(resumenEstado) }}>
-                        {promedioGeneral}
-                      </span>
-                    </span>
-                  )}
-                  <span>
-                    Estado general:&nbsp;
-                    <span
-                      style={{
-                        color: colorEstado(
-                          periodId !== "4" ? "En proceso" : resumenEstado,
-                        ),
-                      }}
-                    >
-                      {periodId !== "4" ? "En proceso" : resumenEstado}
-                    </span>
-                  </span>
-                </div>
 
                 {/* ── Convenciones ── */}
                 {escalas.length > 0 && (

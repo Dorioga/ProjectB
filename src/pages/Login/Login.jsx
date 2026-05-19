@@ -105,15 +105,17 @@ const Login = () => {
             noValidate
           >
             <div className="flex flex-col text-center gap-6">
-              <h2 className="text-secondary font-bold text-6xl">Bienvenido</h2>
-              <h3 className="text-surface font-semibold text-4xl">
+              <h2 className="text-secondary font-bold text-3xl md:text-6xl">
+                Bienvenido
+              </h2>
+              <h3 className="text-surface font-semibold text-2xl md:text-4xl">
                 Iniciar sesión
               </h3>
             </div>
             <div className="flex flex-col justify-between gap-1">
               <label
                 htmlFor="email"
-                className="text-surface text-2xl font-bold"
+                className="text-surface text-xl md:text-2xl font-bold"
               >
                 Usuario
               </label>
@@ -126,13 +128,13 @@ const Login = () => {
                 placeholder="Usuario"
                 autoComplete="username"
                 aria-required="true"
-                className="bg-surface px-2 py-1 rounded-md text-2xl"
+                className="bg-surface px-2 py-1 rounded-md text-xl md:text-2xl"
               />
             </div>
             <div className="flex flex-col justify-between gap-1">
               <label
                 htmlFor="infokey"
-                className="text-surface text-2xl font-bold"
+                className="text-surface text-xl md:text-2xl font-bold"
               >
                 Contraseña
               </label>
@@ -145,7 +147,7 @@ const Login = () => {
                 placeholder="Contraseña"
                 autoComplete="current-password"
                 aria-required="true"
-                className="bg-surface px-2 py-1 rounded-md text-2xl"
+                className="bg-surface px-2 py-1 rounded-md text-xl md:text-2xl"
               />
             </div>
 
@@ -157,7 +159,7 @@ const Login = () => {
                 bg={"bg-secondary"}
                 text={"text-surface"}
                 hover={"hover:bg-secondary/80"}
-                textSize="text-3xl"
+                textSize="text-3xl md:text-4xl  "
               />
               <button
                 type="button"
