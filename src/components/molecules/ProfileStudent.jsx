@@ -948,6 +948,16 @@ const ProfileStudent = ({
         onClose={() => setIsOpenCarnet(false)}
         data={{
           ...data,
+          // Normalizar id_estudiante y fk_sede explícitamente para que el QR
+          // funcione sin importar la nomenclatura que devuelva el API.
+          id_estudiante:
+            data?.id_estudiante ?? data?.id_student ?? undefined,
+          fk_sede:
+            data?.fk_sede ??
+            data?.id_sede ??
+            data?.sede_id ??
+            selectedSede ??
+            undefined,
           first_name: editedData.first_name,
           second_name: editedData.second_name,
           first_lastname: editedData.first_lastname,

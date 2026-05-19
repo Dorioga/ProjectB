@@ -29,7 +29,17 @@ const ProfileStudentPage = () => {
           id_estudiante: Number(idEstudiante),
           fk_sede: Number(idSede),
         });
-        setStudentData(res ?? null);
+        // Asegurar que id_estudiante y fk_sede estén en los datos aunque el
+        // API no los devuelva en la respuesta (son campos requeridos por CarnetModal).
+        setStudentData(
+          res
+            ? {
+                ...res,
+                id_estudiante: res.id_estudiante ?? Number(idEstudiante),
+                fk_sede: res.fk_sede ?? res.id_sede ?? Number(idSede),
+              }
+            : null,
+        );
       } catch (err) {
         console.error("ProfileStudentPage - error loading student:", err);
         setError(err?.message || "Error al cargar los datos del estudiante");
