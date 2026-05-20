@@ -474,10 +474,13 @@ export async function exportAttendancePDF(rows = [], opts = {}) {
           const cx = MARGIN + STUDENT_COL_W + di * dW;
           const key = `${students[si]}|${chunk[di]}`;
           if (presMap.has(key)) {
-            pdf.setFillColor(
-              ...(presMap.get(key) ? [209, 250, 229] : [254, 226, 226]),
-            );
-            pdf.rect(cx + 0.5, y + 0.5, dW - 1, ROW_H - 1, "F");
+            const present = presMap.get(key);
+            pdf.setFontSize(6);
+            pdf.setFont("helvetica", "bold");
+            pdf.setTextColor(...(present ? [22, 101, 52] : [153, 27, 27]));
+            pdf.text(present ? "Si" : "No", cx + dW / 2, y + ROW_H / 2 + 1.5, {
+              align: "center",
+            });
           }
           pdf.setDrawColor(210, 215, 220);
           pdf.setLineWidth(0.1);
