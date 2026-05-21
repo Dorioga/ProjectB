@@ -67,7 +67,9 @@ export const SideProfile = () => {
             });
             return (
               <span className="text-surface text-xs font-semibold">
-                Corte periodo {cutInfo.fk_periodo}: {fechaFormateada}
+                {fechaFormateada
+                  ? `Cierre periodo ${cutInfo.fk_periodo}: ${fechaFormateada}`
+                  : "Sin fecha de cierre en curso"}
               </span>
             );
           })()}

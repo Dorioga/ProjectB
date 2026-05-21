@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import useAuth from "../../lib/hooks/useAuth";
 import { getStudentAssistence } from "../../services/studentService";
 import DataTable from "../../components/atoms/DataTable";
+import SimpleButton from "../../components/atoms/SimpleButton";
+import { exportAttendancePDF } from "../../utils/exportPdf";
 
 const fmtDate = (iso) => {
   if (!iso) return "-";
@@ -68,11 +70,12 @@ const COLUMNS = [
 ];
 
 const AssistenceStudent = () => {
-  const { idEstudiante, idSede } = useAuth();
+  const { idEstudiante, idSede, nameSchool, nameSede, userName } = useAuth();
 
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
 
   useEffect(() => {
     if (!idEstudiante || !idSede) return;
@@ -99,6 +102,42 @@ const AssistenceStudent = () => {
 
   const columns = useMemo(() => COLUMNS, []);
 
+  const handleExportPDF = useCallback(async () => {
+    if (!records.length) return;
+    setIsExportingPDF(true);
+    try {
+      const studentName = userName || "Estudiante";
+      const rowsWithName = records.map((r) => ({
+        ...r,
+        nombre_estudiante: studentName,
+      }));
+      const firstRow = records[0] || {};
+      const gradeLabel = [firstRow.nombre_grado, firstRow.grupo]
+        .filter(Boolean)
+        .join(" ");
+      const dates = records
+        .map((r) => r.fecha_assistance)
+        .filter(Boolean)
+        .sort();
+      const startDate = dates[0] || "";
+      const endDate = dates[dates.length - 1] || "";
+      const sedeLabel = firstRow.nombre_sede || nameSede || "";
+      await exportAttendancePDF(rowsWithName, {
+        nameSchool: nameSchool || "Institución",
+        nameSede: sedeLabel,
+        gradeLabel,
+        journeyLabel: "",
+        startDate,
+        endDate,
+        fileName: `Asistencias_${gradeLabel || "estudiante"}_${startDate}_${endDate}.pdf`,
+      });
+    } catch (err) {
+      console.error("AssistenceStudent - exportPDF error:", err);
+    } finally {
+      setIsExportingPDF(false);
+    }
+  }, [records, nameSchool, nameSede, userName]);
+
   return (
     <div className="border p-6 rounded bg-bg h-full flex flex-col gap-6">
       <div className="w-full grid grid-cols-7 items-center bg-primary text-surface p-3 rounded-lg">
@@ -112,6 +151,21 @@ const AssistenceStudent = () => {
         </div>
       )}
 
+      {records.length > 0 && (
+        <div className="flex justify-end">
+          <SimpleButton
+            type="button"
+            msj={isExportingPDF ? "Generando PDF..." : "Exportar PDF"}
+            icon="FileText"
+            bg="bg-red-600"
+            text="text-white"
+            noRounded={false}
+            disabled={isExportingPDF}
+            onClick={handleExportPDF}
+            msjtooltip="Genera tabla Estudiante × Fecha segmentada por asignatura"
+          />
+        </div>
+      )}
       <DataTable
         data={records}
         columns={columns}

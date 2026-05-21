@@ -244,9 +244,9 @@ export async function exportAttendancePDF(rows = [], opts = {}) {
   const DATE_HDR_H = 16; // cabecera de fechas (texto rotado)
   const SUBJ_HDR_H = 8; // cabecera de asignatura
 
-  // Zona del encabezado — altura fija de 42 mm (patrón PdfObservador)
-  const HDR_H = 42;
-  const CONTENT_TOP = MARGIN + HDR_H; // 52 mm desde arriba
+  // Zona del encabezado — altura fija de 33 mm (patrón PdfObservador)
+  const HDR_H = 33;
+  const CONTENT_TOP = MARGIN + HDR_H; // 43 mm desde arriba
   const CONTENT_BOT = PAGE_H - MARGIN; // 287 mm
 
   const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
