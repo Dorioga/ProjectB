@@ -4,6 +4,7 @@ import { getStudentAssistence } from "../../services/studentService";
 import DataTable from "../../components/atoms/DataTable";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import { exportAttendancePDF } from "../../utils/exportPdf";
+import { useNotify } from "../../lib/hooks/useNotify";
 
 const fmtDate = (iso) => {
   if (!iso) return "-";
@@ -71,6 +72,7 @@ const COLUMNS = [
 
 const AssistenceStudent = () => {
   const { idEstudiante, idSede, nameSchool, nameSede, userName } = useAuth();
+  const notify = useNotify();
 
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -103,7 +105,10 @@ const AssistenceStudent = () => {
   const columns = useMemo(() => COLUMNS, []);
 
   const handleExportPDF = useCallback(async () => {
-    if (!records.length) return;
+    if (!records.length) {
+      notify.warning("Sin datos, no se puede generar el PDF.");
+      return;
+    }
     setIsExportingPDF(true);
     try {
       const studentName = userName || "Estudiante";
@@ -151,21 +156,19 @@ const AssistenceStudent = () => {
         </div>
       )}
 
-      {records.length > 0 && (
-        <div className="flex justify-end">
-          <SimpleButton
-            type="button"
-            msj={isExportingPDF ? "Generando PDF..." : "Exportar PDF"}
-            icon="FileText"
-            bg="bg-red-600"
-            text="text-white"
-            noRounded={false}
-            disabled={isExportingPDF}
-            onClick={handleExportPDF}
-            msjtooltip="Genera tabla Estudiante × Fecha segmentada por asignatura"
-          />
-        </div>
-      )}
+      <div className="flex justify-end">
+        <SimpleButton
+          type="button"
+          msj={isExportingPDF ? "Generando PDF..." : "Exportar PDF"}
+          icon="FileText"
+          bg="bg-red-600"
+          text="text-white"
+          noRounded={false}
+          disabled={isExportingPDF}
+          onClick={handleExportPDF}
+          msjtooltip="Genera tabla Estudiante × Fecha segmentada por asignatura"
+        />
+      </div>
       <DataTable
         data={records}
         columns={columns}

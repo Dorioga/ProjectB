@@ -333,8 +333,7 @@ export function AuthProvider({ children }) {
 
         // Para roles 5 y 6: verificar aceptación de términos ANTES de guardar datos
         const rolValue = data?.rol;
-        const needsTermsCheck =
-          String(rolValue) === "5" || String(rolValue) === "6";
+        const needsTermsCheck = String(rolValue) === "5";
 
         if (needsTermsCheck) {
           // Token temporal solo para llamadas API (no se guarda en estado/localStorage)

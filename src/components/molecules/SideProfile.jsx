@@ -25,17 +25,23 @@ export const SideProfile = () => {
 
   // ── Corte de periodo activo ──
   const [cutInfo, setCutInfo] = useState(null);
+  const [cutLoaded, setCutLoaded] = useState(false);
 
   useEffect(() => {
     if (!idInstitution || [5, 6, "5", "6"].includes(rol)) return;
     let cancelled = false;
     notifyValidator({ fk_institucion: Number(idInstitution) })
       .then((data) => {
-        if (!cancelled && Array.isArray(data) && data.length > 0) {
-          setCutInfo(data[0]);
+        if (!cancelled) {
+          if (Array.isArray(data) && data.length > 0) {
+            setCutInfo(data[0]);
+          }
+          setCutLoaded(true);
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!cancelled) setCutLoaded(true);
+      });
     return () => {
       cancelled = true;
     };
@@ -56,23 +62,19 @@ export const SideProfile = () => {
     <aside className="rounded flex flex-row items-center justify-between gap-2 w-full px-4">
       <div className="flex flex-col">
         <h2 className="text-surface font-semibold">{nameSchool}</h2>
-        {cutInfo &&
-          !["5", "6", 5, 6].includes(rol) &&
-          (() => {
-            const fecha = new Date(cutInfo.fecha_corte);
-            const fechaFormateada = fecha.toLocaleDateString("es-CO", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-            });
-            return (
-              <span className="text-surface text-xs font-semibold">
-                {fechaFormateada
-                  ? `Cierre periodo ${cutInfo.fk_periodo}: ${fechaFormateada}`
-                  : "Sin fecha de cierre en curso"}
-              </span>
-            );
-          })()}
+        {!["5", "6", 5, 6].includes(rol) && cutLoaded && (
+          <span className="text-surface text-xs font-semibold">
+            {cutInfo?.fecha_corte
+              ? `Cierre periodo ${cutInfo.fk_periodo}: ${new Date(
+                  cutInfo.fecha_corte,
+                ).toLocaleDateString("es-CO", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                })}`
+              : "Sin fecha de cierre en curso"}
+          </span>
+        )}
       </div>
 
       <div className="flex flex-row justify-end items-center gap-4">

@@ -273,7 +273,10 @@ const ManageAssistance = () => {
 
   // Exportar PDF de asistencias
   const handleExportPDF = useCallback(async () => {
-    if (!tableData.length) return;
+    if (!tableData.length) {
+      notify.warning("Sin datos, no se puede generar el PDF.");
+      return;
+    }
     setIsExportingPDF(true);
     try {
       const firstRow = tableData[0] || {};
@@ -519,21 +522,19 @@ const ManageAssistance = () => {
           </div>
         ) : (
           <>
-            {tableData.length > 0 && (
-              <div className="flex justify-end mb-2">
-                <SimpleButton
-                  type="button"
-                  msj={isExportingPDF ? "Generando PDF..." : "Exportar PDF"}
-                  icon="FileText"
-                  bg="bg-red-600"
-                  text="text-white"
-                  noRounded={false}
-                  disabled={isExportingPDF}
-                  onClick={handleExportPDF}
-                  msjtooltip="Genera tabla Estudiante × Fecha segmentada por asignatura"
-                />
-              </div>
-            )}
+            <div className="flex justify-end mb-2">
+              <SimpleButton
+                type="button"
+                msj={isExportingPDF ? "Generando PDF..." : "Exportar PDF"}
+                icon="FileText"
+                bg="bg-red-600"
+                text="text-white"
+                noRounded={false}
+                disabled={isExportingPDF}
+                onClick={handleExportPDF}
+                msjtooltip="Genera tabla Estudiante × Fecha segmentada por asignatura"
+              />
+            </div>
             <DataTable
               key="assistance-table"
               data={tableData}

@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import ReCAPTCHA from "react-google-recaptcha";
 import Loader from "../../components/atoms/Loader";
 import useAuth from "../../lib/hooks/useAuth";
 import { institutionAbbreviation } from "../../utils/formatUtils";
@@ -12,6 +13,8 @@ const Login = () => {
     infokey: "",
   });
   const [pendingIdPersona, setPendingIdPersona] = useState(null);
+  const [captchaToken, setCaptchaToken] = useState(null);
+  const recaptchaRef = useRef(null);
   const {
     login,
     loading,
@@ -58,6 +61,7 @@ const Login = () => {
 
   const isFormValid =
     formData.email.trim() !== "" && formData.infokey.trim() !== "";
+  const canSubmit = isFormValid && !!captchaToken;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -72,6 +76,8 @@ const Login = () => {
       }
     } catch {
       // El error ya queda en el AuthContext.
+      recaptchaRef.current?.reset();
+      setCaptchaToken(null);
     }
   };
   return (
@@ -152,10 +158,20 @@ const Login = () => {
             </div>
 
             <div className="flex flex-col justify-between pt-2 gap-2">
+              {isFormValid && (
+                <div className="flex justify-center">
+                  <ReCAPTCHA
+                    ref={recaptchaRef}
+                    sitekey={import.meta.env.VITE_CAPTCHA_PUBLIC_KEY}
+                    onChange={(token) => setCaptchaToken(token)}
+                    onExpired={() => setCaptchaToken(null)}
+                  />
+                </div>
+              )}
               <SimpleButton
                 msj={"Iniciar sesión"}
                 type="submit"
-                disabled={loading || !isFormValid}
+                disabled={loading || !canSubmit}
                 bg={"bg-secondary"}
                 text={"text-surface"}
                 hover={"hover:bg-secondary/80"}

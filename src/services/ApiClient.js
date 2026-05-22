@@ -1,10 +1,6 @@
 import axios from "axios";
 
-//const BASE = import.meta.env.VITE_API_URL || "https://nexusplataforma.com/api";
-const BASE =
-  import.meta.env.VITE_API_URL || "https://backend-barranquilla.onrender.com";
-//https://nexusplataforma.com/api/
-//"https://backend-barranquilla.onrender.com"
+const BASE = import.meta.env.VITE_API_URL;
 
 const apiClient = axios.create({
   baseURL: BASE,
