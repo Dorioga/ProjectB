@@ -1,4 +1,4 @@
-import React, {
+﻿import React, {
   useEffect,
   useMemo,
   useState,
@@ -1795,10 +1795,6 @@ const RegisterStudentRecords = () => {
             comentario: item.comment || "",
           })),
         };
-        console.log(
-          "TransicionSave payload (nuevos):",
-          JSON.stringify(payload, null, 2),
-        );
         await saveTransitionStudentNote(payload);
         notify.success(
           `${newItems.length} nota(s) nueva(s) guardada(s) para ${getStudentName(student)}`,
@@ -2494,10 +2490,6 @@ const RegisterStudentRecords = () => {
               customFetchMethod={getTeacherSubjects}
               additionalParams={teacherSubjectsParams}
               onJourneyDetected={(journey) => {
-                console.log(
-                  "RegisterStudentRecords - Jornada detectada de asignatura:",
-                  journey,
-                );
                 if (journey && journey.id) {
                   setWorkdaySelected(String(journey.id));
                   setDetectedJourney(journey);

@@ -1,4 +1,4 @@
-import { ApiClient } from "./ApiClient";
+﻿import { ApiClient } from "./ApiClient";
 
 /**
  * Obtiene la lista de docentes
@@ -151,7 +151,6 @@ export async function getTeacherSubjects(payload) {
   try {
     const res = await ApiClient.instance.post("/teacher/subjects", payload);
     const data = res;
-    console.log("teacherService - getTeacherSubjects:", data);
     if (data && typeof data === "object" && "data" in data) return data.data;
     if (data !== undefined && data !== null) return data;
     throw new Error("Respuesta inesperada de teacher/subjects.");
@@ -172,7 +171,6 @@ export async function getTeacherGrades(payload) {
   try {
     const res = await ApiClient.instance.post("/teacherS/grades", payload);
     const data = res;
-    console.log("teacherService - getTeacherGrades payload:", payload);
     if (data && typeof data === "object" && "data" in data) return data.data;
     if (data !== undefined && data !== null) return data;
     throw new Error("Respuesta inesperada de teacherS/grades.");
@@ -193,7 +191,6 @@ export async function getStudentNotes(payload) {
   try {
     const res = await ApiClient.instance.post("/studentS/notes", payload);
     const data = res;
-    console.log("teacherService - getStudentNotes payload:", payload);
     if (data && typeof data === "object" && "data" in data) return data.data;
     if (data !== undefined && data !== null) return data;
     throw new Error("Respuesta inesperada de studentS/notes.");
@@ -214,7 +211,6 @@ export async function getAllStudentTeacher(payload) {
   try {
     const res = await ApiClient.instance.post("/teacher/students", payload);
     const data = res;
-    console.log("teacherService - getAllStudentTeacher payload:", payload);
     if (data && typeof data === "object" && "data" in data) return data.data;
     if (data !== undefined && data !== null) return data;
     throw new Error("Respuesta inesperada de teacher/students.");
@@ -268,7 +264,6 @@ export async function saveAssignmentNotes(payload) {
   try {
     const res = await ApiClient.instance.post("/assignment/notes", payload);
     const data = res;
-    console.log("teacherService - saveAssignmentNotes payload:", payload);
     if (data && typeof data === "object" && "data" in data) return data.data;
     if (data !== undefined && data !== null) return data;
     throw new Error("Respuesta inesperada de assignment/notes.");
@@ -286,12 +281,10 @@ export async function updateAssignmentNote(payload) {
   if (!payload || typeof payload !== "object") {
     throw new Error("payload debe ser un objeto.");
   }
-  console.log("teacherService - updateAssignmentNote payload:", payload);
 
   try {
     const res = await ApiClient.instance.patch("/assignment_note", payload);
     const data = res;
-    console.log("teacherService - updateAssignmentNote payload:", payload);
     if (data && typeof data === "object" && "data" in data) return data.data;
     if (data !== undefined && data !== null) return data;
     throw new Error("Respuesta inesperada de assignment_note.");
@@ -309,7 +302,6 @@ export async function getAssistanceValues(payload = {}) {
   try {
     const res = await ApiClient.instance.post("/assistance/values", payload);
     const data = res;
-    console.log("teacherService - getAssistanceValues:", data);
     if (data && typeof data === "object" && "data" in data) return data.data;
     if (data !== undefined && data !== null) return data;
     throw new Error("Respuesta inesperada de /assistance/values.");
@@ -331,7 +323,6 @@ export async function registerAssistance(payload) {
   try {
     const res = await ApiClient.instance.post("/assistance/student", payload);
     const data = res;
-    console.log("teacherService - registerAssistance payload:", payload);
     if (data && typeof data === "object" && "data" in data) return data.data;
     if (data !== undefined && data !== null) return data;
     throw new Error("Respuesta inesperada de /assistance/student.");

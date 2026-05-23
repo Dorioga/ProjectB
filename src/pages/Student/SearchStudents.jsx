@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+﻿import React, { useState, useMemo, useEffect, useCallback } from "react";
 import DataTable from "../../components/atoms/DataTable";
 import useStudent from "../../lib/hooks/useStudent";
 import useSchool from "../../lib/hooks/useSchool";
@@ -14,7 +14,6 @@ const SearchStudents = () => {
   const { updateStudent, getStudent } = useStudent();
   const { getStudentGrades, journeys } = useSchool();
   const { nameSchool, idSede: authIdSede } = useAuth();
-  console.log("SearchStudents - nameSchool from auth:", nameSchool);
 
   // ── Filtros ──────────────────────────────────────────────────────────────
   const [sedeId, setSedeId] = useState("");
@@ -34,10 +33,6 @@ const SearchStudents = () => {
     setIsLoadingProfile(true);
     setIsModalOpen(true);
     try {
-      console.log(
-        "handleViewProfile - fetching full data for student:",
-        sedeId,
-      );
       const fullData = await getStudent({
         id_estudiante: student.id_estudiante,
         fk_sede: Number(sedeId || authIdSede || 0),
@@ -61,12 +56,6 @@ const SearchStudents = () => {
           return raw.toString().split(" ")[0] ?? "";
         })(),
         grupo: (() => {
-          console.log(
-            "Merging grupo - fullData:",
-            fullData,
-            "student:",
-            student,
-          );
           const raw = student?.grado ?? "";
           const parts = raw.toString().split(" ");
           return parts.length > 1

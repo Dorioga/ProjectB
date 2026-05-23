@@ -86,6 +86,9 @@ export function AuthProvider({ children }) {
   const [gradoAcargo, setGradoAcargo] = useState(() =>
     loadFromStorage("gradoAcargo"),
   );
+  const [firmaDocente, setFirmaDocente] = useState(() =>
+    loadFromStorage("firmaDocente"),
+  );
 
   // número de identificación (cedula, etc.) del usuario
   // no se persiste en localStorage, solo se mantiene en memoria
@@ -132,6 +135,7 @@ export function AuthProvider({ children }) {
     setIdPersona(null);
     setDirector(null);
     setGradoAcargo(null);
+    setFirmaDocente(null);
     setNumeroIdentificacion(null);
     setToken(null);
     sessionStorage.clear();
@@ -191,6 +195,7 @@ export function AuthProvider({ children }) {
     saveToStorage("idPersona", idPersona);
     saveToStorage("director", director);
     saveToStorage("gradoAcargo", gradoAcargo);
+    saveToStorage("firmaDocente", firmaDocente);
     // numero_identificacion intentionally not stored
     if (token) {
       localStorage.setItem("token", token);
@@ -219,6 +224,7 @@ export function AuthProvider({ children }) {
     idPersona,
     director,
     gradoAcargo,
+    firmaDocente,
     token,
   ]);
 
@@ -307,6 +313,7 @@ export function AuthProvider({ children }) {
     setFkInstitucion(data?.fk_institucion ?? null);
     setDirector(data?.director ?? null);
     setGradoAcargo(data?.grado_acargo ?? null);
+    setFirmaDocente(data?.firma_docente ?? null);
     setNumeroIdentificacion(data?.numero_identificacion ?? null);
     if (data?.color_principal || data?.color_secundario) {
       applyCustomColors(data?.color_principal, data?.color_secundario);
@@ -493,8 +500,8 @@ export function AuthProvider({ children }) {
     return authService.accessData(payload);
   }, []);
 
-  const registerSignature = useCallback(async (payload) => {
-    return authService.registerSignature(payload);
+  const registerSignature = useCallback(async (payload, rol) => {
+    return authService.registerSignature(payload, rol);
   }, []);
 
   const recoveryPassword = useCallback(async (payload) => {
@@ -527,6 +534,7 @@ export function AuthProvider({ children }) {
       idPersona,
       director,
       gradoAcargo,
+      firmaDocente,
       numero_identificacion,
       setNumeroIdentificacion,
       loading,
@@ -566,6 +574,7 @@ export function AuthProvider({ children }) {
       idPersona,
       director,
       gradoAcargo,
+      firmaDocente,
       numero_identificacion,
       loading,
       error,

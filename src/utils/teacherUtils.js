@@ -1,9 +1,8 @@
-// Utilities para normalizar datos de docentes
+﻿// Utilities para normalizar datos de docentes
 // Nota: esta función devuelve un objeto con campos básicos a nivel root (p.ej. first_name)
 //       y un arreglo `subjects`. No devuelve `basic` como objeto anidado.
 export function mapTeacherRowsToProcessed(rawData, teacherRow = {}) {
   // Acepta rawData como array de filas, o { data } o lo que venga
-  console.log("mapTeacherRowsToProcessed - rawData:", rawData);
   const rows = Array.isArray(rawData) ? rawData : (rawData?.data ?? rawData);
   if (!Array.isArray(rows) || rows.length === 0) {
     // No hay filas: rellenar campos básicos desde teacherRow si están presentes

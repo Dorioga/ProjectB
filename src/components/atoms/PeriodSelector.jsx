@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import useSchool from "../../lib/hooks/useSchool";
 
 const PeriodSelector = ({
@@ -22,7 +22,6 @@ const PeriodSelector = ({
     const loadData = async () => {
       setLocalLoading(true);
       try {
-        console.log("PeriodSelector - Cargando períodos");
         await loadPeriods();
       } catch (err) {
         console.error("PeriodSelector - Error al cargar períodos:", err);
@@ -59,7 +58,6 @@ const PeriodSelector = ({
 
   const handleChange = (e) => {
     const selectedValue = e.target.value;
-    console.log("PeriodSelector - Período seleccionado:", selectedValue);
 
     if (onChange) {
       onChange(e);

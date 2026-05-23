@@ -1,4 +1,4 @@
-import React, {
+﻿import React, {
   useState,
   useRef,
   useCallback,
@@ -714,7 +714,6 @@ const ReserveSpot = ({ mode = "Externo", onSuccess }) => {
 
     // Logo a la izquierda
     if (logoBase64) {
-      console.log("Agregando logo al PDF:", sedeInfo?.link_logo);
       doc.addImage(logoBase64, "JPEG", margin, headerStartY - 4, logoW, logoH);
     }
 
@@ -930,10 +929,6 @@ const ReserveSpot = ({ mode = "Externo", onSuccess }) => {
       if (!esInterno) {
         // Externa: subir la firma dibujada y obtener la URL resultante
         if (signatureDataPng) {
-          console.log(
-            "Subiendo firma del acudiente (PNG)...",
-            signatureDataPng,
-          );
           const fd = new FormData();
           fd.append("imageBase64", signatureDataPng);
           fd.append("folder", "acudientes");
@@ -1012,14 +1007,9 @@ const ReserveSpot = ({ mode = "Externo", onSuccess }) => {
           fk_jornada: student.jornada ? Number(student.jornada) : null,
           parentesco: guardian.parentesco,
         };
-        console.log(
-          "=== ReserveSpot payload enviado a /slots-internal ===",
-          internalPayload,
-        );
         await registerSlotsInternal(internalPayload);
       } else {
         await registerSlot(payload);
-        console.log("=== ReserveSpot payload enviado a /slots ===", payload);
       }
 
       notify.success("Reserva de cupo enviada correctamente.");

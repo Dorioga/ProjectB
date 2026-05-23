@@ -20,7 +20,7 @@ const SignatureModal = ({ isOpen, onClose, onSaved }) => {
   const [saved, setSaved] = useState(false);
 
   const sigCanvas = useRef(null);
-  const { registerSignature, numero_identificacion } = useAuth();
+  const { registerSignature, numero_identificacion, rol } = useAuth();
 
   const handleSignatureEnd = useCallback(() => {
     const data = sigCanvas.current?.toDataURL("image/png") ?? "";
@@ -35,12 +35,26 @@ const SignatureModal = ({ isOpen, onClose, onSaved }) => {
 
   const handleSaveSignature = useCallback(async () => {
     if (!signatureData || !numero_identificacion) return;
+    const rolParam =
+      rol === 7
+        ? "docentes"
+        : rol === 5
+          ? "acudientes"
+          : rol === "7"
+            ? "docentes"
+            : rol === "5"
+              ? "acudientes"
+              : null;
+    if (!rolParam) return;
     setSavingSig(true);
     try {
-      await registerSignature({
-        identificacion: numero_identificacion,
-        imageBase64: signatureData,
-      });
+      await registerSignature(
+        {
+          identificacion: numero_identificacion,
+          imageBase64: signatureData,
+        },
+        rolParam,
+      );
       setSaved(true);
       if (onSaved) onSaved();
     } catch (err) {
@@ -48,7 +62,7 @@ const SignatureModal = ({ isOpen, onClose, onSaved }) => {
     } finally {
       setSavingSig(false);
     }
-  }, [signatureData, numero_identificacion, registerSignature, onSaved]);
+  }, [signatureData, numero_identificacion, rol, registerSignature, onSaved]);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Registrar firma" size="md">

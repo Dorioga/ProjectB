@@ -1,4 +1,4 @@
-import React, {
+﻿import React, {
   createContext,
   useCallback,
   useEffect,
@@ -70,9 +70,6 @@ export function SchoolProvider({ children }) {
       // getJourneys ya devuelve el array mapeado directamente
       if (Array.isArray(journeysData)) {
         setJourneys(journeysData);
-        console.log(
-          `SchoolContext: ${journeysData.length} jornadas cargadas en el contexto`,
-        );
       } else {
         console.warn(
           "SchoolContext: respuesta de getJourneys no es un array",
@@ -104,9 +101,6 @@ export function SchoolProvider({ children }) {
         : (periodsData?.data ?? []);
 
       setPeriods(periodsArray);
-      console.log(
-        `SchoolContext: ${periodsArray.length} períodos cargados en el contexto`,
-      );
     } catch (err) {
       console.error("Error al cargar períodos:", err);
       setErrorPeriods(err);
@@ -133,11 +127,6 @@ export function SchoolProvider({ children }) {
         const payload = municipioId ? { municipioId } : {};
         const data = await schoolService.getValuesReservations(payload);
         setValuesReservations(Array.isArray(data) ? data : (data?.data ?? []));
-        console.log(
-          `SchoolContext: ${
-            Array.isArray(data) ? data.length : 0
-          } valores de reservación cargados (municipioId=${municipioId})`,
-        );
       } catch (err) {
         console.error("Error al cargar valores de reservación:", err);
         setErrorValuesReservations(err);
@@ -192,7 +181,6 @@ export function SchoolProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      console.log("SchoolContext - addSchool payload:", payload);
       const created = await schoolService.createSchool(payload);
       setSchools((s) => [created, ...s]);
       // Emitir notificación de éxito
@@ -364,7 +352,6 @@ export function SchoolProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      console.log("SchoolContext - getSedeAsignature payload:", payload);
       const result = await schoolService.getSedeAsignature(payload);
 
       return result;
@@ -403,7 +390,6 @@ export function SchoolProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      console.log("SchoolContext - getDataSede payload:", payload);
       const result = await schoolService.getDataSede(payload);
       return result;
     } catch (err) {
@@ -421,7 +407,6 @@ export function SchoolProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      console.log("SchoolContext - getDataSchool payload:", payload);
       const result = await schoolService.getDataSchool(payload);
       return result;
     } catch (err) {
@@ -601,7 +586,6 @@ export function SchoolProvider({ children }) {
     setError(null);
     try {
       const students = await schoolService.allstudent(payload);
-      console.log("Todos los estudiantes:", students);
       return students;
     } catch (error) {
       console.error("Error al obtener todos los estudiantes:", error);
@@ -615,7 +599,6 @@ export function SchoolProvider({ children }) {
   const fetchStudentAlerts = useCallback(async () => {
     try {
       const alerts = await schoolService.getStudentAlerts();
-      console.log("SchoolContext - fetchStudentAlerts:", alerts);
       return Array.isArray(alerts) ? alerts : [];
     } catch (error) {
       console.error("Error al obtener alertas de estudiantes:", error);

@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import SimpleButton from "../atoms/SimpleButton";
 import { useNotify } from "../../lib/hooks/useNotify";
 import useData from "../../lib/hooks/useData";
@@ -110,7 +110,6 @@ const RegisterDBA = ({ onClose, sedeId, gradeId, asignatureId, periodId }) => {
           dba: p.derechos.map((d) => ({ nombre_dba: d.nombre.trim() })),
         })),
       };
-      console.log("RegisterDBA - payload:", payload);
       await registerPurposes(payload);
       notify.success(
         `${purposes.length} propósito${purposes.length !== 1 ? "s" : ""} registrado${purposes.length !== 1 ? "s" : ""} correctamente.`,

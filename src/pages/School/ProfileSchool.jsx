@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useCallback } from "react";
+﻿import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import FileChooser from "../../components/atoms/FileChooser";
 import SimpleButton from "../../components/atoms/SimpleButton";
@@ -644,14 +644,9 @@ const ProfileSchool = ({
             logoForm.append("folder", "instituciones");
             logoForm.append("identificacion", String(formData.nit ?? ""));
 
-            console.log("Subiendo logo de institución...");
             const uploadRes = await upload(
               logoForm,
               "uploadfirma/instituciones",
-            );
-            console.log(
-              "Respuesta upload logo (raw):",
-              JSON.stringify(uploadRes),
             );
 
             // El ApiClient devuelve directamente res.data (el body JSON del servidor).
@@ -744,18 +739,12 @@ const ProfileSchool = ({
             })),
           };
 
-          console.log("Datos a enviar (update):", updatePayload);
 
           // Usar updateInstitution si existe, si no usar updateSchool como fallback
           if (typeof updateInstitution === "function") {
             result = await updateInstitution(schoolId, updatePayload);
-            console.log("Institución actualizada (updateInstitution):", result);
           } else {
             result = await updateSchool(schoolId, updatePayload);
-            console.log(
-              "Institución actualizada (updateSchool fallback):",
-              result,
-            );
           }
         } else {
           // Modo creación: procesar sedes y enviar payload completo
@@ -788,10 +777,8 @@ const ProfileSchool = ({
           // Excluir campos auxiliares que no se envían al backend
           delete payload.department_id;
 
-          console.log("Datos a enviar (create):", payload);
 
           result = await addSchool(payload);
-          console.log("Institución creada:", result);
         }
 
         // Llamar al callback onSuccess si fue provisto (para cerrar modal y refrescar listados)

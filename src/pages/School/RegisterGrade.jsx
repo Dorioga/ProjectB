@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import JourneySelect from "../../components/atoms/JourneySelect";
 import SedeSelect from "../../components/atoms/SedeSelect";
@@ -153,7 +153,6 @@ const RegisterGrade = ({ onSuccess }) => {
       group: formData.group,
     };
 
-    console.log("Registro de grado:", dataToSubmit);
 
     // Llamar al servicio para registrar el grado
     try {

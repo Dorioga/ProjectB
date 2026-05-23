@@ -1,4 +1,4 @@
-import React, {
+﻿import React, {
   createContext,
   useCallback,
   useEffect,
@@ -87,7 +87,6 @@ export function DataProvider({ children }) {
   const loadDepartments = useCallback(async () => {
     setLoadingDepartments(true);
     setErrorDepartments(null);
-    console.log("DataContext - loadDepartments called");
     try {
       const res = await dataService.getDepartments();
       setDepartments(Array.isArray(res) ? res : (res?.data ?? []));
@@ -154,7 +153,6 @@ export function DataProvider({ children }) {
 
       const res = await dataService.getInstitutionSede(formData);
       const sedesData = Array.isArray(res) ? res : (res?.data ?? []);
-      console.log("DataContext - loadInstitutionSedes raw:", sedesData);
       // Normalizar formato: id_sede -> id, nombre_sede -> nombre
       const normalizedSedes = sedesData.map((sede) => ({
         id: sede.id_sede || sede.id,
@@ -163,7 +161,6 @@ export function DataProvider({ children }) {
         fk_institucion: sede.fk_institucion,
         fk_workday: sede.id_jornada,
       }));
-      console.log("DataContext - loadInstitutionSedes:", normalizedSedes);
 
       setInstitutionSedes(normalizedSedes);
       return normalizedSedes;

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+﻿import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import useSchool from "../../lib/hooks/useSchool";
 import useTeacher from "../../lib/hooks/useTeacher";
 import useAuth from "../../lib/hooks/useAuth";
@@ -36,7 +36,6 @@ const ManageTeacher = () => {
     try {
       setIsTableLoading(true);
 
-      console.log("ManageTeacher - idInstitution:", idInstitution);
       if (!idInstitution) {
         console.warn(
           "ManageTeacher - idInstitution no disponible; abortando fetchAllTeachers.",
@@ -47,7 +46,6 @@ const ManageTeacher = () => {
       }
 
       const payload = { institucion: idInstitution };
-      console.log("Cargando docentes con payload:", payload);
       const response = await fetchAllTeachers(payload);
 
       // Guardar la respuesta cruda también para depuración
@@ -96,7 +94,6 @@ const ManageTeacher = () => {
         };
 
         const res = await getDataTeacher(payload);
-        console.log("ManageTeacher getDataTeacher response:", res);
 
         let processed;
         // Si getDataTeacher ya devolvió la estructura procesada, úsala tal cual

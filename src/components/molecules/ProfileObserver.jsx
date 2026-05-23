@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+﻿import { useState, useCallback } from "react";
 import SimpleButton from "../atoms/SimpleButton";
 import useStudent from "../../lib/hooks/useStudent";
 import useAuth from "../../lib/hooks/useAuth";
@@ -16,7 +16,6 @@ import tourProfileObserver from "../../tour/tourProfileObserver";
  *  - onSaved: callback opcional tras guardar exitosamente
  */
 const ProfileObserver = ({ data, onClose, onSaved }) => {
-  console.log("ProfileObserver - data received:", data);
   const { updateObservation } = useStudent();
   const {
     idInstitution,
@@ -29,12 +28,10 @@ const ProfileObserver = ({ data, onClose, onSaved }) => {
     userName,
   } = useAuth();
   const { addNotification } = useNotification();
-  console.log("ProfileObserver - data received:", fkInstitucion);
   const isDocenteRole =
     (typeof nameRole === "string" &&
       nameRole.toLowerCase().includes("docente")) ||
     String(rol) === "7";
-  console.log("ProfileObserver - AuthContext values:", isDocenteRole);
   const effectiveInstitution = isDocenteRole ? fkInstitucion : idInstitution;
 
   const [newEntry, setNewEntry] = useState("");
@@ -110,15 +107,7 @@ const ProfileObserver = ({ data, onClose, onSaved }) => {
         acudiente: student.nombre_acudiente,
       };
     });
-    console.log(
-      "ProfileObserver - Prepared student and entries for PDF:",
-      imgSchool,
-    );
     try {
-      console.log("ProfileObserver - Generando PDF con student y entries:", {
-        student,
-        entries,
-      });
       await PdfObservador({
         student,
         entries,
@@ -150,7 +139,6 @@ const ProfileObserver = ({ data, onClose, onSaved }) => {
     if (isDocenteRole) {
       payload.id_docente = Number(idDocente);
     }
-    console.log("ProfileObserver - payload for updateObservation:", payload);
     setSaving(true);
     try {
       await updateObservation(payload);

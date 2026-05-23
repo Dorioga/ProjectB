@@ -1,4 +1,4 @@
-import { ApiClient } from "./ApiClient";
+﻿import { ApiClient } from "./ApiClient";
 
 /**
  * Obtiene los tipos de identificación desde el backend.
@@ -11,7 +11,6 @@ export async function getTypeIdentification() {
   // ApiClient tiene interceptor que normalmente devuelve res.data.
   // Pero aquí usamos instance.get directamente; res ya es data por interceptor.
   const data = res;
-  console.log("DataService - getTypeIdentification:", data);
   // Validación suave del payload: aceptamos array o { data: array }.
   if (Array.isArray(data)) return data;
   if (data && typeof data === "object" && Array.isArray(data.data))
@@ -30,7 +29,6 @@ export async function getStatusBeca() {
 
   // ApiClient tiene interceptor que normalmente devuelve res.data.
   const data = res;
-  console.log("DataService - getStatusBeca:", data);
 
   // Validación suave del payload: aceptamos array o { data: array }.
   if (Array.isArray(data)) return data;
@@ -54,7 +52,6 @@ export async function registerUser(payload) {
   // ApiClient tiene interceptor que normalmente devuelve res.data.
   // Pero aquí usamos instance.post directamente; res ya es data por interceptor.
   const data = res;
-  console.log("DataService - registerUser:", data);
 
   // Validación suave del payload: devolvemos data o data.data.
   if (data && typeof data === "object" && "data" in data) return data.data;
@@ -74,7 +71,6 @@ export async function getRol() {
   // ApiClient tiene interceptor que normalmente devuelve res.data.
   // Pero aquí usamos instance.get directamente; res ya es data por interceptor.
   const data = res;
-  console.log("DataService - getRol:", data);
 
   // Validación suave del payload.
   if (Array.isArray(data)) return data;
@@ -103,7 +99,6 @@ export async function getMenuRol(formData) {
   // ApiClient tiene interceptor que normalmente devuelve res.data.
   // Pero aquí usamos instance.post directamente; res ya es data por interceptor.
   const data = res;
-  console.log("DataService - getMenuRol:", data);
 
   // Validación suave del payload: devolvemos data o data.data.
   if (data && typeof data === "object" && "data" in data) return data.data;
@@ -123,7 +118,6 @@ export async function getDepartments() {
   // ApiClient tiene interceptor que normalmente devuelve res.data.
   // Pero aquí usamos instance.get directamente; res ya es data por interceptor.
   const data = res;
-  console.log("DataService - getDepartments:", data);
 
   // Validación suave del payload: aceptamos array o { data: array }.
   if (Array.isArray(data)) return data;
@@ -155,7 +149,6 @@ export async function getCities(departmentId) {
   // ApiClient tiene interceptor que normalmente devuelve res.data.
   // Pero aquí usamos instance.get directamente; res ya es data por interceptor.
   const data = res;
-  console.log("DataService - getCities:", data);
 
   // Validación suave del payload: aceptamos array o { data: array }.
   if (Array.isArray(data)) return data;
@@ -178,7 +171,6 @@ export async function getInstitutionSede(formData) {
   const res = await ApiClient.instance.post("/institutionS/:sedeId", formData);
 
   const data = res;
-  console.log("DataService - getInstitutionSede:", data);
 
   // Validación suave del payload: devolvemos data o data.data.
   if (Array.isArray(data)) return data;
@@ -207,7 +199,6 @@ export async function getSede(formData) {
   });
 
   const data = res;
-  console.log("DataService - getSede:", data);
 
   // Validación suave del payload: devolvemos data o data.data.
   if (Array.isArray(data)) return data;
@@ -237,7 +228,6 @@ export async function registerPurposes(payload) {
   const res = await ApiClient.instance.post("/purposes", payload);
 
   const data = res;
-  console.log("DataService - registerPurposes:", data);
 
   if (data && typeof data === "object" && "data" in data) return data.data;
   if (data !== undefined && data !== null) return data;
@@ -258,7 +248,6 @@ export async function getPurpose(payload) {
   const res = await ApiClient.instance.post("/purpose/institution", payload);
 
   const data = res;
-  console.log("DataService - getPurpose:", data);
 
   if (Array.isArray(data)) return data;
   if (data && typeof data === "object" && Array.isArray(data.data))
@@ -282,7 +271,6 @@ export async function getDbaByPurpose(payload) {
   const res = await ApiClient.instance.post("/dba/purpose", payload);
 
   const data = res;
-  console.log("DataService - getDbaByPurpose:", data);
 
   if (Array.isArray(data)) return data;
   if (data && typeof data === "object" && Array.isArray(data.data))
@@ -306,7 +294,6 @@ export async function getTransitionNotes(payload) {
   const res = await ApiClient.instance.post("/note/transition", payload);
 
   const data = res;
-  console.log("DataService - getTransitionNotes:", data);
 
   if (Array.isArray(data)) return data;
   if (data && typeof data === "object" && Array.isArray(data.data))
@@ -333,7 +320,6 @@ export async function getStudentTransitionNotes(payload) {
   );
 
   const data = res;
-  console.log("DataService - getStudentTransitionNotes:", data);
 
   if (Array.isArray(data)) return data;
   if (data && typeof data === "object" && Array.isArray(data.data))
@@ -360,7 +346,6 @@ export async function getDbasByPurposeInstitution(payload) {
   );
 
   const data = res;
-  console.log("DataService - getDbasByPurposeInstitution:", data);
 
   if (Array.isArray(data)) return data;
   if (data && typeof data === "object" && Array.isArray(data.data))
@@ -383,7 +368,6 @@ export async function transitionPurpose(idPurpose, body) {
     body,
   );
   const data = res;
-  console.log("DataService - transitionPurpose:", data);
   if (data && typeof data === "object" && "data" in data) return data.data;
   if (data !== undefined && data !== null) return data;
   throw new Error("Respuesta inesperada de transitionPurpose.");
@@ -398,7 +382,6 @@ export async function transitionPurpose(idPurpose, body) {
 export async function transitionDba(idDba, body) {
   const res = await ApiClient.instance.patch(`/DBA/transition/${idDba}`, body);
   const data = res;
-  console.log("DataService - transitionDba:", data);
   if (data && typeof data === "object" && "data" in data) return data.data;
   if (data !== undefined && data !== null) return data;
   throw new Error("Respuesta inesperada de transitionDba.");

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import useSchool from "../../lib/hooks/useSchool";
 import useAuth from "../../lib/hooks/useAuth";
 
@@ -29,23 +29,9 @@ const AsignatureSelector = ({
   const additionalParamsStr = JSON.stringify(additionalParams);
 
   // Log para debugging
-  console.log(
-    "AsignatureSelector RENDER - workdayId:",
-    workdayId,
-    "additionalParamsStr:",
-    additionalParamsStr,
-  );
 
   // Cargar asignaturas cuando cambie la sede o jornada
   useEffect(() => {
-    console.log(
-      "AsignatureSelector useEffect TRIGGERED - autoLoad:",
-      autoLoad,
-      "disabled:",
-      disabled,
-      "hasToken:",
-      !!token,
-    );
 
     // No intentar cargar si no hay token (usuario desconectado)
     if (!token) {
@@ -72,13 +58,6 @@ const AsignatureSelector = ({
       ? Object.keys(JSON.parse(additionalParamsStr)).length > 0
       : isValidSedeId && isValidWorkdayId;
 
-    console.log("AsignatureSelector - canLoad:", canLoad, {
-      sedeId,
-      workdayId,
-      isValidSedeId,
-      isValidWorkdayId,
-      customFetchMethod,
-    });
 
     if (!canLoad) {
       setAsignaturas([]);
@@ -101,14 +80,7 @@ const AsignatureSelector = ({
               idWorkDay: Number(workdayId),
             };
 
-        console.log(
-          "AsignatureSelector - Cargando asignaturas con payload:",
-          payload,
-          "usingCustomMethod:",
-          !!customFetchMethod,
-        );
         const response = await fetchMethod(payload);
-        console.log("AsignatureSelector - Respuesta:", response);
 
         // Extraer las asignaturas de la respuesta
         const data = Array.isArray(response)
@@ -117,7 +89,6 @@ const AsignatureSelector = ({
             ? response.data
             : [];
 
-        console.log("AsignatureSelector - Asignaturas procesadas:", data);
         setAsignaturas(data);
       } catch (err) {
         // Si el token es inválido, ApiClient ya limpiará el token del localStorage.
@@ -211,10 +182,6 @@ const AsignatureSelector = ({
               "",
           ).trim(),
         };
-        console.log(
-          "AsignatureSelector - Jornada detectada al seleccionar:",
-          journeyObj,
-        );
         // Enviar objeto {id, name} para que los selectores puedan usar ambos valores
         onJourneyDetected(journeyObj);
       }

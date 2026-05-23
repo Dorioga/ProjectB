@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import JourneySelect from "../../components/atoms/JourneySelect";
 import SedeSelect from "../../components/atoms/SedeSelect";
@@ -214,7 +214,6 @@ const RegisterAsignature = ({ onSuccess }) => {
         description: formData.description.trim(),
       };
 
-      console.log("Asignatura a registrar:", payload);
 
       await registerAsignature(payload);
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import useData from "../../lib/hooks/useData";
 import useAuth from "../../lib/hooks/useAuth";
 
@@ -50,7 +50,6 @@ const RoleSelector = ({
       })
       .filter((x) => x.id && x.name);
 
-    console.log("rol in RoleSelector:", rol);
 
     // Filtrar roles según el valor numérico de rol
     const rolNumber = String(rol).trim();

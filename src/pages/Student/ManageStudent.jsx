@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+﻿import { useState, useMemo, useEffect, useCallback } from "react";
 import useSchool from "../../lib/hooks/useSchool";
 import useAuth from "../../lib/hooks/useAuth";
 import DataTable from "../../components/atoms/DataTable";
@@ -30,7 +30,6 @@ const ManageStudent = () => {
 
   // Cargar estudiantes - memoizado para evitar recreación en cada render
   const fetchStudentsData = useCallback(async () => {
-    console.log("ManageStudent - idInstitution:", idInstitution);
     if (!idInstitution) {
       console.warn(
         "ManageStudent - idInstitution no disponible; abortando fetchAllStudents.",
@@ -43,9 +42,6 @@ const ManageStudent = () => {
     setFetchError(null);
 
     try {
-      console.log("ManageStudent - llamando fetchAllStudents con:", {
-        institucion: idInstitution,
-      });
       const response = await fetchAllStudents({ institucion: idInstitution });
       const students = Array.isArray(response)
         ? response

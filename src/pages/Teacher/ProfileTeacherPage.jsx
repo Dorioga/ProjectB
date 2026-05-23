@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import useAuth from "../../lib/hooks/useAuth";
 import useTeacher from "../../lib/hooks/useTeacher";
 import ProfileTeacher from "../../components/molecules/ProfileTeacher";
@@ -31,7 +31,6 @@ const ProfileTeacherPage = () => {
           fk_sede: Number(idSede),
         };
         const res = await getDataTeacher(payload);
-        console.log("ProfileTeacherPage - getDataTeacher response:", res);
 
         let processed;
         if (res && typeof res === "object" && (res.basic || res.subjects)) {

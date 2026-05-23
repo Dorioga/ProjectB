@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import useSchool from "../../lib/hooks/useSchool";
 import useAuth from "../../lib/hooks/useAuth";
 
@@ -18,21 +18,6 @@ const GradeSelector = ({
   additionalParams = {},
   staticOptions = null,
 }) => {
-  console.log("GradeSelector - props:", {
-    name,
-    label,
-    labelClassName,
-    value,
-    onChange,
-    placeholder,
-    className,
-    disabled,
-    sedeId,
-    workdayId,
-    autoLoad,
-    customFetchMethod,
-    additionalParams,
-  });
 
   const { getGradeSede, loading } = useSchool();
   const { token } = useAuth();
@@ -55,16 +40,6 @@ const GradeSelector = ({
     // Si se proveen opciones estáticas, no hacer fetch
     if (staticOptions !== null) return;
 
-    console.log(
-      "GradeSelector useEffect TRIGGERED - disabled:",
-      disabled,
-      "sedeId:",
-      sedeId,
-      "workdayId:",
-      workdayId,
-      "hasToken:",
-      !!token,
-    );
 
     // No intentar cargar si no hay token (usuario desconectado)
     if (!token) {
@@ -95,14 +70,6 @@ const GradeSelector = ({
       ? Boolean(sedeId) || hasSedeInParams
       : isValidSedeId && isValidWorkdayId;
 
-    console.log("GradeSelector - canLoad:", canLoad, {
-      sedeId,
-      workdayId,
-      isValidSedeId,
-      isValidWorkdayId,
-      customFetchMethod,
-      hasSedeInParams,
-    });
 
     if (!canLoad) {
       setGrades([]);
@@ -113,12 +80,6 @@ const GradeSelector = ({
       setLoadingGrades(true);
       try {
         const parsedParams = parsedAdditionalParams;
-        console.log("GradeSelector - Cargando grados:", {
-          sedeId,
-          workdayId,
-          additionalParams: parsedParams,
-          usingCustomMethod: !!customFetchMethod,
-        });
 
         const fetchMethod = customFetchMethod || getGradeSede;
 
@@ -143,7 +104,6 @@ const GradeSelector = ({
               : []
             : [];
 
-        console.log("GradeSelector - Grados cargados:", gradesData);
         setGrades(gradesData);
       } catch (err) {
         // Silenciar errores relacionados con token inválido para evitar spam al hacer logout

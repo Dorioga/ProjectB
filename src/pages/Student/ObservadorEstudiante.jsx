@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useContext } from "react";
+﻿import React, { useState, useCallback, useContext } from "react";
 import { StudentContext } from "../../lib/context/StudentContext";
 import Loader from "../../components/atoms/Loader";
 import SimpleButton from "../../components/atoms/SimpleButton";
@@ -114,7 +114,6 @@ const ObservadorEstudiante = ({ onClose }) => {
     if (!form.observacion.trim()) return;
 
     setSubmitLoading(true);
-    console.log("handleFormSubmit invoked with form data:", form);
     const datePrefix = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
     const payload = {
       fk_estudiante: student.id_estudiante,
@@ -164,10 +163,8 @@ const ObservadorEstudiante = ({ onClose }) => {
   };
 
   const handleSearch = async () => {
-    console.log("handleSearch invoked, studentId=", studentId);
     const value = studentId.trim();
     if (!value) {
-      console.log("handleSearch aborted: empty value");
       return;
     }
     setLoading(true);
@@ -176,7 +173,6 @@ const ObservadorEstudiante = ({ onClose }) => {
         numberId: value,
         fk_institucion: effectiveInstitution,
       });
-      console.log("ObservadorEstudiante: Resultado de búsqueda:", found);
       // soporte en caso que contexto no normalice
       if (Array.isArray(found)) found = found[0] || null;
       if (found?.tiene_observacion) {

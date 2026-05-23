@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import { sha256 } from "js-sha256";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import TypeDocumentSelector from "../../components/molecules/TypeDocumentSelector";
@@ -68,7 +68,6 @@ const RegisterParents = ({ fkEstudiante, onSuccess }) => {
         numero_identificacion_estu: Number(value),
         fk_institucion: Number(idInstitution),
       });
-      console.log("Estudiante encontrado:", found.fk_sede);
       setFoundStudentId(found.id_estudiante);
       setResolvedSede(found.fk_sede);
       setSearchStatus("found");

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import { sha256 } from "js-sha256";
 import Loader from "../../components/atoms/Loader";
 import SimpleButton from "../../components/atoms/SimpleButton";
@@ -181,11 +181,9 @@ const RegisterUser = () => {
       payload.idInstitution = parseInt(formData.idInstitution, 10);
     }
 
-    console.log("Payload a enviar:", payload);
 
     try {
       const res = await registerUser(payload);
-      console.log("Usuario registrado:", res);
       addNotification("Usuario registrado exitosamente.", "success");
       setFormData({
         identificationtype: "",

@@ -1,4 +1,4 @@
-import { jsPDF } from "jspdf";
+﻿import { jsPDF } from "jspdf";
 
 /**
  * Genera y descarga el PDF del Observador del Estudiante.
@@ -16,12 +16,6 @@ const PdfObservador = async ({
   year,
   logoSrc = null,
 }) => {
-  console.log("Generando PDF con datos:", {
-    student,
-    entries,
-    nameSchool,
-    year,
-  });
   const pdf = new jsPDF("p", "mm", "a4");
   const pageW = 210;
   const marginX = 10;
@@ -298,7 +292,6 @@ const PdfObservador = async ({
   };
 
   const drawEntry = (entry, startY) => {
-    console.log("Dibujando entrada:", entry);
     const lines = splitText(entry.observacion || "", OBS_COL_OBS_W - 3, 8);
     const obsH = Math.max(MIN_OBS_H, textBlockHeight(lines, LINE_H) + 4);
     const hasSigs =

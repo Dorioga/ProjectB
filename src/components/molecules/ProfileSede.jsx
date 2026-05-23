@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import SimpleButton from "../atoms/SimpleButton";
 import JourneySelect from "../atoms/JourneySelect";
 import tourProfileSede from "../../tour/tourProfileSede";
@@ -62,7 +62,6 @@ const ProfileSede = ({
           if (!Number.isNaN(parsedWorkday)) {
             payload.workday = parsedWorkday;
           }
-          console.log("ProfileSede - payload to save:", payload);
           // Llamar al callback con la carga transformada
           await onSave(id, payload);
 

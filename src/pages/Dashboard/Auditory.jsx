@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from "react";
+﻿import { useMemo, useState, useCallback } from "react";
 import DataTable from "../../components/atoms/DataTable";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import AuditoryModal from "../../components/molecules/AuditoryModal";
@@ -39,7 +39,6 @@ const Auditory = () => {
 
   // Handler estable
   const handleOpenModal = useCallback((mode, rowData = null) => {
-    console.log("Abriendo modal en modo:", mode, "con datos:", rowData);
     setModeModal(mode);
     setSelectedData(rowData);
     setIsOpenModal(true);

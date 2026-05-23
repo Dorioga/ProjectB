@@ -106,11 +106,11 @@ export async function accessData(payload) {
  * @param {Object} payload - Debe incluir al menos idPersona y signature (base64).
  * @returns {Promise} Respuesta del servidor.
  */
-export async function registerSignature(payload) {
+export async function registerSignature(payload, rol) {
   if (!payload || typeof payload !== "object") {
     throw new Error("Payload inválido para registerSignature");
   }
-  return ApiClient.instance.post("/uploadfirma/acudientes", payload);
+  return ApiClient.instance.post("/uploadfirma/" + rol, payload);
 }
 
 /**

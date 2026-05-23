@@ -1,4 +1,4 @@
-import { ApiClient } from "./ApiClient";
+﻿import { ApiClient } from "./ApiClient";
 import { studentsResponse as studentsMock } from "./DataExamples/studentsResponse";
 
 export async function registerStudent(payload) {
@@ -10,7 +10,6 @@ export async function registerStudent(payload) {
 
   // ApiClient tiene interceptor que normalmente devuelve res.data.
   const data = res;
-  console.log("StudentService - registerStudent:", data);
 
   // Validación suave del payload: devolvemos data o data.data.
   if (data && typeof data === "object" && "data" in data) return data.data;
@@ -43,10 +42,8 @@ export async function uploadStudentsExcel(file) {
   formData.append("archivo", file, fileName);
 
   const res = await ApiClient.instance.post("/upload/students/file", formData);
-  console.log("StudentService - uploadStudentsExcel llamado con file:", res);
   const responseData = res;
 
-  console.log("StudentService - uploadStudentsExcel:", responseData);
 
   // Validación suave del payload: devolvemos data o data.data.
   if (
@@ -88,7 +85,6 @@ export async function getStudentByIdentification(payload) {
     payload,
   );
   const data = res?.data[0] ?? res;
-  console.log("StudentService - getStudentByIdentification:", res);
   if (!data?.id_estudiante) throw new Error("Estudiante no encontrado.");
   return data;
 }
@@ -178,7 +174,6 @@ export async function getQR(payload) {
   }
   const res = await ApiClient.instance.post("/student/data/qr", payload);
   const data = res;
-  console.log("StudentService - getQR:", data);
   if (data && typeof data === "object" && "data" in data) return data.data;
   if (data !== undefined && data !== null) return data;
   throw new Error("Respuesta inesperada de /student/data/qr.");
@@ -205,7 +200,6 @@ export async function updateStudent(studentId, personId, payload) {
   );
 
   const data = res;
-  console.log("StudentService - updateStudent:", data);
 
   if (data && typeof data === "object" && "data" in data) return data.data;
   if (data !== undefined && data !== null) return data;
@@ -238,7 +232,6 @@ export async function registerObservation(payload) {
   }
 
   const res = await ApiClient.instance.post("/observation/add", payload);
-  console.log("StudentService - registerObservation:", res);
 
   if (res && typeof res === "object" && "data" in res) return res;
   if (res !== undefined && res !== null) return res;
@@ -259,7 +252,6 @@ export async function getObservationData(payload) {
   }
 
   const res = await ApiClient.instance.post("/data/observation", payload);
-  console.log("StudentService - getObservationData:", res);
 
   const data = Array.isArray(res) ? res : (res?.data ?? []);
   return data;
@@ -278,7 +270,6 @@ export async function updateObservation(payload) {
   }
 
   const res = await ApiClient.instance.patch("/observer/:value", payload);
-  console.log("StudentService - updateObservation:", res);
 
   if (res && typeof res === "object" && "data" in res) return res;
   if (res !== undefined && res !== null) return res;
@@ -348,7 +339,6 @@ export async function getStudentObserver(payload) {
   }
   const res = await ApiClient.instance.post("/data/student/observer", payload);
   const data = res?.data ?? res;
-  console.log("StudentService - getStudentObserver:", data);
   if (!data[0]?.id_estudiante) throw new Error("Estudiante no encontrado.");
   return data;
 }
@@ -366,7 +356,6 @@ export async function getStudentGuardian(payload) {
   }
   const res = await ApiClient.instance.post("/guardian-student", payload);
   const data = Array.isArray(res) ? res : (res?.data ?? []);
-  console.log("StudentService - getStudentGuardian:", data);
   return data;
 }
 
@@ -384,15 +373,10 @@ export async function getDataStudentGuardian(payload) {
   const res = await ApiClient.instance.post("/guardian-reservations", payload);
   const raw = Array.isArray(res) ? res : (res?.data ?? []);
   const data = Array.isArray(raw) ? raw[0] : raw;
-  console.log("StudentService - getGuardianReservations:", data);
   return data;
 }
 
 export async function getStudentNotesById(studentId) {
-  console.log(
-    "StudentService - getStudentNotesById llamado con studentId:",
-    studentId,
-  );
   if (!studentId)
     throw new Error("studentId es requerido para getStudentNotesById");
   const res = await ApiClient.post(`/note/student/${studentId}`);
@@ -415,7 +399,6 @@ export async function getBoletin(payload) {
   }
   const res = await ApiClient.instance.post("/students/boletin", payload);
   const data = res;
-  console.log("StudentService - getBoletin:", data);
   if (data && typeof data === "object" && "data" in data) return data.data;
   if (data !== undefined && data !== null) return data;
   throw new Error("Respuesta inesperada de /students/boletin.");
@@ -434,7 +417,6 @@ export async function getBoletinDocente(payload) {
   }
   const res = await ApiClient.instance.post("/docente/boletin", payload);
   const data = res;
-  console.log("StudentService - getBoletinDocente:", data);
   if (data && typeof data === "object" && "data" in data) return data.data;
   if (data !== undefined && data !== null) return data;
   throw new Error("Respuesta inesperada de /docente/boletin.");
@@ -453,7 +435,6 @@ export async function getStudentAssistence(payload) {
   }
   const res = await ApiClient.instance.post("/students/assistence", payload);
   const data = res;
-  console.log("StudentService - getStudentAssistence:", data);
   if (data && typeof data === "object" && "data" in data) return data.data;
   if (Array.isArray(data)) return data;
   if (data !== undefined && data !== null) return data;

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+﻿import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import DataTable from "../../components/atoms/DataTable";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import Modal from "../../components/atoms/Modal";
@@ -15,12 +15,6 @@ const ManageBoletin = () => {
   const { getStudentGrades } = useSchool();
   const { getTeacherSede, getTeacherGrades } = useTeacher();
   const { idSede, nameSede, idDocente, token, gradoAcargo } = useAuth();
-  console.log("ManageBoletin - Auth Data:", {
-    idSede,
-    nameSede,
-    idDocente,
-    gradoAcargo,
-  });
   const notify = useNotify();
 
   // ── Filtros ─────────────────────────────────────────────────────────────

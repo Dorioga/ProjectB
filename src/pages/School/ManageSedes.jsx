@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+﻿import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import useAuth from "../../lib/hooks/useAuth";
 import useData from "../../lib/hooks/useData";
 import useSchool from "../../lib/hooks/useSchool";
@@ -123,7 +123,6 @@ const ManageSedes = () => {
       setSelectedSede(null);
       setInitialEditing(true);
       setIsModalOpen(true);
-      console.log("Editing sede:", sede);
       try {
         const payload = {
           idInstitution: idInstitution,

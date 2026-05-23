@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+﻿import { useState, useRef, useCallback } from "react";
 import Modal from "../atoms/Modal";
 import SimpleButton from "../atoms/SimpleButton";
 import Loader from "../atoms/Loader";
@@ -33,7 +33,6 @@ const TermsModal = ({ isOpen, onClose, onAccept, pendingIdPersona }) => {
     let idPersona = pendingIdPersona
       ? pendingIdPersona
       : parseIdPersona(localStorage.getItem("idPersona"));
-    console.log("Enviando aceptación de términos para idPersona:", idPersona);
     try {
       await accessData({ fk_perona: idPersona, numero_identificacion });
       localStorage.setItem("termsAccepted", "true");

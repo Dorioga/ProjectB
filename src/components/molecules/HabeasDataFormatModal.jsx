@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import Modal from "../atoms/Modal.jsx";
 import useStudent from "../../lib/hooks/useStudent.js";
 import useData from "../../lib/hooks/useData";
@@ -7,7 +7,6 @@ import SimpleButton from "../atoms/SimpleButton.jsx";
 import RegisterParentsModal from "./RegisterParentsModal.jsx";
 const HabeasDataModal = ({ isOpen, onClose, idEstudiante, mode = "view" }) => {
   const [isLoading, setIsLoading] = useState(false);
-  console.log("ID del estudiante en HabeasDataModal:", idEstudiante);
 
   const { getStudent } = useStudent();
   const { institutionSedes } = useData();

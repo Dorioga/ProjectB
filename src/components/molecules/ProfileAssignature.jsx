@@ -1,9 +1,8 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+﻿import { useState, useEffect, useRef, useCallback } from "react";
 import SimpleButton from "../atoms/SimpleButton";
 import tourProfileAssignature from "../../tour/tourProfileAssignature";
 
 const ProfileAssignature = ({ data, onSave, initialEditing = false }) => {
-  console.log("ProfileAssignature - data:", data);
   const safeData = data || {};
   const [isEditing, setIsEditing] = useState(Boolean(initialEditing));
   const [isSaving, setIsSaving] = useState(false);

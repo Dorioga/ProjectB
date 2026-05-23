@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+﻿import { useState, useEffect, useCallback } from "react";
 import useAuth from "../../lib/hooks/useAuth";
 import PreviewIMG from "../atoms/PreviewIMG";
 import PeriodSelector from "../atoms/PeriodSelector";
@@ -56,7 +56,6 @@ const ProfileStudent = ({
     };
   }, []);
 
-  console.log(" 123 Data en ProfileStudent:", data);
   ///Preguntar el State
   const [isEditing, setIsEditing] = useState(Boolean(initialEditing));
 
@@ -257,18 +256,9 @@ const ProfileStudent = ({
           data,
         );
       }
-      console.log(
-        "Invocando onSave con studentId:",
-        studentId,
-        "personId:",
-        personId,
-        "updatedData:",
-        updatedData,
-      );
       onSave(studentId, personId, updatedData);
     }
 
-    console.log("Payload para actualización:", updatedData);
   };
 
   const handleImageCapture = (file, preview) => {
@@ -283,7 +273,6 @@ const ProfileStudent = ({
     }));
   };
   const handleStateChange = (field, value) => {
-    console.log("Cambiando campo:", field, "a valor:", value);
     if (field === "state_beca" && value === "Retirado") {
       setEditedData((prev) => ({
         ...prev,
@@ -297,9 +286,7 @@ const ProfileStudent = ({
   };
   const handleExcuseSubmit = ({ file }) => {
     if (file) {
-      console.log("Archivo de excusa:", file);
     } else {
-      console.log("No se adjuntó ningún archivo.");
     }
   };
 

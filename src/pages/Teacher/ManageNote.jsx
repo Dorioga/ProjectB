@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+﻿import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import DataTable from "../../components/atoms/DataTable";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import Modal from "../../components/atoms/Modal";
@@ -147,7 +147,6 @@ const ManageNote = () => {
         fk_periodo: Number(periodId),
         fk_asignatura: Number(asignatureId),
       };
-      console.log("ManageNote - payload:", payload);
 
       let data;
       if (isTransicion) {

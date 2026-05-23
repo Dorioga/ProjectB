@@ -1,4 +1,4 @@
-import { ApiClient } from "./ApiClient";
+﻿import { ApiClient } from "./ApiClient";
 
 /**
  * uploadService: envía un payload (por ejemplo un archivo) junto a un nombre
@@ -40,7 +40,6 @@ export async function upload(payload, name) {
   });
 
   const body = payload; // lo enviamos tal cual
-  console.log("Iniciando upload con payload:", body, "y nombre:", name);
   // Usar URL completa para que el servicio siempre apunte al host fijo
   const endpoint = "https://nexusplataforma.com/api/" + name;
 

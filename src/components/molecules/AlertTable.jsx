@@ -1,9 +1,8 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import DataTable from "../atoms/DataTable";
 import SimpleButton from "../atoms/SimpleButton";
 
 const AlertTable = ({ alerts, onRefresh }) => {
-  console.log("Alertas recibidas en AlertTable:", alerts);
   // Definir las columnas para el DataTable
   const columns = useMemo(
     () => [

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+﻿import React, { useState, useCallback } from "react";
 import Modal from "../atoms/Modal";
 import { KeyRound, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { updatePassword } from "../../services/authService";
@@ -58,7 +58,6 @@ const InputPassword = ({
 const ChangePasswordModal = ({ isOpen, onClose }) => {
   const { idPersona, userName, nameRole } = useAuth();
   const { addNotification } = useNotification();
-  console.log("ChangePasswordModal renderizado con idPersona:", idPersona);
   const [form, setForm] = useState(INITIAL_FORM);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);

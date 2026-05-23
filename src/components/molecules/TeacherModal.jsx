@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import Modal from "../atoms/Modal";
 import ProfileTeacher from "./ProfileTeacher";
 
@@ -12,7 +12,6 @@ const TeacherModal = ({
   onReload,
 }) => {
   const title = teacher ? "Perfil del docente" : "Crear nuevo docente";
-  console.log("TeacherModal teacher:", teacher);
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="7xl">
       <ProfileTeacher

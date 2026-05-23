@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import SedeSelect from "../../components/atoms/SedeSelect";
 import JourneySelect from "../../components/atoms/JourneySelect";
@@ -620,10 +620,6 @@ const RegisterRecords = ({ onClose }) => {
                   customFetchMethod={getTeacherSubjects}
                   additionalParams={teacherSubjectsParams}
                   onJourneyDetected={(journey) => {
-                    console.log(
-                      "RegisterRecords - Jornada detectada de asignatura:",
-                      journey,
-                    );
                     if (journey && journey.id) {
                       setWorkdaySelected(String(journey.id));
                       setDetectedJourney(journey);

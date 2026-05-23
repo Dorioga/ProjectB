@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+﻿import { useState, useMemo, useEffect, useCallback } from "react";
 import useSchool from "../../lib/hooks/useSchool";
 import useAuth from "../../lib/hooks/useAuth";
 import useData from "../../lib/hooks/useData";
@@ -78,10 +78,6 @@ const ManageAsignature = () => {
         idWorkDay: Number(selectedJornada),
       };
 
-      console.log(
-        "ManageAsignature - llamando getSedeAsignature con:",
-        payload,
-      );
       const response = await getSedeAsignature(payload);
 
       // Extraer el array de asignaturas de la respuesta
@@ -89,7 +85,6 @@ const ManageAsignature = () => {
         ? response
         : (response?.data ?? []);
 
-      console.log("ManageAsignature - asignaturas recibidas:", asignaturas);
       setTableData(sortAlphabetically(asignaturas, "nombre_asignatura"));
     } catch (error) {
       console.error("Error al cargar asignaturas:", error);

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import JourneySelect from "../../components/atoms/JourneySelect";
 import SedeSelect from "../../components/atoms/SedeSelect";
@@ -42,7 +42,6 @@ const RegisterTeacher = ({ onSuccess }) => {
 
   // El componente AsignatureGrades gestiona su estado interno y la carga de grados.
   const handleAddAsignature = (asign) => {
-    console.log("Agregar asignatura:", asign);
     setFormData((prev) => ({
       ...prev,
       asignature: [...prev.asignature, asign],
@@ -175,7 +174,6 @@ const RegisterTeacher = ({ onSuccess }) => {
   };
 
   const handleSubmit = async (e) => {
-    console.log("Iniciando proceso de registro de docente...");
     e.preventDefault();
     setSubmitOk(false);
 
@@ -271,12 +269,9 @@ const RegisterTeacher = ({ onSuccess }) => {
     };
 
     // Mostrar en consola qué se va a enviar
-    console.log("📤 Datos que se enviarán al backend:");
-    console.log(payload);
 
     try {
       const result = await addTeacher(payload);
-      console.log("Docente registrado exitosamente:", result);
       setSubmitOk(true);
 
       // Limpiar formulario después del registro exitoso

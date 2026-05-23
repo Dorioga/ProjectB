@@ -1,4 +1,4 @@
-import React, {
+﻿import React, {
   createContext,
   useCallback,
   useEffect,
@@ -40,7 +40,6 @@ export function StudentProvider({ children }) {
   // }, [loadStudents]);
 
   const getStudent = useCallback(async (payload) => {
-    console.log("StudentContext: getStudent llamado con payload:", payload);
 
     // Aceptar tanto identificación simple como objeto payload
     const arg =
@@ -72,10 +71,6 @@ export function StudentProvider({ children }) {
     setError(null);
     try {
       const studentRaw = await studentService.getStudent(arg);
-      console.log(
-        "StudentContext: Detalles del estudiante obtenidos (raw):sss",
-        studentRaw,
-      );
 
       // Normalizar los campos para la UI (ProfileStudent espera claves en inglés/normalizadas)
       const s = studentRaw || {};
@@ -181,7 +176,6 @@ export function StudentProvider({ children }) {
 
   // Sube un Excel para carga masiva de estudiantes.
   const uploadStudentsExcel = useCallback(async (file) => {
-    console.log("StudentContext: uploadStudentsExcel llamado con file:", file);
     setLoading(true);
     setError(null);
     try {
@@ -201,7 +195,6 @@ export function StudentProvider({ children }) {
 
     try {
       const res = await studentService.getStudentNotesById(studentId);
-      console.log("StudentContext: Notas del estudiante obtenidas:", res);
       return Array.isArray(res) ? res : (res?.data ?? []);
     } catch (err) {
       setError(err);

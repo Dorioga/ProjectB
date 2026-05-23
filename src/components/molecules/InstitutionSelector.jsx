@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from "react";
+﻿import React, { useEffect, useMemo, useRef } from "react";
 import useSchool from "../../lib/hooks/useSchool";
 
 const InstitutionSelector = ({
@@ -26,7 +26,6 @@ const InstitutionSelector = ({
       setLoadingInstitutions(true);
       try {
         const response = await getInstitution();
-        console.log("InstitutionSelector - fetched institutions:", response);
 
         // El response puede ser un array directo o tener una propiedad data
         let data = [];

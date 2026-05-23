@@ -1,4 +1,4 @@
-import { ApiClient } from "./ApiClient";
+﻿import { ApiClient } from "./ApiClient";
 
 /**
  * Crea una o varias sedes para una institución.
@@ -15,7 +15,6 @@ export async function createSede(payload) {
   }
   const res = await ApiClient.instance.post("/sede", payload);
   const data = res;
-  console.log("SchoolService - createSede:", data);
   if (data && typeof data === "object" && "data" in data) return data.data;
   if (data !== undefined && data !== null) return data;
   throw new Error("Respuesta inesperada de /sede.");
@@ -31,7 +30,6 @@ export async function getInstitution() {
   try {
     const res = await ApiClient.get("/institution");
     const data = res?.data ?? res;
-    console.log("SchoolService - getInstitution:", data);
 
     if (data && typeof data === "object" && "data" in data) return data.data;
     if (data !== undefined && data !== null) return data;
@@ -62,7 +60,6 @@ export async function createSchool(payload) {
   // ApiClient tiene interceptor que normalmente devuelve res.data.
   // Pero aquí usamos instance.post directamente; res ya es data por interceptor.
   const data = res;
-  console.log("SchoolService - createSchool:", data);
 
   // Validación suave del payload: devolvemos data o data.data.
   if (data && typeof data === "object" && "data" in data) return data.data;
@@ -92,7 +89,6 @@ export async function getJourneys() {
         label: String(item.name),
       }));
 
-    console.log(`getJourneys: ${journeys.length} jornadas cargadas`);
     return journeys;
   } catch (error) {
     console.error("Error en getJourneys:", error);
@@ -110,7 +106,6 @@ export async function getPeriods() {
     const res = await ApiClient.get("/periods");
     const data = Array.isArray(res) ? res : (res?.data ?? []);
 
-    console.log("SchoolService - getPeriods:", data);
 
     // Validación suave del payload: aceptamos array o { data: array }.
     if (Array.isArray(data)) return data;
@@ -138,7 +133,6 @@ export async function registerGrade(gradeData) {
   // ApiClient tiene interceptor que normalmente devuelve res.data.
   // Pero aquí usamos instance.post directamente; res ya es data por interceptor.
   const data = res;
-  console.log("SchoolService - registerGrade:", data);
 
   // Validación suave del payload: devolvemos data o data.data.
   if (data && typeof data === "object" && "data" in data) return data.data;
@@ -159,10 +153,8 @@ export async function updateInstitution(id, payload) {
   if (!payload || typeof payload !== "object") {
     throw new Error("payload debe ser un objeto.");
   }
-  console.log("SchoolService - updateInstitution payload:", payload);
   const res = await ApiClient.instance.patch(`/institution/${id}`, payload);
   const data = res;
-  console.log("SchoolService - updateInstitution:", data);
 
   // Validación suave del payload: devolvemos data o data.data.
   if (data && typeof data === "object" && "data" in data) return data.data;
@@ -198,7 +190,6 @@ export async function updateSede(institutionId, sedeId, payload) {
   );
 
   const data = res;
-  console.log("SchoolService - updateSede:", data);
 
   // Validación suave del payload: devolvemos data o data.data.
   if (data && typeof data === "object" && "data" in data) return data.data;
@@ -217,13 +208,11 @@ export async function getGradeSede(payload) {
   if (!payload || typeof payload !== "object") {
     throw new Error("payload debe ser un objeto.");
   }
-  console.log("SchoolService - getGradeSede payload:", payload);
 
   const res = await ApiClient.instance.post("/grade/:sedeId", payload);
 
   // ApiClient tiene interceptor que normalmente devuelve res.data.
   const data = res;
-  console.log("SchoolService - getGradeSede:", data);
 
   // Validación suave del payload: devolvemos data o data.data.
   if (data && typeof data === "object" && "data" in data) return data.data;
@@ -246,7 +235,6 @@ export async function registerAsignature(payload) {
   const res = await ApiClient.instance.post("/asignatures", payload);
 
   const data = res;
-  console.log("SchoolService - registerAsignature:", data);
 
   // Validación suave del payload: devolvemos data o data.data.
   if (data && typeof data === "object" && "data" in data) return data.data;
@@ -276,18 +264,12 @@ export async function getSedeAsignature(payload) {
   const res = await ApiClient.instance.post("/sedes/:id/subjects", payload);
 
   const data = res;
-  console.log("SchoolService - getSedeAsignature respuesta completa:", data);
 
   // Validación suave del payload: devolvemos data o data.data.
   if (data && typeof data === "object" && "data" in data) {
-    console.log(
-      "SchoolService - getSedeAsignature retornando data.data:",
-      data.data,
-    );
     return data.data;
   }
   if (data !== undefined && data !== null) {
-    console.log("SchoolService - getSedeAsignature retornando data:", data);
     return data;
   }
 
@@ -309,19 +291,12 @@ export async function updateAssignature(sedeId, asignaturaId, payload) {
     throw new Error("asignaturaId es requerido para updateAssignature");
   if (!payload || typeof payload !== "object")
     throw new Error("payload debe ser un objeto.");
-  console.log(
-    "SchoolService - updateAssignature payload:",
-    payload,
-    sedeId,
-    asignaturaId,
-  );
   const res = await ApiClient.instance.patch(
     `/assignment/${sedeId}/asignature/${asignaturaId}`,
     payload,
   );
 
   const data = res;
-  console.log("SchoolService - updateAssignature:", data);
 
   if (data && typeof data === "object" && "data" in data) return data.data;
   if (data !== undefined && data !== null) return data;
@@ -350,7 +325,6 @@ export async function updateGrado(idSede, gradoId, payload) {
   );
 
   const data = res;
-  console.log("SchoolService - updateGrado:", data);
 
   if (data && typeof data === "object" && "data" in data) return data.data;
   if (data !== undefined && data !== null) return data;
@@ -369,12 +343,10 @@ export async function getDataSede(payload) {
   if (!payload || typeof payload !== "object") {
     throw new Error("payload debe ser un objeto.");
   }
-  console.log("SchoolService - getDataSede payload:", payload);
 
   const res = await ApiClient.instance.post("/sede/data", payload);
 
   const data = res;
-  console.log("SchoolService - getDataSede:", data);
 
   // Validación suave del payload: devolvemos data o data.data.
   if (data && typeof data === "object" && "data" in data) return data.data;
@@ -393,12 +365,10 @@ export async function getDataSchool(payload) {
   if (!payload || typeof payload !== "object") {
     throw new Error("payload debe ser un objeto.");
   }
-  console.log("SchoolService - getDataSchool payload:", payload);
 
   const res = await ApiClient.instance.post("/institution/data", payload);
 
   const data = res;
-  console.log("SchoolService - getDataSchool:", data);
 
   // Validación suave del payload: devolvemos data o data.data.
   if (data && typeof data === "object" && "data" in data) return data.data;
@@ -417,12 +387,10 @@ export async function getGradeAsignature(payload) {
   if (!payload || typeof payload !== "object") {
     throw new Error("payload debe ser un objeto.");
   }
-  console.log("SchoolService - getGradeAsignature payload:", payload);
 
   const res = await ApiClient.instance.post("/gradeS/:asignatureId", payload);
 
   const data = res;
-  console.log("SchoolService - getGradeAsignature:", data);
 
   // Validar que la respuesta tenga code: "OK"
   if (data && data.code === "OK") {
@@ -510,7 +478,6 @@ export async function createNote(payload) {
   const res = await ApiClient.instance.post("/notes", payload);
 
   const data = res;
-  console.log("SchoolService - createNote:", data);
 
   // Validación suave del payload: devolvemos data o data.data.
   if (data && typeof data === "object" && "data" in data) return data.data;
@@ -534,7 +501,6 @@ export async function createTransitionNote(payload) {
   const res = await ApiClient.instance.post("/transition/note", payload);
 
   const data = res;
-  console.log("SchoolService - createTransitionNote:", data);
 
   if (data && typeof data === "object" && "data" in data) return data.data;
   if (data !== undefined && data !== null) return data;
@@ -559,7 +525,6 @@ export async function saveTransitionStudentNote(payload) {
   );
 
   const data = res;
-  console.log("SchoolService - saveTransitionStudentNote:", data);
 
   if (data && typeof data === "object" && "data" in data) return data.data;
   if (data !== undefined && data !== null) return data;
@@ -586,7 +551,6 @@ export async function updateTransitionStudentNote(noteId, payload) {
   );
 
   const data = res;
-  console.log("SchoolService - updateTransitionStudentNote:", data);
 
   if (data && typeof data === "object" && "data" in data) return data.data;
   if (data !== undefined && data !== null) return data;
@@ -610,7 +574,6 @@ export async function updateNote(noteId, payload) {
   const res = await ApiClient.instance.patch(`/note/${noteId}`, payload);
 
   const data = res;
-  console.log("SchoolService - updateNote:", data);
 
   if (data && typeof data === "object" && "data" in data) return data.data;
   if (data !== undefined && data !== null) return data;
@@ -633,7 +596,6 @@ export async function createOrUpdateNote(payload) {
   const res = await ApiClient.instance.post("/createourupdatenote", payload);
 
   const data = res;
-  console.log("SchoolService - createOrUpdateNote:", data);
 
   if (data && typeof data === "object" && "data" in data) return data.data;
   if (data !== undefined && data !== null) return data;
@@ -654,12 +616,10 @@ export async function getStudentGrades(payload) {
     throw new Error("payload debe ser un objeto.");
   }
 
-  console.log("SchoolService - getStudentGrades payload:", payload);
 
   const res = await ApiClient.instance.post("/student/grades", payload);
 
   const data = res;
-  console.log("SchoolService - getStudentGrades:", data);
 
   // Validación suave del payload: devolvemos data o data.data.
   if (data && typeof data === "object" && "data" in data) return data.data;
@@ -676,13 +636,11 @@ export async function getStudentGrades(payload) {
  */
 export async function getValuesReservations(payload = {}) {
   try {
-    console.log("SchoolService - getValuesReservations payload:", payload);
 
     // El endpoint cambió a POST y espera { municipioId: number }
     const res = await ApiClient.instance.post("/values/reservations", payload);
     const data = Array.isArray(res) ? res : (res?.data ?? []);
 
-    console.log("SchoolService - getValuesReservations:", data);
 
     if (Array.isArray(data)) return data;
     if (data && typeof data === "object" && Array.isArray(data.data))
@@ -714,7 +672,6 @@ export async function getStudentAlerts() {
   try {
     const res = await ApiClient.get("/student/alerts");
     const data = Array.isArray(res) ? res : (res?.data ?? []);
-    console.log("SchoolService - getStudentAlerts:", data);
     return Array.isArray(data) ? data : [];
   } catch (error) {
     console.error("Error en getStudentAlerts:", error);
@@ -727,12 +684,10 @@ export async function allstudent(payload) {
     throw new Error("payload debe ser un objeto.");
   }
 
-  console.log("SchoolService - allstudent payload:", payload);
 
   const res = await ApiClient.instance.post("/institution/students", payload);
 
   const data = res;
-  console.log("SchoolService - allstudent:", data);
 
   // Validación suave del payload: devolvemos data o data.data.
   if (data && typeof data === "object" && "data" in data) return data.data;
@@ -759,7 +714,6 @@ export async function entradaQR(payload) {
 
   const res = await ApiClient.instance.post("/student/validator/qr", payload);
   const data = res;
-  console.log("SchoolService - entradaQR:", data);
 
   if (data && typeof data === "object" && "data" in data) return data.data;
   if (data !== undefined && data !== null) return data;
@@ -785,7 +739,6 @@ export async function salidaQR(payload) {
 
   const res = await ApiClient.instance.post("/student/exit/qr", payload);
   const data = res;
-  console.log("SchoolService - salidaQR:", data);
 
   if (data && typeof data === "object" && "data" in data) return data.data;
   if (data !== undefined && data !== null) return data;

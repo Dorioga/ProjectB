@@ -1,11 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+﻿import { useState, useEffect, useCallback } from "react";
 import SimpleButton from "../atoms/SimpleButton";
 import JourneySelect from "../atoms/JourneySelect";
 import tourProfileGrade from "../../tour/tourProfileGrade";
 
 const ProfileGrade = ({ data, onSave, initialEditing = false }) => {
   const safeData = data || {};
-  console.log("ProfileGrade - render - data prop:", data);
   const [isEditing, setIsEditing] = useState(Boolean(initialEditing));
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState({});
@@ -52,7 +51,6 @@ const ProfileGrade = ({ data, onSave, initialEditing = false }) => {
       estado: safeData.estado || "",
     };
   });
-  console.log("ProfileGrade - data:", form);
   useEffect(() => {
     setIsEditing(Boolean(initialEditing));
   }, [initialEditing]);

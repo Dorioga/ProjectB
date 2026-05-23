@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback, useEffect } from "react";
+﻿import React, { useMemo, useState, useCallback, useEffect } from "react";
 import FileChooser from "../../components/atoms/FileChooser";
 import Loader from "../../components/atoms/Loader";
 import SimpleButton from "../../components/atoms/SimpleButton";
@@ -61,7 +61,6 @@ const UploadStudentPDF = ({
         return;
       }
     }
-    console.log("Archivos validados, iniciando subida:", files);
 
     setSubmitting(true);
     setStatus(null);
@@ -72,11 +71,9 @@ const UploadStudentPDF = ({
 
       // visualizar en consola el contenido del FormData
       for (const pair of form.entries()) {
-        console.log("FormData entry:", pair[1], pair[0]);
       }
 
       const res = await upload(form, folder);
-      console.log("Respuesta de la subida:", res);
 
       // asumimos comportamiento similar al Excel: 200 + array
       if (!res || res.status !== 200) {

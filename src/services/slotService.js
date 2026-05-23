@@ -1,4 +1,4 @@
-import { ApiClient } from "./ApiClient";
+﻿import { ApiClient } from "./ApiClient";
 
 /**
  * Obtiene los valores de cupos (slots) para una institución y año.
@@ -14,7 +14,6 @@ export async function getSlotValues(payload) {
 
   const res = await ApiClient.instance.post("/slots-values", payload);
   const data = res;
-  console.log("SlotService - getSlotValues:", data);
 
   if (data && typeof data === "object" && "data" in data) return data.data;
   if (data !== undefined && data !== null) return data;

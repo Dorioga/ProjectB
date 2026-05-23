@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 
 import SedeSelect from "../../components/atoms/SedeSelect";
 import JourneySelect from "../../components/atoms/JourneySelect";
@@ -236,10 +236,6 @@ const RegisterAssistance = () => {
         fecha_assistance,
       };
     });
-    console.log(
-      "RegisterAssistance - payload para registrar asistencia:",
-      rows,
-    );
 
     try {
       await registerAssistance(rows);

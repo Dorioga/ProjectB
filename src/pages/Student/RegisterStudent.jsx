@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import { sha256 } from "js-sha256";
 import FileChooser from "../../components/atoms/FileChooser";
 import SimpleButton from "../../components/atoms/SimpleButton";
@@ -195,14 +195,10 @@ const RegisterStudent = ({ onSuccess }) => {
         link_piar: piarUrl || "",
       };
 
-      console.log("=== Payload a enviar ===");
-      console.log(JSON.stringify(payload, null, 2));
-      console.log("========================");
 
       // Enviar los datos al backend
       const result = await registerStudent(payload);
 
-      console.log("¡Estudiante registrado exitosamente!", result);
 
       // Mostrar notificación de éxito
       try {

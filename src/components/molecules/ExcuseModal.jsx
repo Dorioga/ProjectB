@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import Modal from "../atoms/Modal";
 import FileChooser from "../atoms/FileChooser";
 import SimpleButton from "../atoms/SimpleButton";
@@ -111,8 +111,6 @@ const ExcuseModal = ({
 
     return "Documento";
   };
-  console.log("Selected File:", selectedFile);
-  console.log("File Type:", mode);
   return (
     <Modal
       isOpen={isOpen}

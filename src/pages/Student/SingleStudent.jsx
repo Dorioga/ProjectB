@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import Loader from "../../components/atoms/Loader";
 import useStudent from "../../lib/hooks/useStudent";
@@ -30,7 +30,6 @@ const SingleStudent = () => {
     try {
       const student = await getStudent({ identification: studentId });
       // getStudent del contexto ahora setea `selected`; además logueamos el resultado recibido
-      console.log("Estudiante encontrado (retornado):", student);
     } catch (err) {
       console.error("Error al buscar estudiante:", err);
       alert("Estudiante no encontrado.");

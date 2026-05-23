@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+﻿import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import DataTable from "../../components/atoms/DataTable";
 import Modal from "../../components/atoms/Modal";
 import RegisterAssistance from "./RegisterAssistance";
@@ -190,7 +190,6 @@ const ManageAssistance = () => {
           idGrade: Number(gradeId),
           idPeriod: Number(periodId),
         };
-        console.log("ManageAssistance (docente) - payload:", payload);
         const res = await getAssistanceValuesRef.current(payload);
         const rows = Array.isArray(res) ? res : (res?.data ?? []);
         if (mounted) {
@@ -247,7 +246,6 @@ const ManageAssistance = () => {
         idGrade: Number(gradeId),
         idPeriod: Number(periodId),
       };
-      console.log("ManageAssistance (admin) - payload:", payload);
       const response = await getAssistanceValues(payload);
       const rows = Array.isArray(response)
         ? response

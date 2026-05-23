@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+﻿import React, { useEffect, useMemo } from "react";
 import useData from "../../lib/hooks/useData";
 import useAuth from "../../lib/hooks/useAuth";
 
@@ -25,12 +25,7 @@ const SedeSelect = ({
     // Si hay data manual, no cargar desde el contexto
     if (data) return;
 
-    console.log("SedeSelect - idInstitution:", idInstitution);
     if (idInstitution) {
-      console.log(
-        "SedeSelect - Cargando sedes para institución:",
-        idInstitution,
-      );
 
       loadInstitutionSedes(idInstitution).catch((err) => {
         console.error("SedeSelect - Error al cargar sedes:", err);
@@ -50,9 +45,6 @@ const SedeSelect = ({
         ? institutionSedes
         : [];
 
-    console.log("SedeSelect - institutionSedes:", institutionSedes);
-    console.log("SedeSelect - data (manual):", data);
-    console.log("SedeSelect - source length:", source.length);
 
     const normalized = source
       .filter(Boolean)
@@ -75,7 +67,6 @@ const SedeSelect = ({
       })
       .filter((opt) => opt.id && opt.label);
 
-    console.log("SedeSelect - normalized sedes:", normalized);
 
     // Solo mostrar datos de ejemplo si no hay data manual Y no hay sedes del contexto
     if (normalized.length === 0 && !data) {

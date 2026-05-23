@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+﻿import { useState, useMemo, useCallback } from "react";
 import useStudent from "../../lib/hooks/useStudent";
 import { useNotification } from "../../lib/context/NotificationContext";
 import DataTable from "../../components/atoms/DataTable";
@@ -28,12 +28,6 @@ const ManageObserver = () => {
   const handleSearch = useCallback(async () => {
     const value = numberId.trim();
     if (!value) return;
-    console.log(
-      "ManageObserver - Searching for ID:",
-      value,
-      "Institution ID:",
-      effectiveInstitution,
-    );
     setIsFetching(true);
     try {
       const data = await getObservationData({

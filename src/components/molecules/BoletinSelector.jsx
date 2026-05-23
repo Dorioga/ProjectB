@@ -1,4 +1,4 @@
-import { jsPDF } from "jspdf";
+﻿import { jsPDF } from "jspdf";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   getBoletin,
@@ -1001,12 +1001,38 @@ async function generateBoletinPDF(
     if (docenteNeeded > computedRowH) computedRowH = docenteNeeded;
     for (let pi = 0; pi < periodos.length; pi++) {
       const per = asig.periodos.get(periodos[pi].id);
-      const logroText = per?.logros?.join(" | ") || "-";
-      const logroColW = colWidths[2 + pi * 5 + 4];
-      pdf.setFontSize(5);
-      const lines = pdf.splitTextToSize(logroText, logroColW - 1.5);
-      const needed = lines.length * (5 * 0.45) + 2;
-      if (needed > computedRowH) computedRowH = needed;
+      {
+        const logroColW = colWidths[2 + pi * 5 + 4];
+        const lineH = 5 * 0.45;
+        const logros = per?.logros ?? [];
+        let logroHeight = 2; // padding top
+        if (logros.length === 0) {
+          logroHeight += lineH;
+        } else {
+          for (const logro of logros) {
+            const sep = logro.indexOf(": ");
+            if (sep === -1) {
+              pdf.setFontSize(5);
+              pdf.setFont("helvetica", "normal");
+              logroHeight +=
+                pdf.splitTextToSize(logro, logroColW - 1.5).length * lineH;
+            } else {
+              pdf.setFontSize(5);
+              pdf.setFont("helvetica", "bold");
+              logroHeight +=
+                pdf.splitTextToSize(logro.slice(0, sep), logroColW - 1.5)
+                  .length * lineH;
+              pdf.setFont("helvetica", "normal");
+              logroHeight +=
+                pdf.splitTextToSize(logro.slice(sep + 2), logroColW - 1.5)
+                  .length * lineH;
+            }
+            logroHeight += lineH * 0.5; // espaciado entre logros
+          }
+        }
+        logroHeight += 7; // reserva para "Obs. énfasis:"
+        if (logroHeight > computedRowH) computedRowH = logroHeight;
+      }
       const estadoText = per?.estado || "-";
       const estadoColW = colWidths[2 + pi * 5 + 3];
       const estadoLines = pdf.splitTextToSize(estadoText, estadoColW - 1.5);
@@ -1062,6 +1088,8 @@ async function generateBoletinPDF(
         pdf.rect(cx, y, w, computedRowH, "D");
         const logros = per?.logros ?? [];
         const lineH = 5 * 0.45;
+        const obsY = y + computedRowH - 6;
+        const logroMaxY = obsY - 1;
         if (logros.length === 0) {
           pdf.setFontSize(5);
           pdf.setFont("helvetica", "normal");
@@ -1069,13 +1097,14 @@ async function generateBoletinPDF(
           pdf.text("-", cx + 1, y + 4);
         } else {
           let textY = y + 2;
-          for (const logro of logros) {
+          outer: for (const logro of logros) {
             const sep = logro.indexOf(": ");
             if (sep === -1) {
               pdf.setFontSize(5);
               pdf.setFont("helvetica", "normal");
               pdf.setTextColor(0, 0, 0);
               for (const ln of pdf.splitTextToSize(logro, w - 1.5)) {
+                if (textY + lineH * 0.8 > logroMaxY) break outer;
                 pdf.text(ln, cx + 1, textY + lineH * 0.8);
                 textY += lineH;
               }
@@ -1086,12 +1115,14 @@ async function generateBoletinPDF(
               pdf.setFont("helvetica", "bold");
               pdf.setTextColor(19, 26, 39);
               for (const ln of pdf.splitTextToSize(tipo, w - 1.5)) {
+                if (textY + lineH * 0.8 > logroMaxY) break outer;
                 pdf.text(ln, cx + 1, textY + lineH * 0.8);
                 textY += lineH;
               }
               pdf.setFont("helvetica", "normal");
               pdf.setTextColor(55, 65, 81);
               for (const ln of pdf.splitTextToSize(desc, w - 1.5)) {
+                if (textY + lineH * 0.8 > logroMaxY) break outer;
                 pdf.text(ln, cx + 1, textY + lineH * 0.8);
                 textY += lineH;
               }
@@ -1101,7 +1132,6 @@ async function generateBoletinPDF(
         }
         // Observaciones de énfasis siempre al fondo de la celda de logro
         {
-          const obsY = y + computedRowH - 6;
           pdf.setDrawColor(200, 200, 200);
           pdf.setLineWidth(0.15);
           pdf.line(cx + 1, obsY, cx + w - 1, obsY);
@@ -1141,23 +1171,60 @@ async function generateBoletinPDF(
   // Fila 3: Observaciones generales
   drawLabelRow("OBSERVACIONES GENERALES:", 22);
   // Fila 4: Firma del director de grupo (celda completa)
-  addPageIfNeeded(18);
-  pdf.rect(margin, y, contentW, 18, "D");
-  const signLineW = 60;
-  const signX = margin + (contentW - signLineW) / 2;
+  const firmaRowH = 28;
+  addPageIfNeeded(firmaRowH);
+  pdf.rect(margin, y, contentW, firmaRowH, "D");
+  if (info.firma_docente) {
+    let firmaImgData = null;
+    try {
+      firmaImgData = await new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+          const maxW = 120,
+            maxH = 40;
+          let w = img.width,
+            h = img.height;
+          const ratio = Math.min(maxW / w, maxH / h);
+          w = Math.round(w * ratio);
+          h = Math.round(h * ratio);
+          const canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL("image/png"));
+        };
+        img.onerror = () => resolve(null);
+        img.src = info.firma_docente;
+      });
+    } catch {
+      firmaImgData = null;
+    }
+    if (firmaImgData) {
+      const imgW = 40;
+      const imgH = 16;
+      const imgX = margin + (contentW - imgW) / 2;
+      pdf.addImage(firmaImgData, "PNG", imgX, y + 2, imgW, imgH);
+    }
+  } else {
+    // sin firma: se deja el espacio en blanco en el PDF
+  }
   pdf.setDrawColor(17, 24, 39);
   pdf.setLineWidth(0.3);
-  pdf.line(signX, y + 13, signX + signLineW, y + 13);
+  const signLineW = 60;
+  const signX = margin + (contentW - signLineW) / 2;
+  pdf.line(signX, y + firmaRowH - 6, signX + signLineW, y + firmaRowH - 6);
   pdf.setFontSize(7);
   pdf.setFont("helvetica", "bold");
   pdf.setTextColor(0, 0, 0);
   pdf.text(
     "FIRMA DEL DIRECTOR DE GRUPO",
     margin + contentW / 2,
-    y + 16,
+    y + firmaRowH - 2,
     { align: "center" },
   );
-  y += 18 + 4;
+  y += firmaRowH + 4;
 
   /* ── Convenciones ── */
   if (escalas.length > 0) {
@@ -1448,7 +1515,7 @@ const BoletinSelector = ({
   students = [],
 }) => {
   const { getInstitutionScales } = useSchool();
-  const { rol, idPersona, userName } = useAuth();
+  const { rol, idPersona, userName, firmaDocente } = useAuth();
   const isGuardian = rol === 5 || rol === "5";
   const isStudent = rol === 6 || rol === "6";
   const currentYear = new Date().getFullYear();
@@ -1524,8 +1591,8 @@ const BoletinSelector = ({
       rawInfo.numero_identificacion ??
       studentInfoProp?.numero_identificacion ??
       studentInfoProp?.identificacion,
+    firma_docente: firmaDocente ?? null,
   };
-  console.log("Boletin info:", info);
 
   const handleConsultar = async () => {
     if (!periodId) {
@@ -2043,8 +2110,45 @@ const BoletinSelector = ({
                       style={{ marginBottom: "10px", overflowX: "auto" }}
                     >
                       <table
-                        style={{ width: "100%", borderCollapse: "collapse" }}
+                        style={{
+                          width: "100%",
+                          borderCollapse: "collapse",
+                          tableLayout: "fixed",
+                        }}
                       >
+                        <colgroup>
+                          <col style={{ width: "14%" }} />
+                          <col style={{ width: "17%" }} />
+                          {periodos.map((p) => (
+                            <React.Fragment key={p.id}>
+                              <col
+                                style={{
+                                  width: `${(4.6 / periodos.length).toFixed(2)}%`,
+                                }}
+                              />
+                              <col
+                                style={{
+                                  width: `${(4.6 / periodos.length).toFixed(2)}%`,
+                                }}
+                              />
+                              <col
+                                style={{
+                                  width: `${(4.6 / periodos.length).toFixed(2)}%`,
+                                }}
+                              />
+                              <col
+                                style={{
+                                  width: `${(12.42 / periodos.length).toFixed(2)}%`,
+                                }}
+                              />
+                              <col
+                                style={{
+                                  width: `${(42.78 / periodos.length).toFixed(2)}%`,
+                                }}
+                              />
+                            </React.Fragment>
+                          ))}
+                        </colgroup>
                         <thead>
                           <tr
                             style={{
@@ -2305,7 +2409,7 @@ const BoletinSelector = ({
                         style={{
                           border: "1px solid #111827",
                           padding: "6px 8px",
-                          height: "50px",
+                          height: "70px",
                           verticalAlign: "bottom",
                         }}
                       >
@@ -2319,6 +2423,31 @@ const BoletinSelector = ({
                           }}
                         >
                           <div style={{ textAlign: "center" }}>
+                            {info.firma_docente ? (
+                              <img
+                                src={info.firma_docente}
+                                alt="Firma director"
+                                crossOrigin="anonymous"
+                                style={{
+                                  maxHeight: "40px",
+                                  maxWidth: "160px",
+                                  objectFit: "contain",
+                                  display: "block",
+                                  margin: "0 auto 4px",
+                                }}
+                              />
+                            ) : (
+                              <p
+                                style={{
+                                  fontSize: "9px",
+                                  color: "#9ca3af",
+                                  fontStyle: "italic",
+                                  marginBottom: "4px",
+                                }}
+                              >
+                                Sin Firma en el sistema
+                              </p>
+                            )}
                             <div
                               style={{
                                 borderBottom: "1px solid #111827",
@@ -2326,7 +2455,9 @@ const BoletinSelector = ({
                                 marginBottom: "4px",
                               }}
                             />
-                            <span style={{ fontWeight: "bold", fontSize: "10px" }}>
+                            <span
+                              style={{ fontWeight: "bold", fontSize: "10px" }}
+                            >
                               FIRMA DEL DIRECTOR DE GRUPO
                             </span>
                           </div>

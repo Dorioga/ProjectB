@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+﻿import { useState, useMemo, useEffect, useCallback } from "react";
 import useSchool from "../../lib/hooks/useSchool";
 import useAuth from "../../lib/hooks/useAuth";
 import useData from "../../lib/hooks/useData";
@@ -74,14 +74,12 @@ const ManageGrade = () => {
         idWorkDay: Number(selectedJornada),
       };
 
-      console.log("ManageGrade - llamando getGradeSede con:", payload);
       const response = await getGradeSede(payload);
 
       const grados = Array.isArray(response)
         ? response
         : (response?.data ?? []);
 
-      console.log("ManageGrade - grados recibidos:", grados);
       setTableData(sortAlphabetically(grados, "nombre_grado"));
     } catch (error) {
       console.error("Error al cargar grados:", error);
