@@ -158,7 +158,7 @@ const Login = () => {
             </div>
 
             <div className="flex flex-col justify-between pt-2 gap-2">
-              {isFormValid && (
+              {isFormValid && import.meta.env.VITE_CAPTCHA_PUBLIC_KEY && (
                 <div className="flex justify-center">
                   <ReCAPTCHA
                     ref={recaptchaRef}
@@ -190,6 +190,13 @@ const Login = () => {
                 onClick={() => navigate("/reserveSpot")}
               >
                 Reservar Cupo
+              </button>
+              <button
+                type="button"
+                className="pointer hover:underline text-secondary font-semibold"
+                onClick={() => navigate("/")}
+              >
+                Volver al inicio
               </button>
               <p className="text-surface text-center text-sm">
                 <a

@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import logoColor from "../assets/img/LogoColor.png";
+import PreviewIMG from "../components/atoms/PreviewIMG";
 import DepartmentSelector from "../components/molecules/DepartmentSelector";
 import CitySelector from "../components/molecules/CitySelector";
 
@@ -237,11 +238,7 @@ export default function LandingPage() {
         <nav className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <img
-              src={logoColor}
-              alt="Nexus Academmi"
-              className="h-10 object-contain"
-            />
+            <PreviewIMG path={logoColor} size="logo" />
           </div>
 
           {/* Links (hidden on mobile) */}

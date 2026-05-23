@@ -14,7 +14,13 @@ import { useNotify } from "../../lib/hooks/useNotify";
 const ManageBoletin = () => {
   const { getStudentGrades } = useSchool();
   const { getTeacherSede, getTeacherGrades } = useTeacher();
-  const { idSede, nameSede, idDocente, token } = useAuth();
+  const { idSede, nameSede, idDocente, token, gradoAcargo } = useAuth();
+  console.log("ManageBoletin - Auth Data:", {
+    idSede,
+    nameSede,
+    idDocente,
+    gradoAcargo,
+  });
   const notify = useNotify();
 
   // ── Filtros ─────────────────────────────────────────────────────────────
@@ -40,6 +46,31 @@ const ManageBoletin = () => {
 
   // ── Params memoizados para selectores ────────────────────────────────────
   const isTeacher = Boolean(idDocente);
+
+  // Extraer el ID numérico de gradoAcargo (puede ser número u objeto)
+  const gradoAcargoId = useMemo(() => {
+    if (!gradoAcargo) return null;
+    if (typeof gradoAcargo === "object") {
+      return (
+        gradoAcargo.id_grade ?? gradoAcargo.id ?? gradoAcargo.id_grado ?? null
+      );
+    }
+    return gradoAcargo;
+  }, [gradoAcargo]);
+
+  // CustomFetch para docente: obtiene los grados desde la API y filtra por gradoAcargo
+  const teacherGradeFilteredFetch = useCallback(
+    async (payload) => {
+      const res = await getTeacherGrades(payload);
+      const list = Array.isArray(res) ? res : (res?.data ?? []);
+      if (!gradoAcargoId) return list;
+      return list.filter((g) => {
+        const gId = g.id_grade ?? g.id ?? g.id_grado;
+        return String(gId) === String(gradoAcargoId);
+      });
+    },
+    [getTeacherGrades, gradoAcargoId],
+  );
 
   const teacherGradesParams = useMemo(
     () => ({
@@ -217,7 +248,7 @@ const ManageBoletin = () => {
             value={gradeId}
             onChange={(e) => setGradeId(e.target.value)}
             sedeId={sedeId}
-            customFetchMethod={getTeacherGrades}
+            customFetchMethod={teacherGradeFilteredFetch}
             additionalParams={teacherGradesParams}
             disabled={!sedeId}
           />

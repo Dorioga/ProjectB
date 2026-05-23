@@ -16,6 +16,7 @@ const GradeSelector = ({
   autoLoad = false,
   customFetchMethod = null,
   additionalParams = {},
+  staticOptions = null,
 }) => {
   console.log("GradeSelector - props:", {
     name,
@@ -51,6 +52,9 @@ const GradeSelector = ({
 
   // Cargar grados cuando se proporciona sedeId y workdayId
   useEffect(() => {
+    // Si se proveen opciones estáticas, no hacer fetch
+    if (staticOptions !== null) return;
+
     console.log(
       "GradeSelector useEffect TRIGGERED - disabled:",
       disabled,
@@ -168,9 +172,10 @@ const GradeSelector = ({
   ]);
 
   const gradeOptions = useMemo(() => {
-    if (!Array.isArray(grades)) return [];
+    const source = staticOptions !== null ? staticOptions : grades;
+    if (!Array.isArray(source)) return [];
 
-    return grades
+    return source
       .filter(Boolean)
       .filter((grade) => !grade?.estado || grade?.estado === "Activo")
       .map((grade) => ({
@@ -180,24 +185,28 @@ const GradeSelector = ({
         grupo: grade.grupo || "",
       }))
       .filter((g) => g.id && g.nombre);
-  }, [grades]);
+  }, [grades, staticOptions]);
 
   const isLoading = loadingGrades || loading;
 
   // Determinar si el selector debe estar deshabilitado
-  const isDisabled = customFetchMethod
-    ? disabled || isLoading || !sedeId
-    : disabled || isLoading || !sedeId || !workdayId;
+  const isDisabled = staticOptions !== null
+    ? disabled
+    : customFetchMethod
+      ? disabled || isLoading || !sedeId
+      : disabled || isLoading || !sedeId || !workdayId;
 
   // Determinar el mensaje del placeholder
-  const placeholderMessage = isLoading
-    ? "Cargando grados..."
-    : customFetchMethod
-      ? !sedeId
-        ? "Selecciona una sede primero"
-        : placeholder
-      : !sedeId
-        ? "Selecciona una sede primero"
+  const placeholderMessage = staticOptions !== null
+    ? placeholder
+    : isLoading
+      ? "Cargando grados..."
+      : customFetchMethod
+        ? !sedeId
+          ? "Selecciona una sede primero"
+          : placeholder
+        : !sedeId
+          ? "Selecciona una sede primero"
         : !workdayId
           ? "Selecciona una jornada primero"
           : placeholder;
