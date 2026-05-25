@@ -1,6 +1,7 @@
 import { ApiClient } from "./ApiClient";
 import { loginResponse } from "./DataExamples/loginResponse";
 import { sha256 } from "js-sha256";
+import { upload } from "./uploadService";
 
 /**
  * authService: funciones para inicio de sesión, cierre de sesión y perfil.
@@ -110,7 +111,16 @@ export async function registerSignature(payload, rol) {
   if (!payload || typeof payload !== "object") {
     throw new Error("Payload inválido para registerSignature");
   }
-  return ApiClient.instance.post("/uploadfirma/" + rol, payload);
+  let formData;
+  if (payload instanceof FormData) {
+    formData = payload;
+  } else {
+    formData = new FormData();
+    Object.entries(payload).forEach(([key, val]) => {
+      formData.append(key, val);
+    });
+  }
+  return upload(formData, "uploadfirma/" + rol);
 }
 
 /**
@@ -177,4 +187,19 @@ export async function updatePassword(userId, nuevaContrasena) {
   if (!nuevaContrasena) throw new Error("La nueva contraseña es requerida");
   const payload = { contrasena: sha256(String(nuevaContrasena)) };
   return ApiClient.patch(`/user/${userId}`, payload);
+}
+
+/**
+ * Actualiza la firma del usuario según el tipo indicado.
+ * PATCH /firma/:type
+ * @param {Object} payload - Datos a enviar (ej. { imageBase64, identificacion }).
+ * @param {string} type - Tipo de firma (ej. "docentes", "acudientes").
+ * @returns {Promise} Respuesta del servidor.
+ */
+export async function updateFirma(payload, type) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Payload inválido para updateFirma");
+  }
+  if (!type) throw new Error("El parámetro type es requerido");
+  return ApiClient.patch(`/firma/${type}`, payload);
 }

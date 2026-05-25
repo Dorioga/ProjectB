@@ -90,9 +90,11 @@ export function AuthProvider({ children }) {
     loadFromStorage("firmaDocente"),
   );
 
-  // número de identificación (cedula, etc.) del usuario
-  // no se persiste en localStorage, solo se mantiene en memoria
-  const [numero_identificacion, setNumeroIdentificacion] = useState(null);
+  // número de identificación: se persiste en localStorage solo si rol=2,
+  // o si rol=7 y gradoAcargo tiene valor
+  const [numero_identificacion, setNumeroIdentificacion] = useState(() =>
+    loadFromStorage("numero_identificacion"),
+  );
 
   const [token, setToken] = useState(
     () => localStorage.getItem("token") || null,
@@ -196,7 +198,14 @@ export function AuthProvider({ children }) {
     saveToStorage("director", director);
     saveToStorage("gradoAcargo", gradoAcargo);
     saveToStorage("firmaDocente", firmaDocente);
-    // numero_identificacion intentionally not stored
+    // numero_identificacion se persiste solo si rol=2, o rol=7 con gradoAcargo
+    const shouldPersistNumeroId =
+      String(rol) === "2" || (String(rol) === "7" && !!gradoAcargo);
+    if (shouldPersistNumeroId && numero_identificacion != null) {
+      saveToStorage("numero_identificacion", numero_identificacion);
+    } else {
+      localStorage.removeItem("numero_identificacion");
+    }
     if (token) {
       localStorage.setItem("token", token);
       setAuthToken(token);
@@ -225,6 +234,7 @@ export function AuthProvider({ children }) {
     director,
     gradoAcargo,
     firmaDocente,
+    numero_identificacion,
     token,
   ]);
 
@@ -504,6 +514,10 @@ export function AuthProvider({ children }) {
     return authService.registerSignature(payload, rol);
   }, []);
 
+  const updateFirma = useCallback(async (payload, type) => {
+    return authService.updateFirma(payload, type);
+  }, []);
+
   const recoveryPassword = useCallback(async (payload) => {
     return authService.recoveryPassword(payload);
   }, []);
@@ -550,6 +564,7 @@ export function AuthProvider({ children }) {
       valuesAccessData,
       accessData,
       registerSignature,
+      updateFirma,
       recoveryPassword,
       reload: loadProfile,
     }),
@@ -589,6 +604,7 @@ export function AuthProvider({ children }) {
       valuesAccessData,
       accessData,
       registerSignature,
+      updateFirma,
       recoveryPassword,
       loadProfile,
     ],

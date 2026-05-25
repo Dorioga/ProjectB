@@ -13,6 +13,12 @@ export default defineConfig({
         changeOrigin: true,
         secure: true,
       },
+      "/backend-proxy": {
+        target: "https://backend-barranquilla.onrender.com",
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/backend-proxy/, ""),
+      },
     },
   },
 });
