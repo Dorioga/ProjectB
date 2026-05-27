@@ -175,11 +175,15 @@ const useBoletinProcessed = (data) => {
 
   const promedioGeneral = useMemo(() => {
     if (!asignaturas.length) return null;
-    const sum = asignaturas.reduce((acc, a) => {
-      const val = parseFloat(a.definitiva);
-      return acc + (isNaN(val) ? 0 : val);
-    }, 0);
-    return (sum / asignaturas.length).toFixed(2);
+    const notas = [];
+    for (const a of asignaturas) {
+      for (const [, per] of a.periodos) {
+        const v = parseFloat(per.nota);
+        if (!isNaN(v)) notas.push(v);
+      }
+    }
+    if (!notas.length) return null;
+    return (notas.reduce((acc, v) => acc + v, 0) / notas.length).toFixed(2);
   }, [asignaturas]);
 
   const resumenEstado = useMemo(() => {
@@ -261,12 +265,16 @@ function computeBoletinData(data) {
     }
   }
   const asignaturas = Array.from(asigMap.values());
-  const promedioGeneral = asignaturas.length
+  const _notasPromedio = [];
+  for (const a of asignaturas) {
+    for (const [, per] of a.periodos) {
+      const v = parseFloat(per.nota);
+      if (!isNaN(v)) _notasPromedio.push(v);
+    }
+  }
+  const promedioGeneral = _notasPromedio.length
     ? (
-        asignaturas.reduce((acc, a) => {
-          const v = parseFloat(a.definitiva);
-          return acc + (isNaN(v) ? 0 : v);
-        }, 0) / asignaturas.length
+        _notasPromedio.reduce((acc, v) => acc + v, 0) / _notasPromedio.length
       ).toFixed(2)
     : null;
   const resumenEstado = (() => {
@@ -620,7 +628,7 @@ async function drawPDFHeader(pdf, info, title, options = {}) {
         const img = new Image();
         img.crossOrigin = "anonymous";
         img.onload = () => {
-          const maxDim = 128;
+          const maxDim = 192;
           let w = img.width,
             h = img.height;
           if (w > maxDim || h > maxDim) {
@@ -635,7 +643,7 @@ async function drawPDFHeader(pdf, info, title, options = {}) {
           ctx.fillStyle = "#ffffff";
           ctx.fillRect(0, 0, w, h);
           ctx.drawImage(img, 0, 0, w, h);
-          resolve(canvas.toDataURL("image/jpeg", 0.6));
+          resolve(canvas.toDataURL("image/jpeg", 0.99));
         };
         img.onerror = () => resolve(null);
         img.src = info.link_logo;
@@ -807,7 +815,12 @@ async function generateBoletinPDF(
 
     drawStudentCell("ESTUDIANTE: ", nombreCompleto, margin, col1W);
     drawStudentCell("PERIODO: ", periodoNombre, margin + col1W, col2W);
-    drawStudentCell("PROM: ", promTexto, margin + col1W + col2W, col3W);
+    drawStudentCell(
+      "NOTA PROMEDIO PERIODO: ",
+      promTexto,
+      margin + col1W + col2W,
+      col3W,
+    );
     y += studentTableH + 4;
   }
 
@@ -1181,8 +1194,8 @@ async function generateBoletinPDF(
         const img = new Image();
         img.crossOrigin = "anonymous";
         img.onload = () => {
-          const maxW = 120,
-            maxH = 40;
+          const maxW = 160,
+            maxH = 56;
           let w = img.width,
             h = img.height;
           const ratio = Math.min(maxW / w, maxH / h);
@@ -1192,8 +1205,10 @@ async function generateBoletinPDF(
           canvas.width = w;
           canvas.height = h;
           const ctx = canvas.getContext("2d");
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, w, h);
           ctx.drawImage(img, 0, 0, w, h);
-          resolve(canvas.toDataURL("image/png"));
+          resolve(canvas.toDataURL("image/jpeg", 0.99));
         };
         img.onerror = () => resolve(null);
         img.src = info.firma_docente;
@@ -1205,7 +1220,7 @@ async function generateBoletinPDF(
       const imgW = 40;
       const imgH = 16;
       const imgX = margin + (contentW - imgW) / 2;
-      pdf.addImage(firmaImgData, "PNG", imgX, y + 2, imgW, imgH);
+      pdf.addImage(firmaImgData, "JPEG", imgX, y + 2, imgW, imgH);
     }
   } else {
     // sin firma: se deja el espacio en blanco en el PDF
@@ -2094,7 +2109,8 @@ const BoletinSelector = ({
                       >
                         {promedioGeneral !== null && (
                           <span>
-                            <strong>PROM:</strong> {promedioGeneral}
+                            <strong>NOTA PROMEDIO PERIODO:</strong>{" "}
+                            {promedioGeneral}
                           </span>
                         )}
                       </td>
