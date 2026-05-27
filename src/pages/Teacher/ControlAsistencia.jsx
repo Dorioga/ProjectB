@@ -180,6 +180,10 @@ const ControlAsistencia = () => {
       {
         accessorKey: "docente",
         header: "Docente",
+        cell: ({ getValue }) => {
+          const val = getValue();
+          return val == null || String(val).trim() === "" ? "SIN DOCENTE" : val;
+        },
       },
       {
         accessorKey: "nombre_sede",
@@ -320,7 +324,8 @@ const ControlAsistencia = () => {
             showDownloadButtons={tableData.length > 0}
             pageSize={50}
             groupBy="docente"
-            groupSummary={(rows) => {
+            groupSummary={(rows, isOpen) => {
+              if (!isOpen) return null;
               const conAsistencia = rows.filter(
                 (r) =>
                   String(r.original.estado_asistencia ?? "")

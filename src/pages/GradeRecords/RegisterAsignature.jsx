@@ -6,6 +6,7 @@ import useSchool from "../../lib/hooks/useSchool";
 import useData from "../../lib/hooks/useData";
 import { useNotify } from "../../lib/hooks/useNotify";
 import tourRegisterAsignature from "../../tour/tourRegisterAsignature";
+import { toUpperCaseField } from "../../utils/formatUtils";
 
 const RegisterAsignature = ({ onSuccess }) => {
   const {
@@ -173,7 +174,7 @@ const RegisterAsignature = ({ onSuccess }) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: toUpperCaseField(name, value),
     }));
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
@@ -213,7 +214,6 @@ const RegisterAsignature = ({ onSuccess }) => {
         code_asignature: formData.code.trim(),
         description: formData.description.trim(),
       };
-
 
       await registerAsignature(payload);
 

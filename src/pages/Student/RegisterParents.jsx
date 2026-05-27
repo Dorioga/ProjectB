@@ -10,6 +10,7 @@ import {
 } from "../../services/studentService";
 import Loader from "../../components/atoms/Loader";
 import tourRegisterParents from "../../tour/tourRegisterParents";
+import { toUpperCaseField } from "../../utils/formatUtils";
 
 const INITIAL_FORM = {
   first_name: "",
@@ -81,7 +82,7 @@ const RegisterParents = ({ fkEstudiante, onSuccess }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: toUpperCaseField(name, value) }));
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 

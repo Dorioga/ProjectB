@@ -323,3 +323,19 @@ export function sortAlphabetically(data, field, order = "asc") {
     return 0;
   });
 }
+
+/** Campos que NO se convierten a mayúsculas (sensibles a capitalización). */
+const _LOWERCASE_FIELDS = new Set(["email", "password"]);
+
+/**
+ * Convierte el valor de un campo de texto a mayúsculas,
+ * excepto para email y contraseña.
+ * @param {string} name  - Nombre del atributo del input
+ * @param {string} value - Valor actual del input
+ * @returns {string}
+ */
+export function toUpperCaseField(name, value) {
+  if (typeof value !== "string") return value;
+  if (_LOWERCASE_FIELDS.has(name)) return value;
+  return value.toUpperCase();
+}

@@ -14,6 +14,7 @@ import { useNotify } from "../../lib/hooks/useNotify";
 import Loader from "../../components/atoms/Loader";
 import { upload } from "../../services/uploadService";
 import tourRegisterStudent from "../../tour/tourRegisterStudent";
+import { toUpperCaseField } from "../../utils/formatUtils";
 
 const RegisterStudent = ({ onSuccess }) => {
   const { registerStudent, loading } = useStudent();
@@ -86,7 +87,7 @@ const RegisterStudent = ({ onSuccess }) => {
     const { name, value, type, files } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "file" ? files[0] : value,
+      [name]: type === "file" ? files[0] : toUpperCaseField(name, value),
     }));
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
@@ -195,10 +196,8 @@ const RegisterStudent = ({ onSuccess }) => {
         link_piar: piarUrl || "",
       };
 
-
       // Enviar los datos al backend
       const result = await registerStudent(payload);
-
 
       // Mostrar notificación de éxito
       try {

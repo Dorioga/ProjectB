@@ -5,6 +5,7 @@ import SedeSelect from "../../components/atoms/SedeSelect";
 import useSchool from "../../lib/hooks/useSchool";
 import useData from "../../lib/hooks/useData";
 import tourRegisterGrade from "../../tour/tourRegisterGrade";
+import { toUpperCaseField } from "../../utils/formatUtils";
 
 const RegisterGrade = ({ onSuccess }) => {
   const { journeys, loadingJourneys, registerGrade, loading } = useSchool();
@@ -76,7 +77,7 @@ const RegisterGrade = ({ onSuccess }) => {
   };
 
   const handleNameChange = (event) => {
-    const value = event.target.value;
+    const value = toUpperCaseField("name_grade", event.target.value);
     setFormData((prev) => ({ ...prev, name_grade: value }));
     setErrors((prev) => ({ ...prev, name_grade: "" }));
   };
@@ -109,7 +110,7 @@ const RegisterGrade = ({ onSuccess }) => {
   };
 
   const handleGroupChange = (index) => (event) => {
-    const value = event.target.value;
+    const value = toUpperCaseField("name_group", event.target.value);
     setFormData((prev) => {
       const nextGroups = [...prev.group];
       nextGroups[index] = { name_group: value };
@@ -152,7 +153,6 @@ const RegisterGrade = ({ onSuccess }) => {
       id_sede: Number(formData.id_sede),
       group: formData.group,
     };
-
 
     // Llamar al servicio para registrar el grado
     try {

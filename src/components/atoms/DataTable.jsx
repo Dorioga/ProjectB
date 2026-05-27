@@ -1,5 +1,5 @@
 // filepath: src/components/molecules/DataTable.jsx
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -45,7 +45,9 @@ const DataTable = ({
   const tableRef = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
   const [downloadTypeMode, setDownloadTypeMode] = useState("all");
-  const [closedGroups, setClosedGroups] = useState(new Set());
+  const [openGroups, setOpenGroups] = useState(new Set());
+  const [groupPageIndex, setGroupPageIndex] = useState(0);
+  const [localPageSize, setLocalPageSize] = useState(Number(pageSize) || 20);
 
   // Función de filtro personalizada que busca todos los términos en toda la fila
   const globalFilterFn = (row, columnId, filterValue) => {
@@ -117,10 +119,96 @@ const DataTable = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, refreshKey]);
 
-  // Reiniciar grupos cerrados cuando cambian los datos o el filtro
+  // Reiniciar grupos abiertos y página cuando cambian los datos o el filtro
   useEffect(() => {
-    if (groupBy) setClosedGroups(new Set());
+    if (groupBy) {
+      setOpenGroups(new Set());
+      setGroupPageIndex(0);
+    }
   }, [data, globalFilter, groupBy]);
+
+  // Paginación personalizada para modo groupBy: se calcula directo en render
+  // para garantizar que siempre use el estado más reciente de table, closedGroups y groupPageIndex
+  let groupPagination = null;
+  if (groupBy) {
+    const allSortedRows = table.getSortedRowModel().rows;
+    const pgSize = localPageSize;
+    const fullGroupMap = new Map();
+    allSortedRows.forEach((row) => {
+      const rawKey = row.getValue(groupBy);
+      const key =
+        rawKey == null || String(rawKey).trim() === ""
+          ? "SIN DOCENTE"
+          : String(rawKey);
+      if (!fullGroupMap.has(key)) fullGroupMap.set(key, []);
+      fullGroupMap.get(key).push(row);
+    });
+    const pages = [];
+    let currentPage = [];
+    let currentCount = 0;
+    for (const [key, rows] of fullGroupMap.entries()) {
+      const isGroupOpen = openGroups.has(key);
+      if (isGroupOpen) {
+        // Si el grupo está abierto, procesamos sus filas de datos individuales
+        // Un grupo abierto añade 1 fila de encabezado + N filas de datos.
+        // Si no caben todas en la página actual, metemos lo que quepa y el resto va a la siguiente página.
+        let groupRowsLeft = [...rows];
+        while (groupRowsLeft.length > 0) {
+          // Espacio restante en la página actual
+          let spaceLeftInPage = pgSize - currentCount;
+
+          // Si la página ya está llena, o solo queda espacio para el header, iniciamos una nueva página
+          if (spaceLeftInPage <= 1 && currentPage.length > 0) {
+            pages.push(currentPage);
+            currentPage = [];
+            currentCount = 0;
+            spaceLeftInPage = pgSize;
+          }
+
+          // Añadimos la cabecera del grupo a esta página (si es la primera vez que se renderiza el grupo en esta iteración)
+          const isFirstSlice = groupRowsLeft.length === rows.length;
+          const headerCost = isFirstSlice ? 1 : 0;
+
+          // Determinamos cuántas filas de datos de este grupo podemos meter en la página actual
+          const maxDataRowsToTake = Math.max(0, spaceLeftInPage - headerCost);
+          const sliceToTake = groupRowsLeft.slice(0, maxDataRowsToTake);
+          groupRowsLeft = groupRowsLeft.slice(maxDataRowsToTake);
+
+          currentPage.push({
+            key,
+            rows: sliceToTake,
+            isContinuation: !isFirstSlice,
+          });
+          currentCount += headerCost + sliceToTake.length;
+        }
+      } else {
+        // Si está cerrado, solo cuesta 1 fila de costo (la cabecera)
+        if (currentCount + 1 > pgSize && currentPage.length > 0) {
+          pages.push(currentPage);
+          currentPage = [];
+          currentCount = 0;
+        }
+        currentPage.push({ key, rows: [], isContinuation: false });
+        currentCount += 1;
+      }
+    }
+    if (currentPage.length > 0) pages.push(currentPage);
+    const totalPages = pages.length || 1;
+    const safeIndex = Math.min(groupPageIndex, totalPages - 1);
+    const currentGroups = pages[safeIndex] ?? [];
+    const visibleRows = currentGroups.reduce(
+      (acc, { rows }) => acc + rows.length,
+      0,
+    );
+    groupPagination = {
+      totalPages,
+      safeIndex,
+      currentGroups,
+      totalRows: allSortedRows.length,
+      visibleRows,
+      fullGroupMap,
+    };
+  }
 
   const handleExport = () => {
     // Obtener todas las filas filtradas
@@ -311,10 +399,12 @@ const DataTable = ({
           <tbody>
             {groupBy ? (
               (() => {
-                const filteredRows = table.getSortedRowModel().rows;
+                if (!groupPagination) return null;
+                const { currentGroups, totalRows, fullGroupMap } =
+                  groupPagination;
                 const colCount =
                   table.getHeaderGroups()?.[0]?.headers?.length || 1;
-                if (filteredRows.length === 0) {
+                if (totalRows === 0) {
                   return (
                     <tr>
                       <td
@@ -326,56 +416,63 @@ const DataTable = ({
                     </tr>
                   );
                 }
-                const groupMap = new Map();
-                filteredRows.forEach((row) => {
-                  const key = String(row.getValue(groupBy) ?? "(Sin valor)");
-                  if (!groupMap.has(key)) groupMap.set(key, []);
-                  groupMap.get(key).push(row);
-                });
-                return Array.from(groupMap.entries()).flatMap(
-                  ([groupKey, rows]) => {
-                    const isOpen = !closedGroups.has(groupKey);
+                return currentGroups.flatMap(
+                  ({ key: groupKey, rows, isContinuation }) => {
+                    const isOpen = openGroups.has(groupKey);
+                    const allGroupRows = fullGroupMap.get(groupKey) ?? rows;
                     return [
-                      <tr
-                        key={`group-${groupKey}`}
-                        className="bg-blue-50 border-b cursor-pointer select-none hover:bg-blue-100 transition-colors"
-                        onClick={() =>
-                          setClosedGroups((prev) => {
-                            const next = new Set(prev);
-                            if (next.has(groupKey)) next.delete(groupKey);
-                            else next.add(groupKey);
-                            return next;
-                          })
-                        }
-                      >
-                        <td colSpan={colCount} className="px-4 py-2">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              {isOpen ? (
-                                <ChevronDown
-                                  size={16}
-                                  className="text-primary"
-                                />
-                              ) : (
-                                <ChevronRight
-                                  size={16}
-                                  className="text-primary"
-                                />
-                              )}
-                              <span className="font-semibold text-sm text-gray-800">
-                                {groupKey}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              {groupSummary && groupSummary(rows)}
-                              <span className="text-xs text-gray-500 font-medium">
-                                {rows.length}{" "}
-                                {rows.length === 1 ? "registro" : "registros"}
-                              </span>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>,
+                      // Renderizar el encabezado de grupo solo si es la primera vez que aparece o si está cerrado
+                      ...(!isContinuation
+                        ? [
+                            <tr
+                              key={`group-${groupKey}`}
+                              className="bg-blue-50 border-b cursor-pointer select-none hover:bg-blue-100 transition-colors"
+                              onClick={() =>
+                                setOpenGroups((prev) => {
+                                  const next = new Set(prev);
+                                  if (next.has(groupKey)) next.delete(groupKey);
+                                  else next.add(groupKey);
+                                  return next;
+                                })
+                              }
+                            >
+                              <td colSpan={colCount} className="px-4 py-2">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    {isOpen ? (
+                                      <ChevronDown
+                                        size={16}
+                                        className="text-primary"
+                                      />
+                                    ) : (
+                                      <ChevronRight
+                                        size={16}
+                                        className="text-primary"
+                                      />
+                                    )}
+                                    <span className="font-semibold text-sm text-gray-800">
+                                      {groupKey === "SIN DOCENTE"
+                                        ? "SIN DOCENTE"
+                                        : groupKey}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    {groupSummary &&
+                                      groupSummary(allGroupRows, isOpen)}
+                                    {isOpen && (
+                                      <span className="text-xs text-gray-500 font-medium">
+                                        {allGroupRows.length}{" "}
+                                        {allGroupRows.length === 1
+                                          ? "registro"
+                                          : "registros"}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>,
+                          ]
+                        : []),
                       ...(isOpen
                         ? rows.map((row) => (
                             <tr
@@ -484,13 +581,27 @@ const DataTable = ({
           <p>
             Página{" "}
             <strong>
-              {table.getState().pagination.pageIndex + 1} de{" "}
-              {table.getPageCount()}
+              {groupPagination
+                ? groupPagination.safeIndex + 1
+                : table.getState().pagination.pageIndex + 1}{" "}
+              de{" "}
+              {groupPagination
+                ? groupPagination.totalPages
+                : table.getPageCount()}
             </strong>
           </p>
           <p>
-            Mostrando <strong>{table.getFilteredRowModel().rows.length}</strong>{" "}
-            de <strong>{data.length}</strong> registros
+            Mostrando{" "}
+            <strong>
+              {groupPagination
+                ? groupPagination.visibleRows
+                : table.getFilteredRowModel().rows.length}
+            </strong>{" "}
+            de{" "}
+            <strong>
+              {groupPagination ? groupPagination.totalRows : data.length}
+            </strong>{" "}
+            registros
             {globalFilter && (
               <span className="text-blue-600"> (filtrados)</span>
             )}
@@ -500,29 +611,61 @@ const DataTable = ({
         <div className="flex items-center gap-2">
           <button
             className="border rounded px-2 py-1 hover:bg-gray-100 disabled:opacity-50"
-            onClick={() => table.setPageIndex(0)}
-            disabled={!table.getCanPreviousPage()}
+            onClick={() =>
+              groupPagination ? setGroupPageIndex(0) : table.setPageIndex(0)
+            }
+            disabled={
+              groupPagination
+                ? groupPagination.safeIndex === 0
+                : !table.getCanPreviousPage()
+            }
           >
             {"<<"}
           </button>
           <button
             className="border rounded px-2 py-1 hover:bg-gray-100 disabled:opacity-50"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
+            onClick={() =>
+              groupPagination
+                ? setGroupPageIndex((p) => Math.max(0, p - 1))
+                : table.previousPage()
+            }
+            disabled={
+              groupPagination
+                ? groupPagination.safeIndex === 0
+                : !table.getCanPreviousPage()
+            }
           >
             {"<"}
           </button>
           <button
             className="border rounded px-2 py-1 hover:bg-gray-100 disabled:opacity-50"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
+            onClick={() =>
+              groupPagination
+                ? setGroupPageIndex((p) =>
+                    Math.min(groupPagination.totalPages - 1, p + 1),
+                  )
+                : table.nextPage()
+            }
+            disabled={
+              groupPagination
+                ? groupPagination.safeIndex >= groupPagination.totalPages - 1
+                : !table.getCanNextPage()
+            }
           >
             {">"}
           </button>
           <button
             className="border rounded px-2 py-1 hover:bg-gray-100 disabled:opacity-50"
-            onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-            disabled={!table.getCanNextPage()}
+            onClick={() =>
+              groupPagination
+                ? setGroupPageIndex(groupPagination.totalPages - 1)
+                : table.setPageIndex(table.getPageCount() - 1)
+            }
+            disabled={
+              groupPagination
+                ? groupPagination.safeIndex >= groupPagination.totalPages - 1
+                : !table.getCanNextPage()
+            }
           >
             {">>"}
           </button>
@@ -531,9 +674,12 @@ const DataTable = ({
         <div className="flex items-center gap-2">
           <span className="text-sm">Mostrar:</span>
           <select
-            value={table.getState().pagination.pageSize}
+            value={localPageSize}
             onChange={(e) => {
-              table.setPageSize(Number(e.target.value));
+              const newSize = Number(e.target.value);
+              setLocalPageSize(newSize);
+              table.setPageSize(newSize);
+              if (groupBy) setGroupPageIndex(0);
             }}
             className="border p-2 rounded"
           >

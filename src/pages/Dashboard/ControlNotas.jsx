@@ -299,6 +299,32 @@ const ControlNotas = () => {
                 groupBy="docente"
                 loading={isLoading}
                 loaderMessage="Cargando notas creadas..."
+                groupSummary={(rows, isOpen) => {
+                  if (!isOpen) return null;
+                  const counts = {};
+                  rows.forEach((r) => {
+                    const estado = r.original.estado_notas ?? "—";
+                    counts[estado] = (counts[estado] || 0) + 1;
+                  });
+                  const colorMap = {
+                    "SIN NOTAS CREADAS": "bg-red-100 text-red-700",
+                    "SIN DOCENTE": "bg-yellow-100 text-yellow-700",
+                  };
+                  return (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {Object.entries(counts).map(([estado, count]) => (
+                        <span
+                          key={estado}
+                          className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                            colorMap[estado] ?? "bg-green-100 text-green-700"
+                          }`}
+                        >
+                          {estado}: {count}
+                        </span>
+                      ))}
+                    </div>
+                  );
+                }}
               />
             )}
             {activeTab === TAB_ASSIGN && (
@@ -309,6 +335,33 @@ const ControlNotas = () => {
                 groupBy="docente"
                 loading={isLoading}
                 loaderMessage="Cargando notas asignadas..."
+                groupSummary={(rows, isOpen) => {
+                  if (!isOpen) return null;
+                  const counts = {};
+                  rows.forEach((r) => {
+                    const estado = r.original.estado_calificacion ?? "—";
+                    counts[estado] = (counts[estado] || 0) + 1;
+                  });
+                  const colorMap = {
+                    "SIN NOTAS CREADAS": "bg-red-100 text-red-700",
+                    "SIN NINGUNA NOTA": "bg-orange-100 text-orange-700",
+                    "EN PROCESO": "bg-yellow-100 text-yellow-700",
+                  };
+                  return (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {Object.entries(counts).map(([estado, count]) => (
+                        <span
+                          key={estado}
+                          className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                            colorMap[estado] ?? "bg-green-100 text-green-700"
+                          }`}
+                        >
+                          {estado}: {count}
+                        </span>
+                      ))}
+                    </div>
+                  );
+                }}
               />
             )}
           </div>

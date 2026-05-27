@@ -17,6 +17,7 @@ import {
   isText,
   matchesPattern,
 } from "../../utils/validationUtils";
+import { toUpperCaseField } from "../../utils/formatUtils";
 
 const RegisterUser = () => {
   const { schools, loading, reload } = useSchool();
@@ -62,15 +63,16 @@ const RegisterUser = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    const finalValue = toUpperCaseField(name, value);
 
     // actualizar valor
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: finalValue,
     }));
 
     // validar campo al vuelo
-    const fieldValidation = validateField(name, value);
+    const fieldValidation = validateField(name, finalValue);
     setFormErrors((prev) => ({ ...prev, [name]: fieldValidation }));
   };
 
@@ -180,7 +182,6 @@ const RegisterUser = () => {
       // Convertir idInstitution a número
       payload.idInstitution = parseInt(formData.idInstitution, 10);
     }
-
 
     try {
       const res = await registerUser(payload);

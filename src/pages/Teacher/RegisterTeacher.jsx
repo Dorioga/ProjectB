@@ -12,6 +12,7 @@ import useData from "../../lib/hooks/useData";
 import { useNotify } from "../../lib/hooks/useNotify";
 import { minLength, matchesPattern } from "../../utils/validationUtils";
 import tourRegisterTeacher from "../../tour/tourRegisterTeacher";
+import { toUpperCaseField } from "../../utils/formatUtils";
 
 const DEFAULT_BIRTH_DATE = new Date().toISOString().split("T")[0];
 
@@ -157,7 +158,7 @@ const RegisterTeacher = ({ onSuccess }) => {
         ? value
           ? Number(value)
           : 0
-        : value;
+        : toUpperCaseField(name, value);
 
     setFormData((prev) => ({
       ...prev,
