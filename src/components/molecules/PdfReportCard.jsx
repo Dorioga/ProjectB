@@ -158,7 +158,7 @@ const exportPDF = async (reportCard) => {
     student?.matricula,
     student?.enrollmentNumber,
     reportCard?.report?.matricula,
-    reportCard?.matricula
+    reportCard?.matricula,
   );
 
   const directorGrupo = pickFirstNonEmpty(
@@ -166,7 +166,7 @@ const exportPDF = async (reportCard) => {
     reportCard?.report?.group?.director_group,
     reportCard?.report?.group?.directorName,
     reportCard?.directorGroup,
-    reportCard?.directorGrupo
+    reportCard?.directorGrupo,
   );
 
   const headerAvg = toNumberOrNull(reportCard?.summary?.finalAverage);
@@ -175,7 +175,7 @@ const exportPDF = async (reportCard) => {
     reportCard?.summary?.rank,
     reportCard?.summary?.puesto,
     reportCard?.summary?.position,
-    reportCard?.puesto
+    reportCard?.puesto,
   );
 
   const studentText = `Estudiante: ${studentName}`;
@@ -206,7 +206,7 @@ const exportPDF = async (reportCard) => {
       const maxH = HEADER_H - pad * 2;
       const scale = Math.min(
         maxW / logoCompressed.width,
-        maxH / logoCompressed.height
+        maxH / logoCompressed.height,
       );
       const drawW = logoCompressed.width * scale;
       const drawH = logoCompressed.height * scale;
@@ -276,18 +276,18 @@ const exportPDF = async (reportCard) => {
     pdfInstance.text(
       truncateToWidth(studentText, row1Col1W),
       row1Col1X,
-      STUDENT_LINE_1_Y
+      STUDENT_LINE_1_Y,
     );
     pdfInstance.text(
       truncateToWidth(matriculaText, row1Col2W),
       row1Col2X,
-      STUDENT_LINE_1_Y
+      STUDENT_LINE_1_Y,
     );
     pdfInstance.text(
       truncateToWidth(gradeText, row1Col3W),
       row1Col3RightX,
       STUDENT_LINE_1_Y,
-      { align: "right" }
+      { align: "right" },
     );
 
     // Fila 2: 4 columnas (Director / Periodo / Promedio / Puesto)
@@ -303,25 +303,25 @@ const exportPDF = async (reportCard) => {
     pdfInstance.text(
       truncateToWidth(directorText, row2Col1W),
       row2Col1X,
-      STUDENT_LINE_2_Y
+      STUDENT_LINE_2_Y,
     );
     pdfInstance.text(
       truncateToWidth(periodoText, row2Col2W),
       row2Col2X + row2Col2W / 2,
       STUDENT_LINE_2_Y,
-      { align: "center" }
+      { align: "center" },
     );
     pdfInstance.text(
       truncateToWidth(promText, row2Col3W),
       row2Col3X + row2Col3W / 2,
       STUDENT_LINE_2_Y,
-      { align: "center" }
+      { align: "center" },
     );
     pdfInstance.text(
       truncateToWidth(puestoText, row2Col4W),
       row2Col4X + row2Col4W,
       STUDENT_LINE_2_Y,
-      { align: "right" }
+      { align: "right" },
     );
   };
 
@@ -487,7 +487,7 @@ const exportPDF = async (reportCard) => {
     const n4 = toNumberOrNull(periodLevelings?.p4);
 
     const computedFinalFromPeriods = computeFinalFromPeriods(
-      subject?.periodGrades
+      subject?.periodGrades,
     );
     const computedFinalFromRecords = calculateFinalGrade(subject?.records);
     const finalGrade =
@@ -506,7 +506,7 @@ const exportPDF = async (reportCard) => {
 
     const subjectLines = pdf.splitTextToSize(
       subjectText,
-      colSubjectW - padding * 2
+      colSubjectW - padding * 2,
     );
     const textLineH = 4.5;
     const textTopOffset = 5;
@@ -523,11 +523,11 @@ const exportPDF = async (reportCard) => {
     // Reserva espacio para fila de observación para evitar cortes raros
     const obsPreviewLines = pdf.splitTextToSize(
       obsText || "-",
-      tableW - padding * 2
+      tableW - padding * 2,
     );
     const obsRowH = Math.max(
       headerH,
-      textTopOffset + (Math.max(1, obsPreviewLines.length) - 1) * 4.2
+      textTopOffset + (Math.max(1, obsPreviewLines.length) - 1) * 4.2,
     );
 
     y = checkPageBreak(pdf, y, rowH + obsRowH + 12);
@@ -707,19 +707,19 @@ const exportPDF = async (reportCard) => {
   drawLegendRow("VN", "Valoración Nacional");
   drawLegendRow(
     "DS",
-    "Desempeño Superior: De 4.7 a 5.0 (Alcanza los desempeños esperados en el tiempo planeado y de manera independiente)"
+    "Desempeño Superior: De 4.7 a 5.0 (Alcanza los desempeños esperados en el tiempo planeado y de manera independiente)",
   );
   drawLegendRow(
     "DA",
-    "Desempeño Alto: De 4.0 a 4.6 (Alcanza la mayoría de los desempeños esperados y algunas veces requiere de apoyo pedagógico. Casi siempre en el tiempo planeado)"
+    "Desempeño Alto: De 4.0 a 4.6 (Alcanza la mayoría de los desempeños esperados y algunas veces requiere de apoyo pedagógico. Casi siempre en el tiempo planeado)",
   );
   drawLegendRow(
     "DB",
-    "Desempeño Básico: De 3.5 a 3.9 (Alcanza desempeños básicos, casi siempre requiere de apoyo y lo aprovecha. Con frecuencia entrega productos por fuera del tiempo planeado y algunos están incompletos)"
+    "Desempeño Básico: De 3.5 a 3.9 (Alcanza desempeños básicos, casi siempre requiere de apoyo y lo aprovecha. Con frecuencia entrega productos por fuera del tiempo planeado y algunos están incompletos)",
   );
   drawLegendRow(
     "DBJ",
-    "Desempeño Bajo: De 1.0 a 3.4 (No alcanza desempeños esperados, aunque cuente con los apoyos)"
+    "Desempeño Bajo: De 1.0 a 3.4 (No alcanza desempeños esperados, aunque cuente con los apoyos)",
   );
 
   // ================== FIRMAS ==================

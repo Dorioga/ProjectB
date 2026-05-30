@@ -21,8 +21,6 @@ import useData from "../../lib/hooks/useData";
 import useAuth from "../../lib/hooks/useAuth";
 import tourRegisterStudentRecords from "../../tour/tourRegisterStudentRecords";
 import { useNotify } from "../../lib/hooks/useNotify";
-import { asignatureResponse } from "../../services/DataExamples/asignatureResponse";
-import { studentsResponse } from "../../services/DataExamples/studentsResponse";
 
 const NIVEL_OPTIONS = ["Superior", "Alto", "Básico", "Bajo"];
 

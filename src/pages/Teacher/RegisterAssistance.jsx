@@ -14,8 +14,6 @@ import useAuth from "../../lib/hooks/useAuth";
 import Loader from "../../components/atoms/Loader";
 import tourRegisterAssistance from "../../tour/tourRegisterAssistance";
 import { useNotify } from "../../lib/hooks/useNotify";
-import { asignatureResponse } from "../../services/DataExamples/asignatureResponse";
-import { studentsResponse } from "../../services/DataExamples/studentsResponse";
 
 const normalize = (value) =>
   String(value ?? "")
@@ -359,9 +357,7 @@ const RegisterAssistance = () => {
     const base =
       Array.isArray(studentsFromService) && studentsFromService.length > 0
         ? studentsFromService
-        : Array.isArray(studentsResponse)
-          ? studentsResponse
-          : [];
+        : [];
     const filtered = journey
       ? base.filter((s) => normalize(s?.journey) === normalize(journey))
       : base;
@@ -372,9 +368,7 @@ const RegisterAssistance = () => {
     const base =
       Array.isArray(studentsFromService) && studentsFromService.length > 0
         ? studentsFromService
-        : Array.isArray(studentsResponse)
-          ? studentsResponse
-          : [];
+        : [];
     const filtered = base.filter((s) => {
       if (journey && normalize(s?.journey) !== normalize(journey)) return false;
       if (grade && String(s?.grade_scholar ?? "").trim() !== String(grade)) {
@@ -389,9 +383,7 @@ const RegisterAssistance = () => {
     const base =
       Array.isArray(studentsFromService) && studentsFromService.length > 0
         ? studentsFromService
-        : Array.isArray(studentsResponse)
-          ? studentsResponse
-          : [];
+        : [];
     return base.filter((s) => {
       if (journey && normalize(s?.journey) !== normalize(journey)) return false;
       if (grade && String(s?.grade_scholar ?? "").trim() !== String(grade)) {

@@ -360,7 +360,8 @@ const ProfileSchool = ({
     // umbral: en formato array viene en cada fila; tomarlo del primero
     const rawPromotion = isArrayFormat
       ? (baseData?.umbral ?? "")
-      : (baseData?.sistema_evaluacion?.politica_promocion ??
+      : (baseData?.umbral ??
+        baseData?.sistema_evaluacion?.politica_promocion ??
         baseData?.politica_promocion ??
         "");
 
@@ -728,6 +729,11 @@ const ProfileSchool = ({
               desde: parseNum(r.start),
               hasta: parseNum(r.end),
             })),
+            umbral:
+              evaluation.promotionThreshold !== "" &&
+              evaluation.promotionThreshold != null
+                ? parseNum(evaluation.promotionThreshold)
+                : null,
           };
 
           // Usar updateInstitution si existe, si no usar updateSchool como fallback

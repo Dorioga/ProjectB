@@ -813,6 +813,57 @@ async function generateBoletinPDF(
     y += studentTableH + 4;
   }
 
+  /* ── Escala Valorativa ── */
+  {
+    const escalaRowH = 7;
+    addPageIfNeeded(escalaRowH * 2 + 2);
+
+    const now = new Date();
+    const pad2 = (n) => String(n).padStart(2, "0");
+    const dateStr = `${pad2(now.getDate())}-${pad2(now.getMonth() + 1)}-${now.getFullYear()} ${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
+
+    const levels = escalas.map((e) => ({
+      label: String(e.escala ?? ""),
+      code: String(e.escala ?? ""),
+      range: `(${e.desde} - ${e.hasta})`,
+    }));
+
+    // Fila 1: título centrado + fecha a la derecha
+    pdf.setDrawColor(0, 0, 0);
+    pdf.setLineWidth(0.3);
+    pdf.rect(margin, y, contentW, escalaRowH, "D");
+    pdf.setFontSize(8);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(0, 0, 0);
+    pdf.text(
+      "ESCALA VALORATIVA",
+      margin + contentW / 2,
+      y + escalaRowH / 2 + 1.5,
+      { align: "center" },
+    );
+
+    y += escalaRowH;
+
+    // Fila 2: columnas de niveles — "label = CODE range"
+    const lvlColW = contentW / levels.length;
+    pdf.setFontSize(6.5);
+    for (let i = 0; i < levels.length; i++) {
+      const cx = margin + i * lvlColW;
+      pdf.rect(cx, y, lvlColW, escalaRowH, "D");
+      const { label, code, range } = levels[i];
+      const textY = y + escalaRowH / 2 + 1.5;
+      const startX = cx + 1.5;
+
+      pdf.setFont("helvetica", "bold");
+      pdf.text(label, startX, textY);
+      const labelW = pdf.getTextWidth(label);
+
+      pdf.setFont("helvetica", "normal");
+      pdf.text(` = ${range}`, startX + labelW, textY);
+    }
+    y += escalaRowH + 4;
+  }
+
   /* ── Tabla de notas ── */
   // Columnas: Asignatura | [por cada periodo: Nota, Recup, Escala, Estado, Logro]
   const periodCols = periodos.length * 5;
@@ -1203,50 +1254,6 @@ async function generateBoletinPDF(
     { align: "center" },
   );
   y += firmaRowH + 4;
-
-  /* ── Convenciones ── */
-  if (escalas.length > 0) {
-    addPageIfNeeded(10 + escalas.length * 6);
-    pdf.setFontSize(9);
-    pdf.setFont("helvetica", "bold");
-    pdf.setTextColor(0, 0, 0);
-    pdf.text("CONVENCIONES", margin, y);
-    y += 5;
-    const escColW = [contentW * 0.2, contentW * 0.8];
-    // Cabecera convenciones
-    pdf.setFillColor(255, 255, 255);
-    pdf.setDrawColor(0, 0, 0);
-    pdf.rect(margin, y, escColW[0], 6, "FD");
-    pdf.rect(margin + escColW[0], y, escColW[1], 6, "FD");
-    pdf.setFontSize(7);
-    pdf.setFont("helvetica", "bold");
-    pdf.text("ESCALA", margin + 2, y + 4);
-    pdf.text("RANGO", margin + escColW[0] + 2, y + 4);
-    y += 6;
-    for (const e of escalas) {
-      addPageIfNeeded(6);
-      pdf.setDrawColor(0, 0, 0);
-      pdf.rect(margin, y, escColW[0], 6, "D");
-      pdf.rect(margin + escColW[0], y, escColW[1], 6, "D");
-      pdf.setFontSize(6.5);
-      pdf.setFont("helvetica", "bold");
-      pdf.setTextColor(0, 0, 0);
-      pdf.text(String(e.escala ?? ""), margin + 2, y + 4);
-      pdf.setFont("helvetica", "normal");
-      const normalized = String(e.escala || "")
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "");
-      const desc = getEscalaDescripcion(normalized);
-      const rangoText = `De ${e.desde} a ${e.hasta}${desc ? ` (${desc})` : ""}`;
-      let display = rangoText;
-      const maxEscW = escColW[1] - 3;
-      while (pdf.getTextWidth(display) > maxEscW && display.length > 1)
-        display = display.slice(0, -1);
-      pdf.text(display, margin + escColW[0] + 2, y + 4);
-      y += 6;
-    }
-  }
 
   const nombreArchivo =
     [info.nombre_estudiante, info.apellido_estudiante]
@@ -2081,6 +2088,60 @@ const BoletinSelector = ({
                   </tbody>
                 </table>
 
+                {/* ── Escala Valorativa ── */}
+                {(() => {
+                  const levels = escalas.map((e) => ({
+                    label: String(e.escala ?? ""),
+                    range: `( ${e.desde} - ${e.hasta} )`,
+                  }));
+                  const now = new Date();
+                  const pad2 = (n) => String(n).padStart(2, "0");
+                  const dateStr = `${pad2(now.getDate())}-${pad2(now.getMonth() + 1)}-${now.getFullYear()} ${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
+                  return (
+                    <table
+                      style={{
+                        width: "100%",
+                        borderCollapse: "collapse",
+                        border: "1px solid #111827",
+                        fontSize: "9px",
+                        marginBottom: "10px",
+                      }}
+                    >
+                      <tbody>
+                        <tr>
+                          <td
+                            colSpan={levels.length}
+                            style={{
+                              border: "1px solid #111827",
+                              padding: "3px 6px",
+                              fontWeight: "bold",
+                              textAlign: "center",
+                              fontSize: "10px",
+                              position: "relative",
+                            }}
+                          >
+                            ESCALA VALORATIVA
+                          </td>
+                        </tr>
+                        <tr>
+                          {levels.map((lvl, i) => (
+                            <td
+                              key={i}
+                              style={{
+                                border: "1px solid #111827",
+                                padding: "3px 6px",
+                                width: `${100 / levels.length}%`,
+                              }}
+                            >
+                              <strong> {lvl.label}</strong> = {lvl.range}
+                            </td>
+                          ))}
+                        </tr>
+                      </tbody>
+                    </table>
+                  );
+                })()}
+
                 {/* ── Tabla por asignatura ── */}
                 {asignaturas.map((asig, idx) => {
                   return (
@@ -2403,97 +2464,7 @@ const BoletinSelector = ({
                   </tbody>
                 </table>
 
-                {/* ── Convenciones ── */}
-                {escalas.length > 0 && (
-                  <div style={{ marginTop: "20px" }}>
-                    <p
-                      style={{
-                        fontWeight: "bold",
-                        fontSize: "11px",
-                        textTransform: "uppercase",
-                        marginBottom: "6px",
-                        letterSpacing: "0.5px",
-                      }}
-                    >
-                      Convenciones
-                    </p>
-                    <table
-                      style={{
-                        width: "100%",
-                        borderCollapse: "collapse",
-                        fontSize: "10px",
-                      }}
-                    >
-                      <thead>
-                        <tr>
-                          <th
-                            style={{
-                              border: "1px solid #d1d5db",
-                              padding: "6px 10px",
-                              textAlign: "left",
-                              fontWeight: "bold",
-                              backgroundColor: "#f9fafb",
-                              width: "20%",
-                            }}
-                          >
-                            ESCALA
-                          </th>
-                          <th
-                            style={{
-                              border: "1px solid #d1d5db",
-                              padding: "6px 10px",
-                              textAlign: "left",
-                              fontWeight: "bold",
-                              backgroundColor: "#f9fafb",
-                            }}
-                          >
-                            RANGO
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {escalas.map((e, i) => {
-                          const key = String(e.escala || "")
-                            .toLowerCase()
-                            .normalize("NFD")
-                            .replace(/[\u0300-\u036f]/g, "");
-                          const descripcion = getEscalaDescripcion(key);
-                          return (
-                            <tr key={i}>
-                              <td
-                                style={{
-                                  border: "1px solid #d1d5db",
-                                  padding: "6px 10px",
-                                  fontWeight: "bold",
-                                }}
-                              >
-                                {e.escala}
-                              </td>
-                              <td
-                                style={{
-                                  border: "1px solid #d1d5db",
-                                  padding: "6px 10px",
-                                }}
-                              >
-                                De {e.desde} a {e.hasta}
-                                {descripcion && (
-                                  <span
-                                    style={{
-                                      marginLeft: "4px",
-                                      color: "#374151",
-                                    }}
-                                  >
-                                    ({descripcion})
-                                  </span>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+
               </div>
             )}
           </div>

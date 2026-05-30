@@ -4,12 +4,11 @@ import DataTable from "../../components/atoms/DataTable";
 import StudentModal from "../../components/molecules/StudentModal"; // 1. Importa el modal
 import { User } from "lucide-react";
 import AlertTable from "../../components/molecules/AlertTable";
-import { alertsResponse } from "../../services/DataExamples/alertsResponse";
 import SimpleButton from "../../components/atoms/SimpleButton";
 
 const AllStudent = () => {
   const { students, loading, reload, updateStudent } = useStudent();
-  const alerts = alertsResponse;
+  const alerts = [];
   // 2. Estados para controlar el modal y el estudiante seleccionado
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);

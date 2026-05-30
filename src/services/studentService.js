@@ -1,5 +1,5 @@
 ﻿import { ApiClient } from "./ApiClient";
-import { studentsResponse as studentsMock } from "./DataExamples/studentsResponse";
+const studentsMock = [];
 
 export async function registerStudent(payload) {
   if (!payload || typeof payload !== "object") {
@@ -38,12 +38,11 @@ export async function uploadStudentsExcel(file) {
   }
 
   const formData = new FormData();
-  const fileName = file?.name || "students.xlsx";
+  const fileName = file?.name;
   formData.append("archivo", file, fileName);
 
   const res = await ApiClient.instance.post("/upload/students/file", formData);
   const responseData = res;
-
 
   // Validación suave del payload: devolvemos data o data.data.
   if (

@@ -1,5 +1,4 @@
 import { ApiClient } from "./ApiClient";
-import { loginResponse } from "./DataExamples/loginResponse";
 import { sha256 } from "js-sha256";
 import { upload } from "./uploadService";
 
@@ -51,25 +50,6 @@ export async function logout() {
   // invalidate tokens if necessary — implement server-side endpoint if
   // you want a server-side logout.
   return Promise.resolve({ ok: true });
-}
-
-/**
- * Solicita al backend el envío de un enlace para restablecer la contraseña.
- * En modo DEV simula la respuesta para poder probar la UI.
- */
-export async function forgotPassword(payload) {
-  const email = payload?.email || payload;
-  if (!email) {
-    throw new Error("El correo es obligatorio");
-  }
-  if (import.meta.env.DEV) {
-    return Promise.resolve({
-      ok: true,
-      message: "Enlace de restablecimiento simulado (DEV)",
-    });
-  }
-  const res = await ApiClient.instance.post("/auth/forgot-password", { email });
-  return res;
 }
 
 // -----------------------------------------------------------------------------

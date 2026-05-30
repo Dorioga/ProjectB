@@ -762,3 +762,94 @@ export async function salidaQR(payload) {
 
   throw new Error("Respuesta inesperada de /student/exit/qr.");
 }
+
+/**
+ * Obtiene las sedes de la institución.
+ *
+ * Endpoint esperado: POST /sedes
+ * @param {Object} params - Filtros opcionales (ej: { fk_institucion: 1 })
+ * @returns {Promise<Array>} Array de sedes
+ */
+export async function getSedes(params = {}) {
+  try {
+    const res = await ApiClient.instance.post("/sedes", params);
+    const data = res;
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === "object" && Array.isArray(data.data))
+      return data.data;
+    if (data && typeof data === "object" && "data" in data) return data.data;
+    if (data !== undefined && data !== null) return data;
+    return [];
+  } catch (error) {
+    console.error("Error en getSedes:", error);
+    throw error;
+  }
+}
+
+/**
+ * Obtiene los registros académicos.
+ *
+ * Endpoint esperado: POST /records
+ * @param {Object} params - Filtros opcionales
+ * @returns {Promise<Array>} Array de registros
+ */
+export async function loadRecords(params = {}) {
+  try {
+    const res = await ApiClient.instance.post("/records", params);
+    const data = res;
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === "object" && Array.isArray(data.data))
+      return data.data;
+    if (data && typeof data === "object" && "data" in data) return data.data;
+    if (data !== undefined && data !== null) return data;
+    return [];
+  } catch (error) {
+    console.error("Error en loadRecords:", error);
+    throw error;
+  }
+}
+
+/**
+ * Obtiene todas las instituciones.
+ *
+ * Endpoint esperado: GET /institutions
+ * @returns {Promise<Array>} Array de instituciones
+ */
+export async function getSchools() {
+  try {
+    const res = await ApiClient.get("/institutions");
+    const data = Array.isArray(res) ? res : (res?.data ?? res);
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === "object" && Array.isArray(data.data))
+      return data.data;
+    if (data !== undefined && data !== null) return data;
+    return [];
+  } catch (error) {
+    console.error("Error en getSchools:", error);
+    throw error;
+  }
+}
+
+/**
+ * Actualiza una institución (alias de updateInstitution para compatibilidad).
+ *
+ * @param {string|number} id
+ * @param {Object} payload
+ * @returns {Promise<Object>}
+ */
+export async function updateSchool(id, payload) {
+  return updateInstitution(id, payload);
+}
+
+/**
+ * Elimina una institución.
+ *
+ * Endpoint esperado: DELETE /institution/:id
+ * @param {string|number} id - Identificador de la institución
+ * @returns {Promise<void>}
+ */
+export async function deleteSchool(id) {
+  if (!id) throw new Error("id es requerido para deleteSchool");
+  const res = await ApiClient.instance.delete(`/institution/${id}`);
+  return res;
+}

@@ -5,7 +5,6 @@ import Modal from "../../components/atoms/Modal";
 import ProfileSchool from "./ProfileSchool";
 import Loader from "../../components/atoms/Loader";
 import useSchool from "../../lib/hooks/useSchool";
-import { alertsResponse } from "../../services/DataExamples/alertsResponse";
 import tourManageSchools from "../../tour/tourManageSchools";
 
 const ManageSchools = () => {
