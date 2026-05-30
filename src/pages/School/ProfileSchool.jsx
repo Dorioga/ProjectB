@@ -38,10 +38,9 @@ const normalizeNumericValue = (value) => {
   if (value === "" || value === null) return "";
   const num = parseFloat(String(value).replace(",", "."));
   if (Number.isNaN(num)) return value;
-  const clamped = Math.max(MIN_VALUE, Math.min(MAX_VALUE, num));
-  return Number.isInteger(clamped)
-    ? String(clamped)
-    : String(parseFloat(clamped.toFixed(2)));
+  return Number.isInteger(num)
+    ? String(num)
+    : String(parseFloat(num.toFixed(2)));
 };
 
 const blockInvalidKeys = (e) => {
@@ -109,14 +108,26 @@ const validatePerformanceScale = (scaleArray) => {
 
   const intervals = [];
 
+  if (!scaleArray || scaleArray.length === 0) {
+    errors.push("La escala de desempeño debe tener al menos una fila.");
+  }
+
   (scaleArray || []).forEach((r, idx) => {
-    const label = r.label || `Estado ${idx + 1}`;
+    const label = (r.label || "").toString().trim();
     const sRaw =
       r.start === undefined || r.start === null ? "" : String(r.start).trim();
     const eRaw =
       r.end === undefined || r.end === null ? "" : String(r.end).trim();
 
     const currentRowErrors = [];
+
+    if (!label) {
+      errors.push(
+        `Fila ${idx + 1}: el nombre de la escala (etiqueta) es obligatorio.`,
+      );
+      rowErrors[idx] = rowErrors[idx] || [];
+      rowErrors[idx].push("nombre de etiqueta requerido");
+    }
 
     if (sRaw === "" || eRaw === "") {
       currentRowErrors.push("inicio y fin deben estar completos");
@@ -127,33 +138,12 @@ const validatePerformanceScale = (scaleArray) => {
       if (Number.isNaN(s) || Number.isNaN(e)) {
         currentRowErrors.push("inicio y fin deben ser números");
       } else {
-        if (!(s < e)) {
-          currentRowErrors.push("inicio debe ser menor que fin");
-        } else {
-          intervals.push({ s, e, label, idx });
-        }
+        intervals.push({ s, e, label: label || `Estado ${idx + 1}`, idx });
       }
     }
 
     if (currentRowErrors.length > 0) rowErrors[idx] = currentRowErrors;
   });
-
-  // Comprobación entre filas adyacentes: exigir fin < inicio siguiente (estricto)
-  for (let i = 0; i < (scaleArray || []).length - 1; i += 1) {
-    const a = intervals.find((it) => it.idx === i);
-    const b = intervals.find((it) => it.idx === i + 1);
-    if (a && b) {
-      if (!(a.e + EPS < b.s)) {
-        errors.push(
-          `'${a.label}' debe tener fin menor que el inicio de '${b.label}'`,
-        );
-        rowErrors[a.idx] = rowErrors[a.idx] || [];
-        rowErrors[b.idx] = rowErrors[b.idx] || [];
-        rowErrors[a.idx].push("fin debe ser menor que inicio siguiente");
-        rowErrors[b.idx].push("inicio debe ser mayor que fin anterior");
-      }
-    }
-  }
 
   // Detectar duplicados globales en todos los valores (starts/ends)
   const valueMap = {};
@@ -191,45 +181,14 @@ const validatePerformanceScale = (scaleArray) => {
         rowErrors[b.idx] = rowErrors[b.idx] || [];
         rowErrors[a.idx].push("intervalo duplicado");
         rowErrors[b.idx].push("intervalo duplicado");
-      } else if (
-        Math.max(a.s, b.s) <
-        Math.min(a.e, b.e) - (MIN_STEP / 2 + EPS)
-      ) {
-        errors.push(`'${a.label}' y '${b.label}': intervalos se solapan`);
-        rowErrors[a.idx] = rowErrors[a.idx] || [];
-        rowErrors[b.idx] = rowErrors[b.idx] || [];
-        rowErrors[a.idx].push("intervalo solapado con otra fila");
-        rowErrors[b.idx].push("intervalo solapado con otra fila");
       }
     }
   }
 
-  // Validar límites 0..5 para cada intervalo
-  (intervals || []).forEach((it) => {
-    if (it.s < MIN_VALUE || it.e > MAX_VALUE) {
-      errors.push(`'${it.label}': valores deben estar entre 0 y 5`);
-      rowErrors[it.idx] = rowErrors[it.idx] || [];
-      rowErrors[it.idx].push("valores fuera de rango (0..5)");
-    }
-  });
-
-  // Validar etiquetas: deben ser una de las opciones permitidas y no repetirse
-  const allowedLabels = ["Superior", "Alto", "Básico", "Bajo"];
+  // Duplicados de etiquetas
   const labels = (scaleArray || []).map((r) =>
     (r?.label || "").toString().trim(),
   );
-
-  labels.forEach((lab, idx) => {
-    if (!lab || !allowedLabels.includes(lab)) {
-      errors.push(
-        `Fila ${idx + 1}: etiqueta inválida — usar Superior/Alto/Básico/Bajo`,
-      );
-      rowErrors[idx] = rowErrors[idx] || [];
-      rowErrors[idx].push("etiqueta inválida");
-    }
-  });
-
-  // Duplicados de etiquetas
   const labelCounts = labels.reduce((acc, l, i) => {
     if (!l) return acc;
     acc[l] = acc[l] || [];
@@ -248,15 +207,6 @@ const validatePerformanceScale = (scaleArray) => {
       });
     }
   });
-
-  // Requerir exactamente las 4 etiquetas únicas
-  const uniqueLabels = [...new Set(labels.filter(Boolean))];
-  const missing = allowedLabels.filter((a) => !uniqueLabels.includes(a));
-  if (uniqueLabels.length !== allowedLabels.length || missing.length > 0) {
-    errors.push(
-      `La escala debe contener exactamente: ${allowedLabels.join(", ")}`,
-    );
-  }
 
   return {
     valid: errors.length === 0 && Object.keys(rowErrors).length === 0,
@@ -340,6 +290,8 @@ const ProfileSchool = ({
     signaturePrincipal: "",
     sede: [],
     department_id: "",
+    licenciaFuncionamiento: "",
+    escalaInasistencias: "",
   });
 
   // Si se pasa initialData, sincronizar el form
@@ -370,6 +322,17 @@ const ProfileSchool = ({
       signaturePrincipal: baseData.link_firma ?? "",
       sede: Array.isArray(baseData.sede) ? baseData.sede : [],
       department_id: baseData.department_id ?? "",
+      licenciaFuncionamiento:
+        baseData.licencia_funcionamiento ??
+        baseData.licenciaFuncionamiento ??
+        baseData.membrete ??
+        "",
+      escalaInasistencias:
+        baseData.escala_inasistencias ??
+        baseData.escalaInasistencias ??
+        baseData.limite_inasistencias ??
+        baseData.faltas ??
+        "",
     };
 
     setFormData((prev) => ({ ...prev, ...map }));
@@ -522,6 +485,28 @@ const ProfileSchool = ({
       "La jornada es obligatoria",
     );
     if (!workdayValidation.valid) errors.workday = workdayValidation.msg;
+
+    // Validar licencia de funcionamiento
+    const licenciaValidation = required(
+      formData.licenciaFuncionamiento,
+      "La licencia de funcionamiento es obligatoria",
+    );
+    if (!licenciaValidation.valid)
+      errors.licenciaFuncionamiento = licenciaValidation.msg;
+
+    // Validar escala de inasistencias
+    const escalaInasistenciasValidation = required(
+      formData.escalaInasistencias,
+      "La escala de inasistencias es obligatoria",
+    );
+    if (!escalaInasistenciasValidation.valid) {
+      errors.escalaInasistencias = escalaInasistenciasValidation.msg;
+    } else {
+      const scaleVal = parseInt(formData.escalaInasistencias, 10);
+      if (Number.isNaN(scaleVal) || scaleVal <= 0) {
+        errors.escalaInasistencias = "Debe ser un número entero mayor a 0";
+      }
+    }
 
     // Validar código DANE solo en modo creación
     if (!isUpdate) {
@@ -725,6 +710,11 @@ const ProfileSchool = ({
             signaturePrincipal: payload.signaturePrincipal ?? "",
             slogan: payload.slogan ?? "",
             workday: payload.workday ? parseInt(payload.workday) : null,
+            licencia_funcionamiento: payload.licenciaFuncionamiento ?? "",
+            escala_inasistencias:
+              payload.escalaInasistencias !== ""
+                ? parseInt(payload.escalaInasistencias)
+                : null,
             // Escala de evaluación: usa id_evaluacion del registro original
             escala_evaluacion: (Array.isArray(evaluation.performanceScale)
               ? evaluation.performanceScale
@@ -734,11 +724,11 @@ const ProfileSchool = ({
                 r.id_sistema_evaluacion != null
                   ? parseInt(r.id_sistema_evaluacion)
                   : undefined,
+              escala: (r.label ?? "").toString(),
               desde: parseNum(r.start),
               hasta: parseNum(r.end),
             })),
           };
-
 
           // Usar updateInstitution si existe, si no usar updateSchool como fallback
           if (typeof updateInstitution === "function") {
@@ -771,12 +761,21 @@ const ProfileSchool = ({
 
           payload.sede = sedeData;
 
+          // Agregar campos adicionales al payload de creación
+          payload.licencia_funcionamiento =
+            payload.licenciaFuncionamiento ?? "";
+          payload.escala_inasistencias =
+            payload.escalaInasistencias !== ""
+              ? parseInt(payload.escalaInasistencias)
+              : null;
+          delete payload.licenciaFuncionamiento;
+          delete payload.escalaInasistencias;
+
           // Agregar sistema de evaluación desde el estado local
           payload.sistema_evaluacion = buildSistemaEvaluacion(evaluation);
 
           // Excluir campos auxiliares que no se envían al backend
           delete payload.department_id;
-
 
           result = await addSchool(payload);
         }
@@ -1041,138 +1040,6 @@ const ProfileSchool = ({
     }));
   }, []);
 
-  // Indica si hay problemas en la escala que AutoFix puede intentar resolver
-  const hasFixableScaleProblems = useMemo(() => {
-    const scale = Array.isArray(evaluation.performanceScale)
-      ? evaluation.performanceScale
-      : [];
-
-    // Requiere que todas las filas tengan valores numéricos para intentar arreglar
-    const parsed = scale.map((r) => {
-      const sRaw =
-        r.start === undefined || r.start === null ? "" : String(r.start).trim();
-      const eRaw =
-        r.end === undefined || r.end === null ? "" : String(r.end).trim();
-      const s = sRaw === "" ? NaN : parseFloat(sRaw.replace(",", "."));
-      const e = eRaw === "" ? NaN : parseFloat(eRaw.replace(",", "."));
-      return { s, e };
-    });
-
-    if (parsed.some((p) => Number.isNaN(p.s) || Number.isNaN(p.e)))
-      return false;
-
-    // Si alguna fila no cumple s < e -> arreglable
-    for (const p of parsed) {
-      if (!(p.s < p.e)) return true;
-    }
-
-    // Si hay solapamientos adyacentes (cur.e >= nxt.s) -> arreglable
-    for (let i = 0; i < parsed.length - 1; i += 1) {
-      const cur = parsed[i];
-      const nxt = parsed[i + 1];
-      if (cur.e >= nxt.s - EPS) return true;
-    }
-
-    // Duplicados exactos también pueden ser arreglados
-    for (let i = 0; i < parsed.length; i += 1) {
-      for (let j = i + 1; j < parsed.length; j += 1) {
-        if (
-          Math.abs(parsed[i].s - parsed[j].s) < EPS &&
-          Math.abs(parsed[i].e - parsed[j].e) < EPS
-        )
-          return true;
-      }
-    }
-
-    return false;
-  }, [evaluation.performanceScale]);
-
-  // Intentar arreglar automáticamente la escala: mantener el orden de filas (Bajo->Básico->Alto->Superior), asegurar inicio < fin y eliminar solapamientos mínimos
-  const autoFixScale = useCallback(() => {
-    const minStep = MIN_STEP;
-    const arr = (evaluation.performanceScale || []).map((r, idx) => {
-      const sRaw =
-        r.start === undefined || r.start === null ? "" : String(r.start).trim();
-      const eRaw =
-        r.end === undefined || r.end === null ? "" : String(r.end).trim();
-      const s = sRaw === "" ? null : parseFloat(sRaw.replace(",", "."));
-      const e = eRaw === "" ? null : parseFloat(eRaw.replace(",", "."));
-      return { idx, label: r.label || `Estado ${idx + 1}`, s, e };
-    });
-
-    // No podemos arreglar filas con valores vacíos o no numéricos
-    if (
-      arr.some(
-        (a) =>
-          a.s === null ||
-          a.e === null ||
-          Number.isNaN(a.s) ||
-          Number.isNaN(a.e),
-      )
-    ) {
-      notify.error(
-        "No se puede auto-arreglar filas con valores vacíos o no numéricos.",
-      );
-      return;
-    }
-
-    // Asegurar s < e por fila
-    arr.forEach((a) => {
-      if (!(a.s < a.e)) a.e = Number(Math.min(a.s + minStep, 5).toFixed(6));
-    });
-
-    // Mantener orden original de filas (no ordenar por inicio) y resolver solapamientos desplazando la siguiente fila, respetando el límite superior 5
-    for (let i = 0; i < arr.length - 1; i += 1) {
-      const cur = arr[i];
-      const nxt = arr[i + 1];
-      if (cur.e >= nxt.s) {
-        nxt.s = Number((cur.e + minStep).toFixed(6));
-        if (!(nxt.s < nxt.e))
-          nxt.e = Number(Math.min(nxt.s + minStep, 5).toFixed(6));
-      }
-    }
-
-    // Asegurar que ningún valor supere los límites MIN_VALUE..MAX_VALUE
-    arr.forEach((a) => {
-      if (a.e > MAX_VALUE) a.e = MAX_VALUE;
-      if (a.s < MIN_VALUE) a.s = MIN_VALUE;
-    });
-
-    // Resolver solapamientos entre filas desplazando la siguiente fila para mantener fin < inicio siguiente
-    if (arr.length > 0) {
-      for (let i = 0; i < arr.length - 1; i += 1) {
-        const cur = arr[i];
-        const nxt = arr[i + 1];
-        if (cur.e >= nxt.s) {
-          nxt.s = Number((cur.e + minStep).toFixed(6));
-          if (!(nxt.s < nxt.e))
-            nxt.e = Number(Math.min(nxt.s + minStep, MAX_VALUE).toFixed(6));
-        }
-      }
-    }
-
-    // Reconstruir la escala manteniendo el orden original de filas
-    const newScale = (evaluation.performanceScale || []).map((r, idx) => {
-      const m = arr.find((a) => a.idx === idx);
-      if (m) return { ...r, start: String(m.s), end: String(m.e) };
-      return r;
-    });
-
-    setEvaluation((prev) => ({ ...prev, performanceScale: newScale }));
-    const { valid, errors } = validatePerformanceScale(newScale);
-    setScaleErrors(errors);
-
-    if (valid) notify.success("Escala arreglada correctamente");
-    else
-      notify.info(
-        "Se intentó arreglar pero quedaron problemas. Revisa los mensajes.",
-      );
-  }, [evaluation.performanceScale, notify]);
-
-  const usedScaleLabels = Array.isArray(evaluation.performanceScale)
-    ? evaluation.performanceScale.map((r) => (r?.label || "").toString())
-    : [];
-
   return (
     <div
       className={` p-6   h-full gap-4 flex flex-col ${isEditing ? "ring-2 ring-accent" : "opacity-95"}`}
@@ -1183,37 +1050,34 @@ const ProfileSchool = ({
       >
         <div
           id="tour-psc-header"
-          className=" grid grid-cols-5 md:col-span-2  justify-between items-center mb-2"
+          className=" flex md:col-span-2  items-center mb-2 w-full"
         >
-          <div className="col-span-4 flex items-center gap-3">
-            <h2 className="text-xl font-semibold flex items-center">
+          <div className="grid grid-cols-5 items-center  w-full">
+            <h2 className="text-xl font-semibold flex items-center col-span-3">
               {title}
-              <span
-                className={`ml-3 inline-flex items-center px-2 py-1 rounded text-xs font-medium ${isEditing ? "bg-green-100 text-green-800" : "bg-gray-200 text-gray-700"}`}
-              >
-                {isEditing ? "Modo edición" : "Solo lectura"}
-              </span>
             </h2>
-            <SimpleButton
-              type="button"
-              onClick={startTour}
-              icon="HelpCircle"
-              msjtooltip="Iniciar tutorial"
-              noRounded={false}
-              bg="bg-info"
-              text="text-surface"
-              className="w-auto px-3 py-1.5"
-            />
-          </div>
-          <div id="tour-psc-edit-btn">
-            <SimpleButton
-              type="button"
-              onClick={toggleEditing}
-              msj={isEditing ? "Cancelar" : "Editar"}
-              icon={isEditing ? "X" : "Pencil"}
-              bg={isEditing ? "bg-red-500" : "bg-warning"}
-              text={"text-surface"}
-            />
+            <div
+              id="tour-psc-edit-btn"
+              className="grid grid-cols-2 col-span-2 gap-2 w-full"
+            >
+              <SimpleButton
+                type="button"
+                onClick={startTour}
+                icon="HelpCircle"
+                msjtooltip="Iniciar tutorial"
+                noRounded={false}
+                bg="bg-info"
+                text="text-surface"
+              />
+              <SimpleButton
+                type="button"
+                onClick={toggleEditing}
+                msj={isEditing ? "Cancelar" : "Editar"}
+                icon={isEditing ? "X" : "Pencil"}
+                bg={isEditing ? "bg-red-500" : "bg-warning"}
+                text={"text-surface"}
+              />
+            </div>
           </div>
         </div>
 
@@ -1503,6 +1367,57 @@ const ProfileSchool = ({
           )}
         </div>
 
+        <div id="tour-psc-licencia">
+          <label className={getLabelClassName("", !isEditing)}>
+            Licencia de funcionamiento <span className="text-red-600">*</span>
+          </label>
+          <input
+            type="text"
+            name="licenciaFuncionamiento"
+            value={formData.licenciaFuncionamiento || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+            className={getInputClassName(
+              `w-full p-2 border rounded bg-surface ${formErrors.licenciaFuncionamiento ? "border-red-500" : ""}`,
+              !isEditing,
+            )}
+            placeholder="Ingrese la licencia de funcionamiento"
+            required
+          />
+          {formErrors.licenciaFuncionamiento && (
+            <p className="text-red-600 text-sm mt-1">
+              {formErrors.licenciaFuncionamiento}
+            </p>
+          )}
+        </div>
+
+        <div id="tour-psc-inasistencias">
+          <label className={getLabelClassName("", !isEditing)}>
+            Escala de inasistencias (límite para reprobar){" "}
+            <span className="text-red-600">*</span>
+          </label>
+          <input
+            type="number"
+            min="1"
+            step="1"
+            name="escalaInasistencias"
+            value={formData.escalaInasistencias || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+            className={getInputClassName(
+              `w-full p-2 border rounded bg-surface ${formErrors.escalaInasistencias ? "border-red-500" : ""}`,
+              !isEditing,
+            )}
+            placeholder="Número de inasistencias para perder"
+            required
+          />
+          {formErrors.escalaInasistencias && (
+            <p className="text-red-600 text-sm mt-1">
+              {formErrors.escalaInasistencias}
+            </p>
+          )}
+        </div>
+
         <div
           id="tour-psc-evaluation"
           className="md:col-span-2 mt-2 border-t pt-4"
@@ -1562,63 +1477,19 @@ const ProfileSchool = ({
                           ? evaluation.performanceScale
                           : []
                         ).map((row, idx) => (
-                          <tr key={`${row?.label || idx}-${idx}`} className="">
+                          <tr key={idx} className="">
                             <td className="p-2 border">
                               {isEditing ? (
-                                <select
-                                  value={
-                                    [
-                                      "Superior",
-                                      "Alto",
-                                      "Básico",
-                                      "Bajo",
-                                    ].includes(row.label)
-                                      ? row.label
-                                      : ""
-                                  }
+                                <input
+                                  type="text"
+                                  value={row.label || ""}
                                   onChange={(e) =>
                                     updateScaleLabel(idx, e.target.value)
                                   }
-                                  className="w-full p-1 border rounded bg-white"
-                                >
-                                  <option value="">Seleccione</option>
-                                  <option
-                                    value="Bajo"
-                                    disabled={
-                                      usedScaleLabels.includes("Bajo") &&
-                                      row.label !== "Bajo"
-                                    }
-                                  >
-                                    Bajo
-                                  </option>
-                                  <option
-                                    value="Básico"
-                                    disabled={
-                                      usedScaleLabels.includes("Básico") &&
-                                      row.label !== "Básico"
-                                    }
-                                  >
-                                    Básico
-                                  </option>
-                                  <option
-                                    value="Alto"
-                                    disabled={
-                                      usedScaleLabels.includes("Alto") &&
-                                      row.label !== "Alto"
-                                    }
-                                  >
-                                    Alto
-                                  </option>
-                                  <option
-                                    value="Superior"
-                                    disabled={
-                                      usedScaleLabels.includes("Superior") &&
-                                      row.label !== "Superior"
-                                    }
-                                  >
-                                    Superior
-                                  </option>
-                                </select>
+                                  className="w-full p-1 border rounded bg-white text-center"
+                                  placeholder={`Ej: Estado ${idx + 1}`}
+                                  required
+                                />
                               ) : (
                                 row.label || `Estado ${idx + 1}`
                               )}
@@ -1627,17 +1498,10 @@ const ProfileSchool = ({
                               <input
                                 type="number"
                                 step="0.01"
-                                min={0}
-                                max={5}
                                 value={row.start ?? ""}
                                 onChange={(e) =>
                                   updateScaleValue(idx, "start", e.target.value)
                                 }
-                                onKeyDown={(e) => {
-                                  const blocked = ["e", "E", "+", "-"];
-                                  if (blocked.includes(e.key))
-                                    e.preventDefault();
-                                }}
                                 disabled={!isEditing}
                                 className={`w-full p-1 border rounded text-center`}
                                 placeholder="Inicio"
@@ -1647,17 +1511,10 @@ const ProfileSchool = ({
                               <input
                                 type="number"
                                 step="0.01"
-                                min={0}
-                                max={5}
                                 value={row.end ?? ""}
                                 onChange={(e) =>
                                   updateScaleValue(idx, "end", e.target.value)
                                 }
-                                onKeyDown={(e) => {
-                                  const blocked = ["e", "E", "+", "-"];
-                                  if (blocked.includes(e.key))
-                                    e.preventDefault();
-                                }}
                                 disabled={!isEditing}
                                 className={`w-full p-1 border rounded text-center`}
                                 placeholder="Fin"
@@ -1697,42 +1554,15 @@ const ProfileSchool = ({
                   Array.isArray(evaluation.performanceScale) &&
                   evaluation.performanceScale.length > 0 && (
                     <div className="flex justify-end mb-2">
-                      <div className="flex gap-2 items-center">
-                        <div className="w-40">
-                          <SimpleButton
-                            type="button"
-                            onClick={addScaleRow}
-                            msj={"Agregar estado"}
-                            icon={"Plus"}
-                            text={"text-surface"}
-                            bg={"bg-secondary"}
-                          />
-                        </div>
-
-                        {hasFixableScaleProblems ? (
-                          <div className="w-40">
-                            <SimpleButton
-                              type="button"
-                              onClick={() => autoFixScale()}
-                              msj={"Auto arreglar"}
-                              icon={"RefreshCw"}
-                              text={"text-surface"}
-                              bg={"bg-secondary"}
-                            />
-                          </div>
-                        ) : (
-                          <div className="w-40">
-                            <SimpleButton
-                              type="button"
-                              onClick={() => autoFixScale()}
-                              msj={"Auto arreglar"}
-                              icon={"RefreshCw"}
-                              text={"text-surface"}
-                              bg={"bg-secondary"}
-                              disabled
-                            />
-                          </div>
-                        )}
+                      <div className="w-40">
+                        <SimpleButton
+                          type="button"
+                          onClick={addScaleRow}
+                          msj={"Agregar estado"}
+                          icon={"Plus"}
+                          text={"text-surface"}
+                          bg={"bg-secondary"}
+                        />
                       </div>
                     </div>
                   )}

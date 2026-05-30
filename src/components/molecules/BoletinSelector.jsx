@@ -39,8 +39,7 @@ const S = {
   th: {
     padding: "5px 4px",
     textAlign: "center",
-    borderRight: "1px solid #2d3a4f",
-    borderBottom: "1px solid #2d3a4f",
+    border: "1px solid #000000",
     fontWeight: "bold",
     fontSize: "9px",
     whiteSpace: "nowrap",
@@ -49,9 +48,8 @@ const S = {
   },
   thLeft: {
     padding: "5px 4px",
-    textAlign: "left",
-    borderRight: "1px solid #2d3a4f",
-    borderBottom: "1px solid #2d3a4f",
+    textAlign: "center",
+    border: "1px solid #000000",
     fontWeight: "bold",
     fontSize: "9px",
     overflow: "hidden",
@@ -59,8 +57,7 @@ const S = {
   },
   td: {
     padding: "4px 4px",
-    borderBottom: "1px solid #e5e7eb",
-    borderRight: "1px solid #e5e7eb",
+    border: "1px solid #000000",
     fontSize: "9px",
     verticalAlign: "middle",
     textAlign: "center",
@@ -70,8 +67,7 @@ const S = {
   },
   tdLeft: {
     padding: "4px 4px",
-    borderBottom: "1px solid #e5e7eb",
-    borderRight: "1px solid #e5e7eb",
+    border: "1px solid #000000",
     fontSize: "9px",
     verticalAlign: "middle",
     textAlign: "left",
@@ -81,11 +77,10 @@ const S = {
   },
   tdBold: {
     padding: "4px 4px",
-    borderBottom: "1px solid #e5e7eb",
-    borderRight: "1px solid #e5e7eb",
+    border: "1px solid #000000",
     fontSize: "9px",
     verticalAlign: "middle",
-    textAlign: "left",
+    textAlign: "center",
     fontWeight: "600",
     overflow: "hidden",
     textOverflow: "ellipsis",
@@ -378,7 +373,7 @@ const BoletinTransicionView = ({ boletinData, info }) => {
           display: "flex",
           alignItems: "center",
           gap: "14px",
-          borderBottom: "2px solid #131a27",
+          borderBottom: "2px solid #000000",
           paddingBottom: "12px",
           marginBottom: "12px",
         }}
@@ -487,30 +482,26 @@ const BoletinTransicionView = ({ boletinData, info }) => {
           {/* Cabecera de asignatura */}
           <div
             style={{
-              backgroundColor: "#131a27",
-              color: "#ffffff",
+              backgroundColor: "#ffffff",
+              color: "#000000",
+              border: "1px solid #000000",
               padding: "6px 10px",
               fontWeight: "bold",
               fontSize: "12px",
-              display: "flex",
-              justifyContent: "space-between",
+              textAlign: "center",
             }}
           >
-            <span>{asig.nombre_asignatura}</span>
-            <span style={{ fontSize: "10px", fontWeight: "normal" }}>
-              Docente: {asig.nombre_docente}
-            </span>
+            {asig.nombre_asignatura}
           </div>
 
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr style={{ backgroundColor: "#1e2d42", color: "#e5e7eb" }}>
+              <tr style={{ backgroundColor: "#ffffff", color: "#000000" }}>
                 <th
                   style={{
                     ...S.th,
                     width: "20%",
                     fontSize: "8px",
-                    color: "#94a3b8",
                   }}
                 >
                   Propósito
@@ -520,7 +511,6 @@ const BoletinTransicionView = ({ boletinData, info }) => {
                     ...S.th,
                     width: "25%",
                     fontSize: "8px",
-                    color: "#94a3b8",
                   }}
                 >
                   DBA
@@ -538,11 +528,10 @@ const BoletinTransicionView = ({ boletinData, info }) => {
             </thead>
             <tbody>
               {asig.filas.map((fila, filaIdx) => {
-                const rowBg = filaIdx % 2 === 0 ? "#f9fafb" : "#ffffff";
                 return (
                   <tr
                     key={`${fila.id_proposito}-${fila.id_dba}`}
-                    style={{ backgroundColor: rowBg }}
+                    style={{ backgroundColor: "#ffffff" }}
                   >
                     <td
                       style={{
@@ -567,7 +556,7 @@ const BoletinTransicionView = ({ boletinData, info }) => {
                         ...S.td,
                         fontWeight: "bold",
                         fontSize: "12px",
-                        color: colorNota(fila.descripcion_nota_elegida),
+                        color: "#111827",
                         textTransform: "uppercase",
                       }}
                     >
@@ -593,7 +582,7 @@ const BoletinTransicionView = ({ boletinData, info }) => {
                       style={{
                         ...S.td,
                         fontSize: "12px",
-                        color: "#6b7280",
+                        color: "#111827",
                       }}
                     >
                       {fila.comentario || "-"}
@@ -727,7 +716,7 @@ async function drawPDFHeader(pdf, info, title, options = {}) {
   }
 
   /* línea separadora */
-  pdf.setDrawColor(19, 26, 39);
+  pdf.setDrawColor(0, 0, 0);
   pdf.setLineWidth(0.5);
   pdf.line(margin, y, pageW - margin, y);
   y += 4;
@@ -825,31 +814,29 @@ async function generateBoletinPDF(
   }
 
   /* ── Tabla de notas ── */
-  // Columnas: Asignatura | Docente | [por cada periodo: Nota, Recup, Escala, Estado, Logro]
+  // Columnas: Asignatura | [por cada periodo: Nota, Recup, Escala, Estado, Logro]
   const periodCols = periodos.length * 5;
-  const fixedCols = 2; // Asignatura + Docente
-  const totalCols = fixedCols + periodCols;
+  const fixedCols = 1; // Asignatura
 
   // Anchos proporcionales
-  const asigW = contentW * 0.14;
-  const docenteW = contentW * 0.17;
-  const remainW = contentW - asigW - docenteW;
-  // Subcolumnas: IHS, Recup, Escala usan smallSubW; Estado usa estadoSubW más ancho; Logro ocupa el resto
+  const asigW = contentW * 0.18;
+  const remainW = contentW - asigW;
+  // Subcolumnas: Nota, Escala usan smallSubW; Estado usa estadoSubW más ancho; Logro ocupa el resto
   const smallSubW =
-    periodos.length > 0 ? (remainW * 0.2) / (periodos.length * 3) : 0;
+    periodos.length > 0 ? (remainW * 0.2) / (periodos.length * 2) : 0;
   const estadoSubW =
     periodos.length > 0 ? (remainW * 0.18) / periodos.length : 0;
   const logroSubW =
     periodos.length > 0
       ? (remainW -
-          smallSubW * 3 * periodos.length -
+          smallSubW * 2 * periodos.length -
           estadoSubW * periodos.length) /
         periodos.length
       : 0;
 
-  const colWidths = [asigW, docenteW];
+  const colWidths = [asigW];
   for (let i = 0; i < periodos.length; i++) {
-    colWidths.push(smallSubW, smallSubW, smallSubW, estadoSubW, logroSubW);
+    colWidths.push(smallSubW, smallSubW, estadoSubW, logroSubW);
   }
 
   const colX = (colIdx) => {
@@ -871,13 +858,12 @@ async function generateBoletinPDF(
     } = opts;
     const cx = colX(col);
     const w = colWidths[col];
-    const isWhiteBg = bg && bg[0] === 255 && bg[1] === 255 && bg[2] === 255;
-    if (bg && !isWhiteBg) {
+    if (bg) {
       pdf.setFillColor(...bg);
       pdf.rect(cx, cy, w, h, "F");
     }
-    pdf.setDrawColor(180, 180, 180);
-    pdf.setLineWidth(0.2);
+    pdf.setDrawColor(0, 0, 0);
+    pdf.setLineWidth(0.3);
     pdf.rect(cx, cy, w, h, "D");
     pdf.setFontSize(fontSize);
     pdf.setFont("helvetica", bold ? "bold" : "normal");
@@ -899,16 +885,21 @@ async function generateBoletinPDF(
   };
 
   const drawCellMultiline = (text, col, cy, h, opts = {}) => {
-    const { bold = false, fontSize = 5, color = [0, 0, 0], bg = null } = opts;
+    const {
+      bold = false,
+      fontSize = 5,
+      color = [0, 0, 0],
+      bg = null,
+      align = "left",
+    } = opts;
     const cx = colX(col);
     const w = colWidths[col];
-    const isWhiteBg = bg && bg[0] === 255 && bg[1] === 255 && bg[2] === 255;
-    if (bg && !isWhiteBg) {
+    if (bg) {
       pdf.setFillColor(...bg);
       pdf.rect(cx, cy, w, h, "F");
     }
-    pdf.setDrawColor(180, 180, 180);
-    pdf.setLineWidth(0.2);
+    pdf.setDrawColor(0, 0, 0);
+    pdf.setLineWidth(0.3);
     pdf.rect(cx, cy, w, h, "D");
     pdf.setFontSize(fontSize);
     pdf.setFont("helvetica", bold ? "bold" : "normal");
@@ -918,37 +909,34 @@ async function generateBoletinPDF(
     const blockH = lines.length * lineH;
     let startY = cy + (h - blockH) / 2 + lineH * 0.8;
     for (const line of lines) {
-      pdf.text(line, cx + 0.8, startY);
+      const tx = align === "center" ? cx + w / 2 : cx + 0.8;
+      pdf.text(line, tx, startY, {
+        align: align === "center" ? "center" : "left",
+      });
       startY += lineH;
     }
   };
 
   /* Fila de cabecera principal */
   addPageIfNeeded(rowH + subHeaderH);
-  const headerBg = [19, 26, 39];
-  const headerColor = [255, 255, 255];
-  drawCell("Asignatura", 0, y, rowH, {
+  const headerBg = [255, 255, 255];
+  const headerColor = [0, 0, 0];
+  drawCell("Asignatura", 0, y, rowH + subHeaderH, {
     bold: true,
     color: headerColor,
     bg: headerBg,
-    align: "left",
-  });
-  drawCell("Docente", 1, y, rowH, {
-    bold: true,
-    color: headerColor,
-    bg: headerBg,
-    align: "left",
+    align: "center",
   });
 
   // Cabeceras agrupadas por periodo (colspan manual)
   for (let pi = 0; pi < periodos.length; pi++) {
-    const startCol = 2 + pi * 5;
+    const startCol = 1 + pi * 4;
     const cx = colX(startCol);
-    const groupW = smallSubW * 3 + estadoSubW + logroSubW;
+    const groupW = smallSubW * 2 + estadoSubW + logroSubW;
     pdf.setFillColor(...headerBg);
-    pdf.rect(cx, y, groupW, rowH, "F");
-    pdf.setDrawColor(180, 180, 180);
-    pdf.rect(cx, y, groupW, rowH, "D");
+    pdf.setDrawColor(0, 0, 0);
+    pdf.setLineWidth(0.3);
+    pdf.rect(cx, y, groupW, rowH, "FD");
     pdf.setFontSize(6);
     pdf.setFont("helvetica", "bold");
     pdf.setTextColor(...headerColor);
@@ -959,37 +947,30 @@ async function generateBoletinPDF(
   y += rowH;
 
   /* Sub-cabecera (NFP, Recup, Escala, Estado) */
-  const subBg = [30, 45, 66];
-  const subColor = [229, 231, 235];
-  drawCell("", 0, y, subHeaderH, { bg: subBg });
-  drawCell("", 1, y, subHeaderH, { bg: subBg });
+  const subBg = [255, 255, 255];
+  const subColor = [0, 0, 0];
+  // col 0 ya fue dibujada combinada arriba; solo sub-cols de periodos
   for (let pi = 0; pi < periodos.length; pi++) {
-    const base = 2 + pi * 5;
+    const base = 1 + pi * 4;
     drawCell("Nota", base, y, subHeaderH, {
       bold: true,
       fontSize: 5,
       color: subColor,
       bg: subBg,
     });
-    drawCell("Recup.", base + 1, y, subHeaderH, {
+    drawCell("Escala", base + 1, y, subHeaderH, {
       bold: true,
       fontSize: 5,
       color: subColor,
       bg: subBg,
     });
-    drawCell("Escala", base + 2, y, subHeaderH, {
+    drawCell("Estado", base + 2, y, subHeaderH, {
       bold: true,
       fontSize: 5,
       color: subColor,
       bg: subBg,
     });
-    drawCell("Estado", base + 3, y, subHeaderH, {
-      bold: true,
-      fontSize: 5,
-      color: subColor,
-      bg: subBg,
-    });
-    drawCell("Logro", base + 4, y, subHeaderH, {
+    drawCell("Logro", base + 3, y, subHeaderH, {
       bold: true,
       fontSize: 5,
       color: subColor,
@@ -1001,21 +982,14 @@ async function generateBoletinPDF(
   /* Filas de datos */
   for (let idx = 0; idx < asignaturas.length; idx++) {
     const asig = asignaturas[idx];
-    const rowBg = idx % 2 === 0 ? [249, 250, 251] : [255, 255, 255];
+    const rowBg = [255, 255, 255];
 
-    // Altura dinámica según longitud del logro y nombre del docente
+    // Altura dinámica según longitud del logro
     let computedRowH = rowH;
-    pdf.setFontSize(5.5);
-    const docenteLines = pdf.splitTextToSize(
-      asig.nombre_docente || "-",
-      docenteW - 1.5,
-    );
-    const docenteNeeded = docenteLines.length * (5.5 * 0.45) + 2;
-    if (docenteNeeded > computedRowH) computedRowH = docenteNeeded;
     for (let pi = 0; pi < periodos.length; pi++) {
       const per = asig.periodos.get(periodos[pi].id);
       {
-        const logroColW = colWidths[2 + pi * 5 + 4];
+        const logroColW = colWidths[1 + pi * 4 + 3];
         const lineH = 5 * 0.45;
         const logros = per?.logros ?? [];
         let logroHeight = 2; // padding top
@@ -1047,7 +1021,7 @@ async function generateBoletinPDF(
         if (logroHeight > computedRowH) computedRowH = logroHeight;
       }
       const estadoText = per?.estado || "-";
-      const estadoColW = colWidths[2 + pi * 5 + 3];
+      const estadoColW = colWidths[1 + pi * 4 + 2];
       const estadoLines = pdf.splitTextToSize(estadoText, estadoColW - 1.5);
       const estadoNeeded = estadoLines.length * (5 * 0.45) + 2;
       if (estadoNeeded > computedRowH) computedRowH = estadoNeeded;
@@ -1057,47 +1031,36 @@ async function generateBoletinPDF(
     drawCell(asig.nombre_asignatura, 0, y, computedRowH, {
       bold: true,
       fontSize: 6,
-      align: "left",
-      bg: rowBg,
-    });
-    drawCellMultiline(asig.nombre_docente, 1, y, computedRowH, {
-      fontSize: 5.5,
-      color: [107, 114, 128],
+      align: "center",
       bg: rowBg,
     });
 
     for (let pi = 0; pi < periodos.length; pi++) {
       const per = asig.periodos.get(periodos[pi].id);
-      const base = 2 + pi * 5;
+      const base = 1 + pi * 4;
       drawCell(per?.nota ?? "-", base, y, computedRowH, {
         bold: true,
         bg: rowBg,
       });
-      drawCell(per?.recuperacion ?? "-", base + 1, y, computedRowH, {
-        bg: rowBg,
-      });
-      drawCell(per?.escala ?? "-", base + 2, y, computedRowH, { bg: rowBg });
+      drawCell(per?.escala ?? "-", base + 1, y, computedRowH, { bg: rowBg });
       const estColor = per?.estado
         ? colorEstado(per.estado) === "#15803d"
           ? [21, 128, 61]
           : [220, 38, 38]
         : [55, 65, 81];
-      drawCellMultiline(per?.estado ?? "-", base + 3, y, computedRowH, {
+      drawCellMultiline(per?.estado ?? "-", base + 2, y, computedRowH, {
         bold: true,
+        align: "center",
         color: estColor,
         bg: rowBg,
       });
       {
-        const cx = colX(base + 4);
-        const w = colWidths[base + 4];
-        const isWhiteBg =
-          rowBg[0] === 255 && rowBg[1] === 255 && rowBg[2] === 255;
-        if (!isWhiteBg) {
-          pdf.setFillColor(...rowBg);
-          pdf.rect(cx, y, w, computedRowH, "F");
-        }
-        pdf.setDrawColor(180, 180, 180);
-        pdf.setLineWidth(0.2);
+        const cx = colX(base + 3);
+        const w = colWidths[base + 3];
+        pdf.setFillColor(...rowBg);
+        pdf.rect(cx, y, w, computedRowH, "F");
+        pdf.setDrawColor(0, 0, 0);
+        pdf.setLineWidth(0.3);
         pdf.rect(cx, y, w, computedRowH, "D");
         const logros = per?.logros ?? [];
         const lineH = 5 * 0.45;
@@ -1126,14 +1089,14 @@ async function generateBoletinPDF(
               const desc = logro.slice(sep + 2);
               pdf.setFontSize(5);
               pdf.setFont("helvetica", "bold");
-              pdf.setTextColor(19, 26, 39);
+              pdf.setTextColor(0, 0, 0);
               for (const ln of pdf.splitTextToSize(tipo, w - 1.5)) {
                 if (textY + lineH * 0.8 > logroMaxY) break outer;
                 pdf.text(ln, cx + 1, textY + lineH * 0.8);
                 textY += lineH;
               }
               pdf.setFont("helvetica", "normal");
-              pdf.setTextColor(55, 65, 81);
+              pdf.setTextColor(0, 0, 0);
               for (const ln of pdf.splitTextToSize(desc, w - 1.5)) {
                 if (textY + lineH * 0.8 > logroMaxY) break outer;
                 pdf.text(ln, cx + 1, textY + lineH * 0.8);
@@ -1145,12 +1108,12 @@ async function generateBoletinPDF(
         }
         // Observaciones de énfasis siempre al fondo de la celda de logro
         {
-          pdf.setDrawColor(200, 200, 200);
+          pdf.setDrawColor(0, 0, 0);
           pdf.setLineWidth(0.15);
           pdf.line(cx + 1, obsY, cx + w - 1, obsY);
           pdf.setFontSize(5);
           pdf.setFont("helvetica", "bold");
-          pdf.setTextColor(19, 26, 39);
+          pdf.setTextColor(0, 0, 0);
           pdf.text("Obs. énfasis:", cx + 1, obsY + 3.5);
         }
       }
@@ -1163,7 +1126,7 @@ async function generateBoletinPDF(
   y += 4;
   const labelColW = contentW * 0.35;
   const contentColW = contentW - labelColW;
-  pdf.setDrawColor(17, 24, 39);
+  pdf.setDrawColor(0, 0, 0);
   pdf.setLineWidth(0.4);
 
   const drawLabelRow = (label, rowH) => {
@@ -1225,7 +1188,7 @@ async function generateBoletinPDF(
   } else {
     // sin firma: se deja el espacio en blanco en el PDF
   }
-  pdf.setDrawColor(17, 24, 39);
+  pdf.setDrawColor(0, 0, 0);
   pdf.setLineWidth(0.3);
   const signLineW = 60;
   const signX = margin + (contentW - signLineW) / 2;
@@ -1251,7 +1214,8 @@ async function generateBoletinPDF(
     y += 5;
     const escColW = [contentW * 0.2, contentW * 0.8];
     // Cabecera convenciones
-    pdf.setFillColor(249, 250, 251);
+    pdf.setFillColor(255, 255, 255);
+    pdf.setDrawColor(0, 0, 0);
     pdf.rect(margin, y, escColW[0], 6, "FD");
     pdf.rect(margin + escColW[0], y, escColW[1], 6, "FD");
     pdf.setFontSize(7);
@@ -1261,7 +1225,7 @@ async function generateBoletinPDF(
     y += 6;
     for (const e of escalas) {
       addPageIfNeeded(6);
-      pdf.setDrawColor(209, 213, 219);
+      pdf.setDrawColor(0, 0, 0);
       pdf.rect(margin, y, escColW[0], 6, "D");
       pdf.rect(margin + escColW[0], y, escColW[1], 6, "D");
       pdf.setFontSize(6.5);
@@ -1383,8 +1347,8 @@ async function generateBoletinTransicionPDF(info, boletinData, meta) {
       pdf.setFillColor(...bg);
       pdf.rect(cx, cy, w, h, "F");
     }
-    pdf.setDrawColor(180, 180, 180);
-    pdf.setLineWidth(0.2);
+    pdf.setDrawColor(0, 0, 0);
+    pdf.setLineWidth(0.3);
     pdf.rect(cx, cy, w, h, "D");
     pdf.setFontSize(fontSize);
     pdf.setFont("helvetica", bold ? "bold" : "normal");
@@ -1418,16 +1382,15 @@ async function generateBoletinTransicionPDF(info, boletinData, meta) {
   for (const asig of asignaturas) {
     /* Barra de asignatura */
     addPageIfNeeded(16);
-    pdf.setFillColor(19, 26, 39);
-    pdf.rect(margin, y, contentW, 7, "F");
+    pdf.setFillColor(255, 255, 255);
+    pdf.setDrawColor(0, 0, 0);
+    pdf.setLineWidth(0.4);
+    pdf.rect(margin, y, contentW, 7, "FD");
     pdf.setFontSize(9);
     pdf.setFont("helvetica", "bold");
-    pdf.setTextColor(255, 255, 255);
-    pdf.text(asig.nombre_asignatura, margin + 3, y + 5);
-    pdf.setFontSize(7);
-    pdf.setFont("helvetica", "normal");
-    pdf.text(`Docente: ${asig.nombre_docente}`, pageW - margin - 3, y + 5, {
-      align: "right",
+    pdf.setTextColor(0, 0, 0);
+    pdf.text(asig.nombre_asignatura, margin + contentW / 2, y + 5, {
+      align: "center",
     });
     y += 7;
 
@@ -1440,8 +1403,8 @@ async function generateBoletinTransicionPDF(info, boletinData, meta) {
       "Otros posibles valores",
       "Comentario",
     ];
-    const headerBg = [30, 45, 66];
-    const headerColor = [229, 231, 235];
+    const headerBg = [255, 255, 255];
+    const headerColor = [0, 0, 0];
     for (let c = 0; c < 5; c++) {
       drawMultiCell(headers[c], colX[c], y, colW[c], headerH, {
         bold: true,
@@ -1456,7 +1419,7 @@ async function generateBoletinTransicionPDF(info, boletinData, meta) {
     /* Filas de datos */
     for (let fi = 0; fi < asig.filas.length; fi++) {
       const fila = asig.filas[fi];
-      const rowBg = fi % 2 === 0 ? [249, 250, 251] : [255, 255, 255];
+      const rowBg = [255, 255, 255];
 
       /* Calcular alto dinámico de la fila */
       pdf.setFontSize(6);
@@ -1501,7 +1464,7 @@ async function generateBoletinTransicionPDF(info, boletinData, meta) {
         bg: rowBg,
       });
       drawMultiCell(fila.comentario || "-", colX[4], y, colW[4], rowH, {
-        color: [107, 114, 128],
+        color: [0, 0, 0],
         bg: rowBg,
       });
       y += rowH;
@@ -2001,7 +1964,7 @@ const BoletinSelector = ({
                     display: "flex",
                     alignItems: "center",
                     gap: "14px",
-                    borderBottom: "2px solid #131a27",
+                    borderBottom: "2px solid #000000",
                     paddingBottom: "12px",
                     marginBottom: "10px",
                   }}
@@ -2133,15 +2096,9 @@ const BoletinSelector = ({
                         }}
                       >
                         <colgroup>
-                          <col style={{ width: "14%" }} />
-                          <col style={{ width: "17%" }} />
+                          <col style={{ width: "25%" }} />
                           {periodos.map((p) => (
                             <React.Fragment key={p.id}>
-                              <col
-                                style={{
-                                  width: `${(4.6 / periodos.length).toFixed(2)}%`,
-                                }}
-                              />
                               <col
                                 style={{
                                   width: `${(4.6 / periodos.length).toFixed(2)}%`,
@@ -2159,7 +2116,7 @@ const BoletinSelector = ({
                               />
                               <col
                                 style={{
-                                  width: `${(42.78 / periodos.length).toFixed(2)}%`,
+                                  width: `${(53.58 / periodos.length).toFixed(2)}%`,
                                 }}
                               />
                             </React.Fragment>
@@ -2168,27 +2125,23 @@ const BoletinSelector = ({
                         <thead>
                           <tr
                             style={{
-                              backgroundColor: "#131a27",
-                              color: "#ffffff",
+                              backgroundColor: "#ffffff",
+                              color: "#000000",
                             }}
                           >
                             <th
+                              rowSpan={2}
                               style={{ ...S.thLeft, verticalAlign: "middle" }}
                             >
                               Asignatura
                             </th>
-                            <th
-                              style={{ ...S.thLeft, verticalAlign: "middle" }}
-                            >
-                              Docente
-                            </th>
                             {periodos.map((p) => (
                               <th
                                 key={p.id}
-                                colSpan={5}
+                                colSpan={4}
                                 style={{
                                   ...S.th,
-                                  borderLeft: "2px solid #ffffff",
+                                  borderLeft: "2px solid #000000",
                                 }}
                               >
                                 {p.nombre}
@@ -2197,42 +2150,21 @@ const BoletinSelector = ({
                           </tr>
                           <tr
                             style={{
-                              backgroundColor: "#1e2d42",
-                              color: "#e5e7eb",
+                              backgroundColor: "#ffffff",
+                              color: "#000000",
                             }}
                           >
-                            <th
-                              style={{
-                                ...S.thLeft,
-                                fontSize: "8px",
-                                color: "#94a3b8",
-                              }}
-                            >
-                              &nbsp;
-                            </th>
-                            <th
-                              style={{
-                                ...S.thLeft,
-                                fontSize: "8px",
-                                color: "#94a3b8",
-                              }}
-                            >
-                              &nbsp;
-                            </th>
                             {periodos.map((p) => (
                               <React.Fragment key={p.id}>
                                 <th
                                   style={{
                                     ...S.th,
-                                    borderLeft: "2px solid #374151",
+                                    borderLeft: "2px solid #000000",
                                     fontSize: "8px",
                                   }}
                                   title="Nota final periodo"
                                 >
                                   Nota
-                                </th>
-                                <th style={{ ...S.th, fontSize: "8px" }}>
-                                  Recup.
                                 </th>
                                 <th style={{ ...S.th, fontSize: "8px" }}>
                                   Escala
@@ -2248,17 +2180,8 @@ const BoletinSelector = ({
                           </tr>
                         </thead>
                         <tbody>
-                          <tr style={{ backgroundColor: "#f9fafb" }}>
+                          <tr style={{ backgroundColor: "#ffffff" }}>
                             <td style={S.tdBold}>{asig.nombre_asignatura}</td>
-                            <td
-                              style={{
-                                ...S.tdLeft,
-                                fontSize: "9px",
-                                color: "#6b7280",
-                              }}
-                            >
-                              {asig.nombre_docente}
-                            </td>
                             {periodos.map((p) => {
                               const per = asig.periodos.get(p.id);
                               return (
@@ -2266,14 +2189,11 @@ const BoletinSelector = ({
                                   <td
                                     style={{
                                       ...S.td,
-                                      borderLeft: "2px solid #d1d5db",
+                                      borderLeft: "2px solid #000000",
                                       fontWeight: "600",
                                     }}
                                   >
                                     {per?.nota ?? "-"}
-                                  </td>
-                                  <td style={S.td}>
-                                    {per?.recuperacion ?? "-"}
                                   </td>
                                   <td style={S.td}>{per?.escala ?? "-"}</td>
                                   <td
@@ -2292,7 +2212,7 @@ const BoletinSelector = ({
                                     style={{
                                       ...S.tdLeft,
                                       fontSize: "8px",
-                                      color: "#374151",
+                                      color: "#111827",
                                       fontStyle: "italic",
                                     }}
                                   >
@@ -2323,7 +2243,7 @@ const BoletinSelector = ({
                                         fontStyle: "normal",
                                         color: "#111827",
                                         fontSize: "8px",
-                                        borderTop: "1px solid #e5e7eb",
+                                        borderTop: "1px solid #000000",
                                         paddingTop: "2px",
                                       }}
                                     >

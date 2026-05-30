@@ -189,6 +189,7 @@ export async function exportAttendancePDF(rows = [], opts = {}) {
     journeyLabel = "",
     startDate = "",
     endDate = "",
+    imgSchool = "",
     fileName = "Asistencias.pdf",
   } = opts;
 
@@ -219,6 +220,45 @@ export async function exportAttendancePDF(rows = [], opts = {}) {
     val === true ||
     val === 1;
 
+  // ── Cargar logo institucional ─────────────────────────────────────────────
+  const loadLogo = (src) =>
+    new Promise((resolve) => {
+      if (!src) {
+        resolve(null);
+        return;
+      }
+      const fullSrc = src.startsWith("http")
+        ? src
+        : `https://www.nexusplataforma.com${src}`;
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.src = fullSrc;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const maxW = 300;
+        let w = img.width;
+        let h = img.height;
+        if (w > maxW) {
+          h = Math.round((h * maxW) / w);
+          w = maxW;
+        }
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        try {
+          resolve({ dataUrl: canvas.toDataURL("image/jpeg", 0.75), w, h });
+        } catch {
+          resolve(null);
+        }
+      };
+      img.onerror = () => resolve(null);
+    });
+
+  const logoData = await loadLogo(imgSchool);
+
   // ── Agrupar por asignatura ────────────────────────────────────────────────
   const asigMap = new Map();
   for (const row of rows) {
@@ -227,9 +267,9 @@ export async function exportAttendancePDF(rows = [], opts = {}) {
     asigMap.get(asig).push(row);
   }
 
-  // ── Dimensiones A4 portrait ───────────────────────────────────────────────
-  const PAGE_W = 210;
-  const PAGE_H = 297;
+  // ── Dimensiones A4 landscape ──────────────────────────────────────────────
+  const PAGE_W = 297;
+  const PAGE_H = 210;
   const MARGIN = 10;
   const CONTENT_W = PAGE_W - MARGIN * 2; // 190 mm
 
@@ -249,7 +289,7 @@ export async function exportAttendancePDF(rows = [], opts = {}) {
   const CONTENT_TOP = MARGIN + HDR_H; // 43 mm desde arriba
   const CONTENT_BOT = PAGE_H - MARGIN; // 287 mm
 
-  const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
 
   // ── Encabezado de página (altura fija HDR_H) ──────────────────────────────
   // Reproduce el estilo de drawDocumentHeader de PdfObservador.jsx:
@@ -258,10 +298,17 @@ export async function exportAttendancePDF(rows = [], opts = {}) {
     const y0 = MARGIN; // 10 mm
     const cx = PAGE_W / 2;
 
-    // Nombre institución (azul oscuro, bold)
+    // Logo institucional a la izquierda
+    if (logoData) {
+      const logoH = 18;
+      const logoW = (logoData.w / logoData.h) * logoH;
+      pdf.addImage(logoData.dataUrl, "JPEG", MARGIN, y0 + 2, logoW, logoH);
+    }
+
+    // Nombre institución (negro, bold)
     pdf.setFontSize(11);
     pdf.setFont("helvetica", "bold");
-    pdf.setTextColor(0, 0, 128);
+    pdf.setTextColor(0, 0, 0);
     pdf.text(nameSchool.toUpperCase(), cx, y0 + 7, { align: "center" });
 
     // Título del documento
@@ -304,7 +351,7 @@ export async function exportAttendancePDF(rows = [], opts = {}) {
       );
     }
 
-    // Fecha de generación (alineada a la derecha, itálica, gris)
+    // Fecha de generación (alineada a la derecha, itálica, negro)
     const fechaGen = new Date().toLocaleDateString("es-CO", {
       day: "2-digit",
       month: "2-digit",
@@ -312,13 +359,13 @@ export async function exportAttendancePDF(rows = [], opts = {}) {
     });
     pdf.setFontSize(7);
     pdf.setFont("helvetica", "italic");
-    pdf.setTextColor(120, 120, 120);
+    pdf.setTextColor(0, 0, 0);
     pdf.text(`Generado: ${fechaGen}`, PAGE_W - MARGIN, row2Y, {
       align: "right",
     });
 
     // Línea de cierre del encabezado (más gruesa)
-    pdf.setDrawColor(19, 26, 39);
+    pdf.setDrawColor(0, 0, 0);
     pdf.setLineWidth(0.6);
     pdf.line(MARGIN, y0 + HDR_H - 1, PAGE_W - MARGIN, y0 + HDR_H - 1);
 
@@ -330,48 +377,48 @@ export async function exportAttendancePDF(rows = [], opts = {}) {
   const drawColHeaders = (chunk, tableW, y) => {
     const dW = chunk.length > 0 ? (tableW - STUDENT_COL_W) / chunk.length : 0;
 
-    // Celda "Estudiante"
-    pdf.setFillColor(19, 26, 39);
-    pdf.rect(MARGIN, y, STUDENT_COL_W, DATE_HDR_H, "F");
+    // Fondo blanco de toda la fila de cabecera
+    pdf.setFillColor(255, 255, 255);
+    pdf.rect(MARGIN, y, tableW, DATE_HDR_H, "F");
+
+    // Texto "ESTUDIANTE"
     pdf.setFontSize(7);
     pdf.setFont("helvetica", "bold");
-    pdf.setTextColor(229, 231, 235);
+    pdf.setTextColor(0, 0, 0);
     pdf.text(
       "ESTUDIANTE",
       MARGIN + STUDENT_COL_W / 2,
       y + DATE_HDR_H / 2 + 1.5,
-      {
-        align: "center",
-      },
+      { align: "center" },
     );
 
-    // Celdas de fechas
+    // Texto de cada fecha (rotado) + separador vertical derecho
     for (let di = 0; di < chunk.length; di++) {
       const cx = MARGIN + STUDENT_COL_W + di * dW;
-      pdf.setFillColor(
-        di % 2 === 0 ? 30 : 22,
-        di % 2 === 0 ? 45 : 35,
-        di % 2 === 0 ? 66 : 52,
-      );
-      pdf.rect(cx, y, dW, DATE_HDR_H, "F");
 
-      pdf.setDrawColor(50, 70, 100);
-      pdf.setLineWidth(0.15);
-      pdf.line(cx + dW, y, cx + dW, y + DATE_HDR_H);
-
-      // Fecha rotada 90° centrada en la celda
+      // Fecha rotada 90°
       pdf.setFontSize(6);
       pdf.setFont("helvetica", "normal");
-      pdf.setTextColor(229, 231, 235);
+      pdf.setTextColor(0, 0, 0);
       pdf.text(fmtShort(chunk[di]), cx + dW / 2, y + DATE_HDR_H - 1.5, {
         angle: 90,
         align: "center",
       });
+
+      // Separador vertical entre celdas de fecha
+      pdf.setDrawColor(0, 0, 0);
+      pdf.setLineWidth(0.2);
+      pdf.line(cx + dW, y, cx + dW, y + DATE_HDR_H);
     }
 
+    // Separador vertical entre columna Estudiante y fechas
+    pdf.setDrawColor(0, 0, 0);
+    pdf.setLineWidth(0.4);
+    pdf.line(MARGIN + STUDENT_COL_W, y, MARGIN + STUDENT_COL_W, y + DATE_HDR_H);
+
     // Borde externo del bloque de cabecera
-    pdf.setDrawColor(19, 26, 39);
-    pdf.setLineWidth(0.3);
+    pdf.setDrawColor(0, 0, 0);
+    pdf.setLineWidth(0.4);
     pdf.rect(MARGIN, y, tableW, DATE_HDR_H, "S");
 
     return y + DATE_HDR_H;
@@ -423,12 +470,14 @@ export async function exportAttendancePDF(rows = [], opts = {}) {
         y = drawPageHeader();
       }
 
-      // Cabecera de asignatura
-      pdf.setFillColor(19, 26, 39);
-      pdf.rect(MARGIN, y, tableW, SUBJ_HDR_H, "F");
+      // Cabecera de asignatura (fondo blanco, borde negro)
+      pdf.setFillColor(255, 255, 255);
+      pdf.setDrawColor(0, 0, 0);
+      pdf.setLineWidth(0.4);
+      pdf.rect(MARGIN, y, tableW, SUBJ_HDR_H, "FD");
       pdf.setFontSize(8.5);
       pdf.setFont("helvetica", "bold");
-      pdf.setTextColor(255, 255, 255);
+      pdf.setTextColor(0, 0, 0);
       pdf.text(`${asigName}${chunkRange}`, MARGIN + 3, y + SUBJ_HDR_H - 2);
       y += SUBJ_HDR_H;
 
@@ -441,11 +490,13 @@ export async function exportAttendancePDF(rows = [], opts = {}) {
           pdf.addPage();
           y = drawPageHeader();
           // Redibujar cabeceras en continuación
-          pdf.setFillColor(19, 26, 39);
-          pdf.rect(MARGIN, y, tableW, SUBJ_HDR_H, "F");
+          pdf.setFillColor(255, 255, 255);
+          pdf.setDrawColor(0, 0, 0);
+          pdf.setLineWidth(0.4);
+          pdf.rect(MARGIN, y, tableW, SUBJ_HDR_H, "FD");
           pdf.setFontSize(8.5);
           pdf.setFont("helvetica", "bold");
-          pdf.setTextColor(255, 255, 255);
+          pdf.setTextColor(0, 0, 0);
           pdf.text(
             `${asigName}${chunkRange} (cont.)`,
             MARGIN + 3,
@@ -455,14 +506,14 @@ export async function exportAttendancePDF(rows = [], opts = {}) {
           y = drawColHeaders(chunk, tableW, y);
         }
 
-        // Fondo alternado
-        pdf.setFillColor(...(si % 2 === 0 ? [248, 249, 250] : [255, 255, 255]));
+        // Fondo blanco (sin alternado de color)
+        pdf.setFillColor(255, 255, 255);
         pdf.rect(MARGIN, y, tableW, ROW_H, "F");
 
         // Nombre del estudiante
         pdf.setFontSize(7);
         pdf.setFont("helvetica", "normal");
-        pdf.setTextColor(20, 20, 20);
+        pdf.setTextColor(0, 0, 0);
         const nameLine =
           pdf.splitTextToSize(students[si], STUDENT_COL_W - 4)[0] || "";
         pdf.text(nameLine, MARGIN + 2, y + ROW_H - 2);
@@ -477,28 +528,30 @@ export async function exportAttendancePDF(rows = [], opts = {}) {
             const present = presMap.get(key);
             pdf.setFontSize(6);
             pdf.setFont("helvetica", "bold");
-            pdf.setTextColor(...(present ? [22, 101, 52] : [153, 27, 27]));
+            pdf.setTextColor(0, 0, 0);
             pdf.text(present ? "Si" : "No", cx + dW / 2, y + ROW_H / 2 + 1.5, {
               align: "center",
             });
           }
-          pdf.setDrawColor(210, 215, 220);
+          // Separador vertical derecho de cada celda de fecha
+          pdf.setDrawColor(0, 0, 0);
           pdf.setLineWidth(0.1);
           pdf.line(cx + dW, y, cx + dW, y + ROW_H);
         }
 
-        // Bordes de fila
-        pdf.setDrawColor(200, 205, 210);
-        pdf.setLineWidth(0.15);
-        pdf.line(MARGIN, y, MARGIN, y + ROW_H);
+        // Borde completo de la fila (rect)
+        pdf.setDrawColor(0, 0, 0);
+        pdf.setLineWidth(0.3);
+        pdf.rect(MARGIN, y, tableW, ROW_H, "S");
+        // Separador columna Estudiante
+        pdf.setLineWidth(0.4);
         pdf.line(MARGIN + STUDENT_COL_W, y, MARGIN + STUDENT_COL_W, y + ROW_H);
-        pdf.line(MARGIN, y + ROW_H, MARGIN + tableW, y + ROW_H);
 
         y += ROW_H;
       }
 
       // Línea de cierre de la tabla
-      pdf.setDrawColor(19, 26, 39);
+      pdf.setDrawColor(0, 0, 0);
       pdf.setLineWidth(0.3);
       pdf.line(MARGIN, y, MARGIN + tableW, y);
 

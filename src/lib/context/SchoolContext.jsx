@@ -314,6 +314,20 @@ export function SchoolProvider({ children }) {
     }
   }, []);
 
+  const getGradeOnlySede = useCallback(async (payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await schoolService.getGradeOnlySede(payload);
+      return result;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const updateGrado = useCallback(async (idSede, gradoId, payload) => {
     setLoading(true);
     setError(null);
@@ -635,6 +649,7 @@ export function SchoolProvider({ children }) {
       registerGrade,
       updateGrado,
       getGradeSede,
+      getGradeOnlySede,
       registerAsignature,
       getSedeAsignature,
       updateAssignature,
@@ -697,6 +712,7 @@ export function SchoolProvider({ children }) {
       registerGrade,
       updateGrado,
       getGradeSede,
+      getGradeOnlySede,
       registerAsignature,
       getSedeAsignature,
       updateAssignature,

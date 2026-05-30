@@ -126,21 +126,31 @@ const tourProfileSchool = () => {
       },
     },
     {
-      element: "#tour-psc-evaluation",
+      element: "#tour-psc-licencia",
       popover: {
-        title: "Configuración de evaluación",
+        title: "Licencia de funcionamiento",
         description:
-          "Define la escala de evaluación: valor mínimo, máximo, mínima nota aprobatoria y decimales a mostrar en reportes.",
-        side: "top",
+          "Número o código de la licencia de funcionamiento de la institución emitida por la Secretaría de Educación. Aparece en documentos oficiales.",
+        side: "bottom",
         align: "start",
       },
     },
     {
-      element: "#tour-psc-promotion",
+      element: "#tour-psc-inasistencias",
       popover: {
-        title: "Criterios de promoción",
+        title: "Escala de inasistencias",
         description:
-          "Configura las reglas de promoción: número máximo de materias reprobadas, porcentaje de asistencia mínimo y otros criterios para aprobar el año.",
+          "Indica cuántas inasistencias acumuladas se requieren para que un estudiante pierda el año o la materia. Define el umbral máximo permitido por tu institución.",
+        side: "bottom",
+        align: "start",
+      },
+    },
+    {
+      element: "#tour-psc-evaluation",
+      popover: {
+        title: "Sistema de evaluación",
+        description:
+          "Define libremente las escalas de desempeño de tu institución: escribe el nombre de cada nivel (ej: Excelente, Bueno, Regular) y asigna el rango numérico que le corresponde. Puedes agregar o eliminar escalas según lo requiera tu modelo pedagógico.",
         side: "top",
         align: "start",
       },

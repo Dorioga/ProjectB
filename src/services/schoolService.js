@@ -106,7 +106,6 @@ export async function getPeriods() {
     const res = await ApiClient.get("/periods");
     const data = Array.isArray(res) ? res : (res?.data ?? []);
 
-
     // Validación suave del payload: aceptamos array o { data: array }.
     if (Array.isArray(data)) return data;
     if (data && typeof data === "object" && Array.isArray(data.data))
@@ -220,6 +219,28 @@ export async function getGradeSede(payload) {
 
   throw new Error("Respuesta inesperada de grade_sede.");
 }
+/**
+ * Obtiene los grados por sede usando la ruta /values/grade/sede.
+ *
+ * Endpoint esperado: POST /values/grade/sede
+ * @param {{ idSede: number }} payload
+ * @returns {Promise<Object>} Respuesta del servidor con los grados
+ */
+export async function getGradeOnlySede(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+
+  const res = await ApiClient.instance.post("/values/grade/sede", payload);
+
+  const data = res;
+
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de /values/grade/sede.");
+}
+
 /**
  * Registra una nueva asignatura.
  *
@@ -616,7 +637,6 @@ export async function getStudentGrades(payload) {
     throw new Error("payload debe ser un objeto.");
   }
 
-
   const res = await ApiClient.instance.post("/student/grades", payload);
 
   const data = res;
@@ -636,11 +656,9 @@ export async function getStudentGrades(payload) {
  */
 export async function getValuesReservations(payload = {}) {
   try {
-
     // El endpoint cambió a POST y espera { municipioId: number }
     const res = await ApiClient.instance.post("/values/reservations", payload);
     const data = Array.isArray(res) ? res : (res?.data ?? []);
-
 
     if (Array.isArray(data)) return data;
     if (data && typeof data === "object" && Array.isArray(data.data))
@@ -683,7 +701,6 @@ export async function allstudent(payload) {
   if (!payload || typeof payload !== "object") {
     throw new Error("payload debe ser un objeto.");
   }
-
 
   const res = await ApiClient.instance.post("/institution/students", payload);
 

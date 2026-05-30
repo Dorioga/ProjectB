@@ -10,6 +10,7 @@ import Loader from "../../components/atoms/Loader";
 import useTeacher from "../../lib/hooks/useTeacher";
 import useAuth from "../../lib/hooks/useAuth";
 import useData from "../../lib/hooks/useData";
+import useSchool from "../../lib/hooks/useSchool";
 import { useNotify } from "../../lib/hooks/useNotify";
 import tourManageAssistance from "../../tour/tourManageAssistance";
 import { exportAttendancePDF } from "../../utils/exportPdf";
@@ -50,8 +51,17 @@ const getLastDayOfMonth = () => {
 const ManageAssistance = () => {
   const { getAssistanceValues, getTeacherSede, getTeacherGrades } =
     useTeacher();
-  const { idSede, nameSede, idDocente, token, rol, idInstitution, nameSchool } =
-    useAuth();
+  const { getGradeOnlySede } = useSchool();
+  const {
+    idSede,
+    nameSede,
+    idDocente,
+    token,
+    rol,
+    idInstitution,
+    nameSchool,
+    imgSchool,
+  } = useAuth();
   const { loadInstitutionSedes } = useData();
   const notify = useNotify();
 
@@ -66,9 +76,14 @@ const ManageAssistance = () => {
   });
 
   // ── Rol ───────────────────────────────────────────────────────────────────
-  const isDocente = useMemo(
+  const isRol3 = useMemo(() => String(rol) === "3", [rol]);
+  const isPureDocente = useMemo(
     () => String(rol).toLowerCase() === "docente" || String(rol) === "7",
     [rol],
+  );
+  const isDocente = useMemo(
+    () => isRol3 || isPureDocente,
+    [isRol3, isPureDocente],
   );
 
   // ── Filtros ───────────────────────────────────────────────────────────────
@@ -119,6 +134,12 @@ const ManageAssistance = () => {
       ...(sedeId ? { idSede: Number(sedeId) } : { idSede: Number(idSede) }),
     }),
     [idDocente, sedeId, idSede],
+  );
+
+  // Params para GradeSelector de rol 3 (usa getGradeSede)
+  const gradeSede3Params = useMemo(
+    () => ({ idSede: Number(sedeId || idSede) }),
+    [sedeId, idSede],
   );
 
   // Data de sedes para SedeSelect: si es docente usa las del docente,
@@ -283,6 +304,11 @@ const ManageAssistance = () => {
         .join(" ");
       const journeyLabel = firstRow.nombre_jornada || "";
       const sedeLabel = firstRow.nombre_sede || nameSede || "";
+      const logoUrl = imgSchool
+        ? imgSchool.startsWith("http")
+          ? imgSchool
+          : `https://www.nexusplataforma.com${imgSchool}`
+        : "";
       await exportAttendancePDF(tableData, {
         nameSchool: nameSchool || "Institución",
         nameSede: sedeLabel,
@@ -290,6 +316,7 @@ const ManageAssistance = () => {
         journeyLabel,
         startDate,
         endDate,
+        imgSchool: logoUrl,
         fileName: `Asistencias_${gradeLabel || "grado"}_${startDate}_${endDate}.pdf`,
       });
     } catch (err) {
@@ -315,11 +342,6 @@ const ManageAssistance = () => {
   const columns = useMemo(
     () => [
       {
-        accessorKey: "id_assistance",
-        header: "ID",
-        meta: { hideOnSM: true },
-      },
-      {
         accessorKey: "nombre_estudiante",
         header: "Estudiante",
       },
@@ -328,13 +350,13 @@ const ManageAssistance = () => {
         header: "Asignatura",
         meta: { hideOnLG: true },
       },
-      {
-        id: "grado_grupo",
-        header: "Grado / Grupo",
-        accessorFn: (row) =>
-          [row.nombre_grado, row.grupo].filter(Boolean).join(" – "),
-        meta: { hideOnLG: true },
-      },
+      // {
+      //   id: "grado_grupo",
+      //   header: "Grado / Grupo",
+      //   accessorFn: (row) =>
+      //     [row.nombre_grado, row.grupo].filter(Boolean).join(" – "),
+      //   meta: { hideOnLG: true },
+      // },
       {
         accessorKey: "fecha_assistance",
         header: "Fecha",
@@ -363,11 +385,11 @@ const ManageAssistance = () => {
           );
         },
       },
-      {
-        accessorKey: "nombre_sede",
-        header: "Sede",
-        meta: { hideOnXL: true },
-      },
+      // {
+      //   accessorKey: "nombre_sede",
+      //   header: "Sede",
+      //   meta: { hideOnXL: true },
+      // },
       {
         accessorKey: "nombre_jornada",
         header: "Jornada",
@@ -458,9 +480,13 @@ const ManageAssistance = () => {
             sedeId={sedeId}
             autoLoad={true}
             disabled={!sedeId}
-            {...(isDocente && {
+            {...(isPureDocente && {
               customFetchMethod: getTeacherGrades,
               additionalParams: teacherGradesParams,
+            })}
+            {...(isRol3 && {
+              customFetchMethod: getGradeOnlySede,
+              additionalParams: gradeSede3Params,
             })}
           />
         </div>
