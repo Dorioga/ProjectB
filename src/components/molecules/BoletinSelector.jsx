@@ -920,6 +920,29 @@ async function generateBoletinPDF(
       col4W,
     );
     y += studentTableH;
+
+    // Fila: Nombre acudiente
+    const acudienteRowH = 8;
+    addPageIfNeeded(acudienteRowH);
+    pdf.setDrawColor(17, 24, 39);
+    pdf.setLineWidth(0.4);
+    pdf.rect(margin, y, contentW, acudienteRowH, "D");
+    {
+      const textY = y + acudienteRowH / 2 + 1.5;
+      pdf.setFontSize(7);
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(0, 0, 0);
+      const acudienteLabel = "NOMBRE ACUDIENTE: ";
+      pdf.text(acudienteLabel, margin + 2, textY);
+      pdf.setFont("helvetica", "normal");
+      const acudienteLabelW = pdf.getTextWidth(acudienteLabel);
+      let acudienteVal = String(info.nombre_acudiente ?? "-");
+      const acudienteMaxW = contentW - acudienteLabelW - 4;
+      while (pdf.getTextWidth(acudienteVal) > acudienteMaxW && acudienteVal.length > 1)
+        acudienteVal = acudienteVal.slice(0, -1);
+      pdf.text(acudienteVal, margin + 2 + acudienteLabelW, textY);
+    }
+    y += acudienteRowH;
   }
 
   /* ── Escala Valorativa ── */
@@ -2291,6 +2314,18 @@ const BoletinSelector = ({
                         }}
                       >
                         <strong>PROMEDIO:</strong> {promedioGeneral ?? "-"}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td
+                        colSpan={4}
+                        style={{
+                          border: "1px solid #000000",
+                          padding: "4px 8px",
+                        }}
+                      >
+                        <strong>NOMBRE ACUDIENTE:</strong>{" "}
+                        {info.nombre_acudiente ?? "-"}
                       </td>
                     </tr>
                   </tbody>
