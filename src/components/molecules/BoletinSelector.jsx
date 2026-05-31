@@ -88,40 +88,62 @@ const S = {
   },
 };
 
-/* ── Descripción por escala ── */
-const getEscalaDescripcion = (key) => {
-  if (key.includes("superior"))
-    return "Alcanza los desempeños esperados en el tiempo planeado y de manera independiente";
-  if (key.includes("alto") || key.includes("alta"))
-    return "Alcanza la mayoría de los desempeños esperados y algunas veces requiere de apoyo pedagógico";
-  if (key.includes("basico") || key.includes("básico"))
-    return "Alcanza desempeños básicos, casi siempre requiere de apoyo y lo aprovecha";
-  if (key.includes("bajo") || key.includes("baja"))
-    return "No alcanza desempeños esperados, aunque cuente con los apoyos";
-  return null;
+/* ── Abreviatura de nombre de asignatura ── */
+const abreviarAsignatura = (nombre) => {
+  const palabras = String(nombre ?? "")
+    .trim()
+    .split(/\s+/);
+  if (palabras.length > 1) {
+    return palabras.map((p) => p.slice(0, 3).toUpperCase()).join("-");
+  }
+  return String(nombre ?? "")
+    .slice(0, 3)
+    .toUpperCase();
+};
+
+/* ── Helpers de nota efectiva (recuperación vs periodo) ── */
+const _computeNotaEfectiva = (notaPeriodo, notaRecuperacion) => {
+  if (notaRecuperacion == null) return notaPeriodo;
+  const pV = parseFloat(notaPeriodo);
+  const rV = parseFloat(notaRecuperacion);
+  if (isNaN(pV) || isNaN(rV)) return notaRecuperacion ?? notaPeriodo;
+  return String(Math.max(pV, rV));
 };
 
 /* ── Hooks de procesamiento de datos del boletín ── */
-const useBoletinProcessed = (data) => {
+const useBoletinProcessed = (data, periodId) => {
   const periodos = useMemo(() => {
     const m = new Map();
     for (const r of data) {
-      if (r.id_periodo && !m.has(r.id_periodo)) {
+      if (
+        r.id_periodo &&
+        String(r.id_periodo) === String(periodId) &&
+        !m.has(r.id_periodo)
+      ) {
         m.set(r.id_periodo, r.nombre_periodo || `Periodo ${r.id_periodo}`);
       }
     }
     return Array.from(m.entries())
       .sort((a, b) => Number(a[0]) - Number(b[0]))
       .map(([id, nombre]) => ({ id, nombre }));
+  }, [data, periodId]);
+
+  const totalAsignaturas = useMemo(() => {
+    for (const r of data) {
+      if (r.total_asignaturas != null) return parseInt(r.total_asignaturas, 10);
+    }
+    return 0;
   }, [data]);
 
   const asignaturas = useMemo(() => {
     const m = new Map();
     for (const r of data) {
-      const key = r.nombre_asignatura;
+      const key = r.id_asignatura_grado;
       if (!m.has(key)) {
         m.set(key, {
-          nombre_asignatura: key,
+          id_asignatura_grado: key,
+          nombre_asignatura_grado: r.nombre_asignatura_grado ?? key,
+          tiene_nota: r.tiene_nota,
           nombre_docente: r.nombre_docente || "-",
           definitiva: r.definitiva || "-",
           estado_final: r.estado_final || "-",
@@ -140,17 +162,32 @@ const useBoletinProcessed = (data) => {
         asig.estado_final = r.estado_final;
       }
       const pid = r.id_periodo;
+      if (!pid) continue;
       if (!asig.periodos.has(pid)) {
         asig.periodos.set(pid, {
-          nota: r.nota_periodo_porcentual || null,
-          recuperacion: r.nota_recuperacion || null,
-          escala: r.escala_nota || null,
-          estado: r.estado_periodo || null,
+          nota: null,
+          recuperacion: null,
+          escala: null,
+          estado: null,
           logros: [],
           notas: [],
         });
       }
       const per = asig.periodos.get(pid);
+      if (r.nota_periodo_porcentual != null) {
+        const v = parseFloat(r.nota_periodo_porcentual);
+        if (
+          !isNaN(v) &&
+          (per.nota === null || v > parseFloat(per.nota ?? "0"))
+        ) {
+          per.nota = r.nota_periodo_porcentual;
+        }
+      }
+      if (r.nota_recuperacion != null && per.recuperacion === null) {
+        per.recuperacion = r.nota_recuperacion;
+      }
+      if (!per.escala && r.escala_nota) per.escala = r.escala_nota;
+      if (!per.estado && r.estado_periodo) per.estado = r.estado_periodo;
       if (r.nombre_tipo && r.descripcion) {
         const logroEntry = `${r.nombre_tipo}: ${r.descripcion}`;
         if (!per.logros.includes(logroEntry)) per.logros.push(logroEntry);
@@ -165,21 +202,28 @@ const useBoletinProcessed = (data) => {
           per.notas.push({ nombre: notaNombre, valor: r.valor_nota });
       }
     }
-    return Array.from(m.values());
+    const result = Array.from(m.values());
+    for (const asig of result) {
+      for (const [, per] of asig.periodos) {
+        per.nota = _computeNotaEfectiva(per.nota, per.recuperacion);
+      }
+    }
+    return result;
   }, [data]);
 
   const promedioGeneral = useMemo(() => {
-    if (!asignaturas.length) return null;
-    const notas = [];
-    for (const a of asignaturas) {
-      for (const [, per] of a.periodos) {
-        const v = parseFloat(per.nota);
-        if (!isNaN(v)) notas.push(v);
+    if (!totalAsignaturas) return null;
+    const pid = String(periodId);
+    let sum = 0;
+    for (const asig of asignaturas) {
+      if (asig.tiene_nota === "SI") {
+        const per = asig.periodos.get(pid);
+        const v = parseFloat(per?.nota);
+        if (!isNaN(v)) sum += v;
       }
     }
-    if (!notas.length) return null;
-    return (notas.reduce((acc, v) => acc + v, 0) / notas.length).toFixed(2);
-  }, [asignaturas]);
+    return (sum / totalAsignaturas).toFixed(2);
+  }, [asignaturas, periodId, totalAsignaturas]);
 
   const resumenEstado = useMemo(() => {
     if (!asignaturas.length) return "-";
@@ -199,10 +243,14 @@ const useBoletinProcessed = (data) => {
 };
 
 /* ── Función pura equivalente a useBoletinProcessed (para uso en loops) ── */
-function computeBoletinData(data) {
+function computeBoletinData(data, periodId) {
   const periodoMap = new Map();
   for (const r of data) {
-    if (r.id_periodo && !periodoMap.has(r.id_periodo)) {
+    if (
+      r.id_periodo &&
+      String(r.id_periodo) === String(periodId) &&
+      !periodoMap.has(r.id_periodo)
+    ) {
       periodoMap.set(
         r.id_periodo,
         r.nombre_periodo || `Periodo ${r.id_periodo}`,
@@ -213,12 +261,22 @@ function computeBoletinData(data) {
     .sort((a, b) => Number(a[0]) - Number(b[0]))
     .map(([id, nombre]) => ({ id, nombre }));
 
+  let totalAsignaturas = 0;
+  for (const r of data) {
+    if (r.total_asignaturas != null) {
+      totalAsignaturas = parseInt(r.total_asignaturas, 10);
+      break;
+    }
+  }
+
   const asigMap = new Map();
   for (const r of data) {
-    const key = r.nombre_asignatura;
+    const key = r.id_asignatura_grado;
     if (!asigMap.has(key)) {
       asigMap.set(key, {
-        nombre_asignatura: key,
+        id_asignatura_grado: key,
+        nombre_asignatura_grado: r.nombre_asignatura_grado ?? key,
+        tiene_nota: r.tiene_nota,
         nombre_docente: r.nombre_docente || "-",
         definitiva: r.definitiva || "-",
         estado_final: r.estado_final || "-",
@@ -235,17 +293,29 @@ function computeBoletinData(data) {
     if ((!asig.estado_final || asig.estado_final === "-") && r.estado_final)
       asig.estado_final = r.estado_final;
     const pid = r.id_periodo;
+    if (!pid) continue;
     if (!asig.periodos.has(pid)) {
       asig.periodos.set(pid, {
-        nota: r.nota_periodo_porcentual || null,
-        recuperacion: r.nota_recuperacion || null,
-        escala: r.escala_nota || null,
-        estado: r.estado_periodo || null,
+        nota: null,
+        recuperacion: null,
+        escala: null,
+        estado: null,
         logros: [],
         notas: [],
       });
     }
     const per = asig.periodos.get(pid);
+    if (r.nota_periodo_porcentual != null) {
+      const v = parseFloat(r.nota_periodo_porcentual);
+      if (!isNaN(v) && (per.nota === null || v > parseFloat(per.nota ?? "0"))) {
+        per.nota = r.nota_periodo_porcentual;
+      }
+    }
+    if (r.nota_recuperacion != null && per.recuperacion === null) {
+      per.recuperacion = r.nota_recuperacion;
+    }
+    if (!per.escala && r.escala_nota) per.escala = r.escala_nota;
+    if (!per.estado && r.estado_periodo) per.estado = r.estado_periodo;
     if (r.nombre_tipo && r.descripcion) {
       const logroEntry = `${r.nombre_tipo}: ${r.descripcion}`;
       if (!per.logros.includes(logroEntry)) per.logros.push(logroEntry);
@@ -260,17 +330,22 @@ function computeBoletinData(data) {
     }
   }
   const asignaturas = Array.from(asigMap.values());
-  const _notasPromedio = [];
-  for (const a of asignaturas) {
-    for (const [, per] of a.periodos) {
-      const v = parseFloat(per.nota);
-      if (!isNaN(v)) _notasPromedio.push(v);
+  for (const asig of asignaturas) {
+    for (const [, per] of asig.periodos) {
+      per.nota = _computeNotaEfectiva(per.nota, per.recuperacion);
     }
   }
-  const promedioGeneral = _notasPromedio.length
-    ? (
-        _notasPromedio.reduce((acc, v) => acc + v, 0) / _notasPromedio.length
-      ).toFixed(2)
+  const pid = String(periodId);
+  let promedioSum = 0;
+  for (const asig of asignaturas) {
+    if (asig.tiene_nota === "SI") {
+      const per = asig.periodos.get(pid);
+      const v = parseFloat(per?.nota);
+      if (!isNaN(v)) promedioSum += v;
+    }
+  }
+  const promedioGeneral = totalAsignaturas
+    ? (promedioSum / totalAsignaturas).toFixed(2)
     : null;
   const resumenEstado = (() => {
     if (!asignaturas.length) return "-";
@@ -297,7 +372,7 @@ const useBoletinTransicionProcessed = (data) => {
       if (!m.has(asigKey)) {
         m.set(asigKey, {
           id_asignatura: r.id_asignatura,
-          nombre_asignatura: r.nombre_asignatura ?? "-",
+          nombre_asignatura_grado: r.nombre_asignatura_grado ?? "-",
           nombre_docente: r.nombre_docente ?? "-",
           filas: [],
         });
@@ -370,12 +445,11 @@ const BoletinTransicionView = ({ boletinData, info }) => {
       {/* Encabezado */}
       <div
         style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "14px",
+          position: "relative",
           borderBottom: "2px solid #000000",
           paddingBottom: "12px",
           marginBottom: "12px",
+          textAlign: "center",
         }}
       >
         {info.link_logo && (
@@ -383,10 +457,17 @@ const BoletinTransicionView = ({ boletinData, info }) => {
             src={info.link_logo}
             alt="Logo institución"
             crossOrigin="anonymous"
-            style={{ width: 64, height: 64, objectFit: "contain" }}
+            style={{
+              position: "absolute",
+              left: 0,
+              top: 0,
+              width: 64,
+              height: 64,
+              objectFit: "contain",
+            }}
           />
         )}
-        <div style={{ flex: 1, textAlign: "center" }}>
+        <div style={{ textAlign: "center" }}>
           {info.nombre_institucion && (
             <p
               style={{
@@ -402,6 +483,16 @@ const BoletinTransicionView = ({ boletinData, info }) => {
           {info.nit && (
             <p style={{ margin: "2px 0", color: "#6b7280", fontSize: "10px" }}>
               NIT: {info.nit}
+            </p>
+          )}
+          {info.membrete && (
+            <p style={{ margin: "2px 0", fontSize: "10px", color: "#374151" }}>
+              {info.membrete}
+            </p>
+          )}
+          {info.cod_dane && (
+            <p style={{ margin: "2px 0", fontSize: "10px", color: "#374151" }}>
+              Cód. DANE: {info.cod_dane}
             </p>
           )}
           {info.nombre_sede && (
@@ -454,7 +545,7 @@ const BoletinTransicionView = ({ boletinData, info }) => {
         </div>
         <div style={{ textAlign: "right", fontSize: "10px", color: "#374151" }}>
           <p style={{ margin: "2px 0" }}>
-            <strong>Fecha:</strong> {formatDate(info.fecha)}
+            <strong>Fecha:</strong> {formatDate(new Date().toISOString())}
           </p>
         </div>
       </div>
@@ -491,7 +582,7 @@ const BoletinTransicionView = ({ boletinData, info }) => {
               textAlign: "center",
             }}
           >
-            {asig.nombre_asignatura}
+            {asig.nombre_asignatura_grado}
           </div>
 
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -655,25 +746,39 @@ async function drawPDFHeader(pdf, info, title, options = {}) {
   pdf.setFont("helvetica", "normal");
   pdf.text(`NIT: ${info.nit ?? "-"}`, textCenter, y + 3, { align: "center" });
   y += 5;
+  if (info.membrete) {
+    pdf.setFontSize(8);
+    pdf.setFont("helvetica", "normal");
+    pdf.text(String(info.membrete), textCenter, y + 3, { align: "center" });
+    y += 5;
+  }
+  if (info.cod_dane) {
+    pdf.setFontSize(8);
+    pdf.setFont("helvetica", "normal");
+    pdf.text(`Cód. DANE: ${info.cod_dane}`, textCenter, y + 3, {
+      align: "center",
+    });
+    y += 5;
+  }
   pdf.setFontSize(9);
   pdf.setFont("helvetica", "bold");
   pdf.text(
     `${info.nombre_sede ?? "-"} — ${info.sede_tip ?? "-"}`,
+
     textCenter,
     y + 3,
     { align: "center" },
   );
   y += 5;
-  if (info.grado) {
-    pdf.setFontSize(8);
-    pdf.setFont("helvetica", "normal");
-    pdf.text(`Grado: ${info.grado}`, textCenter, y + 3, { align: "center" });
-    y += 4;
-  }
   pdf.setFontSize(8);
-  pdf.text(`Fecha: ${formatDate(info.fecha)}`, pageW - margin, y + 3, {
-    align: "right",
-  });
+  pdf.text(
+    `Fecha: ${formatDate(new Date().toISOString())}`,
+    pageW - margin,
+    y + 3,
+    {
+      align: "right",
+    },
+  );
   y += 6;
 
   /* Datos del estudiante */
@@ -771,14 +876,16 @@ async function generateBoletinPDF(
   {
     const studentTableH = 8;
     addPageIfNeeded(studentTableH + 2);
-    const col1W = contentW * 0.4;
-    const col2W = contentW * 0.35;
-    const col3W = contentW * 0.25;
+    const col1W = contentW * 0.38;
+    const col2W = contentW * 0.2;
+    const col3W = contentW * 0.22;
+    const col4W = contentW * 0.2;
     const nombreCompleto =
       [info.nombre_estudiante, info.apellido_estudiante]
         .filter(Boolean)
         .join(" ") || "-";
-    const periodoNombre = info.nombre_periodo ?? periodos[0]?.nombre ?? "-";
+    const gradoTexto = info.grado ?? "-";
+    const periodoNombre = periodos[0]?.nombre ?? "-";
     const promTexto = promedioGeneral !== null ? String(promedioGeneral) : "-";
 
     pdf.setDrawColor(17, 24, 39);
@@ -786,6 +893,7 @@ async function generateBoletinPDF(
     pdf.rect(margin, y, col1W, studentTableH, "D");
     pdf.rect(margin + col1W, y, col2W, studentTableH, "D");
     pdf.rect(margin + col1W + col2W, y, col3W, studentTableH, "D");
+    pdf.rect(margin + col1W + col2W + col3W, y, col4W, studentTableH, "D");
 
     const drawStudentCell = (label, value, cx, cw) => {
       const textY = y + studentTableH / 2 + 1.5;
@@ -803,14 +911,15 @@ async function generateBoletinPDF(
     };
 
     drawStudentCell("ESTUDIANTE: ", nombreCompleto, margin, col1W);
-    drawStudentCell("PERIODO: ", periodoNombre, margin + col1W, col2W);
+    drawStudentCell("GRADO: ", gradoTexto, margin + col1W, col2W);
+    drawStudentCell("PERIODO: ", periodoNombre, margin + col1W + col2W, col3W);
     drawStudentCell(
-      "NOTA PROMEDIO PERIODO: ",
+      "PROMEDIO: ",
       promTexto,
-      margin + col1W + col2W,
-      col3W,
+      margin + col1W + col2W + col3W,
+      col4W,
     );
-    y += studentTableH + 4;
+    y += studentTableH;
   }
 
   /* ── Escala Valorativa ── */
@@ -824,11 +933,10 @@ async function generateBoletinPDF(
 
     const levels = escalas.map((e) => ({
       label: String(e.escala ?? ""),
-      code: String(e.escala ?? ""),
       range: `(${e.desde} - ${e.hasta})`,
     }));
 
-    // Fila 1: título centrado + fecha a la derecha
+    // Fila 1: título
     pdf.setDrawColor(0, 0, 0);
     pdf.setLineWidth(0.3);
     pdf.rect(margin, y, contentW, escalaRowH, "D");
@@ -844,24 +952,25 @@ async function generateBoletinPDF(
 
     y += escalaRowH;
 
-    // Fila 2: columnas de niveles — "label = CODE range"
-    const lvlColW = contentW / levels.length;
+    // Fila 2: columnas de niveles
+    const lvlColW = contentW / (levels.length || 1);
     pdf.setFontSize(6.5);
     for (let i = 0; i < levels.length; i++) {
+      const { label, range } = levels[i];
       const cx = margin + i * lvlColW;
       pdf.rect(cx, y, lvlColW, escalaRowH, "D");
-      const { label, code, range } = levels[i];
       const textY = y + escalaRowH / 2 + 1.5;
-      const startX = cx + 1.5;
-
       pdf.setFont("helvetica", "bold");
+      const fullText = `${label} = ${range}`;
+      const textW = pdf.getTextWidth(fullText);
+      const startX = cx + (lvlColW - textW) / 2;
       pdf.text(label, startX, textY);
       const labelW = pdf.getTextWidth(label);
-
       pdf.setFont("helvetica", "normal");
       pdf.text(` = ${range}`, startX + labelW, textY);
     }
-    y += escalaRowH + 4;
+    y += escalaRowH;
+    y += 3;
   }
 
   /* ── Tabla de notas ── */
@@ -979,56 +1088,37 @@ async function generateBoletinPDF(
     align: "center",
   });
 
-  // Cabeceras agrupadas por periodo (colspan manual)
-  for (let pi = 0; pi < periodos.length; pi++) {
-    const startCol = 1 + pi * 4;
-    const cx = colX(startCol);
-    const groupW = smallSubW * 2 + estadoSubW + logroSubW;
-    pdf.setFillColor(...headerBg);
-    pdf.setDrawColor(0, 0, 0);
-    pdf.setLineWidth(0.3);
-    pdf.rect(cx, y, groupW, rowH, "FD");
-    pdf.setFontSize(6);
-    pdf.setFont("helvetica", "bold");
-    pdf.setTextColor(...headerColor);
-    pdf.text(periodos[pi].nombre, cx + groupW / 2, y + rowH / 2 + 1.5, {
-      align: "center",
-    });
-  }
-  y += rowH;
-
-  /* Sub-cabecera (NFP, Recup, Escala, Estado) */
+  /* Sub-cabecera: Nota, Escala, Estado, Logro (sin fila de nombre de periodo) */
   const subBg = [255, 255, 255];
   const subColor = [0, 0, 0];
-  // col 0 ya fue dibujada combinada arriba; solo sub-cols de periodos
   for (let pi = 0; pi < periodos.length; pi++) {
     const base = 1 + pi * 4;
-    drawCell("Nota", base, y, subHeaderH, {
+    drawCell("Nota", base, y, rowH + subHeaderH, {
       bold: true,
       fontSize: 5,
       color: subColor,
       bg: subBg,
     });
-    drawCell("Escala", base + 1, y, subHeaderH, {
+    drawCell("Escala", base + 1, y, rowH + subHeaderH, {
       bold: true,
       fontSize: 5,
       color: subColor,
       bg: subBg,
     });
-    drawCell("Estado", base + 2, y, subHeaderH, {
+    drawCell("Estado", base + 2, y, rowH + subHeaderH, {
       bold: true,
       fontSize: 5,
       color: subColor,
       bg: subBg,
     });
-    drawCell("Logro", base + 3, y, subHeaderH, {
+    drawCell("Logro", base + 3, y, rowH + subHeaderH, {
       bold: true,
       fontSize: 5,
       color: subColor,
       bg: subBg,
     });
   }
-  y += subHeaderH;
+  y += rowH + subHeaderH;
 
   /* Filas de datos */
   for (let idx = 0; idx < asignaturas.length; idx++) {
@@ -1079,7 +1169,7 @@ async function generateBoletinPDF(
     }
     addPageIfNeeded(computedRowH);
 
-    drawCell(asig.nombre_asignatura, 0, y, computedRowH, {
+    drawCell(asig.nombre_asignatura_grado, 0, y, computedRowH, {
       bold: true,
       fontSize: 6,
       align: "center",
@@ -1174,7 +1264,7 @@ async function generateBoletinPDF(
   }
 
   /* ── Sección inferior boletín (4 filas) ── */
-  y += 4;
+  y += 2;
   const labelColW = contentW * 0.35;
   const contentColW = contentW - labelColW;
   pdf.setDrawColor(0, 0, 0);
@@ -1191,11 +1281,82 @@ async function generateBoletinPDF(
     y += rowH;
   };
 
-  // Fila 1: Desempeño convivencial
-  drawLabelRow("DESEMPEÑO CONVIVENCIAL:", 18);
-  // Fila 2: Histórico de periodo
-  drawLabelRow("HISTÓRICO DE PERIODO:", 18);
-  // Fila 3: Observaciones generales
+  // Fila 1: Histórico de periodo — tabla de asignaturas por periodo
+  {
+    // Todos los periodos disponibles (sin filtrar por selección)
+    const todosLosPeriodosIds = Array.from(
+      new Set(asignaturas.flatMap((a) => Array.from(a.periodos.keys()))),
+    ).sort((a, b) => Number(a) - Number(b));
+
+    const hdrH = 5;
+    const subHdrH = 5;
+    const dataRowH = 5;
+    const totalH = hdrH + subHdrH + todosLosPeriodosIds.length * dataRowH;
+    addPageIfNeeded(totalH + 2);
+
+    // Anchos: primera col fija, resto dividido entre asignaturas
+    const perColW = 8;
+    const asigCount = asignaturas.length || 1;
+    const asigColW = (contentW - perColW) / asigCount;
+
+    pdf.setDrawColor(0, 0, 0);
+    pdf.setLineWidth(0.3);
+
+    // Fila título
+    pdf.rect(margin, y, contentW, hdrH, "D");
+    pdf.setFontSize(6.5);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(0, 0, 0);
+    pdf.text(
+      "HISTÓRICO DE PERIODOS — ASIGNATURAS",
+      margin + contentW / 2,
+      y + hdrH / 2 + 1.5,
+      { align: "center" },
+    );
+    y += hdrH;
+
+    // Fila sub-cabecera: PER. | asig1 | asig2 | ...
+    pdf.rect(margin, y, perColW, subHdrH, "D");
+    pdf.setFontSize(5);
+    pdf.setFont("helvetica", "bold");
+    pdf.text("PER.", margin + perColW / 2, y + subHdrH / 2 + 1.5, {
+      align: "center",
+    });
+    for (let ai = 0; ai < asignaturas.length; ai++) {
+      const cx = margin + perColW + ai * asigColW;
+      pdf.rect(cx, y, asigColW, subHdrH, "D");
+      const abrev = abreviarAsignatura(asignaturas[ai].nombre_asignatura_grado);
+      let display = abrev;
+      while (pdf.getTextWidth(display) > asigColW - 0.5 && display.length > 1) {
+        display = display.slice(0, -1);
+      }
+      pdf.text(display, cx + asigColW / 2, y + subHdrH / 2 + 1.5, {
+        align: "center",
+      });
+    }
+    y += subHdrH;
+
+    // Filas de datos: una por periodo
+    for (let pi = 0; pi < todosLosPeriodosIds.length; pi++) {
+      pdf.setFont("helvetica", "bold");
+      pdf.rect(margin, y, perColW, dataRowH, "D");
+      pdf.text(String(pi + 1), margin + perColW / 2, y + dataRowH / 2 + 1.5, {
+        align: "center",
+      });
+      pdf.setFont("helvetica", "normal");
+      for (let ai = 0; ai < asignaturas.length; ai++) {
+        const cx = margin + perColW + ai * asigColW;
+        pdf.rect(cx, y, asigColW, dataRowH, "D");
+        const per = asignaturas[ai].periodos.get(todosLosPeriodosIds[pi]);
+        const nota = per?.nota ?? "-";
+        pdf.text(nota, cx + asigColW / 2, y + dataRowH / 2 + 1.5, {
+          align: "center",
+        });
+      }
+      y += dataRowH;
+    }
+  }
+  // Fila 2: Observaciones generales
   drawLabelRow("OBSERVACIONES GENERALES:", 22);
   // Fila 4: Firma del director de grupo (celda completa)
   const firmaRowH = 28;
@@ -1275,7 +1436,7 @@ async function generateBoletinTransicionPDF(info, boletinData, meta) {
     if (!asigMap.has(asigKey)) {
       asigMap.set(asigKey, {
         id_asignatura: r.id_asignatura,
-        nombre_asignatura: r.nombre_asignatura ?? "-",
+        nombre_asignatura_grado: r.nombre_asignatura_grado ?? "-",
         nombre_docente: r.nombre_docente ?? "-",
         filas: [],
       });
@@ -1396,7 +1557,7 @@ async function generateBoletinTransicionPDF(info, boletinData, meta) {
     pdf.setFontSize(9);
     pdf.setFont("helvetica", "bold");
     pdf.setTextColor(0, 0, 0);
-    pdf.text(asig.nombre_asignatura, margin + contentW / 2, y + 5, {
+    pdf.text(asig.nombre_asignatura_grado, margin + contentW / 2, y + 5, {
       align: "center",
     });
     y += 7;
@@ -1509,6 +1670,7 @@ const BoletinSelector = ({
     [currentYear],
   );
   const [periodId, setPeriodId] = useState("");
+  const [consultado, setConsultado] = useState(false);
   const [year, setYear] = useState(String(currentYear));
   const [boletinData, setBoletinData] = useState(null);
   const [escalas, setEscalas] = useState([]);
@@ -1552,9 +1714,26 @@ const BoletinSelector = ({
   }, [isGuardian, idPersona]);
 
   const { periodos, asignaturas, promedioGeneral, resumenEstado } =
-    useBoletinProcessed(!isTransicion ? (boletinData ?? []) : []);
+    useBoletinProcessed(!isTransicion ? (boletinData ?? []) : [], periodId);
 
-  const rawInfo = boletinData?.[0] ?? {};
+  // Todos los periodos presentes en la respuesta (para tabla histórica)
+  const todosPeriodos = useMemo(() => {
+    if (!boletinData) return [];
+    const m = new Map();
+    for (const r of boletinData) {
+      if (r.id_periodo && !m.has(r.id_periodo)) {
+        m.set(r.id_periodo, r.nombre_periodo || `Periodo ${r.id_periodo}`);
+      }
+    }
+    return Array.from(m.entries())
+      .sort((a, b) => Number(a[0]) - Number(b[0]))
+      .map(([id, nombre]) => ({ id, nombre }));
+  }, [boletinData]);
+
+  const rawInfo =
+    boletinData?.find((r) => r.nombre_institucion != null) ??
+    boletinData?.[0] ??
+    {};
   const selectedGuardianStudent = isGuardian
     ? guardianStudents.find(
         (s) => String(s.id_estudiante) === String(selectedGuardianStudentId),
@@ -1609,10 +1788,12 @@ const BoletinSelector = ({
       });
       const rows = Array.isArray(result) ? result : [];
       setBoletinData(rows);
+      setConsultado(true);
 
-      if (rows.length > 0 && rows[0].id_institucion) {
+      const instRow = rows.find((r) => r.id_institucion != null);
+      if (instRow?.id_institucion) {
         try {
-          const sc = await getInstitutionScales(rows[0].id_institucion);
+          const sc = await getInstitutionScales(instRow.id_institucion);
           setEscalas(Array.isArray(sc) ? sc : []);
         } catch {
           setEscalas([]);
@@ -1677,18 +1858,20 @@ const BoletinSelector = ({
         });
         const rows = Array.isArray(result) ? result : [];
         if (rows.length > 0) {
+          const infoBase =
+            rows.find((r) => r.nombre_institucion != null) ?? rows[0];
           const info0 = {
-            ...rows[0],
+            ...infoBase,
             nombre_estudiante:
-              rows[0].nombre_estudiante ??
+              infoBase.nombre_estudiante ??
               student.nombre_estudiante ??
               student.nombre,
             apellido_estudiante:
-              rows[0].apellido_estudiante ??
+              infoBase.apellido_estudiante ??
               student.apellido_estudiante ??
               student.apellido,
             numero_identificacion:
-              rows[0].numero_identificacion ??
+              infoBase.numero_identificacion ??
               student.numero_identificacion ??
               student.identificacion,
           };
@@ -1709,7 +1892,7 @@ const BoletinSelector = ({
               asignaturas: a,
               promedioGeneral: pg,
               resumenEstado: re,
-            } = computeBoletinData(rows);
+            } = computeBoletinData(rows, periodId);
             await generateBoletinPDF(info0, p, a, pg, re, escalas0, metaObj);
           }
         }
@@ -1885,7 +2068,10 @@ const BoletinSelector = ({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
         <PeriodSelector
           value={periodId}
-          onChange={(e) => setPeriodId(e.target.value)}
+          onChange={(e) => {
+            setPeriodId(e.target.value);
+            setConsultado(false);
+          }}
           disabled={loading}
         />
         <div>
@@ -1929,14 +2115,14 @@ const BoletinSelector = ({
       {loading && (
         <p className="text-center text-muted py-6">Cargando boletín...</p>
       )}
-      {!loading && boletinData && boletinData.length === 0 && (
+      {!loading && boletinData && boletinData.length === 0 && consultado && (
         <p className="text-center text-muted py-6">
           No se encontraron registros para el período y año seleccionados.
         </p>
       )}
 
       {/* ── Boletín + botón exportar ── */}
-      {boletinData && boletinData.length > 0 && (
+      {boletinData && boletinData.length > 0 && consultado && (
         <>
           <div className="flex justify-end">
             <SimpleButton
@@ -1968,12 +2154,11 @@ const BoletinSelector = ({
                 {/* ── Encabezado institución ── */}
                 <div
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "14px",
+                    position: "relative",
                     borderBottom: "2px solid #000000",
                     paddingBottom: "12px",
                     marginBottom: "10px",
+                    textAlign: "center",
                   }}
                 >
                   {info.link_logo && (
@@ -1981,10 +2166,17 @@ const BoletinSelector = ({
                       src={info.link_logo}
                       alt="Logo institución"
                       crossOrigin="anonymous"
-                      style={{ width: 64, height: 64, objectFit: "contain" }}
+                      style={{
+                        position: "absolute",
+                        left: 0,
+                        top: 0,
+                        width: 64,
+                        height: 64,
+                        objectFit: "contain",
+                      }}
                     />
                   )}
-                  <div style={{ flex: 1, textAlign: "center" }}>
+                  <div style={{ textAlign: "center" }}>
                     <p
                       style={{
                         fontWeight: "bold",
@@ -2000,6 +2192,28 @@ const BoletinSelector = ({
                         NIT: {info.nit}
                       </p>
                     )}
+                    {info.membrete && (
+                      <p
+                        style={{
+                          margin: "2px 0",
+                          fontSize: "10px",
+                          color: "#374151",
+                        }}
+                      >
+                        {info.membrete}
+                      </p>
+                    )}
+                    {info.cod_dane && (
+                      <p
+                        style={{
+                          margin: "2px 0",
+                          fontSize: "10px",
+                          color: "#374151",
+                        }}
+                      >
+                        Cód. DANE: {info.cod_dane}
+                      </p>
+                    )}
                     {info.nombre_sede && (
                       <p
                         style={{
@@ -2010,11 +2224,6 @@ const BoletinSelector = ({
                       >
                         {info.nombre_sede}
                         {info.sede_tip ? ` — ${info.sede_tip}` : ""}
-                      </p>
-                    )}
-                    {info.grado && (
-                      <p style={{ margin: "2px 0", fontSize: "11px" }}>
-                        <strong>Grado:</strong> {info.grado}
                       </p>
                     )}
                     {info.resolucion && (
@@ -2037,18 +2246,18 @@ const BoletinSelector = ({
                   style={{
                     width: "100%",
                     borderCollapse: "collapse",
-                    border: "2px solid #111827",
+                    border: "1px solid #000000",
                     fontSize: "10px",
-                    marginBottom: "12px",
+                    marginBottom: "0px",
                   }}
                 >
                   <tbody>
                     <tr>
                       <td
                         style={{
-                          border: "1px solid #111827",
+                          border: "1px solid #000000",
                           padding: "4px 8px",
-                          width: "40%",
+                          width: "38%",
                         }}
                       >
                         <strong>ESTUDIANTE:</strong>{" "}
@@ -2058,268 +2267,203 @@ const BoletinSelector = ({
                       </td>
                       <td
                         style={{
-                          border: "1px solid #111827",
+                          border: "1px solid #000000",
                           padding: "4px 8px",
-                          width: "35%",
+                          width: "20%",
                         }}
                       >
-                        {(info.nombre_periodo || periodos[0]?.nombre) && (
-                          <span>
-                            <strong>PERIODO:</strong>{" "}
-                            {info.nombre_periodo ?? periodos[0]?.nombre}
-                          </span>
-                        )}
+                        <strong>GRADO:</strong> {info.grado ?? "-"}
                       </td>
                       <td
                         style={{
-                          border: "1px solid #111827",
+                          border: "1px solid #000000",
                           padding: "4px 8px",
-                          width: "25%",
+                          width: "22%",
                         }}
                       >
-                        {promedioGeneral !== null && (
-                          <span>
-                            <strong>NOTA PROMEDIO PERIODO:</strong>{" "}
-                            {promedioGeneral}
-                          </span>
-                        )}
+                        <strong>PERIODO:</strong> {periodos[0]?.nombre ?? "-"}
+                      </td>
+                      <td
+                        style={{
+                          border: "1px solid #000000",
+                          padding: "4px 8px",
+                          width: "20%",
+                        }}
+                      >
+                        <strong>PROMEDIO:</strong> {promedioGeneral ?? "-"}
                       </td>
                     </tr>
                   </tbody>
                 </table>
 
                 {/* ── Escala Valorativa ── */}
-                {(() => {
-                  const levels = escalas.map((e) => ({
-                    label: String(e.escala ?? ""),
-                    range: `( ${e.desde} - ${e.hasta} )`,
-                  }));
-                  const now = new Date();
-                  const pad2 = (n) => String(n).padStart(2, "0");
-                  const dateStr = `${pad2(now.getDate())}-${pad2(now.getMonth() + 1)}-${now.getFullYear()} ${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
-                  return (
-                    <table
-                      style={{
-                        width: "100%",
-                        borderCollapse: "collapse",
-                        border: "1px solid #111827",
-                        fontSize: "9px",
-                        marginBottom: "10px",
-                      }}
-                    >
-                      <tbody>
-                        <tr>
-                          <td
-                            colSpan={levels.length}
-                            style={{
-                              border: "1px solid #111827",
-                              padding: "3px 6px",
-                              fontWeight: "bold",
-                              textAlign: "center",
-                              fontSize: "10px",
-                              position: "relative",
-                            }}
-                          >
-                            ESCALA VALORATIVA
-                          </td>
-                        </tr>
-                        <tr>
-                          {levels.map((lvl, i) => (
-                            <td
-                              key={i}
-                              style={{
-                                border: "1px solid #111827",
-                                padding: "3px 6px",
-                                width: `${100 / levels.length}%`,
-                              }}
-                            >
-                              <strong> {lvl.label}</strong> = {lvl.range}
-                            </td>
-                          ))}
-                        </tr>
-                      </tbody>
-                    </table>
-                  );
-                })()}
-
-                {/* ── Tabla por asignatura ── */}
-                {asignaturas.map((asig, idx) => {
-                  return (
-                    <div
-                      key={asig.nombre_asignatura}
-                      style={{ marginBottom: "10px", overflowX: "auto" }}
-                    >
+                {escalas.length > 0 &&
+                  (() => {
+                    const levels = escalas.map((e) => ({
+                      label: String(e.escala ?? ""),
+                      range: `( ${e.desde} - ${e.hasta} )`,
+                    }));
+                    return (
                       <table
                         style={{
                           width: "100%",
                           borderCollapse: "collapse",
-                          tableLayout: "fixed",
+                          border: "1px solid #000000",
+                          fontSize: "9px",
+                          marginBottom: "8px",
                         }}
                       >
-                        <colgroup>
-                          <col style={{ width: "25%" }} />
-                          {periodos.map((p) => (
-                            <React.Fragment key={p.id}>
-                              <col
-                                style={{
-                                  width: `${(4.6 / periodos.length).toFixed(2)}%`,
-                                }}
-                              />
-                              <col
-                                style={{
-                                  width: `${(4.6 / periodos.length).toFixed(2)}%`,
-                                }}
-                              />
-                              <col
-                                style={{
-                                  width: `${(12.42 / periodos.length).toFixed(2)}%`,
-                                }}
-                              />
-                              <col
-                                style={{
-                                  width: `${(53.58 / periodos.length).toFixed(2)}%`,
-                                }}
-                              />
-                            </React.Fragment>
-                          ))}
-                        </colgroup>
-                        <thead>
-                          <tr
-                            style={{
-                              backgroundColor: "#ffffff",
-                              color: "#000000",
-                            }}
-                          >
-                            <th
-                              rowSpan={2}
-                              style={{ ...S.thLeft, verticalAlign: "middle" }}
+                        <tbody>
+                          <tr>
+                            <td
+                              colSpan={levels.length}
+                              style={{
+                                border: "1px solid #000000",
+                                padding: "3px 6px",
+                                fontWeight: "bold",
+                                textAlign: "center",
+                                fontSize: "10px",
+                              }}
                             >
-                              Asignatura
-                            </th>
-                            {periodos.map((p) => (
-                              <th
-                                key={p.id}
-                                colSpan={4}
+                              ESCALA VALORATIVA
+                            </td>
+                          </tr>
+                          <tr>
+                            {levels.map((lvl, i) => (
+                              <td
+                                key={i}
                                 style={{
-                                  ...S.th,
-                                  borderLeft: "2px solid #000000",
+                                  border: "1px solid #000000",
+                                  padding: "3px 6px",
+                                  width: `${100 / levels.length}%`,
+                                  textAlign: "center",
                                 }}
                               >
-                                {p.nombre}
-                              </th>
+                                <strong>{lvl.label}</strong> = {lvl.range}
+                              </td>
                             ))}
-                          </tr>
-                          <tr
-                            style={{
-                              backgroundColor: "#ffffff",
-                              color: "#000000",
-                            }}
-                          >
-                            {periodos.map((p) => (
-                              <React.Fragment key={p.id}>
-                                <th
-                                  style={{
-                                    ...S.th,
-                                    borderLeft: "2px solid #000000",
-                                    fontSize: "8px",
-                                  }}
-                                  title="Nota final periodo"
-                                >
-                                  Nota
-                                </th>
-                                <th style={{ ...S.th, fontSize: "8px" }}>
-                                  Escala
-                                </th>
-                                <th style={{ ...S.th, fontSize: "8px" }}>
-                                  Estado
-                                </th>
-                                <th style={{ ...S.th, fontSize: "8px" }}>
-                                  Logro
-                                </th>
-                              </React.Fragment>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr style={{ backgroundColor: "#ffffff" }}>
-                            <td style={S.tdBold}>{asig.nombre_asignatura}</td>
-                            {periodos.map((p) => {
-                              const per = asig.periodos.get(p.id);
-                              return (
-                                <React.Fragment key={p.id}>
-                                  <td
-                                    style={{
-                                      ...S.td,
-                                      borderLeft: "2px solid #000000",
-                                      fontWeight: "600",
-                                    }}
-                                  >
-                                    {per?.nota ?? "-"}
-                                  </td>
-                                  <td style={S.td}>{per?.escala ?? "-"}</td>
-                                  <td
-                                    style={{
-                                      ...S.td,
-                                      color: per
-                                        ? colorEstado(per.estado)
-                                        : "#374151",
-                                      fontWeight: "600",
-                                      fontSize: "9px",
-                                    }}
-                                  >
-                                    {per?.estado ?? "-"}
-                                  </td>
-                                  <td
-                                    style={{
-                                      ...S.tdLeft,
-                                      fontSize: "8px",
-                                      color: "#111827",
-                                      fontStyle: "italic",
-                                    }}
-                                  >
-                                    {per?.logros?.length
-                                      ? per.logros.map((l, i) => {
-                                          const sep = l.indexOf(": ");
-                                          if (sep === -1)
-                                            return <div key={i}>{l}</div>;
-                                          return (
-                                            <div key={i}>
-                                              <span
-                                                style={{
-                                                  fontWeight: 900,
-                                                  fontStyle: "normal",
-                                                }}
-                                              >
-                                                {l.slice(0, sep)}
-                                              </span>
-                                              {l.slice(sep)}
-                                            </div>
-                                          );
-                                        })
-                                      : "-"}
-                                    <div
-                                      style={{
-                                        marginTop: "4px",
-                                        fontWeight: "bold",
-                                        fontStyle: "normal",
-                                        color: "#111827",
-                                        fontSize: "8px",
-                                        borderTop: "1px solid #000000",
-                                        paddingTop: "2px",
-                                      }}
-                                    >
-                                      Observaciones de énfasis:
-                                    </div>
-                                  </td>
-                                </React.Fragment>
-                              );
-                            })}
                           </tr>
                         </tbody>
                       </table>
-                    </div>
-                  );
-                })}
+                    );
+                  })()}
+
+                {/* ── Tabla de asignaturas (encabezado único) ── */}
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    tableLayout: "fixed",
+                  }}
+                >
+                  <colgroup>
+                    <col style={{ width: "22%" }} />
+                    <col style={{ width: "7%" }} />
+                    <col style={{ width: "7%" }} />
+                    <col style={{ width: "14%" }} />
+                    <col style={{ width: "50%" }} />
+                  </colgroup>
+                  <thead>
+                    <tr
+                      style={{ backgroundColor: "#ffffff", color: "#000000" }}
+                    >
+                      <th style={{ ...S.thLeft, verticalAlign: "middle" }}>
+                        Asignatura
+                      </th>
+                      <th
+                        style={{ ...S.th, fontSize: "8px" }}
+                        title="Nota final periodo"
+                      >
+                        Nota
+                      </th>
+                      <th style={{ ...S.th, fontSize: "8px" }}>Escala</th>
+                      <th style={{ ...S.th, fontSize: "8px" }}>Estado</th>
+                      <th style={{ ...S.th, fontSize: "8px" }}>Logro</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {asignaturas.map((asig) => (
+                      <tr
+                        key={asig.id_asignatura_grado}
+                        style={{ backgroundColor: "#ffffff" }}
+                      >
+                        <td style={{ ...S.tdBold, textAlign: "center" }}>
+                          {asig.nombre_asignatura_grado}
+                        </td>
+                        {periodos.map((p) => {
+                          const per = asig.periodos.get(p.id);
+                          return (
+                            <React.Fragment key={p.id}>
+                              <td
+                                style={{
+                                  ...S.td,
+                                  fontWeight: "600",
+                                }}
+                              >
+                                {per?.nota ?? "-"}
+                              </td>
+                              <td style={S.td}>{per?.escala ?? "-"}</td>
+                              <td
+                                style={{
+                                  ...S.td,
+                                  color: per
+                                    ? colorEstado(per.estado)
+                                    : "#374151",
+                                  fontWeight: "600",
+                                  fontSize: "9px",
+                                }}
+                              >
+                                {per?.estado ?? "-"}
+                              </td>
+                              <td
+                                style={{
+                                  ...S.tdLeft,
+                                  fontSize: "8px",
+                                  color: "#111827",
+                                  fontStyle: "italic",
+                                }}
+                              >
+                                {per?.logros?.length
+                                  ? per.logros.map((l, i) => {
+                                      const sep = l.indexOf(": ");
+                                      if (sep === -1)
+                                        return <div key={i}>{l}</div>;
+                                      return (
+                                        <div key={i}>
+                                          <span
+                                            style={{
+                                              fontWeight: 900,
+                                              fontStyle: "normal",
+                                            }}
+                                          >
+                                            {l.slice(0, sep)}
+                                          </span>
+                                          {l.slice(sep)}
+                                        </div>
+                                      );
+                                    })
+                                  : "-"}
+                                <div
+                                  style={{
+                                    marginTop: "4px",
+                                    fontWeight: "bold",
+                                    fontStyle: "normal",
+                                    color: "#111827",
+                                    fontSize: "8px",
+                                    borderTop: "1px solid #000000",
+                                    paddingTop: "2px",
+                                  }}
+                                >
+                                  Observaciones de énfasis:
+                                </div>
+                              </td>
+                            </React.Fragment>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
 
                 {/* ── Sección inferior boletín ── */}
                 <table
@@ -2327,61 +2471,118 @@ const BoletinSelector = ({
                     width: "100%",
                     borderCollapse: "collapse",
                     marginTop: "16px",
-                    border: "1px solid #111827",
+                    border: "1px solid #000000",
                     fontSize: "11px",
                   }}
                 >
                   <tbody>
-                    {/* Fila 1: Desempeño convivencial */}
+                    {/* Fila 1: Histórico de periodo */}
                     <tr>
                       <td
+                        colSpan={2}
                         style={{
-                          border: "1px solid #111827",
-                          padding: "6px 8px",
-                          width: "35%",
-                          fontWeight: "bold",
+                          border: "1px solid #000000",
+                          padding: "0px",
                           verticalAlign: "top",
-                          whiteSpace: "nowrap",
                         }}
                       >
-                        DESEMPEÑO CONVIVENCIAL:
+                        {/* Tabla histórico de asignaturas por periodo */}
+                        <table
+                          style={{
+                            width: "100%",
+                            borderCollapse: "collapse",
+                            fontSize: "8px",
+                          }}
+                        >
+                          <thead>
+                            <tr>
+                              <th
+                                colSpan={asignaturas.length + 1}
+                                style={{
+                                  border: "1px solid #000000",
+                                  padding: "3px 6px",
+                                  textAlign: "center",
+                                  fontWeight: "bold",
+                                  fontSize: "9px",
+                                  backgroundColor: "#ffffff",
+                                }}
+                              >
+                                HISTÓRICO DE PERIODOS — ASIGNATURAS
+                              </th>
+                            </tr>
+                            <tr>
+                              <th
+                                style={{
+                                  border: "1px solid #000000",
+                                  padding: "3px 4px",
+                                  textAlign: "center",
+                                  fontWeight: "bold",
+                                  backgroundColor: "#ffffff",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                PER.
+                              </th>
+                              {asignaturas.map((asig) => (
+                                <th
+                                  key={asig.id_asignatura_grado}
+                                  title={asig.nombre_asignatura_grado}
+                                  style={{
+                                    border: "1px solid #000000",
+                                    padding: "3px 2px",
+                                    textAlign: "center",
+                                    fontWeight: "bold",
+                                    backgroundColor: "#ffffff",
+                                    whiteSpace: "nowrap",
+                                  }}
+                                >
+                                  {abreviarAsignatura(
+                                    asig.nombre_asignatura_grado,
+                                  )}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {todosPeriodos.map((p, pIdx) => (
+                              <tr key={p.id}>
+                                <td
+                                  style={{
+                                    border: "1px solid #000000",
+                                    padding: "2px 4px",
+                                    textAlign: "center",
+                                    fontWeight: "bold",
+                                    whiteSpace: "nowrap",
+                                  }}
+                                >
+                                  {pIdx + 1}
+                                </td>
+                                {asignaturas.map((asig) => {
+                                  const per = asig.periodos.get(p.id);
+                                  return (
+                                    <td
+                                      key={asig.id_asignatura_grado}
+                                      style={{
+                                        border: "1px solid #000000",
+                                        padding: "2px 2px",
+                                        textAlign: "center",
+                                      }}
+                                    >
+                                      {per?.nota ?? "-"}
+                                    </td>
+                                  );
+                                })}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                       </td>
-                      <td
-                        style={{
-                          border: "1px solid #111827",
-                          padding: "6px 8px",
-                          height: "50px",
-                          verticalAlign: "top",
-                        }}
-                      />
                     </tr>
-                    {/* Fila 2: Histórico de periodo */}
+                    {/* Fila 2: Observaciones generales */}
                     <tr>
                       <td
                         style={{
-                          border: "1px solid #111827",
-                          padding: "6px 8px",
-                          fontWeight: "bold",
-                          verticalAlign: "top",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        HISTÓRICO DE PERIODO:
-                      </td>
-                      <td
-                        style={{
-                          border: "1px solid #111827",
-                          padding: "6px 8px",
-                          height: "50px",
-                          verticalAlign: "top",
-                        }}
-                      />
-                    </tr>
-                    {/* Fila 3: Observaciones generales */}
-                    <tr>
-                      <td
-                        style={{
-                          border: "1px solid #111827",
+                          border: "1px solid #000000",
                           padding: "6px 8px",
                           fontWeight: "bold",
                           verticalAlign: "top",
@@ -2392,7 +2593,7 @@ const BoletinSelector = ({
                       </td>
                       <td
                         style={{
-                          border: "1px solid #111827",
+                          border: "1px solid #000000",
                           padding: "6px 8px",
                           height: "70px",
                           verticalAlign: "top",
@@ -2404,7 +2605,7 @@ const BoletinSelector = ({
                       <td
                         colSpan={2}
                         style={{
-                          border: "1px solid #111827",
+                          border: "1px solid #000000",
                           padding: "6px 8px",
                           height: "70px",
                           verticalAlign: "bottom",
@@ -2463,8 +2664,6 @@ const BoletinSelector = ({
                     </tr>
                   </tbody>
                 </table>
-
-
               </div>
             )}
           </div>
