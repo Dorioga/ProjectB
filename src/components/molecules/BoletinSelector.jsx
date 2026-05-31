@@ -938,7 +938,10 @@ async function generateBoletinPDF(
       const acudienteLabelW = pdf.getTextWidth(acudienteLabel);
       let acudienteVal = String(info.nombre_acudiente ?? "-");
       const acudienteMaxW = contentW - acudienteLabelW - 4;
-      while (pdf.getTextWidth(acudienteVal) > acudienteMaxW && acudienteVal.length > 1)
+      while (
+        pdf.getTextWidth(acudienteVal) > acudienteMaxW &&
+        acudienteVal.length > 1
+      )
         acudienteVal = acudienteVal.slice(0, -1);
       pdf.text(acudienteVal, margin + 2 + acudienteLabelW, textY);
     }
