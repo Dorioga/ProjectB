@@ -545,6 +545,7 @@ const RegisterStudentRecords = () => {
   const [rowEditById, setRowEditById] = useState({});
   const [commentsById, setCommentsById] = useState({});
   const [recoveryNotesById, setRecoveryNotesById] = useState({});
+  const [observacionEnfasisById, setObservacionEnfasisById] = useState({});
 
   // --- Logros (para comentarios): tipos y lista filtrada por tipo (por fila) ---
   const [tipoLogroOptions, setTipoLogroOptions] = useState([]);
@@ -568,6 +569,7 @@ const RegisterStudentRecords = () => {
   const recordValuesByStudentRef = useRef(recordValuesByStudent);
   const commentsByIdRef = useRef(commentsById);
   const recoveryNotesByIdRef = useRef(recoveryNotesById);
+  const observacionEnfasisByIdRef = useRef(observacionEnfasisById);
   const rowEditByIdRef = useRef(rowEditById);
   const rowLoadingByIdRef = useRef(rowLoadingById);
   const rowSavedByIdRef = useRef(rowSavedById);
@@ -594,6 +596,7 @@ const RegisterStudentRecords = () => {
   recordValuesByStudentRef.current = recordValuesByStudent;
   commentsByIdRef.current = commentsById;
   recoveryNotesByIdRef.current = recoveryNotesById;
+  observacionEnfasisByIdRef.current = observacionEnfasisById;
   rowEditByIdRef.current = rowEditById;
   rowLoadingByIdRef.current = rowLoadingById;
   rowSavedByIdRef.current = rowSavedById;
@@ -919,6 +922,7 @@ const RegisterStudentRecords = () => {
     );
     setRecordValuesByStudent({});
     setRecoveryNotesById({});
+    setObservacionEnfasisById({});
   }, [asignatureCode, journey]);
 
   // Cargar propósitos cuando se activa el modo transición (o cambia la institución)
@@ -963,8 +967,13 @@ const RegisterStudentRecords = () => {
     }
 
     setLoadingData(true);
+    // Limpiar selects de logros y comentarios al iniciar una nueva consulta
+    setTipoByStudent({});
+    setLogrosOptionsByStudent({});
+    setCommentsById({});
     try {
       // 1) Cargar estudiantes
+      setSelectedLogroByStudent({});
       const studentsResponse = await getStudentGrades({
         idGrade: Number(gradeSelected),
       });
@@ -1046,6 +1055,14 @@ const RegisterStudentRecords = () => {
       const valuesByStudent = {};
       const metaByStudent = {};
 
+      // Acumuladores globales (fuera del forEach) — se llenan con datos frescos del servidor
+      const allComments = {};
+      const allTipo = {};
+      const allLogro = {};
+      const allLogroOptions = {};
+      const allRecovery = {};
+      const allObservacion = {};
+
       settled.forEach((res, idx) => {
         const student = studentsArray[idx];
         const studentKey = getStudentKey(student);
@@ -1061,13 +1078,6 @@ const RegisterStudentRecords = () => {
         const data = Array.isArray(res.value)
           ? res.value
           : (res.value?.data ?? []);
-
-        // temporales para comentarios/tipo/logro/opciones por estudiante
-        const commentsForStudent = commentsById || {};
-        const tipoForStudent = {};
-        const logroForStudent = selectedLogroByStudent || {};
-        const logroOptionsForStudent = {};
-        const recoveryForStudent = {};
 
         data.forEach((n) => {
           const name = String(
@@ -1111,8 +1121,8 @@ const RegisterStudentRecords = () => {
             n?.comentario ??
             n?.comentario_docente ??
             null;
-          if (noteComment && !commentsForStudent[studentKey]) {
-            commentsForStudent[studentKey] = String(noteComment);
+          if (noteComment && !allComments[studentKey]) {
+            allComments[studentKey] = String(noteComment);
           }
 
           // Extraer nota de recuperación si viene en la respuesta
@@ -1120,10 +1130,17 @@ const RegisterStudentRecords = () => {
             n?.nota_recuperacion ?? n?.recovery_note ?? n?.recoveryNote ?? null;
           if (
             noteRecovery != null &&
-            (recoveryForStudent[studentKey] === undefined ||
-              recoveryForStudent[studentKey] === null)
+            (allRecovery[studentKey] === undefined ||
+              allRecovery[studentKey] === null)
           ) {
-            recoveryForStudent[studentKey] = String(noteRecovery);
+            allRecovery[studentKey] = String(noteRecovery);
+          }
+
+          // Extraer observacion_enfasis si viene en la respuesta
+          const noteObservacion =
+            n?.observacion_enfasis ?? n?.observacionEnfasis ?? null;
+          if (noteObservacion != null && !allObservacion[studentKey]) {
+            allObservacion[studentKey] = String(noteObservacion);
           }
 
           // Extraer fk_tipo_logro (primer select) y id_logro (segundo select) si vienen
@@ -1138,55 +1155,50 @@ const RegisterStudentRecords = () => {
             n?.descripcion_logro_estudiante ??
             null;
 
-          if (noteTipo && !tipoForStudent[studentKey]) {
-            tipoForStudent[studentKey] = String(noteTipo);
+          if (noteTipo && !allTipo[studentKey]) {
+            allTipo[studentKey] = String(noteTipo);
           }
 
-          if (noteLogro && !logroForStudent[studentKey]) {
-            logroForStudent[studentKey] = String(noteLogro);
+          if (noteLogro && !allLogro[studentKey]) {
+            allLogro[studentKey] = String(noteLogro);
           }
 
           if (noteLogro && noteLogroDesc) {
-            logroOptionsForStudent[studentKey] =
-              logroOptionsForStudent[studentKey] || [];
-            // evitar duplicados
+            allLogroOptions[studentKey] = allLogroOptions[studentKey] || [];
             if (
-              !logroOptionsForStudent[studentKey].some(
+              !allLogroOptions[studentKey].some(
                 (o) => String(o.id) === String(noteLogro),
               )
             ) {
-              logroOptionsForStudent[studentKey].push({
+              allLogroOptions[studentKey].push({
                 id: noteLogro,
                 descripcion: String(noteLogroDesc),
               });
             }
           }
         });
-
-        // Asignar maps extraídos (si hubo datos)
-        if (Object.keys(commentsForStudent).length > 0)
-          setCommentsById((prev) => ({ ...prev, ...commentsForStudent }));
-        if (Object.keys(tipoForStudent).length > 0)
-          setTipoByStudent((prev) => ({ ...prev, ...tipoForStudent }));
-        if (Object.keys(logroForStudent).length > 0)
-          setSelectedLogroByStudent((prev) => ({
-            ...prev,
-            ...logroForStudent,
-          }));
-        if (Object.keys(logroOptionsForStudent).length > 0)
-          setLogrosOptionsByStudent((prev) => ({
-            ...prev,
-            ...logroOptionsForStudent,
-          }));
-        if (Object.keys(recoveryForStudent).length > 0)
-          setRecoveryNotesById((prev) => ({ ...prev, ...recoveryForStudent }));
       });
+
+      // Reemplazar estados completos con los datos frescos del servidor
+      setCommentsById(allComments);
+      setTipoByStudent(allTipo);
+      setSelectedLogroByStudent(allLogro);
+      setLogrosOptionsByStudent(allLogroOptions);
+      setRecoveryNotesById(allRecovery);
+      setObservacionEnfasisById(allObservacion);
+
+      // Sincronizar refs inmediatamente para que las celdas lean los valores correctos
+      commentsByIdRef.current = allComments;
+      tipoByStudentRef.current = allTipo;
+      selectedLogroByStudentRef.current = allLogro;
+      logrosOptionsByStudentRef.current = allLogroOptions;
+      recoveryNotesByIdRef.current = allRecovery;
+      observacionEnfasisByIdRef.current = allObservacion;
 
       const consolidatedNotes = Array.from(notesMap.values());
       setNotesFromService(consolidatedNotes);
       console.debug("initial valuesByStudent set", { valuesByStudent });
       setRecordValuesByStudent(valuesByStudent);
-      setCommentsById({});
       setNoteMetaByStudent(metaByStudent);
 
       // Inicializar estados por fila basados en valores traídos del servicio:
@@ -1411,6 +1423,13 @@ const RegisterStudentRecords = () => {
     }));
   }, []);
 
+  const handleObservacionEnfasisChange = useCallback((studentKey, value) => {
+    setObservacionEnfasisById((prev) => ({
+      ...prev,
+      [studentKey]: value,
+    }));
+  }, []);
+
   // --- Handlers para selects de logros en la columna "Comentarios" ---
   const handleTipoSelectForStudent = useCallback(
     async (studentKey, tipoId) => {
@@ -1550,6 +1569,12 @@ const RegisterStudentRecords = () => {
       tipoByStudent?.[studentKey] ??
       "";
 
+    // observacion énfasis del input en la columna de logros
+    const observacionEnfasis =
+      observacionEnfasisByIdRef.current?.[studentKey] ??
+      observacionEnfasisById?.[studentKey] ??
+      "";
+
     const finalInfo = computeFinalRecord(values);
     console.debug("saveStudentNotes - computed finalInfo", {
       finalInfo,
@@ -1602,6 +1627,9 @@ const RegisterStudentRecords = () => {
           ...(recoveryNote && String(recoveryNote).trim() !== ""
             ? { recovery_note: Number(recoveryNote) }
             : {}),
+          ...(observacionEnfasis && String(observacionEnfasis).trim() !== ""
+            ? { observacion_enfasis: String(observacionEnfasis).trim() }
+            : {}),
         };
         if (finalInfo.isComplete) updateItem.nota_final = finalInfo.final;
         updateArray.push(updateItem);
@@ -1616,6 +1644,9 @@ const RegisterStudentRecords = () => {
           ...(selectedLogro ? { id_logro: Number(selectedLogro) } : {}),
           ...(recoveryNote && String(recoveryNote).trim() !== ""
             ? { recovery_note: Number(recoveryNote) }
+            : {}),
+          ...(observacionEnfasis && String(observacionEnfasis).trim() !== ""
+            ? { observacion_enfasis: String(observacionEnfasis).trim() }
             : {}),
         };
         if (finalInfo.isComplete) insertItem.final_note = finalInfo.final;
@@ -1669,7 +1700,7 @@ const RegisterStudentRecords = () => {
 
       await Promise.all(ops);
 
-      // Recargar datos de la tabla
+      // Recargar datos de la tabla (repoblará selectedLogroByStudent desde el servidor)
       await loadStudentsAndNotes();
 
       setRowInitialValuesById((prev) => ({
@@ -2169,24 +2200,28 @@ const RegisterStudentRecords = () => {
       accessorFn: (student) => {
         const key = getStudentKey(student);
         const comment = commentsByIdRef.current?.[key] ?? "";
-        if (comment) return comment;
-        const selectedLogro = selectedLogroByStudentRef.current?.[key] ?? "";
-        if (!selectedLogro) return "";
-        const options = logrosOptionsByStudentRef.current?.[key] ?? [];
-        const logro = options.find(
-          (l) => String(l.id) === String(selectedLogro),
-        );
-        return logro?.descripcion ?? String(selectedLogro);
+        const obs = observacionEnfasisByIdRef.current?.[key] ?? "";
+        let base = "";
+        if (comment) {
+          base = comment;
+        } else {
+          const selectedLogro = selectedLogroByStudentRef.current?.[key] ?? "";
+          if (selectedLogro) {
+            const options = logrosOptionsByStudentRef.current?.[key] ?? [];
+            const logro = options.find(
+              (l) => String(l.id) === String(selectedLogro),
+            );
+            base = logro?.descripcion ?? String(selectedLogro);
+          }
+        }
+        return [base, obs].filter(Boolean).join(" | ");
       },
-      meta: { exportHeader: "Comentarios del docente" },
-      header: (
-        <div className="lowercase first-letter:uppercase">
-          Comentarios del docente
-        </div>
-      ),
+      meta: { exportHeader: "Logros" },
+      header: <div className="lowercase first-letter:uppercase">Logros</div>,
       cell: ({ row }) => {
         const student = row.original;
         const studentKey = getStudentKey(student);
+
         const comment = commentsByIdRef.current?.[studentKey] ?? "";
         const tipoValue = tipoByStudentRef.current?.[studentKey] ?? "";
         const logroOptions =
@@ -2196,6 +2231,8 @@ const RegisterStudentRecords = () => {
         const loadingLogros = Boolean(
           loadingLogrosByStudentRef.current?.[studentKey],
         );
+        const observacionEnfasis =
+          observacionEnfasisByIdRef.current?.[studentKey] ?? "";
 
         // Detectar si la fila está en modo edición
         const editing = rowEditByIdRef.current?.[studentKey] !== false;
@@ -2213,15 +2250,23 @@ const RegisterStudentRecords = () => {
               ? logroOptions.find((l) => String(l.id) === String(selectedLogro))
               : null
           )?.descripcion;
-
+          console.log("Render cell - modo lectura", {
+            selectedLogroByStudentRef,
+          });
           const display =
-            comment ||
             logroText ||
+            comment ||
             (selectedLogro ? String(selectedLogro) : "-");
 
           return (
             <div className="p-2 text-sm text-gray-700 wrap-break-words">
-              {display}
+              <div>{display}</div>
+              {observacionEnfasis ? (
+                <div className="mt-1 text-xs text-gray-500">
+                  <span className="font-medium">Obs. énfasis:</span>{" "}
+                  {observacionEnfasis}
+                </div>
+              ) : null}
             </div>
           );
         }
@@ -2298,6 +2343,22 @@ const RegisterStudentRecords = () => {
                   </option>
                 ))}
             </select>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-gray-600">
+                Observación énfasis
+              </label>
+              <textarea
+                value={observacionEnfasis}
+                onChange={(e) =>
+                  handleObservacionEnfasisChange(studentKey, e.target.value)
+                }
+                className="w-full min-w-[200px] p-2 border rounded bg-surface text-sm resize-none"
+                placeholder="Ingresa una observación..."
+                rows={2}
+                disabled={loadingDataRef.current}
+              />
+            </div>
           </div>
         );
       },
@@ -2362,6 +2423,7 @@ const RegisterStudentRecords = () => {
     handleRecordValueChange,
     handleCommentChange,
     handleRecoveryNoteChange,
+    handleObservacionEnfasisChange,
     sanitizeGradeInput,
     periodSelected,
     // Forzar re-registro de columnas cuando tipos de logro carguen

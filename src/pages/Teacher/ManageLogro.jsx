@@ -250,7 +250,6 @@ const ManageLogro = () => {
         const res = await getLogroInstitution(payload);
         const data = Array.isArray(res) ? res : (res?.data ?? []);
         setResults(data);
-        setIsModalOpen(false);
         notify.success("Resultados cargados");
       } catch (err) {
         console.error("ManageLogro - error:", err);

@@ -103,11 +103,7 @@ export default function AsignatureGrades({
 
   return (
     <div className="">
-      <div className="md:col-span-3 font-bold  text-surface bg-primary p-2 rounded-lg">
-        Asignaturas y Grados <span className="text-red-500 ml-1">*</span>
-      </div>
-
-      <div className=" py-4">
+      <div className="">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <AsignatureSelector
             name="tempAsignature"

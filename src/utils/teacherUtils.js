@@ -21,7 +21,12 @@ export function mapTeacherRowsToProcessed(rawData, teacherRow = {}) {
         teacherRow?.fecha_nacimiento || teacherRow?.birthday || "",
       direccion: teacherRow?.direccion || "",
       nombre_sede: teacherRow?.nombre_sede || teacherRow?.name_sede || "",
-      fk_journey: teacherRow?.fk_jornada ?? teacherRow?.fk_journey ?? null,
+      fk_journey: (() => {
+        const raw = teacherRow?.fk_jornada ?? teacherRow?.fk_journey ?? null;
+        if (raw == null || raw === "") return [];
+        if (Array.isArray(raw)) return raw.map(String);
+        return [String(raw)];
+      })(),
       nombre_jornada:
         teacherRow?.nombre_jornada ||
         teacherRow?.nombre_jornada_estudiante ||
@@ -39,7 +44,8 @@ export function mapTeacherRowsToProcessed(rawData, teacherRow = {}) {
         : [],
       grupos: teacherRow?.grupo ? [String(teacherRow.grupo).trim()] : [],
       // preservar director_of_grade si viene en teacherRow (compatibilidad)
-      director_of_grade: teacherRow?.director_of_grade || teacherRow?.director_of_grades || "",
+      director_of_grade:
+        teacherRow?.director_of_grade || teacherRow?.director_of_grades || "",
       estado: teacherRow?.estado || "",
     };
   }
@@ -205,6 +211,32 @@ export function mapTeacherRowsToProcessed(rawData, teacherRow = {}) {
     }),
   );
 
+  // Recolectar valores únicos de jornada desde todas las filas
+  const jornadaIdsSet = new Set();
+  const jornadaNamesSet = new Set();
+  for (const r of rows) {
+    const jId = r.fk_jornada != null ? String(r.fk_jornada).trim() : "";
+    const jName = (
+      r.nombre_jornada ||
+      r.nombre_jornada_estudiante ||
+      ""
+    ).trim();
+    if (jId) jornadaIdsSet.add(jId);
+    if (jName) jornadaNamesSet.add(jName);
+  }
+  const jornadaIds = Array.from(jornadaIdsSet);
+  const jornadaNames = Array.from(jornadaNamesSet);
+  const fk_journey_computed =
+    jornadaIds.length > 0
+      ? jornadaIds
+      : base.fk_jornada != null
+        ? [String(base.fk_jornada)]
+        : [];
+  const nombre_jornada_computed =
+    jornadaNames.length > 0
+      ? jornadaNames.join(", ")
+      : base.nombre_jornada || base.nombre_jornada_estudiante || "";
+
   return {
     id_docente: base.id_docente ?? teacherRow?.id_docente,
     per_id: base.id_persona ?? teacherRow?.id_persona ?? null,
@@ -218,11 +250,15 @@ export function mapTeacherRowsToProcessed(rawData, teacherRow = {}) {
     fecha_nacimiento: base.fecha_nacimiento || base.birthday || "",
     direccion: base.direccion || "",
     nombre_sede: base.nombre_sede || base.name_sede || "",
-    fk_journey: base.fk_jornada ?? null,
-    nombre_jornada: base.nombre_jornada || base.nombre_jornada_estudiante || "",
+    fk_journey: fk_journey_computed,
+    nombre_jornada: nombre_jornada_computed,
     id_sede: base.id_sede ?? null,
     // consolidated director_of_grade (CSV) gathered from rows
-    director_of_grade: director_of_grade || base.director_of_grade || teacherRow?.director_of_grade || "",
+    director_of_grade:
+      director_of_grade ||
+      base.director_of_grade ||
+      teacherRow?.director_of_grade ||
+      "",
     subjects: uniqueSubjects,
     assignments: assignments, // plano (grado/grupo/asignatura por fila)
     estado: rows[0]?.estado ?? teacherRow?.estado ?? "",

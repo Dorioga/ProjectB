@@ -12,9 +12,9 @@ import useAuth from "../../lib/hooks/useAuth";
 import { useNotify } from "../../lib/hooks/useNotify";
 
 const ManageBoletin = () => {
-  const { getStudentGrades } = useSchool();
+  const { getStudentGrades, getGradeOnlySede } = useSchool();
   const { getTeacherSede, getTeacherGrades } = useTeacher();
-  const { idSede, nameSede, idDocente, token, gradoAcargo } = useAuth();
+  const { idSede, nameSede, idDocente, token, gradoAcargo, rol } = useAuth();
   const notify = useNotify();
 
   // ── Filtros ─────────────────────────────────────────────────────────────
@@ -40,6 +40,7 @@ const ManageBoletin = () => {
 
   // ── Params memoizados para selectores ────────────────────────────────────
   const isTeacher = Boolean(idDocente);
+  const isRol3 = useMemo(() => String(rol) === "3", [rol]);
 
   // Extraer el ID numérico de gradoAcargo (puede ser número u objeto)
   const gradoAcargoId = useMemo(() => {
@@ -72,6 +73,11 @@ const ManageBoletin = () => {
       ...(sedeId ? { idSede: Number(sedeId) } : { idSede: Number(idSede) }),
     }),
     [idDocente, sedeId, idSede],
+  );
+
+  const gradeSede3Params = useMemo(
+    () => ({ idSede: Number(sedeId || idSede) }),
+    [sedeId, idSede],
   );
 
   const teacherSedeData = useMemo(() => {
@@ -244,6 +250,17 @@ const ManageBoletin = () => {
             sedeId={sedeId}
             customFetchMethod={teacherGradeFilteredFetch}
             additionalParams={teacherGradesParams}
+            disabled={!sedeId}
+          />
+        ) : isRol3 ? (
+          <GradeSelector
+            label="Grado"
+            labelClassName="text-lg font-semibold"
+            value={gradeId}
+            onChange={(e) => setGradeId(e.target.value)}
+            sedeId={sedeId}
+            customFetchMethod={getGradeOnlySede}
+            additionalParams={gradeSede3Params}
             disabled={!sedeId}
           />
         ) : (

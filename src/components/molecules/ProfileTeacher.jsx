@@ -31,7 +31,15 @@ const buildFormFromData = (d, applyDateFormat = false) => ({
   direccion: d.direccion || d.address || "",
   nombre_sede: d.nombre_sede || d.name_sede || "",
   id_sede: d.id_sede || d.idSede || "",
-  fk_journey: d.fk_journey || d.fk_jornada || "",
+  fk_journey: (() => {
+    const raw = d.fk_journey ?? d.fk_jornada ?? null;
+    if (raw == null || raw === "") return [];
+    if (Array.isArray(raw)) return raw.map(String);
+    return String(raw)
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  })(),
   nombre_jornada: d.nombre_jornada || d.nombre_jornada_estudiante || "",
   representante_curso: !!(
     d.director_of_grade ||
@@ -61,6 +69,7 @@ const ProfileTeacher = ({
   onReload,
   mode = "modal",
 }) => {
+  console.log("ProfileTeacher renderizado con data:", data);
   const isPageMode = mode === "page";
   const [isEditing, setIsEditing] = useState(Boolean(initialEditing));
   const [form, setForm] = useState(() => buildFormFromData(data));
@@ -78,6 +87,7 @@ const ProfileTeacher = ({
   const [newAsignatures, setNewAsignatures] = useState([]);
   const [newSede, setNewSede] = useState([]);
   const [showAsignatureGrades, setShowAsignatureGrades] = useState(false);
+  const [selectedWorkdayForAdd, setSelectedWorkdayForAdd] = useState("");
   const [showSedeAsignatures, setShowSedeAsignatures] = useState({});
   const [isTourMode, setIsTourMode] = useState(Boolean(initialTutorial));
 
@@ -148,7 +158,7 @@ const ProfileTeacher = ({
           ...prev,
           id_sede: val,
           nombre_sede: label,
-          fk_journey: wday && wday !== "3" ? wday : "",
+          fk_journey: wday && wday !== "3" ? [wday] : [],
           nombre_jornada: "",
         }));
         return;
@@ -168,7 +178,7 @@ const ProfileTeacher = ({
       ...prev,
       id_sede: val,
       nombre_sede: label,
-      fk_journey: wday && wday !== "3" ? wday : "",
+      fk_journey: wday && wday !== "3" ? [wday] : [],
       nombre_jornada: "",
     }));
     // Deactivate all checkboxes (clear active selections)
@@ -566,6 +576,7 @@ const ProfileTeacher = ({
     setNewAsignatures([]);
     setNewSede([]);
     setShowAsignatureGrades(false);
+    setSelectedWorkdayForAdd("");
     setShowSedeAsignatures({});
     setFormErrors({});
     setIsEditing(false);
@@ -782,7 +793,15 @@ const ProfileTeacher = ({
       email: form.email,
       id_sede: form.id_sede ? Number(form.id_sede) : null,
       birth_date: parseDateToISO(form.fecha_nacimiento),
-      workday: form.fk_journey ? Number(form.fk_journey) : null,
+      workday: (() => {
+        if (Array.isArray(form.fk_journey)) {
+          if (form.fk_journey.length >= 2) return 3;
+          if (form.fk_journey.length === 1)
+            return Number(form.fk_journey[0]) || null;
+          return null;
+        }
+        return form.fk_journey ? Number(form.fk_journey) : null;
+      })(),
       address: form.direccion,
       representante_curso: !!form.representante_curso,
       director_of_grade: Array.from(localDirectorGroups).join(","),
@@ -878,7 +897,14 @@ const ProfileTeacher = ({
 
     const payload = {
       id_sede_new_asignature: form.id_sede ? Number(form.id_sede) : null,
-      workday_new: form.fk_journey ? Number(form.fk_journey) : form.id_sede,
+      workday_new: (() => {
+        if (Array.isArray(form.fk_journey) && form.fk_journey.length >= 2) {
+          return selectedWorkdayForAdd ? Number(selectedWorkdayForAdd) : null;
+        }
+        if (Array.isArray(form.fk_journey) && form.fk_journey.length === 1)
+          return Number(form.fk_journey[0]) || null;
+        return form.fk_journey ? Number(form.fk_journey) : form.id_sede;
+      })(),
 
       fk_teacher: form.id_docente ? Number(form.id_docente) : null,
       asignature_new: newAsignatures.map((a) => ({
@@ -896,6 +922,7 @@ const ProfileTeacher = ({
 
       setNewAsignatures([]);
       setShowAsignatureGrades(false);
+      setSelectedWorkdayForAdd("");
 
       notify.success("Asignaturas registradas correctamente.");
       if (typeof onReload === "function") {
@@ -1198,21 +1225,38 @@ const ProfileTeacher = ({
         <div className="grid grid-cols-2">
           <div className="grid grid-cols-1">
             <label className="font-semibold">Jornada Actual</label>
-            <p>{form.nombre_jornada || form.fk_journey || ""}</p>
+            <p>
+              {form.nombre_jornada ||
+                (Array.isArray(form.fk_journey)
+                  ? form.fk_journey.join(", ")
+                  : form.fk_journey) ||
+                ""}
+            </p>
           </div>
           {isEditing ? (
             <JourneySelect
               name="fk_journey"
-              value={form.fk_journey || ""}
-              filterValue={getSedeWorkday(form.id_sede) || ""}
+              value={
+                Array.isArray(form.fk_journey) && form.fk_journey.length >= 2
+                  ? "3"
+                  : form.fk_journey?.[0] || ""
+              }
+              filterValue={
+                getSedeWorkday(form.id_sede) ||
+                (Array.isArray(form.fk_journey) && form.fk_journey.length >= 2
+                  ? "3"
+                  : "")
+              }
               onChange={(e) => {
                 const val = e.target.value;
                 const found = Array.isArray(journeys)
                   ? journeys.find((opt) => String(opt.value) === String(val))
                   : null;
+                const newFkJourney =
+                  val === "3" ? ["1", "2"] : val ? [val] : [];
                 setForm((prev) => ({
                   ...prev,
-                  fk_journey: val,
+                  fk_journey: newFkJourney,
                   nombre_jornada: found
                     ? String(found.label)
                     : prev.nombre_jornada || "",
@@ -1393,9 +1437,38 @@ const ProfileTeacher = ({
             </div>
             {showAsignatureGrades && (
               <div className="mt-3 flex flex-col gap-4">
+                <div className="md:col-span-3 font-bold  text-surface bg-primary p-2 rounded-lg">
+                  Asignaturas y Grados{" "}
+                  <span className="text-red-500 ml-1">*</span>
+                </div>
+                {Array.isArray(form.fk_journey) &&
+                  form.fk_journey.length >= 2 && (
+                    <div>
+                      <label className="font-semibold block mb-1">
+                        Jornada para agregar asignaturas
+                      </label>
+                      <select
+                        value={selectedWorkdayForAdd}
+                        onChange={(e) => {
+                          setSelectedWorkdayForAdd(e.target.value);
+                          setNewAsignatures([]);
+                        }}
+                        className="w-full p-2 border rounded bg-white border-gray-300"
+                      >
+                        <option value="">Selecciona una jornada</option>
+                        <option value="1">Mañana</option>
+                        <option value="2">Tarde</option>
+                      </select>
+                    </div>
+                  )}
                 <AsignatureGrades
                   sede={form.id_sede}
-                  workday={form.fk_journey}
+                  workday={
+                    Array.isArray(form.fk_journey) &&
+                    form.fk_journey.length >= 2
+                      ? selectedWorkdayForAdd
+                      : (form.fk_journey?.[0] ?? "")
+                  }
                   asignatures={newAsignatures}
                   onAdd={handleAddAsignature}
                   onRemove={handleRemoveAsignature}
