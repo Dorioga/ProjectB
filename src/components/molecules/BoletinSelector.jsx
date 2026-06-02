@@ -912,7 +912,12 @@ async function generateBoletinPDF(
     const gradoTexto = info.grado ?? "-";
     const periodoNombre = periodos[0]?.nombre ?? "-";
     const promTexto = promedioGeneral !== null ? String(promedioGeneral) : "-";
-    const posicionTexto = info.posicion ?? "-";
+    const rankingEntry = Array.isArray(info.ranking)
+      ? info.ranking.find((r) => String(r.id_periodo) === String(meta.periodId))
+      : null;
+    const posicionTexto = String(
+      rankingEntry?.posicion ?? info.posicion ?? "-",
+    );
 
     pdf.setDrawColor(17, 24, 39);
     pdf.setLineWidth(0.4);
@@ -984,12 +989,9 @@ async function generateBoletinPDF(
       pdf.setFontSize(7);
       pdf.setFont("helvetica", "bold");
       pdf.setTextColor(0, 0, 0);
-      pdf.text(
-        "Posici\u00f3n",
-        posX + col5W / 2,
-        y - studentTableH + totalH * 0.35,
-        { align: "center" },
-      );
+      pdf.text("Puesto", posX + col5W / 2, y - studentTableH + totalH * 0.35, {
+        align: "center",
+      });
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(9);
       let pVal = posicionTexto;
@@ -1405,16 +1407,23 @@ async function generateBoletinPDF(
       new Set(asignaturas.flatMap((a) => Array.from(a.periodos.keys()))),
     ).sort((a, b) => Number(a) - Number(b));
 
+    // Ranking por periodo
+    const rankingMapPDF = new Map();
+    if (Array.isArray(info.ranking)) {
+      for (const r of info.ranking) rankingMapPDF.set(String(r.id_periodo), r);
+    }
+
     const hdrH = 5;
     const subHdrH = 5;
     const dataRowH = 5;
     const totalH = hdrH + subHdrH + todosLosPeriodosIds.length * dataRowH;
     addPageIfNeeded(totalH + 2);
 
-    // Anchos: primera col fija, resto dividido entre asignaturas
+    // Anchos: primera col fija, resto dividido entre asignaturas + 2 cols ranking
     const perColW = 8;
+    const rankColW = 10;
     const asigCount = asignaturas.length || 1;
-    const asigColW = (contentW - perColW) / asigCount;
+    const asigColW = (contentW - perColW - rankColW * 2) / asigCount;
 
     pdf.setDrawColor(0, 0, 0);
     pdf.setLineWidth(0.3);
@@ -1432,7 +1441,7 @@ async function generateBoletinPDF(
     );
     y += hdrH;
 
-    // Fila sub-cabecera: PER. | asig1 | asig2 | ...
+    // Fila sub-cabecera: PER. | asig1 | asig2 | ... | Prom. | Puesto
     pdf.rect(margin, y, perColW, subHdrH, "D");
     pdf.setFontSize(5);
     pdf.setFont("helvetica", "bold");
@@ -1451,10 +1460,23 @@ async function generateBoletinPDF(
         align: "center",
       });
     }
+    // cabecera Prom. y Puesto
+    const promHdrX = margin + perColW + asignaturas.length * asigColW;
+    const puestoHdrX = promHdrX + rankColW;
+    pdf.rect(promHdrX, y, rankColW, subHdrH, "D");
+    pdf.text("Prom.", promHdrX + rankColW / 2, y + subHdrH / 2 + 1.5, {
+      align: "center",
+    });
+    pdf.rect(puestoHdrX, y, rankColW, subHdrH, "D");
+    pdf.text("Puesto", puestoHdrX + rankColW / 2, y + subHdrH / 2 + 1.5, {
+      align: "center",
+    });
     y += subHdrH;
 
     // Filas de datos: una por periodo
     for (let pi = 0; pi < todosLosPeriodosIds.length; pi++) {
+      const pidStr = String(todosLosPeriodosIds[pi]);
+      const rk = rankingMapPDF.get(pidStr);
       pdf.setFont("helvetica", "bold");
       pdf.rect(margin, y, perColW, dataRowH, "D");
       pdf.text(String(pi + 1), margin + perColW / 2, y + dataRowH / 2 + 1.5, {
@@ -1470,6 +1492,25 @@ async function generateBoletinPDF(
           align: "center",
         });
       }
+      // celdas Prom. y Puesto
+      const promCx = margin + perColW + asignaturas.length * asigColW;
+      const puestoCx = promCx + rankColW;
+      pdf.setFont("helvetica", "bold");
+      pdf.rect(promCx, y, rankColW, dataRowH, "D");
+      pdf.text(
+        String(rk?.promedio ?? "-"),
+        promCx + rankColW / 2,
+        y + dataRowH / 2 + 1.5,
+        { align: "center" },
+      );
+      pdf.rect(puestoCx, y, rankColW, dataRowH, "D");
+      pdf.text(
+        String(rk?.posicion ?? "-"),
+        puestoCx + rankColW / 2,
+        y + dataRowH / 2 + 1.5,
+        { align: "center" },
+      );
+      pdf.setFont("helvetica", "normal");
       y += dataRowH;
     }
   }
@@ -1851,6 +1892,14 @@ const BoletinSelector = ({
     boletinData?.find((r) => r.nombre_institucion != null) ??
     boletinData?.[0] ??
     {};
+  const rankingMap = useMemo(() => {
+    const m = new Map();
+    const rankingArr = rawInfo?.ranking;
+    if (Array.isArray(rankingArr)) {
+      for (const r of rankingArr) m.set(String(r.id_periodo), r);
+    }
+    return m;
+  }, [rawInfo]);
   const selectedGuardianStudent = isGuardian
     ? guardianStudents.find(
         (s) => String(s.id_estudiante) === String(selectedGuardianStudentId),
@@ -2430,10 +2479,12 @@ const BoletinSelector = ({
                           }}
                         >
                           <div style={{ fontWeight: "bold", fontSize: "9px" }}>
-                            Posición
+                            Puesto
                           </div>
                           <div style={{ fontSize: "11px" }}>
-                            {info.posicion ?? "-"}
+                            {rankingMap.get(String(periodId))?.posicion ??
+                              info.posicion ??
+                              "-"}
                           </div>
                         </td>
                       </tr>
@@ -2676,7 +2727,7 @@ const BoletinSelector = ({
                             <thead>
                               <tr>
                                 <th
-                                  colSpan={asignaturas.length + 1}
+                                  colSpan={asignaturas.length + 3}
                                   style={{
                                     border: "1px solid #000000",
                                     padding: "3px 6px",
@@ -2720,39 +2771,86 @@ const BoletinSelector = ({
                                     )}
                                   </th>
                                 ))}
+                                <th
+                                  style={{
+                                    border: "1px solid #000000",
+                                    padding: "3px 2px",
+                                    textAlign: "center",
+                                    fontWeight: "bold",
+                                    backgroundColor: "#ffffff",
+                                    whiteSpace: "nowrap",
+                                  }}
+                                >
+                                  Prom.
+                                </th>
+                                <th
+                                  style={{
+                                    border: "1px solid #000000",
+                                    padding: "3px 2px",
+                                    textAlign: "center",
+                                    fontWeight: "bold",
+                                    backgroundColor: "#ffffff",
+                                    whiteSpace: "nowrap",
+                                  }}
+                                >
+                                  Puesto
+                                </th>
                               </tr>
                             </thead>
                             <tbody>
-                              {todosPeriodos.map((p, pIdx) => (
-                                <tr key={p.id}>
-                                  <td
-                                    style={{
-                                      border: "1px solid #000000",
-                                      padding: "2px 4px",
-                                      textAlign: "center",
-                                      fontWeight: "bold",
-                                      whiteSpace: "nowrap",
-                                    }}
-                                  >
-                                    {pIdx + 1}
-                                  </td>
-                                  {asignaturas.map((asig) => {
-                                    const per = asig.periodos.get(p.id);
-                                    return (
-                                      <td
-                                        key={asig.id_asignatura_grado}
-                                        style={{
-                                          border: "1px solid #000000",
-                                          padding: "2px 2px",
-                                          textAlign: "center",
-                                        }}
-                                      >
-                                        {per?.nota ?? "-"}
-                                      </td>
-                                    );
-                                  })}
-                                </tr>
-                              ))}
+                              {todosPeriodos.map((p, pIdx) => {
+                                const rk = rankingMap.get(String(p.id));
+                                return (
+                                  <tr key={p.id}>
+                                    <td
+                                      style={{
+                                        border: "1px solid #000000",
+                                        padding: "2px 4px",
+                                        textAlign: "center",
+                                        fontWeight: "bold",
+                                        whiteSpace: "nowrap",
+                                      }}
+                                    >
+                                      {pIdx + 1}
+                                    </td>
+                                    {asignaturas.map((asig) => {
+                                      const per = asig.periodos.get(p.id);
+                                      return (
+                                        <td
+                                          key={asig.id_asignatura_grado}
+                                          style={{
+                                            border: "1px solid #000000",
+                                            padding: "2px 2px",
+                                            textAlign: "center",
+                                          }}
+                                        >
+                                          {per?.nota ?? "-"}
+                                        </td>
+                                      );
+                                    })}
+                                    <td
+                                      style={{
+                                        border: "1px solid #000000",
+                                        padding: "2px 2px",
+                                        textAlign: "center",
+                                        fontWeight: "bold",
+                                      }}
+                                    >
+                                      {rk?.promedio ?? "-"}
+                                    </td>
+                                    <td
+                                      style={{
+                                        border: "1px solid #000000",
+                                        padding: "2px 2px",
+                                        textAlign: "center",
+                                        fontWeight: "bold",
+                                      }}
+                                    >
+                                      {rk?.posicion ?? "-"}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
                             </tbody>
                           </table>
                         </td>
@@ -2760,24 +2858,16 @@ const BoletinSelector = ({
                       {/* Fila 2: Observaciones generales */}
                       <tr>
                         <td
+                          colSpan={2}
                           style={{
                             border: "1px solid #000000",
                             padding: "6px 8px",
-                            fontWeight: "bold",
+                            height: "50px",
                             verticalAlign: "top",
-                            whiteSpace: "nowrap",
                           }}
                         >
-                          OBSERVACIONES GENERALES:
+                          <strong>OBSERVACIONES GENERALES:</strong>
                         </td>
-                        <td
-                          style={{
-                            border: "1px solid #000000",
-                            padding: "6px 8px",
-                            height: "70px",
-                            verticalAlign: "top",
-                          }}
-                        />
                       </tr>
                       {/* Fila 4: Firma del director de grupo */}
                       <tr>
