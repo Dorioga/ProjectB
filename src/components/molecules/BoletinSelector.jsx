@@ -995,12 +995,9 @@ async function generateBoletinPDF(
       let pVal = posicionTexto;
       while (pdf.getTextWidth(pVal) > col5W - 2 && pVal.length > 1)
         pVal = pVal.slice(0, -1);
-      pdf.text(
-        pVal,
-        posX + col5W / 2,
-        y - studentTableH + totalH * 0.72,
-        { align: "center" },
-      );
+      pdf.text(pVal, posX + col5W / 2, y - studentTableH + totalH * 0.72, {
+        align: "center",
+      });
     }
     y += acudienteRowH;
   }
