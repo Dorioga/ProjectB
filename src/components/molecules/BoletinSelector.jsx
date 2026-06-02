@@ -901,9 +901,10 @@ async function generateBoletinPDF(
     const studentTableH = 8;
     addPageIfNeeded(studentTableH + 2);
     const col1W = contentW * 0.38;
-    const col2W = contentW * 0.2;
-    const col3W = contentW * 0.22;
-    const col4W = contentW * 0.2;
+    const col2W = contentW * 0.16;
+    const col3W = contentW * 0.14;
+    const col4W = contentW * 0.16;
+    const col5W = contentW - col1W - col2W - col3W - col4W; // ~16%, fill remaining
     const nombreCompleto =
       [info.nombre_estudiante, info.apellido_estudiante]
         .filter(Boolean)
@@ -911,6 +912,7 @@ async function generateBoletinPDF(
     const gradoTexto = info.grado ?? "-";
     const periodoNombre = periodos[0]?.nombre ?? "-";
     const promTexto = promedioGeneral !== null ? String(promedioGeneral) : "-";
+    const posicionTexto = info.posicion ?? "-";
 
     pdf.setDrawColor(17, 24, 39);
     pdf.setLineWidth(0.4);
@@ -918,6 +920,7 @@ async function generateBoletinPDF(
     pdf.rect(margin + col1W, y, col2W, studentTableH, "D");
     pdf.rect(margin + col1W + col2W, y, col3W, studentTableH, "D");
     pdf.rect(margin + col1W + col2W + col3W, y, col4W, studentTableH, "D");
+    // col5W (Posición) se dibuja después abarcando las 2 filas
 
     const drawStudentCell = (label, value, cx, cw) => {
       const textY = y + studentTableH / 2 + 1.5;
@@ -948,9 +951,10 @@ async function generateBoletinPDF(
     // Fila: Nombre acudiente
     const acudienteRowH = 8;
     addPageIfNeeded(acudienteRowH);
+    const acudienteW = contentW - col5W;
     pdf.setDrawColor(17, 24, 39);
     pdf.setLineWidth(0.4);
-    pdf.rect(margin, y, contentW, acudienteRowH, "D");
+    pdf.rect(margin, y, acudienteW, acudienteRowH, "D");
     {
       const textY = y + acudienteRowH / 2 + 1.5;
       pdf.setFontSize(7);
@@ -961,13 +965,42 @@ async function generateBoletinPDF(
       pdf.setFont("helvetica", "normal");
       const acudienteLabelW = pdf.getTextWidth(acudienteLabel);
       let acudienteVal = String(info.nombre_acudiente ?? "-");
-      const acudienteMaxW = contentW - acudienteLabelW - 4;
+      const acudienteMaxW = acudienteW - acudienteLabelW - 4;
       while (
         pdf.getTextWidth(acudienteVal) > acudienteMaxW &&
         acudienteVal.length > 1
       )
         acudienteVal = acudienteVal.slice(0, -1);
       pdf.text(acudienteVal, margin + 2 + acudienteLabelW, textY);
+    }
+
+    // Celda Posición abarcando ambas filas
+    {
+      const posX = margin + col1W + col2W + col3W + col4W;
+      const totalH = studentTableH + acudienteRowH;
+      pdf.setDrawColor(17, 24, 39);
+      pdf.setLineWidth(0.4);
+      pdf.rect(posX, y - studentTableH, col5W, totalH, "D");
+      pdf.setFontSize(7);
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(
+        "Posici\u00f3n",
+        posX + col5W / 2,
+        y - studentTableH + totalH * 0.35,
+        { align: "center" },
+      );
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(9);
+      let pVal = posicionTexto;
+      while (pdf.getTextWidth(pVal) > col5W - 2 && pVal.length > 1)
+        pVal = pVal.slice(0, -1);
+      pdf.text(
+        pVal,
+        posX + col5W / 2,
+        y - studentTableH + totalH * 0.72,
+        { align: "center" },
+      );
     }
     y += acudienteRowH;
   }
@@ -981,6 +1014,9 @@ async function generateBoletinPDF(
     const pad2 = (n) => String(n).padStart(2, "0");
     const dateStr = `${pad2(now.getDate())}-${pad2(now.getMonth() + 1)}-${now.getFullYear()} ${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
 
+    const umbralValue = String(
+      escalas.find((e) => e.umbral != null)?.umbral ?? "-",
+    );
     const levels = escalas.map((e) => ({
       label: String(e.escala ?? ""),
       range: `(${e.desde} - ${e.hasta})`,
@@ -1002,8 +1038,9 @@ async function generateBoletinPDF(
 
     y += escalaRowH;
 
-    // Fila 2: columnas de niveles
-    const lvlColW = contentW / (levels.length || 1);
+    // Fila 2: columnas horizontales por nivel + columna única Umbral
+    const umbralColW = contentW * 0.14;
+    const lvlColW = (contentW - umbralColW) / (levels.length || 1);
     pdf.setFontSize(6.5);
     for (let i = 0; i < levels.length; i++) {
       const { label, range } = levels[i];
@@ -1015,9 +1052,26 @@ async function generateBoletinPDF(
       const textW = pdf.getTextWidth(fullText);
       const startX = cx + (lvlColW - textW) / 2;
       pdf.text(label, startX, textY);
-      const labelW = pdf.getTextWidth(label);
+      const lW = pdf.getTextWidth(label);
       pdf.setFont("helvetica", "normal");
-      pdf.text(` = ${range}`, startX + labelW, textY);
+      pdf.text(` = ${range}`, startX + lW, textY);
+    }
+    // columna Umbral
+    const umbralCx = margin + levels.length * lvlColW;
+    pdf.rect(umbralCx, y, umbralColW, escalaRowH, "D");
+    {
+      const textY = y + escalaRowH / 2 + 1.5;
+      const centerX = umbralCx + umbralColW / 2;
+      pdf.setFont("helvetica", "bold");
+      const uLabelW = pdf.getTextWidth("Umbral: ");
+      pdf.setFont("helvetica", "normal");
+      const uValW = pdf.getTextWidth(umbralValue);
+      const totalW = uLabelW + uValW;
+      const startX = centerX - totalW / 2;
+      pdf.setFont("helvetica", "bold");
+      pdf.text("Umbral: ", startX, textY);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(umbralValue, startX + uLabelW, textY);
     }
     y += escalaRowH;
     y += 3;
@@ -2354,7 +2408,7 @@ const BoletinSelector = ({
                           style={{
                             border: "1px solid #000000",
                             padding: "4px 8px",
-                            width: "22%",
+                            width: "18%",
                           }}
                         >
                           <strong>PERIODO:</strong> {periodos[0]?.nombre ?? "-"}
@@ -2363,10 +2417,27 @@ const BoletinSelector = ({
                           style={{
                             border: "1px solid #000000",
                             padding: "4px 8px",
-                            width: "20%",
+                            width: "16%",
                           }}
                         >
                           <strong>PROMEDIO:</strong> {promedioGeneral ?? "-"}
+                        </td>
+                        <td
+                          rowSpan={2}
+                          style={{
+                            border: "1px solid #000000",
+                            padding: "4px 8px",
+                            width: "14%",
+                            textAlign: "center",
+                            verticalAlign: "middle",
+                          }}
+                        >
+                          <div style={{ fontWeight: "bold", fontSize: "9px" }}>
+                            Posición
+                          </div>
+                          <div style={{ fontSize: "11px" }}>
+                            {info.posicion ?? "-"}
+                          </div>
                         </td>
                       </tr>
                       <tr>
@@ -2387,9 +2458,12 @@ const BoletinSelector = ({
                   {/* ── Escala Valorativa ── */}
                   {escalas.length > 0 &&
                     (() => {
+                      const umbralValue = String(
+                        escalas.find((e) => e.umbral != null)?.umbral ?? "-",
+                      );
                       const levels = escalas.map((e) => ({
                         label: String(e.escala ?? ""),
-                        range: `( ${e.desde} - ${e.hasta} )`,
+                        range: `(${e.desde} - ${e.hasta})`,
                       }));
                       return (
                         <table
@@ -2404,7 +2478,7 @@ const BoletinSelector = ({
                           <tbody>
                             <tr>
                               <td
-                                colSpan={levels.length}
+                                colSpan={levels.length + 1}
                                 style={{
                                   border: "1px solid #000000",
                                   padding: "3px 6px",
@@ -2423,13 +2497,23 @@ const BoletinSelector = ({
                                   style={{
                                     border: "1px solid #000000",
                                     padding: "3px 6px",
-                                    width: `${100 / levels.length}%`,
+                                    width: `${86 / levels.length}%`,
                                     textAlign: "center",
                                   }}
                                 >
                                   <strong>{lvl.label}</strong> = {lvl.range}
                                 </td>
                               ))}
+                              <td
+                                style={{
+                                  border: "1px solid #000000",
+                                  padding: "3px 6px",
+                                  width: "14%",
+                                  textAlign: "center",
+                                }}
+                              >
+                                <strong>Umbral:</strong> {umbralValue}
+                              </td>
                             </tr>
                           </tbody>
                         </table>
