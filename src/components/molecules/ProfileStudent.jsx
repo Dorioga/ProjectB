@@ -9,7 +9,10 @@ import ExcuseModal from "./ExcuseModal";
 import PDFViewerModal from "./PDFViewerModal.jsx";
 import MatriculaModal from "./MatriculaModal.jsx";
 import CarnetModal from "./CarnetModal.jsx";
-import { formatDateToDisplay } from "../../utils/formatUtils";
+import {
+  formatDateToDisplay,
+  getIdentificationLabel,
+} from "../../utils/formatUtils";
 import { upload } from "../../services/uploadService";
 import { useNotify } from "../../lib/hooks/useNotify";
 import tourProfileStudent from "../../tour/tourProfileStudent";
@@ -83,7 +86,7 @@ const ProfileStudent = ({
   const [documentFiles, setDocumentFiles] = useState({
     id_Student: null,
     id_Acudiente: null,
-    piar: null,
+    piar: data.link_piar,
   });
 
   const [editedData, setEditedData] = useState({
@@ -176,8 +179,7 @@ const ProfileStudent = ({
       process_id: processIdMap[editedData.state_process] || "2",
       gender: data.genero || data.genre || "",
       photo_link: photoPreview || data.link_foto || data.url_photo || "",
-      identification_link:
-        data.auDoc_idEstudiante || data.link_identificacion || "",
+      identification_link: "yes",
       nui: data.nui || "",
       per_id: data.per_id || "",
       fk_beca: becaIdMap[editedData.state_beca] ?? 1,
@@ -190,6 +192,7 @@ const ProfileStudent = ({
           : null,
       // PIAR
       cuenta_piar: hasPiar,
+      link_piar: hasPiar ? data?.link_piar || null : null,
     };
 
     // Si hay archivos nuevos, actualizar los links correspondientes
@@ -197,7 +200,7 @@ const ProfileStudent = ({
       updatedData.photo_link = photoPreview;
     }
 
-    // ── Subida de archivos (identificación y/o PIAR) ───────────────────────
+    // -- Subida de archivos (identificación y/o PIAR) -----------------------
     const hasIdFile = Boolean(documentFiles.id_Student);
     const hasPiarFile = Boolean(hasPiar && documentFiles.piar);
 
@@ -216,13 +219,17 @@ const ProfileStudent = ({
         }
 
         const res = await upload(form, "upload/estudiantes");
-
+        console.log("Respuesta de subida de archivos en ProfileStudent:", res);
         if (res && res.status === 200 && Array.isArray(res.data)) {
           res.data.forEach((entry) => {
             if (entry.field === "cedulaEstudiante") {
               updatedData.identification_link = "yes";
             } else if (entry.field === "soporteExcel") {
-              updatedData.link_piar = "yes";
+              const folder =
+                entry?.files?.[0]?.folder?.replace("/var/www", "") ?? "";
+              const fileName = entry?.files?.[0]?.fileName ?? "";
+              updatedData.link_piar = `https://www.nexusplataforma.com${folder}/${fileName}`;
+              //si el estudiante tiene piar dejarlo igual si el check es false enviar null en el link piar
             }
           });
         }
@@ -258,7 +265,6 @@ const ProfileStudent = ({
       }
       onSave(studentId, personId, updatedData);
     }
-
   };
 
   const handleImageCapture = (file, preview) => {
@@ -289,7 +295,12 @@ const ProfileStudent = ({
     } else {
     }
   };
-
+  console.log(
+    "Renderizando ProfileStudent con data:",
+    data,
+    "editedData:",
+    editedData,
+  );
   return (
     <div className="w-full flex flex-col items-center justify-center">
       <div className="w-11/12 flex flex-col gap-4">
@@ -328,7 +339,7 @@ const ProfileStudent = ({
             )}
             <SimpleButton
               onClick={() => setIsOpenCarnet(true)}
-              msj="Carnét"
+              msj="Carné"
               bg="bg-accent"
               icon="CreditCard"
               text="text-surface"
@@ -349,10 +360,7 @@ const ProfileStudent = ({
                 Tipo de identificación:
               </label>
               <p>
-                {data.identificationType ||
-                  (data.fk_tipo_identificacion === "4"
-                    ? "Tarjeta de Identidad"
-                    : "Cédula de Ciudadanía")}
+                {getIdentificationLabel(Number(data.fk_tipo_identificacion))}
               </p>
             </div>
             <div className="flex flex-row gap-4 items-center">
@@ -499,14 +507,14 @@ const ProfileStudent = ({
             </label>
             <p>
               {data.tipo_documento_acudiente ||
-                (data.fk_tipo_identificacion_acudiente === "4"
-                  ? "Tarjeta de Identidad"
-                  : "Cédula de Ciudadanía")}
+                getIdentificationLabel(
+                  Number(data.fk_tipo_identificacion_acudiente),
+                )}
             </p>
           </div>
           <div className="flex flex-row gap-4 items-center">
             <label className="text-lg font-medium">
-              Número Identificación Acudiente:
+              Número identificación Acudiente:
             </label>
             <p>{data.numero_identificacion_acudiente}</p>
           </div>
@@ -719,20 +727,25 @@ const ProfileStudent = ({
             </div>
           </div>
 
-          {/* PIAR - checkbox + FileChooser (edit) / descarga (view) */}
-          <div className="w-full grid grid-cols-1 lg:grid-cols-4 gap-4 items-center">
-            <label className="text-lg font-medium">Cuenta con PIAR:</label>
+          {/* PIAR - checkbox + FileChooser (edit) / descarga (view) w-full grid grid-cols-1 lg:grid-cols-4 gap-4 items-center */}
 
-            <div className="flex w-full items-center justify-center gap-3 col-span-2">
-              <input
-                type="checkbox"
-                checked={hasPiar}
-                disabled={!isEditing}
-                onChange={(e) => setHasPiar(!!e.target.checked)}
-                className="w-4 h-4"
-              />
+          <div
+            className={`w-full grid grid-cols-1 lg:grid-cols-3 gap-4 items-center `}
+          >
+            <label className="text-lg font-medium">Cuenta con PIAR:</label>
+            <div
+              className={` flex items-center justify-center w-full gap-3 col-span-1 `}
+            >
+              {isEditing && (
+                <input
+                  type="checkbox"
+                  checked={hasPiar}
+                  onChange={(e) => setHasPiar(!!e.target.checked)}
+                  className="w-4 h-4"
+                />
+              )}
               <span
-                className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
+                className={`px-3 py-1 w-full rounded-lg text-sm font-semibold text-center border border-solid  ${
                   hasPiar
                     ? "bg-green-100 text-green-800 border-green-200"
                     : "bg-yellow-100 text-yellow-800 border-yellow-200"
@@ -740,6 +753,8 @@ const ProfileStudent = ({
               >
                 {hasPiar ? "Sí" : "No"}
               </span>
+            </div>
+            <div className={` w-full gap-3 col-span-1`}>
               {hasPiar && (
                 <div className="flex">
                   <FileChooser
@@ -754,25 +769,78 @@ const ProfileStudent = ({
                   />
                 </div>
               )}
+              {!isEditing &&
+              (String(data?.auDoc_piar || "").includes("https://") ||
+                data?.link_piar) ? (
+                <SimpleButton
+                  onClick={() =>
+                    window.open(
+                      data.auDoc_piar || data?.link_piar,
+                      "_blank",
+                      "noreferrer",
+                    )
+                  }
+                  msj="Descargar PIAR"
+                  bg="bg-accent"
+                  icon="Download"
+                  text="text-surface"
+                />
+              ) : null}
             </div>
-
-            {!isEditing &&
-            (String(data?.auDoc_piar || "").includes("https://") ||
-              data?.link_piar) ? (
+          </div>
+          <div
+            className={`w-full grid grid-cols-1  gap-4 items-center ${
+              documentFiles.id_Student ? "grid-cols-5" : "grid-cols-3"
+            }`}
+          >
+            <label className="text-lg font-medium lg:col-span-1">
+              Identificación Estudiante:
+            </label>
+            {/* ||
+                data?.link_identificacion */}
+            <span
+              className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
+                data?.link_identificacion
+                  ? "bg-green-100 text-green-800 border-green-200 "
+                  : "bg-yellow-100 text-yellow-800 border-yellow-200 "
+              }`}
+            >
+              {data?.link_identificacion ? "Cargado" : "No cargado"}
+            </span>
+            {isEditing ? (
+              <div
+                className={`flex  ${
+                  documentFiles.id_Student ? "col-span-3" : "col-span-1"
+                }`}
+              >
+                <FileChooser
+                  editing={isEditing}
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(file) => handleDocumentChange("id_Student", file)}
+                  label={
+                    documentFiles.id_Student
+                      ? documentFiles.id_Student.name
+                      : "Cargar archivo"
+                  }
+                />
+              </div>
+            ) : data?.link_identificacion ? (
               <SimpleButton
-                onClick={() =>
-                  window.open(
-                    data.auDoc_piar || data?.link_piar,
-                    "_blank",
-                    "noreferrer",
-                  )
-                }
-                msj="Descargar PIAR"
+                onClick={() => {
+                  setIsOpenDocument(true);
+                  setDocumentSelected({
+                    file: data.auDoc_idEstudiante || data.link_identificacion,
+                    name: "Documento Estudiante",
+                  });
+                }}
+                msj="Ver Documento"
                 bg="bg-accent"
-                icon="Download"
+                icon="View"
                 text="text-surface"
               />
-            ) : null}
+            ) : (
+              <div />
+            )}
           </div>
           <div
             className={`w-full grid grid-cols-1  gap-4 items-center ${
@@ -784,14 +852,14 @@ const ProfileStudent = ({
             </label>
             <span
               className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
-                data.Doc_acudiente
+                data.link_identificacion_acudiente
                   ? "bg-green-100 text-green-800 border-green-200 "
                   : "bg-yellow-100 text-yellow-800 border-yellow-200 "
               }`}
             >
               {/* ||
               data?.link_identificacion_acudiente */}
-              {data?.Doc_acudiente ? "Cargado" : "No cargado"}
+              {data?.link_identificacion_acudiente ? "Cargado" : "No cargado"}
             </span>
             {isEditing ? (
               <div
@@ -812,7 +880,7 @@ const ProfileStudent = ({
                   }
                 />
               </div>
-            ) : data?.Doc_acudiente ? (
+            ) : data?.link_identificacion_acudiente ? (
               <SimpleButton
                 onClick={() => {
                   setIsOpenDocument(true);
@@ -821,60 +889,6 @@ const ProfileStudent = ({
                       data.auDoc_idAcudiente ||
                       data.link_identificacion_acudiente,
                     name: "Documento Acudiente",
-                  });
-                }}
-                msj="Ver Documento"
-                bg="bg-accent"
-                icon="View"
-                text="text-surface"
-              />
-            ) : (
-              <div />
-            )}
-          </div>
-          <div
-            className={`w-full grid grid-cols-1  gap-4 items-center ${
-              documentFiles.id_Student ? "grid-cols-5" : "grid-cols-3"
-            }`}
-          >
-            <label className="text-lg font-medium lg:col-span-1">
-              Identificación Estudiante:
-            </label>
-            {/* ||
-                data?.link_identificacion */}
-            <span
-              className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
-                data?.Doc_estudiante
-                  ? "bg-green-100 text-green-800 border-green-200 "
-                  : "bg-yellow-100 text-yellow-800 border-yellow-200 "
-              }`}
-            >
-              {data?.Doc_estudiante ? "Cargado" : "No cargado"}
-            </span>
-            {isEditing ? (
-              <div
-                className={`flex  ${
-                  documentFiles.id_Student ? "col-span-3" : "col-span-1"
-                }`}
-              >
-                <FileChooser
-                  editing={isEditing}
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={(file) => handleDocumentChange("id_Student", file)}
-                  label={
-                    documentFiles.id_Student
-                      ? documentFiles.id_Student.name
-                      : "Cargar archivo"
-                  }
-                />
-              </div>
-            ) : data?.Doc_estudiante ? (
-              <SimpleButton
-                onClick={() => {
-                  setIsOpenDocument(true);
-                  setDocumentSelected({
-                    file: data.auDoc_idEstudiante || data.link_identificacion,
-                    name: "Documento Estudiante",
                   });
                 }}
                 msj="Ver Documento"

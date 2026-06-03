@@ -57,7 +57,7 @@ const Modal = ({
     >
       <div
         ref={containerRef}
-        className={`bg-surface rounded shadow-lg w-full max-h-[90vh] flex flex-col ${
+        className={`bg-surface rounded shadow-lg w-full max-h-[95vh] flex flex-col ${
           sizeClasses[size] || sizeClasses.lg
         }`}
         onMouseDown={(e) => e.stopPropagation()}

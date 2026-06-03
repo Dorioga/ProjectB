@@ -18,14 +18,13 @@ import { upload } from "../../services/uploadService";
  *     directorio dinámico.
  *   - <code>onSuccess</code> (function): callback opcional tras subida exitosa.
  */
-const UploadStudentPDF = ({
-  folder = "uploads/estudiantes",
-  onSuccess,
-} = {}) => {
+const UploadStudentPDF = ({ onSuccess } = {}) => {
   const [files, setFiles] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState(null);
+  const [tipoSubida, setTipoSubida] = useState("");
 
+  const folder = `uploads/${tipoSubida}`;
   const busy = useMemo(() => submitting, [submitting]);
 
   const validateFile = useCallback((f) => {
@@ -69,10 +68,6 @@ const UploadStudentPDF = ({
       const form = new FormData();
       files.forEach((f) => form.append("file", f));
 
-      // visualizar en consola el contenido del FormData
-      for (const pair of form.entries()) {
-      }
-
       const res = await upload(form, folder);
 
       // asumimos comportamiento similar al Excel: 200 + array
@@ -108,11 +103,26 @@ const UploadStudentPDF = ({
 
   return (
     <div className="border p-6 rounded bg-bg h-full gap-4 flex flex-col">
-      <div className="flex flex-col gap-2">
-        <div className="">
-          <h2 className="text-xl font-semibold">Cargar PDF(s)</h2>
+      <div className="flex flex-col gap-4">
+        <h2 className="text-xl font-semibold">Cargar PDF(s)</h2>
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium">Tipo de documento</label>
+          <select
+            value={tipoSubida}
+            onChange={(e) => setTipoSubida(e.target.value)}
+            disabled={busy}
+            className="border p-2 rounded bg-surface"
+          >
+            <option value="">Seleccione un tipo</option>
+            <option value="estudiantes">Estudiantes</option>
+            <option value="acudientes">Acudientes</option>
+          </select>
         </div>
-
+        <p>
+          <strong>IMPORTANTE:</strong> Los nombres de los archivos deben ser
+          exclusivamente las identificaciones de los{" "}
+          {tipoSubida ? tipoSubida : "usuarios"}.
+        </p>
         <FileChooser
           value={files}
           onChange={handleFilesChange}
@@ -122,13 +132,12 @@ const UploadStudentPDF = ({
           label="Seleccionar PDF(s)"
           mode="default"
         />
-
         <SimpleButton
           type="button"
           msj={busy ? "Subiendo…" : "Subir archivos"}
           icon={"Upload"}
           onClick={handleUpload}
-          disabled={busy}
+          disabled={busy || files.length === 0 || !tipoSubida}
           bg={"bg-secondary"}
           text={"text-surface"}
           hover={"hover:bg-secondary/80"}

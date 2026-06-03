@@ -22,10 +22,10 @@ const PDFViewerModal = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={title} size="xl">
+    <Modal isOpen={isOpen} onClose={onClose} title={title} size="5xl">
       <div className="w-full">
         {/* Visor de PDF */}
-        <div className="w-full h-[600px]">
+        <div className="w-full h-[700px]">
           {pdfUrl ? (
             <PDFViewer pdfUrl={pdfUrl} />
           ) : (

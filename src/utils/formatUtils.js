@@ -1,3 +1,23 @@
+export const IDENTIFICATION_TYPES = [
+  { value: 2, label: "CC", description: "CÉDULA DE CIUDADANÍA" },
+  { value: 3, label: "NIT", description: "NIT" },
+  { value: 4, label: "RC", description: "REGISTRO CIVIL DE NACIMIENTO" },
+  { value: 5, label: "TI", description: "TARJETA DE IDENTIDAD" },
+  { value: 6, label: "PPT", description: "PERMISO DE PROTECCIÓN TEMPORAL" },
+  { value: 7, label: "CE", description: "CÉDULA DE EXTRANJERÍA" },
+  {
+    value: 8,
+    label: "NES",
+    description: "NÚMERO ESTABLECIDO POR LA SECRETARÍA",
+  },
+  { value: 9, label: "PASAPORTE", description: "PASAPORTE" },
+];
+
+export function getIdentificationLabel(value) {
+  const tipo = IDENTIFICATION_TYPES.find((t) => t.value === value);
+  return tipo ? `${tipo.label} - ${tipo.description}` : "N/A";
+}
+
 /**
  * Formatea una fecha tipo 'YYYYMMDD' o 'YYYY-MM-DD' a 'DD/MM/YYYY'.
  * Si no es válida, devuelve la cadena original o "N/A".
