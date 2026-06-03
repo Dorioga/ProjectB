@@ -63,13 +63,13 @@ const Sidebar = () => {
   return (
     <>
       <div
-        className="fixed left-0 top-0 z-50 h-screen grid grid-rows-10  rounded-br-2xl bg-primary overflow-hidden"
+        className="fixed left-0 top-0 z-50 h-screen grid grid-rows-12  rounded-br-2xl bg-primary overflow-hidden"
         style={{
           width: isOpen ? "300px" : "70px",
           transition: "width 300ms ease-in-out",
         }}
       >
-        <div className="row-span-2">
+        <div className="row-span-3">
           <div
             className={`flex py-3 cursor-pointer transition-colors duration-200
             ${isOpen ? "justify-end px-6" : "justify-center px-0"}`}
@@ -89,7 +89,7 @@ const Sidebar = () => {
             </div>
           )}
         </div>
-        <div className="row-span-7  flex flex-col justify-start overflow-y-auto pt-0 sm:pt-3">
+        <div className="row-span-8 md:row-span-7 2xl:row-span-8 flex flex-col justify-start overflow-y-auto pt-0 sm:pt-3">
           <ul className="">
             {menu &&
               Array.isArray(menu) &&
@@ -156,7 +156,7 @@ const Sidebar = () => {
             )}
           </ul>
         </div>
-        <div className="flex flex-col items-center row-span-1 justify-end  ">
+        <div className="flex flex-col items-center row-span-1 justify-center  ">
           <div className="flex flex-row items-center">
             {showContent ? (
               <PreviewIMG

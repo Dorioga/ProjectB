@@ -30,6 +30,7 @@ const ProfileStudent = ({
     .toLowerCase()
     .includes("docente");
   const isRol6 = String(rol) === "6";
+  const isRol7 = String(rol) === "7";
   const [isTourMode, setIsTourMode] = useState(false);
 
   const startTour = useCallback(() => {
@@ -318,7 +319,7 @@ const ProfileStudent = ({
                 className="w-auto px-3 py-1.5"
               />
             )}
-            {!isDocente && isEditing && (
+            {(!isDocente || isRol7) && isEditing && (
               <SimpleButton
                 onClick={() => setIsEditing(false)}
                 msj="Cancelar"
@@ -327,7 +328,7 @@ const ProfileStudent = ({
                 text="text-surface"
               />
             )}
-            {!isDocente && !isRol6 && (
+            {(!isDocente || isRol7) && !isRol6 && (
               <SimpleButton
                 onClick={() => setIsEditing(true)}
                 msj="Editar"

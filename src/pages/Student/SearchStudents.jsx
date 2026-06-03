@@ -16,7 +16,7 @@ const SearchStudents = () => {
   const { nameSchool, idSede: authIdSede } = useAuth();
 
   // ── Filtros ──────────────────────────────────────────────────────────────
-  const [sedeId, setSedeId] = useState("");
+  const [sedeId, setSedeId] = useState(authIdSede ?? "");
   const [workdayId, setWorkdayId] = useState("");
   const [gradeId, setGradeId] = useState("");
 
@@ -175,8 +175,9 @@ const SearchStudents = () => {
 
   return (
     <div className="p-6 h-full gap-4 flex flex-col">
-      <h1 className="text-2xl font-bold mb-4">Buscar estudiantes</h1>
-
+      <div className="w-full lg:col-span-2  xl:col-span-3 flex items-center bg-primary text-surface p-3 rounded-lg">
+        <h1 className="text-2xl font-bold">Buscar estudiantes</h1>
+      </div>
       {/* ── Filtros ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-3xl">
         <div className="flex flex-col gap-1">
@@ -184,6 +185,11 @@ const SearchStudents = () => {
             label="Sede"
             value={sedeId}
             onChange={(e) => setSedeId(e.target.value)}
+            data={
+              authIdSede
+                ? [{ id_sede: authIdSede, nombre_sede: nameSchool }]
+                : undefined
+            }
           />
         </div>
         <div className="flex flex-col gap-1">

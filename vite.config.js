@@ -14,7 +14,7 @@ export default defineConfig({
         secure: true,
       },
       "/backend-proxy": {
-        target: "https://backend-barranquilla.onrender.com",
+        target: "https://nexusplataforma.com/api",
         changeOrigin: true,
         secure: true,
         rewrite: (path) => path.replace(/^\/backend-proxy/, ""),
