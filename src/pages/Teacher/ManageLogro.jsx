@@ -502,6 +502,7 @@ const ManageLogro = () => {
             data={results || []}
             columns={columns}
             fileName="Export_Logros"
+            initialSorting={[{ id: "nombre_asignatura", desc: false }]}
           />
         )}
       </div>

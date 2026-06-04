@@ -97,7 +97,6 @@ const SignatureModal = ({ isOpen, onClose, onSaved }) => {
         await updateFirma(patchPayload, patchType);
       }
 
-      console.log("Firma guardada con éxito:", result);
       setSaved(true);
       if (onSaved) onSaved();
     } catch (err) {

@@ -17,6 +17,7 @@ const GradeSelector = ({
   customFetchMethod = null,
   additionalParams = {},
   staticOptions = null,
+  onOptionChange = null,
 }) => {
 
   const { getGradeSede, loading } = useSchool();
@@ -147,6 +148,16 @@ const GradeSelector = ({
       .filter((g) => g.id && g.nombre);
   }, [grades, staticOptions]);
 
+  const handleChange = (e) => {
+    if (onOptionChange) {
+      const selected = gradeOptions.find(
+        (g) => String(g.id) === String(e.target.value),
+      );
+      onOptionChange(selected ? selected.nombre : "");
+    }
+    if (onChange) onChange(e);
+  };
+
   const isLoading = loadingGrades || loading;
 
   // Determinar si el selector debe estar deshabilitado
@@ -177,7 +188,7 @@ const GradeSelector = ({
       <select
         name={name}
         value={value}
-        onChange={onChange}
+        onChange={handleChange}
         className={className}
         disabled={isDisabled}
       >

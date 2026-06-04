@@ -500,6 +500,25 @@ export async function ControlCreateNote(payload) {
 }
 
 /**
+ * Obtiene notas de estudiantes por grado, sede, año y periodo
+ * Endpoint: POST /notes/grades/sede
+ * payload: { fk_grade, fk_sede, anio, id_periodo }
+ */
+export async function getNotesGradesSede(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto para getNotesGradesSede.");
+  }
+  try {
+    const res = await ApiClient.instance.post("/notes/grades/sede", payload);
+    const data = Array.isArray(res) ? res : (res?.data ?? res);
+    return data;
+  } catch (error) {
+    console.error("teacherService - getNotesGradesSede error:", error);
+    throw error;
+  }
+}
+
+/**
  * Control de notas asignadas por sede y período
  * Endpoint: POST /note/controle/assignment
  * payload: { id_sede, id_periodo }

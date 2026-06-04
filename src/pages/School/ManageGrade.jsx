@@ -232,6 +232,7 @@ const ManageGrade = () => {
             data={tableData || []}
             columns={columns}
             fileName="Export_Grades"
+            initialSorting={[{ id: "nombre_grado", desc: false }]}
             showDownloadButtons={false}
             loading={isFetching}
             loaderMessage="Cargando grados..."

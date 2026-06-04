@@ -178,6 +178,7 @@ const ManageObserver = () => {
           data={tableData}
           columns={columns}
           fileName="Export_Observaciones"
+          initialSorting={[{ id: "nombre_estudiante", desc: false }]}
           showDownloadButtons={false}
           loading={isFetching}
           loaderMessage="Cargando observaciones..."

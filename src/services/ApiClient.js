@@ -1,11 +1,29 @@
 import axios from "axios";
 
 const BASE = import.meta.env.VITE_API_URL;
+const DEFAULT_TIMEOUT = 30000;
 
 const apiClient = axios.create({
   baseURL: BASE,
-  timeout: 0,
+  timeout: DEFAULT_TIMEOUT,
 });
+
+const cacheStore = new Map();
+const CACHE_TTL = 30000;
+
+function getCacheKey(url, params) {
+  return `${url}::${JSON.stringify(params || {})}`;
+}
+
+export function clearCache(pattern) {
+  if (!pattern) {
+    cacheStore.clear();
+    return;
+  }
+  for (const key of cacheStore.keys()) {
+    if (key.startsWith(pattern)) cacheStore.delete(key);
+  }
+}
 
 let apiDisabled = false; // <<< bandera global
 
@@ -141,11 +159,22 @@ export function setAuthToken(token) {
   }
 }
 
-// Mantener compatibilidad con el formato anterior
 export const ApiClient = {
   instance: apiClient,
-  get: (path, params = {}, config = {}) =>
-    apiClient.get(path, { params, ...config }),
+  get: (path, params = {}, config = {}) => {
+    if (config.cache) {
+      const key = getCacheKey(path, params);
+      const cached = cacheStore.get(key);
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        return Promise.resolve(cached.data);
+      }
+      return apiClient.get(path, { params, ...config }).then((res) => {
+        cacheStore.set(key, { data: res, timestamp: Date.now() });
+        return res;
+      });
+    }
+    return apiClient.get(path, { params, ...config });
+  },
   post: (path, data, config = {}) => apiClient.post(path, data, config),
   put: (path, data, config = {}) => apiClient.put(path, data, config),
   patch: (path, data, config = {}) => apiClient.patch(path, data, config),
@@ -153,10 +182,3 @@ export const ApiClient = {
 };
 
 export default apiClient;
-/*try {
-   await axios.post("/refresh-token", {
-      refreshToken: storedRefreshToken (esto es el localstorage donde debe poner el refreshtoken)
-   });
-} catch (err) {
-   ejecutar metodo que le voy a crear para cerrar sesion como tal
-}*/

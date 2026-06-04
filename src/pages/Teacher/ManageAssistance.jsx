@@ -564,6 +564,7 @@ const ManageAssistance = () => {
               data={tableData}
               columns={columns}
               fileName="Export_Asistencias"
+              initialSorting={[{ id: "nombre_estudiante", desc: false }]}
               showDownloadButtons={tableData.length > 0}
               pageSize={20}
               exportWithoutHeaders={true}

@@ -23,7 +23,7 @@ export async function upload(payload, name) {
   if (!(payload instanceof FormData)) {
     throw new Error("El payload debe ser una instancia de FormData");
   }
-  console.log("Enviando payload a uploadService:", { payload, name });
+
   // validamos el contenido del FormData recibido (cada valor debe ser
   // string, File o Blob). No hacemos comprobación del número de entradas
   // porque en algunos casos se envía un campo adicional con el número de

@@ -275,6 +275,7 @@ const ManageAsignature = () => {
             data={tableData || []}
             columns={columns}
             fileName="Export_Asignatures"
+            initialSorting={[{ id: "nombre_asignatura", desc: false }]}
             showDownloadButtons={false}
             loading={isFetching}
             loaderMessage="Cargando asignaturas..."

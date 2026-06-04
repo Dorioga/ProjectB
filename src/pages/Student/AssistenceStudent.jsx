@@ -173,6 +173,7 @@ const AssistenceStudent = () => {
         data={records}
         columns={columns}
         fileName="asistencia_estudiante"
+        initialSorting={[{ id: "nombre_asignatura", desc: false }]}
         loading={loading}
         loaderMessage="Cargando asistencia..."
         showDownloadButtons={false}

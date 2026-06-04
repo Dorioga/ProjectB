@@ -321,6 +321,7 @@ const ControlAsistencia = () => {
             data={tableData}
             columns={columns}
             fileName="Export_Control_Asistencia"
+            initialSorting={[{ id: "docente", desc: false }]}
             showDownloadButtons={tableData.length > 0}
             pageSize={50}
             groupBy="docente"

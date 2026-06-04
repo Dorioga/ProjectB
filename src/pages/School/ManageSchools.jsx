@@ -158,6 +158,7 @@ const ManageSchools = () => {
           data={tableData || []}
           columns={columns}
           fileName="Export_Institutions"
+          initialSorting={[{ id: "nombre_institution", desc: false }]}
           mode={"School"}
           showDownloadButtons={false}
           loading={isFetching}

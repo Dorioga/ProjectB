@@ -243,6 +243,7 @@ const ManageSedes = () => {
           data={tableData || []}
           columns={columns}
           fileName="Export_Sedes"
+          initialSorting={[{ id: "nombre", desc: false }]}
           mode="Sede"
           showDownloadButtons={false}
           loading={isFetching}

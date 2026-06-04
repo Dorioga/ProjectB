@@ -24,4 +24,4 @@ const DashboardTemplate = ({ data, options }) => {
   );
 };
 
-export default DashboardTemplate;
+export default React.memo(DashboardTemplate);

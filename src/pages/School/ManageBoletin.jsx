@@ -172,7 +172,7 @@ const ManageBoletin = () => {
       },
 
       {
-        accessorKey: "nombre_grado",
+        accessorKey: "grado",
         header: "Grado",
         meta: { hideOnLG: true },
       },
@@ -310,6 +310,7 @@ const ManageBoletin = () => {
               columns={columns}
               fileName="gestion_boletines"
               pageSize={50}
+              initialSorting={[{ id: "nombre_completo", desc: false }]}
             />
           )}
         </div>

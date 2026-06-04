@@ -220,7 +220,7 @@ const ProfileStudent = ({
         }
 
         const res = await upload(form, "upload/estudiantes");
-        console.log("Respuesta de subida de archivos en ProfileStudent:", res);
+
         if (res && res.status === 200 && Array.isArray(res.data)) {
           res.data.forEach((entry) => {
             if (entry.field === "cedulaEstudiante") {
@@ -296,12 +296,7 @@ const ProfileStudent = ({
     } else {
     }
   };
-  console.log(
-    "Renderizando ProfileStudent con data:",
-    data,
-    "editedData:",
-    editedData,
-  );
+
   return (
     <div className="w-full flex flex-col items-center justify-center">
       <div className="w-11/12 flex flex-col gap-4">
@@ -801,12 +796,14 @@ const ProfileStudent = ({
                 data?.link_identificacion */}
             <span
               className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
-                data?.link_identificacion
+                data?.Doc_estudiante && data?.link_identificacion
                   ? "bg-green-100 text-green-800 border-green-200 "
                   : "bg-yellow-100 text-yellow-800 border-yellow-200 "
               }`}
             >
-              {data?.link_identificacion ? "Cargado" : "No cargado"}
+              {data?.Doc_estudiante && data?.link_identificacion
+                ? "Cargado"
+                : "No cargado"}
             </span>
             {isEditing ? (
               <div
@@ -825,7 +822,7 @@ const ProfileStudent = ({
                   }
                 />
               </div>
-            ) : data?.link_identificacion ? (
+            ) : data?.Doc_estudiante && data?.link_identificacion ? (
               <SimpleButton
                 onClick={() => {
                   setIsOpenDocument(true);
@@ -853,14 +850,16 @@ const ProfileStudent = ({
             </label>
             <span
               className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
-                data.link_identificacion_acudiente
+                data?.Doc_acudiente && data?.link_identificacion_acudiente
                   ? "bg-green-100 text-green-800 border-green-200 "
                   : "bg-yellow-100 text-yellow-800 border-yellow-200 "
               }`}
             >
               {/* ||
               data?.link_identificacion_acudiente */}
-              {data?.link_identificacion_acudiente ? "Cargado" : "No cargado"}
+              {data?.Doc_acudiente && data?.link_identificacion_acudiente
+                ? "Cargado"
+                : "No cargado"}
             </span>
             {isEditing ? (
               <div
@@ -881,7 +880,7 @@ const ProfileStudent = ({
                   }
                 />
               </div>
-            ) : data?.link_identificacion_acudiente ? (
+            ) : data?.Doc_acudiente && data?.link_identificacion_acudiente ? (
               <SimpleButton
                 onClick={() => {
                   setIsOpenDocument(true);

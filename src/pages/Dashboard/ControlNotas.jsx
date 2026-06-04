@@ -296,6 +296,7 @@ const ControlNotas = () => {
                 data={createData}
                 columns={columnsCreate}
                 fileName="control_notas_creadas"
+                initialSorting={[{ id: "nombre_grado", desc: false }]}
                 groupBy="docente"
                 loading={isLoading}
                 loaderMessage="Cargando notas creadas..."
@@ -332,6 +333,7 @@ const ControlNotas = () => {
                 data={assignData}
                 columns={columnsAssign}
                 fileName="control_notas_asignadas"
+                initialSorting={[{ id: "nombre", desc: false }]}
                 groupBy="docente"
                 loading={isLoading}
                 loaderMessage="Cargando notas asignadas..."

@@ -566,6 +566,7 @@ const Slots = () => {
                     data={filteredSlots}
                     columns={TABLE_COLUMNS}
                     fileName={`cupos-${selectedYear}`}
+                    initialSorting={[{ id: "nombre_sede", desc: false }]}
                     pageSize={100}
                   />
                 </div>

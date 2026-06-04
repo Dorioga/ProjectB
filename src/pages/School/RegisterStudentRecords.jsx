@@ -2250,9 +2250,7 @@ const RegisterStudentRecords = () => {
               ? logroOptions.find((l) => String(l.id) === String(selectedLogro))
               : null
           )?.descripcion;
-          console.log("Render cell - modo lectura", {
-            selectedLogroByStudentRef,
-          });
+
           const display =
             logroText ||
             comment ||

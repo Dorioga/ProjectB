@@ -113,6 +113,7 @@ const ManageDBA = () => {
             data={tableData}
             columns={columns}
             fileName="Export_Propositos"
+            initialSorting={[{ id: "nombre_proposito", desc: false }]}
           />
         )}
       </div>

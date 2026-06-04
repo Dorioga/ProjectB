@@ -211,8 +211,8 @@ const DataTable = ({
   }
 
   const handleExport = () => {
-    // Obtener todas las filas filtradas
-    const filteredRows = table.getFilteredRowModel().rows;
+    // Obtener todas las filas filtradas y ordenadas
+    const filteredRows = table.getSortedRowModel().rows;
 
     // Crear los datos para exportar
     const exportData = filteredRows.map((row) => {
@@ -703,4 +703,4 @@ const DataTable = ({
   );
 };
 
-export default DataTable;
+export default React.memo(DataTable);

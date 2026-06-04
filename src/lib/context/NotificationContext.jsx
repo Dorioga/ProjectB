@@ -5,6 +5,7 @@ import {
   useCallback,
   useEffect,
   useRef,
+  useMemo,
 } from "react";
 import { eventBus } from "../../services/ApiClient";
 
@@ -75,15 +76,13 @@ export const NotificationProvider = ({ children }) => {
     return unsubscribe;
   }, [isDuplicate]);
 
+  const value = useMemo(
+    () => ({ notifications, addNotification, removeNotification, clearAll }),
+    [notifications, addNotification, removeNotification, clearAll],
+  );
+
   return (
-    <NotificationContext.Provider
-      value={{
-        notifications,
-        addNotification,
-        removeNotification,
-        clearAll,
-      }}
-    >
+    <NotificationContext.Provider value={value}>
       {children}
     </NotificationContext.Provider>
   );

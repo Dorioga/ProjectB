@@ -252,6 +252,7 @@ const ManageStudent = () => {
           data={tableData || []}
           columns={columns}
           fileName="Export_Students"
+          initialSorting={[{ id: "nombre", desc: false }]}
           mode="Student"
           showDownloadButtons={false}
           loading={isFetching}

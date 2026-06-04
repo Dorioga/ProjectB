@@ -219,6 +219,7 @@ const SearchStudents = () => {
           data={studentsData}
           columns={columns}
           title="Estudiantes del grado"
+          initialSorting={[{ id: "nombre_completo", desc: false }]}
         />
       )}
       {!isLoading && gradeId && studentsData.length === 0 && (

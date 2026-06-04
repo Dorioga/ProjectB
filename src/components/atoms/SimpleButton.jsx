@@ -1,5 +1,19 @@
 import React, { useId } from "react";
-import * as LucideIcons from "lucide-react";
+import {
+  Aperture, ArrowLeftCircle, BookOpen, CalendarCheck, Camera, Check,
+  ClipboardList, CreditCard, Download, DownloadCloud, Edit, ExternalLink,
+  Eye, FileDown, FileText, FileUp, HelpCircle, ListPlus, PanelLeftOpen,
+  PanelRightOpen, Pencil, Plus, RefreshCw, RotateCcw, Save, Search, Send,
+  Trash2, Upload, User, UserSearch, View, X,
+} from "lucide-react";
+
+const ICON_MAP = {
+  Aperture, ArrowLeftCircle, BookOpen, CalendarCheck, Camera, Check,
+  ClipboardList, CreditCard, Download, DownloadCloud, Edit, ExternalLink,
+  Eye, FileDown, FileText, FileUp, HelpCircle, ListPlus, PanelLeftOpen,
+  PanelRightOpen, Pencil, Plus, RefreshCw, RotateCcw, Save, Search, Send,
+  Trash2, Upload, User, UserSearch, View, X,
+};
 const SimpleButton = ({
   msj = null,
   msjtooltip = null,
@@ -18,7 +32,7 @@ const SimpleButton = ({
 }) => {
   const id = useId();
   const tooltipId = `simplebutton-tooltip-${id}`;
-  const IconComponent = LucideIcons[icon] || LucideIcons.User;
+  const IconComponent = ICON_MAP[icon] || User;
 
   // Determinar si el tooltip debe mostrarse
   const tooltipEnabled =

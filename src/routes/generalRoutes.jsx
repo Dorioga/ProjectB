@@ -1,36 +1,63 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import LandingPage from "../pages/LandingPage";
 import Login from "../pages/Login/Login";
 import ForgotPassword from "../pages/Login/ForgotPassword";
 import RequireAuth from "../components/RequireAuth";
 import DashboardTemplate from "../components/templates/DashboardTemplate";
-import DashHome from "../pages/Dashboard/Home";
-import RegisterUser from "../pages/Dashboard/RegisterUser";
-import AllStudent from "../pages/Student/AllStudent";
-import RegisterParents from "../pages/Student/RegisterParents";
-import SearchStudents from "../pages/Student/SearchStudents";
-import ManageLogro from "../pages/Teacher/ManageLogro";
-import ManageTeacher from "../pages/Teacher/ManageTeacher";
-import ManageStudent from "../pages/Student/ManageStudent";
-import ManageSchools from "../pages/School/ManageSchools";
-import ProfileSchoolPage from "../pages/School/ProfileSchoolPage";
-import ManageSedes from "../pages/School/ManageSedes";
-import ManageAsignature from "../pages/School/ManageAsignature";
-import ManageGrade from "../pages/School/ManageGrade";
-import ProfileTeacherPage from "../pages/Teacher/ProfileTeacherPage";
-import ManageAssistance from "../pages/Teacher/ManageAssistance";
-import ControlAsistencia from "../pages/Teacher/ControlAsistencia";
-import ManageNote from "../pages/Teacher/ManageNote";
-import StudentNotes from "../pages/Student/StudentNotes";
-import ProfileStudentPage from "../pages/Student/ProfileStudentPage";
-import ManageObserver from "../pages/Student/ManageObserver";
-import AssistenceStudent from "../pages/Student/AssistenceStudent";
 import ReserveSpot from "../components/templates/ReserveSpot";
-import ManageDBA from "../pages/Teacher/ManageDBA";
-import ManageBoletin from "../pages/School/ManageBoletin";
-import Slots from "../pages/Dashboard/Slots";
-import ControlNotas from "../pages/Dashboard/ControlNotas";
-import ControlAccesoSalida from "../pages/School/ControlAccesoSalida";
+
+import Loader from "../components/atoms/Loader";
+
+const DashHome = lazy(() => import("../pages/Dashboard/Home"));
+const RegisterUser = lazy(() => import("../pages/Dashboard/RegisterUser"));
+const AllStudent = lazy(() => import("../pages/Student/AllStudent"));
+const RegisterParents = lazy(() => import("../pages/Student/RegisterParents"));
+const SearchStudents = lazy(() => import("../pages/Student/SearchStudents"));
+const ManageLogro = lazy(() => import("../pages/Teacher/ManageLogro"));
+const ManageTeacher = lazy(() => import("../pages/Teacher/ManageTeacher"));
+const ManageStudent = lazy(() => import("../pages/Student/ManageStudent"));
+const ManageSchools = lazy(() => import("../pages/School/ManageSchools"));
+const ProfileSchoolPage = lazy(
+  () => import("../pages/School/ProfileSchoolPage"),
+);
+const ManageSedes = lazy(() => import("../pages/School/ManageSedes"));
+const ManageAsignature = lazy(() => import("../pages/School/ManageAsignature"));
+const ManageGrade = lazy(() => import("../pages/School/ManageGrade"));
+const ProfileTeacherPage = lazy(
+  () => import("../pages/Teacher/ProfileTeacherPage"),
+);
+const ManageAssistance = lazy(
+  () => import("../pages/Teacher/ManageAssistance"),
+);
+const ControlAsistencia = lazy(
+  () => import("../pages/Teacher/ControlAsistencia"),
+);
+const ManageNote = lazy(() => import("../pages/Teacher/ManageNote"));
+const StudentNotes = lazy(() => import("../pages/Student/StudentNotes"));
+const ProfileStudentPage = lazy(
+  () => import("../pages/Student/ProfileStudentPage"),
+);
+const ManageObserver = lazy(() => import("../pages/Student/ManageObserver"));
+const AssistenceStudent = lazy(
+  () => import("../pages/Student/AssistenceStudent"),
+);
+const ManageDBA = lazy(() => import("../pages/Teacher/ManageDBA"));
+const ManageBoletin = lazy(() => import("../pages/School/ManageBoletin"));
+const Slots = lazy(() => import("../pages/Dashboard/Slots"));
+const ControlNotas = lazy(() => import("../pages/Dashboard/ControlNotas"));
+const ControlAccesoSalida = lazy(
+  () => import("../pages/School/ControlAccesoSalida"),
+);
+const ProfileNoteSedePage = lazy(
+  () => import("../pages/Teacher/ProfileNoteSedePage"),
+);
+
+const SuspenseFallback = () => (
+  <div className="flex items-center justify-center h-full w-full">
+    <Loader message="Cargando..." />
+  </div>
+);
 
 const GeneralRoutes = () => {
   return (
@@ -49,35 +76,222 @@ const GeneralRoutes = () => {
               </RequireAuth>
             }
           >
-            <Route path="home" element={<DashHome />} />
-            <Route path="registerUser" element={<RegisterUser />} />
-            <Route path="studentSchool" element={<AllStudent />} />
-            <Route path="searchStudents" element={<SearchStudents />} />
-            <Route path="profileSchool" element={<ProfileSchoolPage />} />
-            <Route path="profileTeacher" element={<ProfileTeacherPage />} />
-            <Route path="profileStudent" element={<ProfileStudentPage />} />
-            <Route path="registerParents" element={<RegisterParents />} />
+            <Route
+              path="home"
+              element={
+                <Suspense fallback={<SuspenseFallback />}>
+                  <DashHome />
+                </Suspense>
+              }
+            />
+            <Route
+              path="registerUser"
+              element={
+                <Suspense fallback={<SuspenseFallback />}>
+                  <RegisterUser />
+                </Suspense>
+              }
+            />
+            <Route
+              path="studentSchool"
+              element={
+                <Suspense fallback={<SuspenseFallback />}>
+                  <AllStudent />
+                </Suspense>
+              }
+            />
+            <Route
+              path="searchStudents"
+              element={
+                <Suspense fallback={<SuspenseFallback />}>
+                  <SearchStudents />
+                </Suspense>
+              }
+            />
+            <Route
+              path="profileSchool"
+              element={
+                <Suspense fallback={<SuspenseFallback />}>
+                  <ProfileSchoolPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="profileTeacher"
+              element={
+                <Suspense fallback={<SuspenseFallback />}>
+                  <ProfileTeacherPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="profileStudent"
+              element={
+                <Suspense fallback={<SuspenseFallback />}>
+                  <ProfileStudentPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="registerParents"
+              element={
+                <Suspense fallback={<SuspenseFallback />}>
+                  <RegisterParents />
+                </Suspense>
+              }
+            />
             <Route path="reserveSpot" element={<ReserveSpot />} />
-            <Route path="manageTeacher" element={<ManageTeacher />} />
-            <Route path="manageLogro" element={<ManageLogro />} />
-            <Route path="manageStudent" element={<ManageStudent />} />
-            <Route path="manageSchools" element={<ManageSchools />} />
-            <Route path="manageSedes" element={<ManageSedes />} />
-            <Route path="manageAsignature" element={<ManageAsignature />} />
-            <Route path="manageGrade" element={<ManageGrade />} />
-            <Route path="manageAssistance" element={<ManageAssistance />} />
-            <Route path="controlAsistencia" element={<ControlAsistencia />} />
-            <Route path="manageNote" element={<ManageNote />} />
-            <Route path="studentNotes" element={<StudentNotes />} />
-            <Route path="assistenceStudent" element={<AssistenceStudent />} />
-            <Route path="manageObserver" element={<ManageObserver />} />
-            <Route path="manageDBA" element={<ManageDBA />} />
-            <Route path="manageBoletin" element={<ManageBoletin />} />
-            <Route path="slots" element={<Slots />} />
-            <Route path="controlNotas" element={<ControlNotas />} />
+            <Route
+              path="manageTeacher"
+              element={
+                <Suspense fallback={<SuspenseFallback />}>
+                  <ManageTeacher />
+                </Suspense>
+              }
+            />
+            <Route
+              path="manageLogro"
+              element={
+                <Suspense fallback={<SuspenseFallback />}>
+                  <ManageLogro />
+                </Suspense>
+              }
+            />
+            <Route
+              path="manageStudent"
+              element={
+                <Suspense fallback={<SuspenseFallback />}>
+                  <ManageStudent />
+                </Suspense>
+              }
+            />
+            <Route
+              path="manageSchools"
+              element={
+                <Suspense fallback={<SuspenseFallback />}>
+                  <ManageSchools />
+                </Suspense>
+              }
+            />
+            <Route
+              path="manageSedes"
+              element={
+                <Suspense fallback={<SuspenseFallback />}>
+                  <ManageSedes />
+                </Suspense>
+              }
+            />
+            <Route
+              path="manageAsignature"
+              element={
+                <Suspense fallback={<SuspenseFallback />}>
+                  <ManageAsignature />
+                </Suspense>
+              }
+            />
+            <Route
+              path="manageGrade"
+              element={
+                <Suspense fallback={<SuspenseFallback />}>
+                  <ManageGrade />
+                </Suspense>
+              }
+            />
+            <Route
+              path="manageAssistance"
+              element={
+                <Suspense fallback={<SuspenseFallback />}>
+                  <ManageAssistance />
+                </Suspense>
+              }
+            />
+            <Route
+              path="controlAsistencia"
+              element={
+                <Suspense fallback={<SuspenseFallback />}>
+                  <ControlAsistencia />
+                </Suspense>
+              }
+            />
+            <Route
+              path="manageNote"
+              element={
+                <Suspense fallback={<SuspenseFallback />}>
+                  <ManageNote />
+                </Suspense>
+              }
+            />
+            <Route
+              path="studentNotes"
+              element={
+                <Suspense fallback={<SuspenseFallback />}>
+                  <StudentNotes />
+                </Suspense>
+              }
+            />
+            <Route
+              path="assistenceStudent"
+              element={
+                <Suspense fallback={<SuspenseFallback />}>
+                  <AssistenceStudent />
+                </Suspense>
+              }
+            />
+            <Route
+              path="manageObserver"
+              element={
+                <Suspense fallback={<SuspenseFallback />}>
+                  <ManageObserver />
+                </Suspense>
+              }
+            />
+            <Route
+              path="manageDBA"
+              element={
+                <Suspense fallback={<SuspenseFallback />}>
+                  <ManageDBA />
+                </Suspense>
+              }
+            />
+            <Route
+              path="manageBoletin"
+              element={
+                <Suspense fallback={<SuspenseFallback />}>
+                  <ManageBoletin />
+                </Suspense>
+              }
+            />
+            <Route
+              path="slots"
+              element={
+                <Suspense fallback={<SuspenseFallback />}>
+                  <Slots />
+                </Suspense>
+              }
+            />
+            <Route
+              path="controlNotas"
+              element={
+                <Suspense fallback={<SuspenseFallback />}>
+                  <ControlNotas />
+                </Suspense>
+              }
+            />
             <Route
               path="controlAccesoSalida"
-              element={<ControlAccesoSalida />}
+              element={
+                <Suspense fallback={<SuspenseFallback />}>
+                  <ControlAccesoSalida />
+                </Suspense>
+              }
+            />
+            <Route
+              path="profileNoteSede"
+              element={
+                <Suspense fallback={<SuspenseFallback />}>
+                  <ProfileNoteSedePage />
+                </Suspense>
+              }
             />
           </Route>
         </Routes>

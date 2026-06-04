@@ -69,7 +69,6 @@ const ProfileTeacher = ({
   onReload,
   mode = "modal",
 }) => {
-  console.log("ProfileTeacher renderizado con data:", data);
   const isPageMode = mode === "page";
   const [isEditing, setIsEditing] = useState(Boolean(initialEditing));
   const [form, setForm] = useState(() => buildFormFromData(data));

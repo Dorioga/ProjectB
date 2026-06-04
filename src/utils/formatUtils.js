@@ -292,6 +292,25 @@ export function onlyNumbers(str) {
 }
 
 /**
+ * Genera una abreviatura de un nombre de asignatura.
+ * Si tiene varias palabras, toma las primeras 3 letras de cada una separadas por guión.
+ * Si es una sola palabra, devuelve las primeras 3 letras.
+ * @param {string} nombre
+ * @returns {string}
+ */
+export function abreviarAsignatura(nombre) {
+  const palabras = String(nombre ?? "")
+    .trim()
+    .split(/\s+/);
+  if (palabras.length > 1) {
+    return palabras.map((p) => p.slice(0, 3).toUpperCase()).join("-");
+  }
+  return String(nombre ?? "")
+    .slice(0, 3)
+    .toUpperCase();
+}
+
+/**
  * Comprueba si la fecha actual es posterior a la fecha de cierre.
  * @param {string} endDate - Fecha en formato 'YYYY-MM-DD'
  * @returns {boolean} - true si hoy es después de la fecha de cierre

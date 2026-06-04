@@ -6,11 +6,29 @@ import {
   getStudentGuardian,
 } from "../../services/studentService";
 import useSchool from "../../lib/hooks/useSchool";
+import { abreviarAsignatura } from "../../utils/formatUtils";
 import PeriodSelector from "../atoms/PeriodSelector";
 import SimpleButton from "../atoms/SimpleButton";
 import useAuth from "../../lib/hooks/useAuth";
 
 /* ── Helpers ── */
+const cleanPeriodoLabel = (label) => {
+  if (!label) return "-";
+  return label.replace(/Periodo\s*/i, "").trim() || "-";
+};
+
+const buildRankingMap = (data) => {
+  const m = new Map();
+  for (const row of data ?? []) {
+    if (Array.isArray(row.ranking)) {
+      for (const rank of row.ranking) {
+        m.set(String(rank.id_periodo), rank);
+      }
+    }
+  }
+  return m;
+};
+
 const formatDate = (isoDate) => {
   if (!isoDate) return "-";
   const d = new Date(isoDate);
@@ -86,19 +104,6 @@ const S = {
     textOverflow: "ellipsis",
     wordBreak: "break-word",
   },
-};
-
-/* ── Abreviatura de nombre de asignatura ── */
-const abreviarAsignatura = (nombre) => {
-  const palabras = String(nombre ?? "")
-    .trim()
-    .split(/\s+/);
-  if (palabras.length > 1) {
-    return palabras.map((p) => p.slice(0, 3).toUpperCase()).join("-");
-  }
-  return String(nombre ?? "")
-    .slice(0, 3)
-    .toUpperCase();
 };
 
 /* ── Helpers de nota efectiva (recuperación vs periodo) ── */
@@ -206,7 +211,11 @@ const useBoletinProcessed = (data, periodId) => {
         per.observacion_enfasis = r.observacion_enfasis;
       }
     }
-    const result = Array.from(m.values());
+    const result = Array.from(m.values()).sort((a, b) =>
+      a.nombre_asignatura_grado.localeCompare(b.nombre_asignatura_grado, "es", {
+        sensitivity: "base",
+      }),
+    );
     for (const asig of result) {
       for (const [, per] of asig.periodos) {
         per.nota = _computeNotaEfectiva(per.nota, per.recuperacion);
@@ -337,7 +346,11 @@ function computeBoletinData(data, periodId) {
       per.observacion_enfasis = r.observacion_enfasis;
     }
   }
-  const asignaturas = Array.from(asigMap.values());
+  const asignaturas = Array.from(asigMap.values()).sort((a, b) =>
+    a.nombre_asignatura_grado.localeCompare(b.nombre_asignatura_grado, "es", {
+      sensitivity: "base",
+    }),
+  );
   for (const asig of asignaturas) {
     for (const [, per] of asig.periodos) {
       per.nota = _computeNotaEfectiva(per.nota, per.recuperacion);
@@ -760,31 +773,31 @@ async function drawPDFHeader(pdf, info, title, options = {}) {
 
   const textCenter = pageW / 2;
 
-  pdf.setFontSize(12);
+  pdf.setFontSize(13);
   pdf.setFont("helvetica", "bold");
   pdf.text((info.nombre_institucion ?? "-").toUpperCase(), textCenter, y + 5, {
     align: "center",
   });
   y += 7;
-  pdf.setFontSize(8);
+  pdf.setFontSize(9);
   pdf.setFont("helvetica", "normal");
   pdf.text(`NIT: ${info.nit ?? "-"}`, textCenter, y + 3, { align: "center" });
   y += 5;
   if (info.membrete) {
-    pdf.setFontSize(8);
+    pdf.setFontSize(9);
     pdf.setFont("helvetica", "normal");
     pdf.text(String(info.membrete), textCenter, y + 3, { align: "center" });
     y += 5;
   }
   if (info.cod_dane) {
-    pdf.setFontSize(8);
+    pdf.setFontSize(9);
     pdf.setFont("helvetica", "normal");
     pdf.text(`Cód. DANE: ${info.cod_dane}`, textCenter, y + 3, {
       align: "center",
     });
     y += 5;
   }
-  pdf.setFontSize(9);
+  pdf.setFontSize(10);
   pdf.setFont("helvetica", "bold");
   pdf.text(
     `${info.nombre_sede ?? "-"} — ${info.sede_tip ?? "-"}`,
@@ -794,7 +807,7 @@ async function drawPDFHeader(pdf, info, title, options = {}) {
     { align: "center" },
   );
   y += 5;
-  pdf.setFontSize(8);
+  pdf.setFontSize(9);
   pdf.text(
     `Fecha: ${formatDate(new Date().toISOString())}`,
     pageW - margin,
@@ -811,7 +824,7 @@ async function drawPDFHeader(pdf, info, title, options = {}) {
       .filter(Boolean)
       .join(" ");
     if (_nombreCompleto) {
-      pdf.setFontSize(10);
+      pdf.setFontSize(11);
       pdf.setFont("helvetica", "bold");
       pdf.setTextColor(0, 0, 0);
       pdf.text(_nombreCompleto.toUpperCase(), textCenter, y + 3, {
@@ -821,7 +834,7 @@ async function drawPDFHeader(pdf, info, title, options = {}) {
     }
     const _docId = info.numero_identificacion ?? info.identificacion ?? null;
     if (_docId) {
-      pdf.setFontSize(8);
+      pdf.setFontSize(9);
       pdf.setFont("helvetica", "normal");
       pdf.text(`Doc: ${_docId}`, textCenter, y + 3, { align: "center" });
       y += 4;
@@ -833,7 +846,7 @@ async function drawPDFHeader(pdf, info, title, options = {}) {
       .filter(Boolean)
       .join("  —  ");
     if (_jornGrupo) {
-      pdf.setFontSize(8);
+      pdf.setFontSize(9);
       pdf.setFont("helvetica", "normal");
       pdf.text(_jornGrupo, textCenter, y + 3, { align: "center" });
       y += 4;
@@ -851,7 +864,7 @@ async function drawPDFHeader(pdf, info, title, options = {}) {
   y += 4;
 
   /* Título */
-  pdf.setFontSize(11);
+  pdf.setFontSize(12);
   pdf.setFont("helvetica", "bold");
   pdf.text(title, pageW / 2, y + 4, { align: "center" });
   y += 10;
@@ -871,6 +884,7 @@ async function generateBoletinPDF(
   resumenEstado,
   escalas,
   meta,
+  rankingMap,
 ) {
   const pdf = new jsPDF({
     orientation: "portrait",
@@ -898,7 +912,7 @@ async function generateBoletinPDF(
 
   /* ── Tabla 3 cols: Estudiante | Periodo | Promedio ── */
   {
-    const studentTableH = 8;
+    const studentTableH = 10;
     addPageIfNeeded(studentTableH + 2);
     const col1W = contentW * 0.38;
     const col2W = contentW * 0.16;
@@ -910,11 +924,10 @@ async function generateBoletinPDF(
         .filter(Boolean)
         .join(" ") || "-";
     const gradoTexto = info.grado ?? "-";
-    const periodoNombre = periodos[0]?.nombre ?? "-";
+    const periodoNombre = cleanPeriodoLabel(periodos[0]?.nombre);
     const promTexto = promedioGeneral !== null ? String(promedioGeneral) : "-";
-    const rankingEntry = Array.isArray(info.ranking)
-      ? info.ranking.find((r) => String(r.id_periodo) === String(meta.periodId))
-      : null;
+    const rankingEntry = rankingMap?.get(String(meta.periodId)) ?? null;
+
     const posicionTexto = String(
       rankingEntry?.posicion ?? info.posicion ?? "-",
     );
@@ -929,7 +942,7 @@ async function generateBoletinPDF(
 
     const drawStudentCell = (label, value, cx, cw) => {
       const textY = y + studentTableH / 2 + 1.5;
-      pdf.setFontSize(7);
+      pdf.setFontSize(8);
       pdf.setFont("helvetica", "bold");
       pdf.setTextColor(0, 0, 0);
       pdf.text(label, cx + 2, textY);
@@ -954,7 +967,7 @@ async function generateBoletinPDF(
     y += studentTableH;
 
     // Fila: Nombre acudiente
-    const acudienteRowH = 8;
+    const acudienteRowH = 9;
     addPageIfNeeded(acudienteRowH);
     const acudienteW = contentW - col5W;
     pdf.setDrawColor(17, 24, 39);
@@ -962,7 +975,7 @@ async function generateBoletinPDF(
     pdf.rect(margin, y, acudienteW, acudienteRowH, "D");
     {
       const textY = y + acudienteRowH / 2 + 1.5;
-      pdf.setFontSize(7);
+      pdf.setFontSize(8);
       pdf.setFont("helvetica", "bold");
       pdf.setTextColor(0, 0, 0);
       const acudienteLabel = "NOMBRE ACUDIENTE: ";
@@ -986,14 +999,14 @@ async function generateBoletinPDF(
       pdf.setDrawColor(17, 24, 39);
       pdf.setLineWidth(0.4);
       pdf.rect(posX, y - studentTableH, col5W, totalH, "D");
-      pdf.setFontSize(7);
+      pdf.setFontSize(8);
       pdf.setFont("helvetica", "bold");
       pdf.setTextColor(0, 0, 0);
       pdf.text("Puesto", posX + col5W / 2, y - studentTableH + totalH * 0.35, {
         align: "center",
       });
       pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(9);
+      pdf.setFontSize(10);
       let pVal = posicionTexto;
       while (pdf.getTextWidth(pVal) > col5W - 2 && pVal.length > 1)
         pVal = pVal.slice(0, -1);
@@ -1006,7 +1019,7 @@ async function generateBoletinPDF(
 
   /* ── Escala Valorativa ── */
   {
-    const escalaRowH = 7;
+    const escalaRowH = 8;
     addPageIfNeeded(escalaRowH * 2 + 2);
 
     const now = new Date();
@@ -1025,7 +1038,7 @@ async function generateBoletinPDF(
     pdf.setDrawColor(0, 0, 0);
     pdf.setLineWidth(0.3);
     pdf.rect(margin, y, contentW, escalaRowH, "D");
-    pdf.setFontSize(8);
+    pdf.setFontSize(9);
     pdf.setFont("helvetica", "bold");
     pdf.setTextColor(0, 0, 0);
     pdf.text(
@@ -1040,7 +1053,7 @@ async function generateBoletinPDF(
     // Fila 2: columnas horizontales por nivel + columna única Umbral
     const umbralColW = contentW * 0.14;
     const lvlColW = (contentW - umbralColW) / (levels.length || 1);
-    pdf.setFontSize(6.5);
+    pdf.setFontSize(7.5);
     for (let i = 0; i < levels.length; i++) {
       const { label, range } = levels[i];
       const cx = margin + i * lvlColW;
@@ -1108,13 +1121,13 @@ async function generateBoletinPDF(
     return x;
   };
 
-  const rowH = 6;
-  const subHeaderH = 5;
+  const rowH = 7;
+  const subHeaderH = 6;
 
   const drawCell = (text, col, cy, h, opts = {}) => {
     const {
       bold = false,
-      fontSize = 6,
+      fontSize = 7,
       align = "center",
       color = [0, 0, 0],
       bg = null,
@@ -1150,7 +1163,7 @@ async function generateBoletinPDF(
   const drawCellMultiline = (text, col, cy, h, opts = {}) => {
     const {
       bold = false,
-      fontSize = 5,
+      fontSize = 6,
       color = [0, 0, 0],
       bg = null,
       align = "left",
@@ -1198,25 +1211,25 @@ async function generateBoletinPDF(
     const base = 1 + pi * 4;
     drawCell("Nota", base, y, rowH + subHeaderH, {
       bold: true,
-      fontSize: 5,
+      fontSize: 6,
       color: subColor,
       bg: subBg,
     });
     drawCell("Escala", base + 1, y, rowH + subHeaderH, {
       bold: true,
-      fontSize: 5,
+      fontSize: 6,
       color: subColor,
       bg: subBg,
     });
     drawCell("Estado", base + 2, y, rowH + subHeaderH, {
       bold: true,
-      fontSize: 5,
+      fontSize: 6,
       color: subColor,
       bg: subBg,
     });
     drawCell("Logro", base + 3, y, rowH + subHeaderH, {
       bold: true,
-      fontSize: 5,
+      fontSize: 9,
       color: subColor,
       bg: subBg,
     });
@@ -1234,7 +1247,7 @@ async function generateBoletinPDF(
       const per = asig.periodos.get(periodos[pi].id);
       {
         const logroColW = colWidths[1 + pi * 4 + 3];
-        const lineH = 5 * 0.45;
+        const lineH = 9 * 0.45;
         const logros = per?.logros ?? [];
         let logroHeight = 2; // padding top
         if (logros.length === 0) {
@@ -1243,12 +1256,12 @@ async function generateBoletinPDF(
           for (const logro of logros) {
             const sep = logro.indexOf(": ");
             if (sep === -1) {
-              pdf.setFontSize(5);
+              pdf.setFontSize(9);
               pdf.setFont("helvetica", "normal");
               logroHeight +=
                 pdf.splitTextToSize(logro, logroColW - 1.5).length * lineH;
             } else {
-              pdf.setFontSize(5);
+              pdf.setFontSize(9);
               pdf.setFont("helvetica", "bold");
               logroHeight +=
                 pdf.splitTextToSize(logro.slice(0, sep), logroColW - 1.5)
@@ -1261,20 +1274,20 @@ async function generateBoletinPDF(
             logroHeight += lineH * 0.5; // espaciado entre logros
           }
         }
-        logroHeight += 7; // reserva para "Obs. énfasis:"
+        logroHeight += 10; // reserva para "Obs. énfasis:"
         if (logroHeight > computedRowH) computedRowH = logroHeight;
       }
       const estadoText = per?.estado || "-";
       const estadoColW = colWidths[1 + pi * 4 + 2];
       const estadoLines = pdf.splitTextToSize(estadoText, estadoColW - 1.5);
-      const estadoNeeded = estadoLines.length * (5 * 0.45) + 2;
+      const estadoNeeded = estadoLines.length * (6 * 0.45) + 2;
       if (estadoNeeded > computedRowH) computedRowH = estadoNeeded;
     }
     addPageIfNeeded(computedRowH);
 
     drawCell(asig.nombre_asignatura_grado, 0, y, computedRowH, {
       bold: true,
-      fontSize: 6,
+      fontSize: 7,
       align: "center",
       bg: rowBg,
     });
@@ -1307,11 +1320,11 @@ async function generateBoletinPDF(
         pdf.setLineWidth(0.3);
         pdf.rect(cx, y, w, computedRowH, "D");
         const logros = per?.logros ?? [];
-        const lineH = 5 * 0.45;
-        const obsY = y + computedRowH - 6;
+        const lineH = 9 * 0.45;
+        const obsY = y + computedRowH - 9;
         const logroMaxY = obsY - 1;
         if (logros.length === 0) {
-          pdf.setFontSize(5);
+          pdf.setFontSize(9);
           pdf.setFont("helvetica", "normal");
           pdf.setTextColor(0, 0, 0);
           pdf.text("-", cx + 1, y + 4);
@@ -1320,7 +1333,7 @@ async function generateBoletinPDF(
           outer: for (const logro of logros) {
             const sep = logro.indexOf(": ");
             if (sep === -1) {
-              pdf.setFontSize(5);
+              pdf.setFontSize(9);
               pdf.setFont("helvetica", "normal");
               pdf.setTextColor(0, 0, 0);
               for (const ln of pdf.splitTextToSize(logro, w - 1.5)) {
@@ -1331,7 +1344,7 @@ async function generateBoletinPDF(
             } else {
               const tipo = logro.slice(0, sep);
               const desc = logro.slice(sep + 2);
-              pdf.setFontSize(5);
+              pdf.setFontSize(9);
               pdf.setFont("helvetica", "bold");
               pdf.setTextColor(0, 0, 0);
               for (const ln of pdf.splitTextToSize(tipo, w - 1.5)) {
@@ -1355,7 +1368,7 @@ async function generateBoletinPDF(
           pdf.setDrawColor(0, 0, 0);
           pdf.setLineWidth(0.15);
           pdf.line(cx + 1, obsY, cx + w - 1, obsY);
-          pdf.setFontSize(5);
+          pdf.setFontSize(9);
           pdf.setFont("helvetica", "bold");
           pdf.setTextColor(0, 0, 0);
           const obsLabel = "Obs. énfasis:";
@@ -1371,7 +1384,7 @@ async function generateBoletinPDF(
               let obsTextY = obsY + 3.5;
               for (const ol of obsLines) {
                 pdf.text(ol, cx + 1 + obsLabelW, obsTextY);
-                obsTextY += 5 * 0.45;
+                obsTextY += 9 * 0.45;
               }
             }
           }
@@ -1393,7 +1406,7 @@ async function generateBoletinPDF(
     addPageIfNeeded(rowH);
     pdf.rect(margin, y, labelColW, rowH, "D");
     pdf.rect(margin + labelColW, y, contentColW, rowH, "D");
-    pdf.setFontSize(7);
+    pdf.setFontSize(8);
     pdf.setFont("helvetica", "bold");
     pdf.setTextColor(0, 0, 0);
     pdf.text(label, margin + 2, y + 5);
@@ -1408,14 +1421,11 @@ async function generateBoletinPDF(
     ).sort((a, b) => Number(a) - Number(b));
 
     // Ranking por periodo
-    const rankingMapPDF = new Map();
-    if (Array.isArray(info.ranking)) {
-      for (const r of info.ranking) rankingMapPDF.set(String(r.id_periodo), r);
-    }
+    const rankingMapPDF = rankingMap ?? new Map();
 
-    const hdrH = 5;
-    const subHdrH = 5;
-    const dataRowH = 5;
+    const hdrH = 6;
+    const subHdrH = 6;
+    const dataRowH = 6;
     const totalH = hdrH + subHdrH + todosLosPeriodosIds.length * dataRowH;
     addPageIfNeeded(totalH + 2);
 
@@ -1430,7 +1440,7 @@ async function generateBoletinPDF(
 
     // Fila título
     pdf.rect(margin, y, contentW, hdrH, "D");
-    pdf.setFontSize(6.5);
+    pdf.setFontSize(7.5);
     pdf.setFont("helvetica", "bold");
     pdf.setTextColor(0, 0, 0);
     pdf.text(
@@ -1443,7 +1453,7 @@ async function generateBoletinPDF(
 
     // Fila sub-cabecera: PER. | asig1 | asig2 | ... | Prom. | Puesto
     pdf.rect(margin, y, perColW, subHdrH, "D");
-    pdf.setFontSize(5);
+    pdf.setFontSize(6);
     pdf.setFont("helvetica", "bold");
     pdf.text("PER.", margin + perColW / 2, y + subHdrH / 2 + 1.5, {
       align: "center",
@@ -1563,7 +1573,7 @@ async function generateBoletinPDF(
   const signLineW = 60;
   const signX = margin + (contentW - signLineW) / 2;
   pdf.line(signX, y + firmaRowH - 6, signX + signLineW, y + firmaRowH - 6);
-  pdf.setFontSize(7);
+  pdf.setFontSize(8);
   pdf.setFont("helvetica", "bold");
   pdf.setTextColor(0, 0, 0);
   pdf.text(
@@ -1892,14 +1902,8 @@ const BoletinSelector = ({
     boletinData?.find((r) => r.nombre_institucion != null) ??
     boletinData?.[0] ??
     {};
-  const rankingMap = useMemo(() => {
-    const m = new Map();
-    const rankingArr = rawInfo?.ranking;
-    if (Array.isArray(rankingArr)) {
-      for (const r of rankingArr) m.set(String(r.id_periodo), r);
-    }
-    return m;
-  }, [rawInfo]);
+  const rankingMap = useMemo(() => buildRankingMap(boletinData), [boletinData]);
+
   const selectedGuardianStudent = isGuardian
     ? guardianStudents.find(
         (s) => String(s.id_estudiante) === String(selectedGuardianStudentId),
@@ -1993,6 +1997,7 @@ const BoletinSelector = ({
           resumenEstado,
           escalas,
           metaObj,
+          rankingMap,
         );
       }
     } finally {
@@ -2064,7 +2069,17 @@ const BoletinSelector = ({
               promedioGeneral: pg,
               resumenEstado: re,
             } = computeBoletinData(rows, periodId);
-            await generateBoletinPDF(info0, p, a, pg, re, escalas0, metaObj);
+            const rankMap0 = buildRankingMap(rows);
+            await generateBoletinPDF(
+              info0,
+              p,
+              a,
+              pg,
+              re,
+              escalas0,
+              metaObj,
+              rankMap0,
+            );
           }
         }
       } catch (err) {
@@ -2457,7 +2472,8 @@ const BoletinSelector = ({
                             width: "18%",
                           }}
                         >
-                          <strong>PERIODO:</strong> {periodos[0]?.nombre ?? "-"}
+                          <strong>PERIODO:</strong>{" "}
+                          {cleanPeriodoLabel(periodos[0]?.nombre)}
                         </td>
                         <td
                           style={{
