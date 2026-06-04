@@ -325,7 +325,7 @@ async function exportNotesGradesPDF(data, opts = {}) {
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
-const ProfileNoteSede = () => {
+const ProfileNoteSede = ({ Modal } = {}) => {
   const {
     rol,
     idSede,
@@ -518,7 +518,7 @@ const ProfileNoteSede = () => {
   }, [tableData]);
 
   // ── Export PDF ────────────────────────────────────────────────────────────
-    const handleExportPDF = useCallback(async () => {
+  const handleExportPDF = useCallback(async () => {
     if (!tableData.length) {
       notify("No hay datos para exportar.", "warning");
       return;
@@ -544,13 +544,15 @@ const ProfileNoteSede = () => {
   ]);
 
   return (
-    <div className="flex flex-col gap-4 p-4">
-      <div className="w-full flex justify-between items-center bg-primary text-surface p-3 rounded-lg">
-        <h2 className="text-2xl font-bold">Notas por Grado</h2>
-      </div>
+    <div>
+      {!Modal ? (
+        <div className="w-full flex justify-between items-center bg-primary text-surface p-3 rounded-lg">
+          <h2 className="text-2xl font-bold">Notas por Grado</h2>
+        </div>
+      ) : null}
 
       {/* ── Filtros ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mt-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 py-4">
         {/* Sede */}
         <SedeSelect
           value={sedeId}

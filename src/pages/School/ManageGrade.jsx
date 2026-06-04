@@ -11,6 +11,7 @@ import JourneySelect from "../../components/atoms/JourneySelect";
 import SedeSelect from "../../components/atoms/SedeSelect";
 import { useNotify } from "../../lib/hooks/useNotify";
 import ProfileGrade from "../../components/molecules/ProfileGrade";
+import ProfileNoteSede from "../../components/molecules/ProfileNoteSede";
 import tourManageGrade from "../../tour/tourManageGrade";
 
 const ManageGrade = () => {
@@ -22,6 +23,7 @@ const ManageGrade = () => {
   const [tableData, setTableData] = useState([]);
   const [fetchError, setFetchError] = useState(null);
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedGrade, setSelectedGrade] = useState(null);
@@ -179,8 +181,16 @@ const ManageGrade = () => {
         </div>
         <div
           id="tour-mg-add-btn"
-          className=" grid grid-cols-2 col-span-2 xl:col-span-2 gap-2"
+          className=" grid grid-cols-3 col-span-2 xl:col-span-2 gap-2"
         >
+          <SimpleButton
+            onClick={() => setIsNotesModalOpen(true)}
+            msj="Consultar notas"
+            icon="Search"
+            bg="bg-secondary"
+            text="text-surface"
+            noRounded={false}
+          />
           <SimpleButton
             onClick={() => setIsAddOpen(true)}
             msj="Registrar grado"
@@ -258,6 +268,16 @@ const ManageGrade = () => {
               fetchGrades();
             }}
           />
+        </Modal>
+
+        {/* Modal Consultar Notas */}
+        <Modal
+          isOpen={isNotesModalOpen}
+          onClose={() => setIsNotesModalOpen(false)}
+          title="Consultar notas por grado"
+          size="7xl"
+        >
+          <ProfileNoteSede Modal />
         </Modal>
 
         {/* Modal Editar */}
