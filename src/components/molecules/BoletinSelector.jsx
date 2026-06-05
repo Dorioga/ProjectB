@@ -150,12 +150,16 @@ const useBoletinProcessed = (data, periodId) => {
           nombre_asignatura_grado: r.nombre_asignatura_grado ?? key,
           tiene_nota: r.tiene_nota,
           nombre_docente: r.nombre_docente || "-",
+          intensidad_horaria: r.intensidad_horaria,
           definitiva: r.definitiva || "-",
           estado_final: r.estado_final || "-",
           periodos: new Map(),
         });
       }
       const asig = m.get(key);
+      if (asig.intensidad_horaria == null && r.intensidad_horaria != null) {
+        asig.intensidad_horaria = r.intensidad_horaria;
+      }
       if (r.definitiva) {
         const newDef = parseFloat(r.definitiva);
         const curDef = parseFloat(asig.definitiva);
@@ -291,12 +295,16 @@ function computeBoletinData(data, periodId) {
         nombre_asignatura_grado: r.nombre_asignatura_grado ?? key,
         tiene_nota: r.tiene_nota,
         nombre_docente: r.nombre_docente || "-",
+        intensidad_horaria: r.intensidad_horaria,
         definitiva: r.definitiva || "-",
         estado_final: r.estado_final || "-",
         periodos: new Map(),
       });
     }
     const asig = asigMap.get(key);
+    if (asig.intensidad_horaria == null && r.intensidad_horaria != null) {
+      asig.intensidad_horaria = r.intensidad_horaria;
+    }
     if (r.definitiva) {
       const newDef = parseFloat(r.definitiva);
       const curDef = parseFloat(asig.definitiva);
@@ -524,9 +532,9 @@ const BoletinTransicionView = ({ boletinData, info }) => {
               Cód. DANE: {info.cod_dane}
             </p>
           )}
-          {info.nombre_sede && (
+          {info.alias && (
             <p style={{ margin: "2px 0", fontWeight: "600", fontSize: "11px" }}>
-              {info.nombre_sede}
+              {info.alias}
               {info.sede_tip ? ` — ${info.sede_tip}` : ""}
             </p>
           )}
@@ -797,16 +805,17 @@ async function drawPDFHeader(pdf, info, title, options = {}) {
     });
     y += 5;
   }
-  pdf.setFontSize(10);
-  pdf.setFont("helvetica", "bold");
-  pdf.text(
-    `${info.nombre_sede ?? "-"} — ${info.sede_tip ?? "-"}`,
-
-    textCenter,
-    y + 3,
-    { align: "center" },
-  );
-  y += 5;
+  if (info.alias) {
+    pdf.setFontSize(10);
+    pdf.setFont("helvetica", "bold");
+    pdf.text(
+      `${info.alias} — ${info.sede_tip ?? "-"}`,
+      textCenter,
+      y + 3,
+      { align: "center" },
+    );
+    y += 5;
+  }
   pdf.setFontSize(9);
   pdf.text(
     `Fecha: ${formatDate(new Date().toISOString())}`,
@@ -857,12 +866,6 @@ async function drawPDFHeader(pdf, info, title, options = {}) {
     pdf.addImage(logoData, "JPEG", logoX, margin, logoSize, logoSize);
   }
 
-  /* línea separadora */
-  pdf.setDrawColor(0, 0, 0);
-  pdf.setLineWidth(0.5);
-  pdf.line(margin, y, pageW - margin, y);
-  y += 4;
-
   /* Título */
   pdf.setFontSize(12);
   pdf.setFont("helvetica", "bold");
@@ -910,111 +913,81 @@ async function generateBoletinPDF(
     return false;
   };
 
-  /* ── Tabla 3 cols: Estudiante | Periodo | Promedio ── */
+  /* ── Información del estudiante ── */
   {
-    const studentTableH = 10;
-    addPageIfNeeded(studentTableH + 2);
-    const col1W = contentW * 0.38;
-    const col2W = contentW * 0.16;
-    const col3W = contentW * 0.14;
-    const col4W = contentW * 0.16;
-    const col5W = contentW - col1W - col2W - col3W - col4W; // ~16%, fill remaining
+    const titleH = 8;
+    const rowH = 6;
+    const totalH = titleH + rowH * 2;
+    addPageIfNeeded(totalH + 2);
+
     const nombreCompleto =
       [info.nombre_estudiante, info.apellido_estudiante]
         .filter(Boolean)
         .join(" ") || "-";
     const gradoTexto = info.grado ?? "-";
     const periodoNombre = cleanPeriodoLabel(periodos[0]?.nombre);
+    const anioTexto = String(meta.year ?? new Date().getFullYear());
     const promTexto = promedioGeneral !== null ? String(promedioGeneral) : "-";
     const rankingEntry = rankingMap?.get(String(meta.periodId)) ?? null;
-
     const posicionTexto = String(
       rankingEntry?.posicion ?? info.posicion ?? "-",
     );
 
-    pdf.setDrawColor(17, 24, 39);
-    pdf.setLineWidth(0.4);
-    pdf.rect(margin, y, col1W, studentTableH, "D");
-    pdf.rect(margin + col1W, y, col2W, studentTableH, "D");
-    pdf.rect(margin + col1W + col2W, y, col3W, studentTableH, "D");
-    pdf.rect(margin + col1W + col2W + col3W, y, col4W, studentTableH, "D");
-    // col5W (Posición) se dibuja después abarcando las 2 filas
+    const estudianteW = (contentW / 5) * 2;
+    const acudienteW = (contentW / 5) * 2;
+    const anioW = contentW / 5;
+    const colW = contentW / 4;
 
-    const drawStudentCell = (label, value, cx, cw) => {
-      const textY = y + studentTableH / 2 + 1.5;
+    // Outer border
+    pdf.setDrawColor(0, 0, 0);
+    pdf.setLineWidth(0.4);
+    pdf.rect(margin, y, contentW, totalH, "D");
+
+    // Row 1: Title
+    pdf.setFontSize(9);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(0, 0, 0);
+    pdf.text("INFORME EVALUATIVO", margin + contentW / 2, y + titleH / 2 + 1.5, {
+      align: "center",
+    });
+
+    const drawFlexRowCell = (label, value, cx, cw, yPos, h) => {
       pdf.setFontSize(8);
+      const cy = yPos + h / 2 + 1.5;
       pdf.setFont("helvetica", "bold");
       pdf.setTextColor(0, 0, 0);
-      pdf.text(label, cx + 2, textY);
+      const displayLabel = label + " ";
+      pdf.text(displayLabel, cx + 2, cy);
+      const labelW = pdf.getTextWidth(displayLabel);
       pdf.setFont("helvetica", "normal");
-      const labelW = pdf.getTextWidth(label);
-      let val = value;
-      const maxW = cw - labelW - 4;
-      while (pdf.getTextWidth(val) > maxW && val.length > 1)
+      let val = String(value ?? "-");
+      const maxValW = cw - labelW - 4;
+      while (pdf.getTextWidth(val) > maxValW && val.length > 1)
         val = val.slice(0, -1);
-      pdf.text(val, cx + 2 + labelW, textY);
+      pdf.text(val, cx + 2 + labelW, cy);
     };
 
-    drawStudentCell("ESTUDIANTE: ", nombreCompleto, margin, col1W);
-    drawStudentCell("GRADO: ", gradoTexto, margin + col1W, col2W);
-    drawStudentCell("PERIODO: ", periodoNombre, margin + col1W + col2W, col3W);
-    drawStudentCell(
-      "PROMEDIO: ",
-      promTexto,
-      margin + col1W + col2W + col3W,
-      col4W,
+    // Row 2: Estudiante (2) | Acudiente (2) | Año (1)
+    const row2Y = y + titleH;
+    drawFlexRowCell("ESTUDIANTE:", nombreCompleto, margin, estudianteW, row2Y, rowH);
+    drawFlexRowCell(
+      "ACUDIENTE:",
+      info.nombre_acudiente ?? "-",
+      margin + estudianteW,
+      acudienteW,
+      row2Y,
+      rowH,
     );
-    y += studentTableH;
+    drawFlexRowCell("AÑO:", anioTexto, margin + estudianteW + acudienteW, anioW, row2Y, rowH);
 
-    // Fila: Nombre acudiente
-    const acudienteRowH = 9;
-    addPageIfNeeded(acudienteRowH);
-    const acudienteW = contentW - col5W;
-    pdf.setDrawColor(17, 24, 39);
-    pdf.setLineWidth(0.4);
-    pdf.rect(margin, y, acudienteW, acudienteRowH, "D");
-    {
-      const textY = y + acudienteRowH / 2 + 1.5;
-      pdf.setFontSize(8);
-      pdf.setFont("helvetica", "bold");
-      pdf.setTextColor(0, 0, 0);
-      const acudienteLabel = "NOMBRE ACUDIENTE: ";
-      pdf.text(acudienteLabel, margin + 2, textY);
-      pdf.setFont("helvetica", "normal");
-      const acudienteLabelW = pdf.getTextWidth(acudienteLabel);
-      let acudienteVal = String(info.nombre_acudiente ?? "-");
-      const acudienteMaxW = acudienteW - acudienteLabelW - 4;
-      while (
-        pdf.getTextWidth(acudienteVal) > acudienteMaxW &&
-        acudienteVal.length > 1
-      )
-        acudienteVal = acudienteVal.slice(0, -1);
-      pdf.text(acudienteVal, margin + 2 + acudienteLabelW, textY);
-    }
+    // Row 3: Grado | Periodo | Promedio | Puesto (inline flex-row)
+    const row3Y = y + titleH + rowH;
+    drawFlexRowCell("GRADO:", gradoTexto, margin, colW, row3Y, rowH);
+    drawFlexRowCell("PERIODO:", periodoNombre, margin + colW, colW, row3Y, rowH);
+    drawFlexRowCell("PROMEDIO:", promTexto, margin + colW * 2, colW, row3Y, rowH);
+    drawFlexRowCell("PUESTO:", posicionTexto, margin + colW * 3, colW, row3Y, rowH);
 
-    // Celda Posición abarcando ambas filas
-    {
-      const posX = margin + col1W + col2W + col3W + col4W;
-      const totalH = studentTableH + acudienteRowH;
-      pdf.setDrawColor(17, 24, 39);
-      pdf.setLineWidth(0.4);
-      pdf.rect(posX, y - studentTableH, col5W, totalH, "D");
-      pdf.setFontSize(8);
-      pdf.setFont("helvetica", "bold");
-      pdf.setTextColor(0, 0, 0);
-      pdf.text("Puesto", posX + col5W / 2, y - studentTableH + totalH * 0.35, {
-        align: "center",
-      });
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(10);
-      let pVal = posicionTexto;
-      while (pdf.getTextWidth(pVal) > col5W - 2 && pVal.length > 1)
-        pVal = pVal.slice(0, -1);
-      pdf.text(pVal, posX + col5W / 2, y - studentTableH + totalH * 0.72, {
-        align: "center",
-      });
-    }
-    y += acudienteRowH;
+    y += totalH + 1;
   }
 
   /* ── Escala Valorativa ── */
@@ -1036,7 +1009,7 @@ async function generateBoletinPDF(
 
     // Fila 1: título
     pdf.setDrawColor(0, 0, 0);
-    pdf.setLineWidth(0.3);
+    pdf.setLineWidth(0.4);
     pdf.rect(margin, y, contentW, escalaRowH, "D");
     pdf.setFontSize(9);
     pdf.setFont("helvetica", "bold");
@@ -1092,11 +1065,12 @@ async function generateBoletinPDF(
   /* ── Tabla de notas ── */
   // Columnas: Asignatura | [por cada periodo: Nota, Recup, Escala, Estado, Logro]
   const periodCols = periodos.length * 5;
-  const fixedCols = 1; // Asignatura
+  const fixedCols = 2; // Asignatura + IH
 
   // Anchos proporcionales
-  const asigW = contentW * 0.18;
-  const remainW = contentW - asigW;
+  const asigW = contentW * 0.16;
+  const ihW = contentW * 0.04;
+  const remainW = contentW - asigW - ihW;
   // Subcolumnas: Nota, Escala usan smallSubW; Estado usa estadoSubW más ancho; Logro ocupa el resto
   const smallSubW =
     periodos.length > 0 ? (remainW * 0.2) / (periodos.length * 2) : 0;
@@ -1110,7 +1084,7 @@ async function generateBoletinPDF(
         periodos.length
       : 0;
 
-  const colWidths = [asigW];
+  const colWidths = [asigW, ihW];
   for (let i = 0; i < periodos.length; i++) {
     colWidths.push(smallSubW, smallSubW, estadoSubW, logroSubW);
   }
@@ -1203,12 +1177,18 @@ async function generateBoletinPDF(
     bg: headerBg,
     align: "center",
   });
+  drawCell("IH", 1, y, rowH + subHeaderH, {
+    bold: true,
+    color: headerColor,
+    bg: headerBg,
+    align: "center",
+  });
 
   /* Sub-cabecera: Nota, Escala, Estado, Logro (sin fila de nombre de periodo) */
   const subBg = [255, 255, 255];
   const subColor = [0, 0, 0];
   for (let pi = 0; pi < periodos.length; pi++) {
-    const base = 1 + pi * 4;
+    const base = 2 + pi * 4;
     drawCell("Nota", base, y, rowH + subHeaderH, {
       bold: true,
       fontSize: 6,
@@ -1246,7 +1226,7 @@ async function generateBoletinPDF(
     for (let pi = 0; pi < periodos.length; pi++) {
       const per = asig.periodos.get(periodos[pi].id);
       {
-        const logroColW = colWidths[1 + pi * 4 + 3];
+        const logroColW = colWidths[2 + pi * 4 + 3];
         const lineH = 9 * 0.45;
         const logros = per?.logros ?? [];
         let logroHeight = 2; // padding top
@@ -1274,27 +1254,41 @@ async function generateBoletinPDF(
             logroHeight += lineH * 0.5; // espaciado entre logros
           }
         }
-        logroHeight += 10; // reserva para "Obs. énfasis:"
+        // reserva dinámica para "Obs. énfasis:" (título + valor)
+        {
+          const obsValue = per?.observacion_enfasis ?? null;
+          let obsReserve = 8;
+          if (obsValue) {
+            pdf.setFontSize(9);
+            pdf.setFont("helvetica", "normal");
+            const obsLines = pdf.splitTextToSize(obsValue, logroColW - 1.5);
+            obsReserve += obsLines.length * lineH;
+          }
+          logroHeight += obsReserve;
+        }
         if (logroHeight > computedRowH) computedRowH = logroHeight;
       }
       const estadoText = per?.estado || "-";
-      const estadoColW = colWidths[1 + pi * 4 + 2];
+      const estadoColW = colWidths[2 + pi * 4 + 2];
       const estadoLines = pdf.splitTextToSize(estadoText, estadoColW - 1.5);
       const estadoNeeded = estadoLines.length * (6 * 0.45) + 2;
       if (estadoNeeded > computedRowH) computedRowH = estadoNeeded;
     }
     addPageIfNeeded(computedRowH);
 
-    drawCell(asig.nombre_asignatura_grado, 0, y, computedRowH, {
+    drawCellMultiline(asig.nombre_asignatura_grado, 0, y, computedRowH, {
       bold: true,
       fontSize: 7,
       align: "center",
       bg: rowBg,
     });
+    drawCell(asig.intensidad_horaria ?? "-", 1, y, computedRowH, {
+      bg: rowBg,
+    });
 
     for (let pi = 0; pi < periodos.length; pi++) {
       const per = asig.periodos.get(periodos[pi].id);
-      const base = 1 + pi * 4;
+      const base = 2 + pi * 4;
       drawCell(per?.nota ?? "-", base, y, computedRowH, {
         bold: true,
         bg: rowBg,
@@ -1363,29 +1357,36 @@ async function generateBoletinPDF(
             textY += lineH * 0.5;
           }
         }
-        // Observaciones de énfasis siempre al fondo de la celda de logro
+        // Observaciones de énfasis al fondo de la celda de logro (flex-col)
         {
+          const obsValue = per?.observacion_enfasis ?? null;
+          const lineH = 9 * 0.45;
+          let obsNeeded = 8;
+          if (obsValue) {
+            pdf.setFontSize(9);
+            pdf.setFont("helvetica", "normal");
+            const vLines = pdf.splitTextToSize(obsValue, w - 2);
+            obsNeeded += vLines.length * lineH;
+          }
+          const obsY = y + computedRowH - obsNeeded;
+          const obsBottomY = y + computedRowH - 1;
           pdf.setDrawColor(0, 0, 0);
           pdf.setLineWidth(0.15);
           pdf.line(cx + 1, obsY, cx + w - 1, obsY);
+          const labelY = obsY + 3.5;
           pdf.setFontSize(9);
           pdf.setFont("helvetica", "bold");
           pdf.setTextColor(0, 0, 0);
           const obsLabel = "Obs. énfasis:";
-          pdf.text(obsLabel, cx + 1, obsY + 3.5);
-          const obsValue = per?.observacion_enfasis ?? null;
+          pdf.text(obsLabel, cx + 1, labelY);
           if (obsValue) {
-            const obsLabelW = pdf.getTextWidth(obsLabel);
             pdf.setFont("helvetica", "normal");
-            const obsLines = pdf.splitTextToSize(obsValue, w - obsLabelW - 2.5);
-            if (obsLines.length === 1) {
-              pdf.text(" " + obsLines[0], cx + 1 + obsLabelW, obsY + 3.5);
-            } else {
-              let obsTextY = obsY + 3.5;
-              for (const ol of obsLines) {
-                pdf.text(ol, cx + 1 + obsLabelW, obsTextY);
-                obsTextY += 9 * 0.45;
-              }
+            const obsLines = pdf.splitTextToSize(obsValue, w - 2);
+            let obsTextY = labelY + lineH + 1;
+            for (const ol of obsLines) {
+              if (obsTextY > obsBottomY) break;
+              pdf.text(ol, cx + 1, obsTextY);
+              obsTextY += lineH;
             }
           }
         }
@@ -2405,7 +2406,7 @@ const BoletinSelector = ({
                           Cód. DANE: {info.cod_dane}
                         </p>
                       )}
-                      {info.nombre_sede && (
+                      {info.alias && (
                         <p
                           style={{
                             margin: "2px 0",
@@ -2413,7 +2414,7 @@ const BoletinSelector = ({
                             fontSize: "11px",
                           }}
                         >
-                          {info.nombre_sede}
+                          {info.alias}
                           {info.sede_tip ? ` — ${info.sede_tip}` : ""}
                         </p>
                       )}
@@ -2433,91 +2434,70 @@ const BoletinSelector = ({
                   </div>
 
                   {/* ── Bloque datos del estudiante ── */}
-                  <table
+                  <div
                     style={{
-                      width: "100%",
-                      borderCollapse: "collapse",
                       border: "1px solid #000000",
                       fontSize: "10px",
                       marginBottom: "0px",
                     }}
                   >
-                    <tbody>
-                      <tr>
-                        <td
-                          style={{
-                            border: "1px solid #000000",
-                            padding: "4px 8px",
-                            width: "38%",
-                          }}
-                        >
-                          <strong>ESTUDIANTE:</strong>{" "}
-                          {[info.nombre_estudiante, info.apellido_estudiante]
-                            .filter(Boolean)
-                            .join(" ") || "-"}
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #000000",
-                            padding: "4px 8px",
-                            width: "20%",
-                          }}
-                        >
-                          <strong>GRADO:</strong> {info.grado ?? "-"}
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #000000",
-                            padding: "4px 8px",
-                            width: "18%",
-                          }}
-                        >
-                          <strong>PERIODO:</strong>{" "}
-                          {cleanPeriodoLabel(periodos[0]?.nombre)}
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #000000",
-                            padding: "4px 8px",
-                            width: "16%",
-                          }}
-                        >
-                          <strong>PROMEDIO:</strong> {promedioGeneral ?? "-"}
-                        </td>
-                        <td
-                          rowSpan={2}
-                          style={{
-                            border: "1px solid #000000",
-                            padding: "4px 8px",
-                            width: "14%",
-                            textAlign: "center",
-                            verticalAlign: "middle",
-                          }}
-                        >
-                          <div style={{ fontWeight: "bold", fontSize: "9px" }}>
-                            Puesto
-                          </div>
-                          <div style={{ fontSize: "11px" }}>
-                            {rankingMap.get(String(periodId))?.posicion ??
-                              info.posicion ??
-                              "-"}
-                          </div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td
-                          colSpan={4}
-                          style={{
-                            border: "1px solid #000000",
-                            padding: "4px 8px",
-                          }}
-                        >
-                          <strong>NOMBRE ACUDIENTE:</strong>{" "}
-                          {info.nombre_acudiente ?? "-"}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+                    {/* Row 1: Title */}
+                    <div
+                      style={{
+                        textAlign: "center",
+                        fontWeight: "bold",
+                        padding: "6px",
+
+                        fontSize: "10px",
+                      }}
+                    >
+                      INFORME EVALUATIVO
+                    </div>
+
+                    {/* Row 2: Estudiante (2) | Acudiente (2) | Año (1) */}
+                    <div style={{ display: "flex", flexDirection: "row" }}>
+                      <div style={{ flex: 2, padding: "2px 8px" }}>
+                        <strong>ESTUDIANTE:</strong>{" "}
+                        {[info.nombre_estudiante, info.apellido_estudiante]
+                          .filter(Boolean)
+                          .join(" ") || "-"}
+                      </div>
+                      <div style={{ flex: 2, padding: "2px 8px" }}>
+                        <strong>ACUDIENTE:</strong>{" "}
+                        {info.nombre_acudiente ?? "-"}
+                      </div>
+                      <div style={{ flex: 1, padding: "2px 8px" }}>
+                        <strong>AÑO:</strong>{" "}
+                        {year}
+                      </div>
+                    </div>
+
+                    {/* Row 3: Grado | Periodo | Promedio | Puesto (flex-row) */}
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "row",
+                        borderTop: "1px solid #000000",
+                      }}
+                    >
+                      <div style={{ flex: 1, padding: "2px 8px" }}>
+                        <strong>GRADO:</strong> {info.grado ?? "-"}
+                      </div>
+                      <div style={{ flex: 1, padding: "2px 8px" }}>
+                        <strong>PERIODO:</strong>{" "}
+                        {cleanPeriodoLabel(periodos[0]?.nombre)}
+                      </div>
+                      <div style={{ flex: 1, padding: "2px 8px" }}>
+                        <strong>PROMEDIO:</strong> {promedioGeneral ?? "-"}
+                      </div>
+                      <div style={{ flex: 1, padding: "2px 8px" }}>
+                        <strong>PUESTO:</strong>{" "}
+                        {rankingMap.get(String(periodId))?.posicion ??
+                          info.posicion ??
+                          "-"}
+                      </div>
+                    </div>
+                  </div>
 
                   {/* ── Escala Valorativa ── */}
                   {escalas.length > 0 &&
@@ -2593,7 +2573,8 @@ const BoletinSelector = ({
                     }}
                   >
                     <colgroup>
-                      <col style={{ width: "22%" }} />
+                      <col style={{ width: "18%" }} />
+                      <col style={{ width: "4%" }} />
                       <col style={{ width: "7%" }} />
                       <col style={{ width: "7%" }} />
                       <col style={{ width: "14%" }} />
@@ -2606,6 +2587,7 @@ const BoletinSelector = ({
                         <th style={{ ...S.thLeft, verticalAlign: "middle" }}>
                           Asignatura
                         </th>
+                        <th style={{ ...S.th, fontSize: "8px" }}>IH</th>
                         <th
                           style={{ ...S.th, fontSize: "8px" }}
                           title="Nota final periodo"
@@ -2625,6 +2607,9 @@ const BoletinSelector = ({
                         >
                           <td style={{ ...S.tdBold, textAlign: "center" }}>
                             {asig.nombre_asignatura_grado}
+                          </td>
+                          <td style={S.td}>
+                            {asig.intensidad_horaria ?? "-"}
                           </td>
                           {periodos.map((p) => {
                             const per = asig.periodos.get(p.id);
