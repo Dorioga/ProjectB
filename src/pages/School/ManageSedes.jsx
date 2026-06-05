@@ -57,14 +57,20 @@ const ManageSedes = () => {
 
       // Guardar la respuesta cruda para depuración
       lastResponseRef.current = response;
-
+      console.log("Respuesta de loadInstitutionSedes:", response);
       const newSedes = Array.isArray(response)
         ? response
         : (response?.data ?? []);
 
+      // Normalizar alias por si el API lo devuelve con otro nombre
+      const normalized = newSedes.map((s) => ({
+        ...s,
+        alias: s.alias ?? s.alias_sede ?? s.sede_alias ?? "",
+      }));
+
       // Actualizar tableData primero para asegurar que DataTable reciba los datos
-      prevSedesRef.current = newSedes;
-      setTableData(newSedes);
+      prevSedesRef.current = normalized;
+      setTableData(normalized);
 
       setSedes(newSedes);
       hasFetchedRef.current = true;
@@ -144,7 +150,12 @@ const ManageSedes = () => {
     },
     [getDataSede, idInstitution],
   );
-
+  console.log(
+    "ManageSedes render - sedes:",
+    tableData,
+    "fetchError:",
+    fetchError,
+  );
   // Define las columnas para la tabla
   const columns = useMemo(
     () => [
@@ -158,6 +169,13 @@ const ManageSedes = () => {
       {
         accessorKey: "nombre",
         header: "Nombre Sede",
+      },
+      {
+        accessorKey: "alias",
+        header: "Alias",
+        meta: {
+          hideOnLG: true,
+        },
       },
       {
         accessorKey: "name_workday",
@@ -265,23 +283,10 @@ const ManageSedes = () => {
         initialEditing={initialEditing}
         onSave={async (id, updated) => {
           try {
-            const saved = await updateSede(idInstitution, id, updated);
-
-            const newRow =
-              saved && typeof saved === "object" ? saved : { ...updated };
-
-            // Actualizar tabla con los datos devueltos por el backend
-            setTableData((prev) =>
-              (prev || []).map((row) =>
-                row.id === id ? { ...row, ...newRow } : row,
-              ),
-            );
-            setSedes((prev) =>
-              (prev || []).map((s) => (s.id === id ? { ...s, ...newRow } : s)),
-            );
-
+            await updateSede(idInstitution, id, updated);
             notify.success("Sede actualizada exitosamente");
             setIsModalOpen(false);
+            fetchSedesData();
           } catch (err) {
             console.error("Error al guardar sede:", err);
             notify.error(err?.message || "Error al actualizar la sede");

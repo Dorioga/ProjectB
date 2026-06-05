@@ -101,7 +101,10 @@ const ManageAsignature = () => {
 
   // Abrir modal de edición
   const handleEditAsignature = useCallback((asignature) => {
-    setSelectedAsignature(asignature);
+    setSelectedAsignature({
+      ...asignature,
+      estado: asignature.estado ?? asignature.estado_grade_asignature ?? "",
+    });
     setIsEditModalOpen(true);
   }, []);
 
@@ -140,7 +143,7 @@ const ManageAsignature = () => {
       fetchAsignatures,
     ],
   );
-
+  console.log("Table data ", tableData);
   // Define las columnas para la tabla
   const columns = useMemo(
     () => [
@@ -163,6 +166,20 @@ const ManageAsignature = () => {
         },
       },
       {
+        accessorKey: "intensidad_horaria",
+        header: "Intensidad horaria",
+        meta: {
+          hideOnXL: true,
+        },
+      },
+      {
+        accessorKey: "grados",
+        header: "Grados",
+        meta: {
+          hideOnXL: true,
+        },
+      },
+      {
         accessorKey: "nombre_jornada",
         header: "Jornada",
         meta: {
@@ -176,20 +193,14 @@ const ManageAsignature = () => {
           hideOnXL: true,
         },
       },
-      {
-        accessorKey: "estado_grade_asignature",
-        header: "Estado",
-        meta: {
-          hideOnXL: true,
-        },
-      },
-      {
-        accessorKey: "grados",
-        header: "Grados",
-        meta: {
-          hideOnXL: true,
-        },
-      },
+      // {
+      //   accessorKey: "estado_grade_asignature",
+      //   header: "Estado",
+      //   meta: {
+      //     hideOnXL: true,
+      //   },
+      // },
+
       {
         id: "actions",
         header: "Acciones",

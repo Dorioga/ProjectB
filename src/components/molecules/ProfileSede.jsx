@@ -16,6 +16,7 @@ const ProfileSede = ({
   const [isTourMode, setIsTourMode] = useState(Boolean(initialTutorial));
   const [form, setForm] = useState({
     nombre_sede: safeData.nombre_sede || safeData.nombre || "",
+    alias: safeData.alias || "",
     direccion: safeData.direccion || safeData.address || "",
     telefono: safeData.telefono || safeData.telefono_sede || "",
     estado: safeData.estado || safeData.status || "",
@@ -30,6 +31,7 @@ const ProfileSede = ({
     const d = data || {};
     setForm({
       nombre_sede: d.nombre_sede || d.nombre || "",
+      alias: d.alias || "",
       direccion: d.direccion || d.address || "",
       telefono: d.telefono || d.telefono_sede || "",
       estado: d.estado || d.status || "",
@@ -55,6 +57,7 @@ const ProfileSede = ({
           // Mapear campos: direccion -> address, nombre_sede -> name, telefono -> phone
           if (form.direccion !== undefined) payload.address = form.direccion;
           if (form.nombre_sede !== undefined) payload.name = form.nombre_sede;
+          if (form.alias !== undefined) payload.alias = form.alias;
           if (form.telefono !== undefined) payload.phone = form.telefono;
 
           // workday debe ser numérico si existe
@@ -204,6 +207,17 @@ const ProfileSede = ({
             id="tour-sede-telefono"
             name="telefono"
             value={form.telefono}
+            onChange={handleChange}
+            className={`w-full p-2 border rounded bg-surface ${isEditing && !isSaving ? "" : "opacity-80 text-gray-700"}`}
+            disabled={!isEditing || isSaving}
+          />
+        </div>
+
+        <div>
+          <label className="font-semibold">Alias</label>
+          <input
+            name="alias"
+            value={form.alias}
             onChange={handleChange}
             className={`w-full p-2 border rounded bg-surface ${isEditing && !isSaving ? "" : "opacity-80 text-gray-700"}`}
             disabled={!isEditing || isSaving}

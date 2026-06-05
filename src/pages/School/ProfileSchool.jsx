@@ -277,6 +277,7 @@ const ProfileSchool = ({
     name: "",
     nit: "",
     slogan: "",
+    alias: "",
     address: "",
     email: "",
     phone: "",
@@ -309,6 +310,7 @@ const ProfileSchool = ({
       name: baseData.nombre_institucion || "",
       nit: baseData.nit ?? "",
       slogan: baseData.eslogan ?? "",
+      alias: baseData.alias ?? "",
       address: baseData.address ?? baseData.direccion ?? "",
       email: baseData.email ?? baseData.correo ?? "",
       phone: baseData.phone ?? baseData.telefono ?? "",
@@ -495,14 +497,8 @@ const ProfileSchool = ({
     if (!licenciaValidation.valid)
       errors.licenciaFuncionamiento = licenciaValidation.msg;
 
-    // Validar escala de inasistencias
-    const escalaInasistenciasValidation = required(
-      formData.escalaInasistencias,
-      "La escala de inasistencias es obligatoria",
-    );
-    if (!escalaInasistenciasValidation.valid) {
-      errors.escalaInasistencias = escalaInasistenciasValidation.msg;
-    } else {
+    // Validar escala de inasistencias (opcional)
+    if (formData.escalaInasistencias !== "") {
       const scaleVal = parseInt(formData.escalaInasistencias, 10);
       if (Number.isNaN(scaleVal) || scaleVal <= 0) {
         errors.escalaInasistencias = "Debe ser un número entero mayor a 0";
@@ -710,6 +706,7 @@ const ProfileSchool = ({
             secondaryColor: payload.secondaryColor ?? "",
             signaturePrincipal: payload.signaturePrincipal ?? "",
             slogan: payload.slogan ?? "",
+            alias: payload.alias ?? "",
             workday: payload.workday ? parseInt(payload.workday) : null,
             licencia_funcionamiento: payload.licenciaFuncionamiento ?? "",
             escala_inasistencias:
@@ -867,6 +864,7 @@ const ProfileSchool = ({
           ...(Array.isArray(prev.sede) ? prev.sede : []),
           {
             name_sede: "",
+            alias: "",
             adress: "",
             phone: "",
             jornada: currentWorkday,
@@ -1139,6 +1137,24 @@ const ProfileSchool = ({
           />
         </div>
 
+        {!isUpdate && (
+          <div id="tour-psc-alias" className="md:col-span-2">
+            <label className={getLabelClassName("", !isEditing)}>Alias</label>
+            <input
+              type="text"
+              name="alias"
+              value={formData.alias}
+              onChange={handleChange}
+              disabled={!isEditing}
+              className={getInputClassName(
+                "w-full p-2 border rounded bg-surface",
+                !isEditing,
+              )}
+              placeholder="Ej: Colegio San José"
+            />
+          </div>
+        )}
+
         <div id="tour-psc-address" className="md:col-span-2">
           <label className={getLabelClassName("", !isEditing)}>
             Dirección <span className="text-red-600">*</span>
@@ -1399,8 +1415,7 @@ const ProfileSchool = ({
 
         <div id="tour-psc-inasistencias">
           <label className={getLabelClassName("", !isEditing)}>
-            Escala de inasistencias (límite para reprobar){" "}
-            <span className="text-red-600">*</span>
+            Escala de inasistencias (límite para reprobar)
           </label>
           <input
             type="number"
@@ -1415,7 +1430,6 @@ const ProfileSchool = ({
               !isEditing,
             )}
             placeholder="Número de inasistencias para perder"
-            required
           />
           {formErrors.escalaInasistencias && (
             <p className="text-red-600 text-sm mt-1">
@@ -1738,6 +1752,18 @@ const ProfileSchool = ({
                             )}
                           </div>
 
+                          <div>
+                            <label>Alias</label>
+                            <input
+                              type="text"
+                              value={sede?.alias ?? ""}
+                              onChange={(e) =>
+                                updateSedeField(index, "alias", e.target.value)
+                              }
+                              className="w-full p-2 border rounded bg-surface"
+                            />
+                          </div>
+
                           <div className="md:col-span-2">
                             <label>
                               Dirección <span className="text-red-600">*</span>
@@ -1802,6 +1828,11 @@ const ProfileSchool = ({
                           <div>
                             <label>Teléfono</label>
                             <p className="p-2">{sede?.phone ?? "-"}</p>
+                          </div>
+
+                          <div>
+                            <label>Alias</label>
+                            <p className="p-2">{sede?.alias ?? "-"}</p>
                           </div>
 
                           <div className="md:col-span-2">

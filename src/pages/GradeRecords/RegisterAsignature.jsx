@@ -20,6 +20,7 @@ const RegisterAsignature = ({ onSuccess }) => {
     name: "",
     code: "",
     description: "",
+    intensity_hours: "",
     jornada: "",
     sedeId: "",
     grades_scholar: [],
@@ -213,6 +214,7 @@ const RegisterAsignature = ({ onSuccess }) => {
         name_asignature: formData.name.trim(),
         code_asignature: formData.code.trim(),
         description: formData.description.trim(),
+        intensity_hours: formData.intensity_hours.trim(),
       };
 
       await registerAsignature(payload);
@@ -222,6 +224,7 @@ const RegisterAsignature = ({ onSuccess }) => {
         name: "",
         code: "",
         description: "",
+        intensity_hours: "",
         jornada: "",
         sedeId: "",
         grades_scholar: [],
@@ -306,6 +309,22 @@ const RegisterAsignature = ({ onSuccess }) => {
             value={formData.description}
             onChange={(e) =>
               setFormData({ ...formData, description: e.target.value })
+            }
+          />
+        </div>
+        <div id="tour-intensity">
+          <label className={labelClassName}>Intensidad horaria</label>
+          <input
+            className={inputClassName}
+            type="number"
+            min="0"
+            placeholder="Ej: 40"
+            value={formData.intensity_hours}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                intensity_hours: e.target.value,
+              })
             }
           />
         </div>

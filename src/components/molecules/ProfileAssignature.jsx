@@ -59,6 +59,7 @@ const ProfileAssignature = ({ data, onSave, initialEditing = false }) => {
     code_asignature:
       safeData.codigo_asignatura || safeData.code_asignature || "",
     description: safeData.descripcion || safeData.description || "",
+    intensity_hours: safeData.intensity_hours || safeData.intensidad_horaria || "",
     estado: safeData.estado || "",
   });
 
@@ -72,6 +73,7 @@ const ProfileAssignature = ({ data, onSave, initialEditing = false }) => {
       name_asignature: d.nombre_asignatura || d.name_asignature || "",
       code_asignature: d.codigo_asignatura || d.code_asignature || "",
       description: d.descripcion || d.description || "",
+      intensity_hours: d.intensity_hours || d.intensidad_horaria || "",
       estado: d.estado || "",
     });
     const parsed = parseGrades(d);
@@ -132,6 +134,7 @@ const ProfileAssignature = ({ data, onSave, initialEditing = false }) => {
             nombre_asignatura: String(form.name_asignature || "").trim(),
             codigo_asignatura: String(form.code_asignature || "").trim(),
             descripcion: String(form.description || "").trim(),
+            intensity_hours: form.intensity_hours || "",
             estado: form.estado || "",
             grados_asignatura: grades.map((g) => ({
               fk_grade: Number(g.id),
@@ -246,6 +249,19 @@ const ProfileAssignature = ({ data, onSave, initialEditing = false }) => {
               {errors.code_asignature}
             </div>
           )}
+        </div>
+
+        <div id="tour-pa-intensity">
+          <label className="font-semibold">Intensidad horaria</label>
+          <input
+            name="intensity_hours"
+            value={form.intensity_hours}
+            onChange={handleChange}
+            type="number"
+            min="0"
+            className={`w-full p-2 border rounded bg-surface ${isEditing && !isSaving ? "ring-2 ring-accent/30" : "opacity-80 text-gray-700"}`}
+            disabled={!isEditing || isSaving}
+          />
         </div>
 
         <div id="tour-pa-description" className="md:col-span-3">

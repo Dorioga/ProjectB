@@ -156,6 +156,7 @@ export function DataProvider({ children }) {
       // Normalizar formato: id_sede -> id, nombre_sede -> nombre
       const normalizedSedes = sedesData.map((sede) => ({
         id: sede.id_sede || sede.id,
+        alias: sede.alias ?? sede.alias_sede ?? sede.sede_alias ?? "",
         nombre: sede.nombre_sede || sede.nombre,
         name_workday: sede.nombre_jornada,
         fk_institucion: sede.fk_institucion,

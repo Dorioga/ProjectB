@@ -9,12 +9,12 @@ export default defineConfig({
   server: {
     proxy: {
       "/storage": {
-        target: "https://nexusplataforma.com",
+        target: process.env.VITE_STORAGE_URL || "https://nexusplataforma.com",
         changeOrigin: true,
         secure: true,
       },
       "/backend-proxy": {
-        target: "https://nexusplataforma.com/api",
+        target: process.env.VITE_API_BACKEND_URL || "https://backend-barranquilla.onrender.com",
         changeOrigin: true,
         secure: true,
         rewrite: (path) => path.replace(/^\/backend-proxy/, ""),
