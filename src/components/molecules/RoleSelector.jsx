@@ -50,7 +50,6 @@ const RoleSelector = ({
       })
       .filter((x) => x.id && x.name);
 
-
     // Filtrar roles según el valor numérico de rol
     const rolNumber = String(rol).trim();
 
@@ -60,7 +59,11 @@ const RoleSelector = ({
     } else if (rolNumber === "2" || rolNumber === "3" || rolNumber === "4") {
       // Si es rol 2, 3 o 4, solo mostrar roles 2, 3 y 4
       return allItems.filter(
-        (item) => item.id === "2" || item.id === "3" || item.id === "4",
+        (item) =>
+          item.id === "2" ||
+          item.id === "3" ||
+          item.id === "4" ||
+          item.id === "9",
       );
     }
 
