@@ -8,6 +8,7 @@ import RegisterStudent from "./RegisterStudent";
 import UploadStudentExcel from "./UploadStudentExcel";
 import UploadStudentPDF from "./UploadStudentPDF";
 import StudentModal from "../../components/molecules/StudentModal";
+import AuditBulkModal from "../../components/molecules/AuditBulkModal";
 import useStudent from "../../lib/hooks/useStudent";
 import { useNotify } from "../../lib/hooks/useNotify";
 import tourManageStudent from "../../tour/tourManageStudent";
@@ -25,6 +26,7 @@ const ManageStudent = () => {
   const [isBulkOpen, setIsBulkOpen] = useState(false);
   const [isBulkPdfOpen, setIsBulkPdfOpen] = useState(false);
   const [isBulkAuditOpen, setIsBulkAuditOpen] = useState(false);
+  const [isBulkAuditUploadOpen, setIsBulkAuditUploadOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [initialEditing, setInitialEditing] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
@@ -224,7 +226,7 @@ const ManageStudent = () => {
           <h2 className="text-2xl font-bold">Datos de Estudiantes</h2>
         </div>
         <div
-          className={`w-full grid gap-2 lg:col-span-5 xl:col-span-8 2xl:col-span-5 ${Number(rol) === 9 ? "grid-cols-3" : "grid-cols-7"}`}
+          className={`w-full grid gap-2 lg:col-span-5 xl:col-span-8 2xl:col-span-5 ${Number(rol) === 9 ? "grid-cols-5" : "grid-cols-7"}`}
         >
           {Number(rol) !== 9 && (
             <div id="tour-mst-add-btn" className="col-span-2">
@@ -266,6 +268,18 @@ const ManageStudent = () => {
             <div className="col-span-2">
               <SimpleButton
                 onClick={() => setIsBulkAuditOpen(true)}
+                msj="Descarga Masiva Auditoria"
+                icon="Download"
+                bg="bg-secondary"
+                text="text-surface"
+                noRounded={false}
+              />
+            </div>
+          )}
+          {Number(rol) === 9 && (
+            <div className="col-span-2">
+              <SimpleButton
+                onClick={() => setIsBulkAuditUploadOpen(true)}
                 msj="Carga Masiva Auditoria"
                 icon="Upload"
                 bg="bg-secondary"
@@ -373,12 +387,30 @@ const ManageStudent = () => {
         <Modal
           isOpen={isBulkAuditOpen}
           onClose={() => setIsBulkAuditOpen(false)}
+          title="Descarga masiva auditoria"
+          size="4xl"
+        >
+          <AuditBulkModal
+            mode="download"
+            onClose={() => setIsBulkAuditOpen(false)}
+            onSuccess={() => {
+              setIsBulkAuditOpen(false);
+              fetchStudentsData();
+            }}
+          />
+        </Modal>
+
+        <Modal
+          isOpen={isBulkAuditUploadOpen}
+          onClose={() => setIsBulkAuditUploadOpen(false)}
           title="Carga masiva auditoria"
           size="4xl"
         >
-          <UploadStudentExcel
+          <AuditBulkModal
+            mode="upload"
+            onClose={() => setIsBulkAuditUploadOpen(false)}
             onSuccess={() => {
-              setIsBulkAuditOpen(false);
+              setIsBulkAuditUploadOpen(false);
               fetchStudentsData();
             }}
           />
