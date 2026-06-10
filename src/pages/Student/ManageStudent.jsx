@@ -13,7 +13,7 @@ import { useNotify } from "../../lib/hooks/useNotify";
 import tourManageStudent from "../../tour/tourManageStudent";
 
 const ManageStudent = () => {
-  const { idInstitution, idSede } = useAuth();
+  const { idInstitution, idSede, rol } = useAuth();
   const { fetchAllStudents } = useSchool();
   const { updateStudent, getStudent } = useStudent();
   const notify = useNotify();
@@ -24,6 +24,7 @@ const ManageStudent = () => {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isBulkOpen, setIsBulkOpen] = useState(false);
   const [isBulkPdfOpen, setIsBulkPdfOpen] = useState(false);
+  const [isBulkAuditOpen, setIsBulkAuditOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [initialEditing, setInitialEditing] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
@@ -163,6 +164,26 @@ const ManageStudent = () => {
           hideOnLG: true,
         },
       },
+      ...(Number(rol) === 9
+        ? [
+            {
+              accessorKey: "etapa1",
+              header: "Etapa 1",
+            },
+            {
+              accessorKey: "etapa2",
+              header: "Etapa 2",
+            },
+            {
+              accessorKey: "etapa3",
+              header: "Etapa 3",
+            },
+            {
+              accessorKey: "status_beca",
+              header: "Status Beca",
+            },
+          ]
+        : []),
       {
         id: "actions",
         header: "Acciones",
@@ -190,7 +211,7 @@ const ManageStudent = () => {
         ),
       },
     ],
-    [handleViewProfile, handleEditStudent],
+    [handleViewProfile, handleEditStudent, rol],
   );
 
   return (
@@ -202,37 +223,57 @@ const ManageStudent = () => {
         <div className="w-full lg:col-span-2  xl:col-span-3 flex items-center">
           <h2 className="text-2xl font-bold">Datos de Estudiantes</h2>
         </div>
-        <div className="w-full grid grid-cols-7 lg:col-span-5 xl:col-span-8 2xl:col-span-5 gap-2">
-          <div id="tour-mst-add-btn" className="col-span-2">
-            <SimpleButton
-              onClick={() => setIsAddOpen(true)}
-              msj="Registrar estudiante"
-              icon="Plus"
-              bg="bg-secondary"
-              text="text-surface"
-              noRounded={false}
-            />
-          </div>
-          <div id="tour-mst-bulk-excel" className="col-span-2">
-            <SimpleButton
-              onClick={() => setIsBulkOpen(true)}
-              msj="Carga masiva "
-              icon="Upload"
-              bg="bg-secondary"
-              text="text-surface"
-              noRounded={false}
-            />
-          </div>
-          <div id="tour-mst-bulk-pdf" className="col-span-2">
-            <SimpleButton
-              onClick={() => setIsBulkPdfOpen(true)}
-              msj="Subir PDF(s)"
-              icon="FileText"
-              bg="bg-secondary"
-              text="text-surface"
-              noRounded={false}
-            />
-          </div>
+        <div
+          className={`w-full grid gap-2 lg:col-span-5 xl:col-span-8 2xl:col-span-5 ${Number(rol) === 9 ? "grid-cols-3" : "grid-cols-7"}`}
+        >
+          {Number(rol) !== 9 && (
+            <div id="tour-mst-add-btn" className="col-span-2">
+              <SimpleButton
+                onClick={() => setIsAddOpen(true)}
+                msj="Registrar estudiante"
+                icon="Plus"
+                bg="bg-secondary"
+                text="text-surface"
+                noRounded={false}
+              />
+            </div>
+          )}
+          {Number(rol) !== 9 && (
+            <div id="tour-mst-bulk-excel" className="col-span-2">
+              <SimpleButton
+                onClick={() => setIsBulkOpen(true)}
+                msj="Carga masiva "
+                icon="Upload"
+                bg="bg-secondary"
+                text="text-surface"
+                noRounded={false}
+              />
+            </div>
+          )}
+          {Number(rol) !== 9 && (
+            <div id="tour-mst-bulk-pdf" className="col-span-2">
+              <SimpleButton
+                onClick={() => setIsBulkPdfOpen(true)}
+                msj="Subir PDF(s)"
+                icon="FileText"
+                bg="bg-secondary"
+                text="text-surface"
+                noRounded={false}
+              />
+            </div>
+          )}
+          {Number(rol) === 9 && (
+            <div className="col-span-2">
+              <SimpleButton
+                onClick={() => setIsBulkAuditOpen(true)}
+                msj="Carga Masiva Auditoria"
+                icon="Upload"
+                bg="bg-secondary"
+                text="text-surface"
+                noRounded={false}
+              />
+            </div>
+          )}
           <div className="col-span-1">
             <SimpleButton
               type="button"
@@ -252,11 +293,32 @@ const ManageStudent = () => {
           data={tableData || []}
           columns={columns}
           fileName="Export_Students"
-          initialSorting={[{ id: "nombre", desc: false }]}
+          initialSorting={[{ id: "nombre_sede", desc: false }]}
           mode="Student"
           showDownloadButtons={false}
           loading={isFetching}
           loaderMessage="Cargando estudiantes..."
+          groupBy="nombre_sede"
+          groupSummary={(rows, isOpen) => {
+            if (!isOpen) return null;
+            const counts = {};
+            rows.forEach((r) => {
+              const grado = r.original.nombre_grado ?? "SIN GRADO";
+              counts[grado] = (counts[grado] || 0) + 1;
+            });
+            return (
+              <div className="flex items-center gap-2 flex-wrap">
+                {Object.entries(counts).map(([grado, count]) => (
+                  <span
+                    key={grado}
+                    className="px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-700"
+                  >
+                    {grado}: {count}
+                  </span>
+                ))}
+              </div>
+            );
+          }}
         />
 
         {fetchError && (
@@ -303,6 +365,20 @@ const ManageStudent = () => {
             onSuccess={() => {
               setIsBulkPdfOpen(false);
               // si los PDFs afectan listado, recargar
+              fetchStudentsData();
+            }}
+          />
+        </Modal>
+
+        <Modal
+          isOpen={isBulkAuditOpen}
+          onClose={() => setIsBulkAuditOpen(false)}
+          title="Carga masiva auditoria"
+          size="4xl"
+        >
+          <UploadStudentExcel
+            onSuccess={() => {
+              setIsBulkAuditOpen(false);
               fetchStudentsData();
             }}
           />

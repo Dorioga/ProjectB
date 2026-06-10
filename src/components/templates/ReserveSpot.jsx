@@ -931,7 +931,6 @@ const ReserveSpot = ({ mode = "Externo", onSuccess }) => {
         if (signatureDataPng) {
           const fd = new FormData();
           fd.append("imageBase64", signatureDataPng);
-          fd.append("folder", "acudientes");
           fd.append("identificacion", guardian.identification.trim());
           const uploadRes = await upload(fd, "uploadfirma/acudientes");
           const rawData = uploadRes?.data ?? uploadRes;

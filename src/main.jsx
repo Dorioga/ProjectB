@@ -26,6 +26,7 @@ import { AuthProvider } from "./lib/context/AuthContext.jsx";
 import { StudentProvider } from "./lib/context/StudentContext.jsx";
 import { DataProvider } from "./lib/context/DataContext.jsx";
 import { NotificationProvider } from "./lib/context/NotificationContext.jsx";
+import { AuditProvider } from "./lib/context/AuditContext.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -34,11 +35,13 @@ createRoot(document.getElementById("root")).render(
         <AuthProvider>
           <DataProvider>
             <SchoolProvider>
-              <TeacherProvider>
-                <StudentProvider>
-                  <App />
-                </StudentProvider>
-              </TeacherProvider>
+              <AuditProvider>
+                <TeacherProvider>
+                  <StudentProvider>
+                    <App />
+                  </StudentProvider>
+                </TeacherProvider>
+              </AuditProvider>
             </SchoolProvider>
           </DataProvider>
         </AuthProvider>

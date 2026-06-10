@@ -63,7 +63,8 @@ const RoleSelector = ({
           item.id === "2" ||
           item.id === "3" ||
           item.id === "4" ||
-          item.id === "9",
+          item.id === "9" ||
+          item.id === "10",
       );
     }
 

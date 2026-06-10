@@ -623,7 +623,6 @@ const ProfileSchool = ({
             const base64 = await fileToBase64(logoFile);
             const logoForm = new FormData();
             logoForm.append("imageBase64", base64);
-            logoForm.append("folder", "instituciones");
             logoForm.append("identificacion", String(formData.nit ?? ""));
 
             const uploadRes = await upload(

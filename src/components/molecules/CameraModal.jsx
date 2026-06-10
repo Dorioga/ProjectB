@@ -19,8 +19,8 @@ const CameraModal = ({ isOpen, onClose, onImageCapture }) => {
       fetch(image)
         .then((res) => res.blob())
         .then((blob) => {
-          const file = new File([blob], `photo_${Date.now()}.jpg`, {
-            type: "image/jpeg",
+          const file = new File([blob], `photo_${Date.now()}.png`, {
+            type: "image/png",
           });
           onImageCapture(file, image); // Envía tanto el File como la preview
         });
@@ -44,8 +44,7 @@ const CameraModal = ({ isOpen, onClose, onImageCapture }) => {
             <Webcam
               audio={false}
               ref={webcamRef}
-              screenshotFormat="image/jpeg"
-              screenshotQuality={0.8}
+              screenshotFormat="image/png"
               width={320}
               height={240}
               className="w-full"

@@ -15,6 +15,7 @@ import {
 } from "../../utils/formatUtils";
 import { upload } from "../../services/uploadService";
 import { useNotify } from "../../lib/hooks/useNotify";
+import useAudit from "../../lib/hooks/useAudit";
 import tourProfileStudent from "../../tour/tourProfileStudent";
 
 const ProfileStudent = ({
@@ -26,11 +27,13 @@ const ProfileStudent = ({
 }) => {
   const notify = useNotify();
   const { nameRole, rol } = useAuth();
+  const { setStudentDataAudit } = useAudit();
   const isDocente = String(nameRole ?? "")
     .toLowerCase()
     .includes("docente");
   const isRol6 = String(rol) === "6";
   const isRol7 = String(rol) === "7";
+  const isRol9 = String(rol) === "9";
   const [isTourMode, setIsTourMode] = useState(false);
 
   const startTour = useCallback(() => {
@@ -62,6 +65,7 @@ const ProfileStudent = ({
 
   ///Preguntar el State
   const [isEditing, setIsEditing] = useState(Boolean(initialEditing));
+  const canEditRestricted = isEditing && !isRol9;
 
   // Si la prop initialEditing cambia (abrir en modo edición), sincronizar el estado local
   useEffect(() => {
@@ -69,6 +73,7 @@ const ProfileStudent = ({
   }, [initialEditing]);
 
   const [isOpenCamera, setIsOpenCamera] = useState(false);
+  const [currentEtapa, setCurrentEtapa] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isOpenExcuse, setIsOpenExcuse] = useState(false);
   const [isOpenDocument, setIsOpenDocument] = useState(false);
@@ -94,13 +99,18 @@ const ProfileStudent = ({
     state_first: data?.nombre_primera_etapa || data?.state_first || "Pendiente",
     state_second:
       data?.nombre_segunda_etapa || data?.state_second || "Pendiente",
+    fk_state_first: data?.fk_primera_etapa,
+    fk_state_second: data?.fk_segunda_etapa,
+    link_foto_primera_etapa: data?.link_foto_primera_etapa || null,
+    link_foto_segunda_etapa: data?.link_foto_segunda_etapa || null,
     state_beca: data?.status_beca || data?.state_beca || "Activo",
+    fk_beca: data?.fk_beca,
     state_process: data?.nombre_proceso || data?.state_process || "Conforme",
+    fk_process: data?.fk_proceso,
     first_name: data?.primero_nombre || data?.first_name || "",
     second_name: data?.segundo_nombre || data?.second_name || "",
     first_lastname: data?.primer_apellido || data?.first_lastname || "",
     second_lastname: data?.segundo_apellido || data?.second_lastname || "",
-    // Periodo de ingreso (editable)
     periodo_ingreso: data?.perido_ingreso || data?.fk_periodo_ingreso || "",
   });
 
@@ -130,6 +140,19 @@ const ProfileStudent = ({
     );
   }, [data]);
 
+  const processIdMap = {
+    Conforme: "1",
+    Excusa: "2",
+    SinExcusa: "3",
+    Retirado: "4",
+    Reasignado: "5",
+  };
+
+  const becaIdMap = {
+    Activo: 1,
+    Retirado: 0,
+  };
+
   const toggleEditing = async () => {
     if (isEditing) {
       setIsSubmitting(true);
@@ -151,21 +174,6 @@ const ProfileStudent = ({
       return;
     }
 
-    // Mapear state_process a process_id
-    const processIdMap = {
-      Conforme: "1",
-      Excusa: "2",
-      SinExcusa: "3",
-      Retirado: "4",
-      Reasignado: "5",
-    };
-
-    // Mapear state_beca a fk_beca
-    const becaIdMap = {
-      Activo: 1,
-      Retirado: 0,
-    };
-
     // Construir el payload según el formato requerido
     const updatedData = {
       first_name: editedData.first_name,
@@ -177,7 +185,7 @@ const ProfileStudent = ({
         data.numero_identificacion || data.identification || "",
       email: data.email || data.correo_electronico || "",
       birth_date: data.fecha_nacimiento || data.birthday || "",
-      process_id: processIdMap[editedData.state_process] || "2",
+      process_id: processIdMap[editedData.state_process],
       gender: data.genero || data.genre || "",
       photo_link: photoPreview || data.link_foto || data.url_photo || "",
       identification_link: "yes",
@@ -195,11 +203,6 @@ const ProfileStudent = ({
       cuenta_piar: hasPiar,
       link_piar: hasPiar ? data?.link_piar || null : null,
     };
-
-    // Si hay archivos nuevos, actualizar los links correspondientes
-    if (photoFile) {
-      updatedData.photo_link = photoPreview;
-    }
 
     // -- Subida de archivos (identificación y/o PIAR) -----------------------
     const hasIdFile = Boolean(documentFiles.id_Student);
@@ -271,6 +274,66 @@ const ProfileStudent = ({
   const handleImageCapture = (file, preview) => {
     setPhotoFile(file);
     setPhotoPreview(preview);
+  };
+
+  const handleUploadEtapaFoto = async () => {
+    if (!photoFile) {
+      notify.error("No hay foto para subir");
+      return;
+    }
+    if (!currentEtapa) {
+      notify.error("Debes tomar una foto de etapa primero");
+      return;
+    }
+    try {
+      const reader = new FileReader();
+      const photoBase64 = await new Promise((resolve, reject) => {
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(photoFile);
+      });
+      const fd = new FormData();
+      fd.append("imageBase64", photoBase64);
+      fd.append(
+        "identificacion",
+        data.numero_identificacion || data.identification || "",
+      );
+      fd.append("etapa", currentEtapa);
+      const uploadRes = await upload(fd, "uploadfirma/estudiantes");
+      if (uploadRes?.status === 200 && uploadRes?.data) {
+        const { fileName, folder } = uploadRes.data;
+        if (fileName && folder) {
+          const cleanFolder = folder.replace("/var/www", "");
+          const imageUrl = `https://www.nexusplataforma.com${cleanFolder}/${fileName}`;
+          const etapaPayload = {
+            fk_estudiante: data.id_estudiante,
+            fk_primera_etapa: editedData.fk_state_first,
+            fk_segunda_etapa: editedData.fk_state_second,
+            fk_tercera_etapa: null,
+            link_foto_primera_etapa:
+              currentEtapa === "et1"
+                ? imageUrl
+                : editedData.link_foto_primera_etapa,
+            link_foto_segunda_etapa:
+              currentEtapa === "et2"
+                ? imageUrl
+                : editedData.link_foto_segunda_etapa,
+            fk_beca: editedData.fk_beca || null,
+            fk_proceso: editedData.fk_process || null,
+          };
+          await setStudentDataAudit(etapaPayload);
+          if (currentEtapa === "et1") {
+            handleStateChange("link_foto_primera_etapa", imageUrl);
+          } else if (currentEtapa === "et2") {
+            handleStateChange("link_foto_segunda_etapa", imageUrl);
+          }
+          notify.success("Foto de etapa subida correctamente");
+        }
+      }
+    } catch (err) {
+      console.error("Error subiendo foto en ProfileStudent:", err);
+      notify.error("Error al subir la foto de etapa");
+    }
   };
 
   const handleDocumentChange = (documentName, file) => {
@@ -367,7 +430,7 @@ const ProfileStudent = ({
             </div>
             <div className="flex flex-row gap-4 items-center">
               <label className="text-lg font-medium">Primer nombre:</label>
-              {isEditing ? (
+              {canEditRestricted ? (
                 <input
                   type="text"
                   value={editedData.first_name}
@@ -382,7 +445,7 @@ const ProfileStudent = ({
             </div>
             <div className="flex flex-row gap-4 items-center">
               <label className="text-lg font-medium">Segundo nombre:</label>
-              {isEditing ? (
+              {canEditRestricted ? (
                 <input
                   type="text"
                   value={editedData.second_name}
@@ -397,7 +460,7 @@ const ProfileStudent = ({
             </div>
             <div className="flex flex-row gap-4 items-center">
               <label className="text-lg font-medium">Primer apellido:</label>
-              {isEditing ? (
+              {canEditRestricted ? (
                 <input
                   type="text"
                   value={editedData.first_lastname}
@@ -412,7 +475,7 @@ const ProfileStudent = ({
             </div>
             <div className="flex flex-row gap-4 items-center">
               <label className="text-lg font-medium">Segundo apellido:</label>
-              {isEditing ? (
+              {canEditRestricted ? (
                 <input
                   type="text"
                   value={editedData.second_lastname}
@@ -467,7 +530,7 @@ const ProfileStudent = ({
 
           <div className="flex flex-row gap-4 items-center">
             <label className="text-lg font-medium">Periodo de ingreso:</label>
-            {isEditing ? (
+            {canEditRestricted ? (
               <PeriodSelector
                 name="periodo_ingreso"
                 label={false}
@@ -531,7 +594,7 @@ const ProfileStudent = ({
         {showStates && (
           <div id="tour-ps-states" className="p-4 bg-bg rounded-lg shadow-md">
             <h2 className="text-2xl font-semibold pb-4">
-              Estados del estudiante
+              Documentos Auditoria
             </h2>
 
             <div className="flex flex-col gap-3">
@@ -540,21 +603,48 @@ const ProfileStudent = ({
                 <label className="text-lg font-medium w-48">
                   Primera Etapa:
                 </label>
-                <span
-                  className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
-                    editedData.state_first === "Registrado"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-yellow-100 text-yellow-800"
-                  }`}
-                >
-                  {editedData.state_first}
-                </span>
-                {!isRol6 &&
-                (data.state_first === "Ausente" ||
-                  data.nombre_primera_etapa === "Pendiente") ? (
-                  <div className="">
+                {isEditing ? (
+                  <select
+                    value={editedData.fk_state_first ?? 1}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      const labelMap = {
+                        1: "Pendiente",
+                        2: "Registrado",
+                        3: "Ausente",
+                        4: "Excusa",
+                      };
+                      handleStateChange("fk_state_first", val);
+                      handleStateChange(
+                        "state_first",
+                        labelMap[val] || "Pendiente",
+                      );
+                    }}
+                    className="border p-2 rounded bg-surface text-center"
+                  >
+                    <option value={1}>Pendiente</option>
+                    <option value={2}>Registrado</option>
+                    <option value={3}>Ausente</option>
+                    <option value={4}>Excusa</option>
+                  </select>
+                ) : (
+                  <span
+                    className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
+                      editedData.state_first === "Registrado"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-yellow-100 text-yellow-800"
+                    }`}
+                  >
+                    {editedData.state_first}
+                  </span>
+                )}
+                {isEditing && !isRol6 && editedData.fk_state_first === 2 ? (
+                  <div lassName="">
                     <SimpleButton
-                      onClick={() => setIsOpenCamera(true)}
+                      onClick={() => {
+                        setCurrentEtapa("et1");
+                        setIsOpenCamera(true);
+                      }}
                       msj="Tomar foto"
                       bg="bg-accent"
                       icon="Camera"
@@ -569,30 +659,55 @@ const ProfileStudent = ({
                   Segunda Etapa:
                 </label>
 
-                <span
-                  className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
-                    editedData.state_second === "Validado"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-yellow-100 text-yellow-800"
-                  }`}
-                >
-                  {editedData.state_second}
-                </span>
-                {!isRol6 &&
-                  (data.state_first === "Registrado" ||
-                    data.nombre_primera_etapa === "Registrado") &&
-                  (data.state_second === "Ausente" ||
-                    data.nombre_segunda_etapa === "Pendiente") && (
-                    <div className="">
-                      <SimpleButton
-                        onClick={() => setIsOpenCamera(true)}
-                        msj="Tomar Foto"
-                        bg="bg-accent"
-                        icon="Camera"
-                        text="text-surface"
-                      />
-                    </div>
-                  )}
+                {isEditing ? (
+                  <select
+                    value={editedData.fk_state_second ?? 1}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      const labelMap = {
+                        1: "Pendiente",
+                        2: "Registrado",
+                        3: "Ausente",
+                        4: "Excusa",
+                      };
+                      handleStateChange("fk_state_second", val);
+                      handleStateChange(
+                        "state_second",
+                        labelMap[val] || "Pendiente",
+                      );
+                    }}
+                    className="border p-2 rounded bg-surface text-center"
+                  >
+                    <option value={1}>Pendiente</option>
+                    <option value={2}>Registrado</option>
+                    <option value={3}>Ausente</option>
+                    <option value={4}>Excusa</option>
+                  </select>
+                ) : (
+                  <span
+                    className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
+                      editedData.state_second === "Registrado"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-yellow-100 text-yellow-800"
+                    }`}
+                  >
+                    {editedData.state_second}
+                  </span>
+                )}
+                {isEditing && !isRol6 && editedData.fk_state_second === 2 && (
+                  <div className="">
+                    <SimpleButton
+                      onClick={() => {
+                        setCurrentEtapa("et2");
+                        setIsOpenCamera(true);
+                      }}
+                      msj="Tomar Foto"
+                      bg="bg-accent"
+                      icon="Camera"
+                      text="text-surface"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Estado Institucional */}
@@ -603,24 +718,28 @@ const ProfileStudent = ({
 
                 {isEditing ? (
                   <select
-                    value={editedData.state_beca}
+                    value={editedData.fk_beca}
                     onChange={(e) =>
-                      handleStateChange("state_beca", e.target.value)
+                      handleStateChange("fk_beca", e.target.value)
                     }
                     className="border p-2 rounded bg-surface text-center"
                   >
-                    <option value="Activo">Activo</option>
-                    <option value="Retirado">Retirado</option>
+                    <option value="">Seleccionar</option>
+                    <option value="1">Activo</option>
+                    <option value="2">Retirado</option>
+                    <option value="3">Sin beca</option>
                   </select>
                 ) : (
                   <span
                     className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
-                      editedData.state_beca === "Activo"
+                      editedData.fk_beca === "1"
                         ? "bg-green-100 text-green-800"
-                        : "bg-gray-100 text-gray-800"
+                        : editedData.fk_beca === "2"
+                          ? "bg-red-100 text-red-800"
+                          : "bg-gray-100 text-gray-800"
                     }`}
                   >
-                    {editedData.state_beca}
+                    {editedData.state_beca ? editedData.state_beca : "Nulo"}
                   </span>
                 )}
               </div>
@@ -633,28 +752,30 @@ const ProfileStudent = ({
 
                 {isEditing ? (
                   <select
-                    value={editedData.state_process}
+                    value={editedData.fk_process}
                     onChange={(e) =>
-                      handleStateChange("state_process", e.target.value)
+                      handleStateChange("fk_process", e.target.value)
                     }
                     className="border p-2 rounded bg-surface text-center"
                   >
-                    <option value="Conforme">Conforme</option>
-                    <option value="Retirado">Retirado</option>
-                    <option value="SinExcusa">Sin Excusa</option>
-                    <option value="Excusa">Excusa</option>
-                    <option value="Reasignado">Reasignado</option>
+                    <option value="1">Conforme</option>
+                    <option value="2">Excusa</option>
+                    <option value="3">Sin Excusa</option>
+                    <option value="4">Retirado</option>
+                    <option value="5">Reasignado</option>
                   </select>
                 ) : (
                   <span
                     className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
-                      editedData.state_process === "Conforme"
+                      editedData.fk_process === "1"
                         ? "bg-green-100 text-green-800"
-                        : editedData.state_process === "Retirado"
+                        : editedData.fk_process === "4"
                           ? "bg-gray-100 text-gray-800"
-                          : editedData.state_process === "Reasignado"
+                          : editedData.fk_process === "5"
                             ? "bg-indigo-100 text-indigo-800"
-                            : "bg-red-100 text-red-800"
+                            : editedData.fk_process === "2"
+                              ? "bg-yellow-700 text-yellow-100"
+                              : "bg-red-100 text-red-800"
                     }`}
                   >
                     {editedData.state_process}
@@ -672,6 +793,39 @@ const ProfileStudent = ({
                   />
                 )}
               </div>
+
+              {isEditing && !isRol6 && (
+                <div className="flex justify-start pt-2">
+                  <SimpleButton
+                    onClick={handleUploadEtapaFoto}
+                    msj="Subir foto de etapa"
+                    bg="bg-accent"
+                    icon="Upload"
+                    text="text-surface"
+                  />
+                </div>
+              )}
+
+              {(editedData.link_foto_primera_etapa || editedData.link_foto_segunda_etapa) && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-4 border-t">
+                  <div className="flex flex-col items-center gap-2">
+                    <label className="text-lg font-medium">Foto Primera Etapa</label>
+                    {editedData.link_foto_primera_etapa ? (
+                      <PreviewIMG path={editedData.link_foto_primera_etapa} size="profile" />
+                    ) : (
+                      <span className="text-sm text-gray-500">Sin foto</span>
+                    )}
+                  </div>
+                  <div className="flex flex-col items-center gap-2">
+                    <label className="text-lg font-medium">Foto Segunda Etapa</label>
+                    {editedData.link_foto_segunda_etapa ? (
+                      <PreviewIMG path={editedData.link_foto_segunda_etapa} size="profile" />
+                    ) : (
+                      <span className="text-sm text-gray-500">Sin foto</span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -679,7 +833,9 @@ const ProfileStudent = ({
           id="tour-ps-documents"
           className="p-4 bg-bg rounded-lg shadow-md flex flex-col gap-2"
         >
-          <h2 className="text-2xl font-semibold pb-4">Documentos Auditoria</h2>
+          <h2 className="text-2xl font-semibold pb-4">
+            Documentos del estudiante
+          </h2>
 
           <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-4 items-center">
             <label className="text-lg font-medium">Ficha de matrícula:</label>
