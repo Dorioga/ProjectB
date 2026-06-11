@@ -791,7 +791,7 @@ const ProfileStudent = ({
                 <div className="flex justify-start pt-2">
                   <SimpleButton
                     onClick={handleUploadEtapaFoto}
-                    msj="Subir foto de etapa"
+                    msj="Subir información de auditoria"
                     bg="bg-accent"
                     icon="Upload"
                     text="text-surface"
