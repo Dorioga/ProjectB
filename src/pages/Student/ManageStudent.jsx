@@ -418,7 +418,7 @@ const ManageStudent = () => {
 
         <StudentModal
           isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
+          onClose={() => { setIsModalOpen(false); fetchStudentsData(); }}
           student={selectedStudent}
           initialEditing={initialEditing}
           isLoading={isFetching}
