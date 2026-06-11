@@ -277,59 +277,52 @@ const ProfileStudent = ({
   };
 
   const handleUploadEtapaFoto = async () => {
-    if (!photoFile) {
-      notify.error("No hay foto para subir");
-      return;
-    }
-    if (!currentEtapa) {
-      notify.error("Debes tomar una foto de etapa primero");
-      return;
-    }
     try {
-      const reader = new FileReader();
-      const photoBase64 = await new Promise((resolve, reject) => {
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(photoFile);
-      });
-      const fd = new FormData();
-      fd.append("imageBase64", photoBase64);
-      fd.append(
-        "identificacion",
-        data.numero_identificacion || data.identification || "",
-      );
-      fd.append("etapa", currentEtapa);
-      const uploadRes = await upload(fd, "uploadfirma/estudiantes");
-      if (uploadRes?.status === 200 && uploadRes?.data) {
-        const { fileName, folder } = uploadRes.data;
-        if (fileName && folder) {
-          const cleanFolder = folder.replace("/var/www", "");
-          const imageUrl = `https://www.nexusplataforma.com${cleanFolder}/${fileName}`;
-          const etapaPayload = {
-            fk_estudiante: data.id_estudiante,
-            fk_primera_etapa: editedData.fk_state_first,
-            fk_segunda_etapa: editedData.fk_state_second,
-            fk_tercera_etapa: null,
-            link_foto_primera_etapa:
-              currentEtapa === "et1"
-                ? imageUrl
-                : editedData.link_foto_primera_etapa,
-            link_foto_segunda_etapa:
-              currentEtapa === "et2"
-                ? imageUrl
-                : editedData.link_foto_segunda_etapa,
-            fk_beca: editedData.fk_beca || null,
-            fk_proceso: editedData.fk_process || null,
-          };
-          await setStudentDataAudit(etapaPayload);
-          if (currentEtapa === "et1") {
-            handleStateChange("link_foto_primera_etapa", imageUrl);
-          } else if (currentEtapa === "et2") {
-            handleStateChange("link_foto_segunda_etapa", imageUrl);
+      let imageUrl = null;
+      if (photoFile) {
+        const reader = new FileReader();
+        const photoBase64 = await new Promise((resolve, reject) => {
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(photoFile);
+        });
+        const fd = new FormData();
+        fd.append("imageBase64", photoBase64);
+        fd.append(
+          "identificacion",
+          data.numero_identificacion || data.identification || "",
+        );
+        fd.append("etapa", currentEtapa);
+        const uploadRes = await upload(fd, "uploadfirma/estudiantes");
+        if (uploadRes?.status === 200 && uploadRes?.data) {
+          const { fileName, folder } = uploadRes.data;
+          if (fileName && folder) {
+            const cleanFolder = folder.replace("/var/www", "");
+            imageUrl = `https://www.nexusplataforma.com${cleanFolder}/${fileName}`;
           }
-          notify.success("Foto de etapa subida correctamente");
         }
       }
+      const etapaPayload = {
+        fk_estudiante: data.id_estudiante,
+        fk_primera_etapa: editedData.fk_state_first,
+        fk_segunda_etapa: editedData.fk_state_second,
+        fk_tercera_etapa: null,
+        link_foto_primera_etapa: editedData.link_foto_primera_etapa,
+        link_foto_segunda_etapa: editedData.link_foto_segunda_etapa,
+        fk_beca: editedData.fk_beca || null,
+        fk_proceso: editedData.fk_process || null,
+      };
+      if (imageUrl) {
+        if (currentEtapa === "et1") {
+          etapaPayload.link_foto_primera_etapa = imageUrl;
+          handleStateChange("link_foto_primera_etapa", imageUrl);
+        } else if (currentEtapa === "et2") {
+          etapaPayload.link_foto_segunda_etapa = imageUrl;
+          handleStateChange("link_foto_segunda_etapa", imageUrl);
+        }
+      }
+      await setStudentDataAudit(etapaPayload);
+      notify.success("Foto de etapa subida correctamente");
     } catch (err) {
       console.error("Error subiendo foto en ProfileStudent:", err);
       notify.error("Error al subir la foto de etapa");
@@ -806,20 +799,31 @@ const ProfileStudent = ({
                 </div>
               )}
 
-              {(editedData.link_foto_primera_etapa || editedData.link_foto_segunda_etapa) && (
+              {(editedData.link_foto_primera_etapa ||
+                editedData.link_foto_segunda_etapa) && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-4 border-t">
                   <div className="flex flex-col items-center gap-2">
-                    <label className="text-lg font-medium">Foto Primera Etapa</label>
+                    <label className="text-lg font-medium">
+                      Foto Primera Etapa
+                    </label>
                     {editedData.link_foto_primera_etapa ? (
-                      <PreviewIMG path={editedData.link_foto_primera_etapa} size="profile" />
+                      <PreviewIMG
+                        path={editedData.link_foto_primera_etapa}
+                        size="profile"
+                      />
                     ) : (
                       <span className="text-sm text-gray-500">Sin foto</span>
                     )}
                   </div>
                   <div className="flex flex-col items-center gap-2">
-                    <label className="text-lg font-medium">Foto Segunda Etapa</label>
+                    <label className="text-lg font-medium">
+                      Foto Segunda Etapa
+                    </label>
                     {editedData.link_foto_segunda_etapa ? (
-                      <PreviewIMG path={editedData.link_foto_segunda_etapa} size="profile" />
+                      <PreviewIMG
+                        path={editedData.link_foto_segunda_etapa}
+                        size="profile"
+                      />
                     ) : (
                       <span className="text-sm text-gray-500">Sin foto</span>
                     )}
@@ -839,43 +843,15 @@ const ProfileStudent = ({
 
           <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-4 items-center">
             <label className="text-lg font-medium">Ficha de matrícula:</label>
-            <span
-              className={`px-3 py-1 rounded-lg text-sm font-semibold text-center border border-solid  ${
-                String(data?.auDoc_matricula || "").includes("https://")
-                  ? "bg-green-100 text-green-800 border-green-200 "
-                  : "bg-yellow-100 text-yellow-800 border-yellow-200 "
-              }`}
-            >
-              {String(data?.auDoc_matricula || "").includes("https://")
-                ? "Cargado"
-                : "No cargado"}
-            </span>
 
             <div className="flex gap-2">
-              {String(data?.auDoc_matricula || "").includes("https://") && (
-                <SimpleButton
-                  onClick={() => {
-                    setIsOpenDocument(true);
-                    setDocumentSelected({
-                      file: data.auDoc_matricula,
-                      name: "Documento Matricula",
-                    });
-                  }}
-                  msj="Ver Documento"
-                  bg="bg-accent"
-                  icon="View"
-                  text="text-surface"
-                />
-              )}
-              {[3, 5, 6].includes(Number(rol)) && (
-                <SimpleButton
-                  onClick={() => setIsOpenMatricula(true)}
-                  msj="Ficha de matrícula"
-                  bg="bg-primary"
-                  icon="ClipboardList"
-                  text="text-surface"
-                />
-              )}
+              <SimpleButton
+                onClick={() => setIsOpenMatricula(true)}
+                msj="Ficha de matrícula"
+                bg="bg-primary"
+                icon="ClipboardList"
+                text="text-surface"
+              />
             </div>
           </div>
 

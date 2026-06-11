@@ -1,6 +1,6 @@
 import { useState } from "react";
-import FileChooser from "../atoms/FileChooser";
 import SimpleButton from "../atoms/SimpleButton";
+import FileChooser from "../atoms/FileChooser";
 import { upload } from "../../services/uploadService";
 import { useNotify } from "../../lib/hooks/useNotify";
 
@@ -14,52 +14,37 @@ const DOCUMENT_TYPES = [
 const AuditBulkModal = ({ onClose, onSuccess, mode = "upload" }) => {
   const notify = useNotify();
   const [submitting, setSubmitting] = useState(false);
-  const [documents, setDocuments] = useState(
-    Object.fromEntries(
-      DOCUMENT_TYPES.map(({ key }) => [key, { selected: false, file: null }]),
-    ),
+  const [selectedDocs, setSelectedDocs] = useState(
+    Object.fromEntries(DOCUMENT_TYPES.map(({ key }) => [key, false])),
   );
+  const [files, setFiles] = useState(null);
 
   const handleCheckChange = (key, checked) => {
-    setDocuments((prev) => ({
-      ...prev,
-      [key]: { ...prev[key], selected: checked },
-    }));
-  };
-
-  const handleFileChange = (key, file) => {
-    setDocuments((prev) => ({
-      ...prev,
-      [key]: { selected: true, file },
-    }));
+    setSelectedDocs((prev) => ({ ...prev, [key]: checked }));
   };
 
   const handleSubmit = async () => {
-    const selected = Object.entries(documents).filter(
-      ([, v]) => v.selected && v.file,
-    );
+    const selected = Object.entries(selectedDocs)
+      .filter(([, v]) => v)
+      .map(([k]) => k);
     if (selected.length === 0) {
-      notify.error(
-        "Selecciona al menos un tipo de documento y adjunta su archivo",
-      );
+      notify.error("Selecciona al menos un tipo de documento");
       return;
     }
     setSubmitting(true);
     try {
       const fd = new FormData();
-      selected.forEach(([key, { file }]) => {
-        fd.append(key, file, file.name);
-      });
+      selected.forEach((key) => fd.append("tipos[]", key));
       const res = await upload(fd, "upload/auditoria");
       if (res?.status === 200) {
-        notify.success("Documentos de auditoría subidos correctamente");
+        notify.success("Documentos de auditoría procesados correctamente");
         onSuccess?.();
       } else {
-        notify.error("Error al subir los documentos");
+        notify.error("Error al procesar los documentos");
       }
     } catch (err) {
       console.error("Error en auditoría:", err);
-      notify.error("Error al subir documentos de auditoría");
+      notify.error("Error al procesar documentos de auditoría");
     } finally {
       setSubmitting(false);
     }
@@ -69,34 +54,28 @@ const AuditBulkModal = ({ onClose, onSuccess, mode = "upload" }) => {
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-4 gap-4">
         {DOCUMENT_TYPES.map(({ key, label }) => (
-          <div
+          <label
             key={key}
-            className="grid grid-cols-[auto_1fr] gap-3 items-center"
+            className="flex items-center gap-3 cursor-pointer"
           >
             <input
               type="checkbox"
-              checked={documents[key].selected}
+              checked={selectedDocs[key]}
               onChange={(e) => handleCheckChange(key, e.target.checked)}
               className="w-4 h-4"
             />
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium min-w-[180px]">{label}</span>
-              {documents[key].selected && (
-                <FileChooser
-                  editing
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={(file) => handleFileChange(key, file)}
-                  label={
-                    documents[key].file
-                      ? documents[key].file.name
-                      : "Seleccionar archivo"
-                  }
-                />
-              )}
-            </div>
-          </div>
+            <span className="text-sm font-medium">{label}</span>
+          </label>
         ))}
       </div>
+      {mode === "upload" && (
+        <FileChooser
+          value={files}
+          onChange={setFiles}
+          multiple
+          label="Seleccionar archivos"
+        />
+      )}
       <div className="flex justify-end gap-2 pt-4 border-t">
         <SimpleButton
           onClick={onClose}
