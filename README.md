@@ -79,6 +79,7 @@ graph TD
         Teacher["TeacherContext\n(Docentes)"]
         Data["DataContext\n(Catálogos)"]
         Notify["NotificationContext\n(Alertas UI)"]
+        Audit["AuditContext\n(Auditoría)"]
     end
 
     subgraph Servicios ["Capa de Servicios"]
@@ -88,6 +89,8 @@ graph TD
         schoolSvc["schoolService"]
         studentSvc["studentService"]
         teacherSvc["teacherService"]
+        slotSvc["slotService"]
+        auditSvc["auditService"]
         uploadSvc["uploadService"]
     end
 
@@ -102,18 +105,22 @@ graph TD
     SPA --> Teacher
     SPA --> Data
     SPA --> Notify
+    SPA --> Audit
 
     Auth --> ApiClient
     School --> ApiClient
     Student --> ApiClient
     Teacher --> ApiClient
     Data --> ApiClient
+    Audit --> ApiClient
 
     ApiClient --> authSvc
     ApiClient --> dataSvc
     ApiClient --> schoolSvc
     ApiClient --> studentSvc
     ApiClient --> teacherSvc
+    ApiClient --> slotSvc
+    ApiClient --> auditSvc
     ApiClient --> uploadSvc
 
     authSvc --> API
@@ -121,6 +128,8 @@ graph TD
     schoolSvc --> API
     studentSvc --> API
     teacherSvc --> API
+    slotSvc --> API
+    auditSvc --> API
     uploadSvc --> Storage
 ```
 
@@ -154,6 +163,9 @@ graph TD
 | Tours guiados           | Driver.js                   | ^1.4.0             |
 | Webcam                  | react-webcam                | ^7.2.0             |
 | Firma digital           | react-signature-canvas      | ^1.1.0-alpha.2     |
+| Códigos QR              | qrcode.react                | ^4.2.0             |
+| Escáner QR              | html5-qrcode                | ^2.3.8             |
+| reCAPTCHA               | react-google-recaptcha      | ^3.1.0             |
 
 ### Herramientas de desarrollo
 
@@ -240,7 +252,7 @@ ProjectB/
 │   │   ├── molecules/          # Componentes compuestos (43 componentes)
 │   │   └── templates/          # Layouts de página (DashboardTemplate, ReserveSpot)
 │   ├── lib/
-│   │   ├── context/            # Proveedores de estado global (6 contextos React)
+│   │   ├── context/            # Proveedores de estado global (7 contextos React)
 │   │   ├── hooks/              # Hooks personalizados que consumen los contextos
 │   │   └── constants/          # Constantes globales de la aplicación
 │   ├── pages/
@@ -248,8 +260,8 @@ ProjectB/
 │   │   ├── Dashboard/          # Vistas de panel principal y administración
 │   │   ├── Login/              # Autenticación y recuperación de contraseña
 │   │   ├── Student/            # Gestión integral de estudiantes (13 vistas)
-│   │   ├── Teacher/            # Gestión integral de docentes (9 vistas)
-│   │   ├── School/             # Gestión institucional (8 vistas)
+│   │   ├── Teacher/            # Gestión integral de docentes (10 vistas)
+│   │   ├── School/             # Gestión institucional (10 vistas)
 │   │   └── GradeRecords/       # Registros académicos (2 vistas)
 │   ├── routes/
 │   │   └── generalRoutes.jsx   # Definición centralizada de todas las rutas
@@ -260,8 +272,9 @@ ProjectB/
 │   │   ├── schoolService.js    # Gestión de instituciones y sedes
 │   │   ├── studentService.js   # Gestión de estudiantes
 │   │   ├── teacherService.js   # Gestión de docentes
-│   │   ├── uploadService.js    # Carga de archivos multimedia
-│   │   └── DataExamples/       # Datos mock para desarrollo local
+│   │   ├── slotService.js      # Gestión de cupos
+│   │   ├── auditService.js     # Registro de auditoría
+│   │   └── uploadService.js    # Carga de archivos multimedia
 │   ├── styles/
 │   │   └── globals.css         # Estilos globales y variables CSS personalizadas
 │   ├── tour/                   # Archivos de configuración para tours guiados (Driver.js)
@@ -284,8 +297,8 @@ ProjectB/
 
 | Directorio                  | Responsabilidad                                                                                                                                     |
 | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/lib/context/`          | Estado global de la aplicación. Contiene `AuthContext`, `DataContext`, `SchoolContext`, `StudentContext`, `TeacherContext` y `NotificationContext`. |
-| `src/lib/hooks/`            | Hooks de acceso simplificado a cada contexto (`useAuth`, `useData`, `useSchool`, `useStudent`, `useTeacher`, `useNotify`).                          |
+| `src/lib/context/`          | Estado global de la aplicación. Contiene `AuthContext`, `DataContext`, `SchoolContext`, `StudentContext`, `TeacherContext`, `NotificationContext` y `AuditContext`. |
+| `src/lib/hooks/`            | Hooks de acceso simplificado a cada contexto (`useAuth`, `useData`, `useSchool`, `useStudent`, `useTeacher`, `useNotify`, `useAudit`).              |
 | `src/services/`             | Capa de abstracción sobre la API REST. Cada archivo encapsula los endpoints de un dominio.                                                          |
 | `src/components/atoms/`     | Componentes primitivos sin lógica de negocio: botones, selectores, modales, loaders, etc.                                                           |
 | `src/components/molecules/` | Componentes que combinan átomos con lógica de presentación: tablas con acciones, formularios de selección, paneles de perfil.                       |
@@ -357,6 +370,18 @@ La comunicación con el backend se realiza a través de `ApiClient.js`, que conf
 | `POST`  | `/teachers`                | Registrar docente                        |
 | `PATCH` | `/teacher/:id/person/:pid` | Actualizar docente y su persona asociada |
 | `POST`  | `/teacher/sedes`           | Sedes asignadas a un docente             |
+
+### slotService — Gestión de cupos
+
+| Método | Endpoint          | Descripción                                                    |
+| ------ | ----------------- | -------------------------------------------------------------- |
+| `POST` | `/slots-values`   | Obtener valores de cupos reservados por institución y año      |
+
+### auditService — Auditoría
+
+| Método | Endpoint | Descripción                                                     |
+| ------ | -------- | --------------------------------------------------------------- |
+| `POST` | `/audit` | Registrar acción en el historial de auditoría del sistema       |
 
 ### uploadService — Carga de archivos
 
@@ -724,7 +749,7 @@ erDiagram
 
 | Atributo        | Detalle                                                                    |
 | --------------- | -------------------------------------------------------------------------- |
-| **Ruta**        | `/dashboard/auditory`                                                      |
+| **Ruta**        | Acceso desde el menú dinámico del Dashboard                                |
 | **Descripción** | Registro histórico de acciones realizadas dentro del sistema.              |
 | **Objetivo**    | Proveer trazabilidad completa de las operaciones para control y seguridad. |
 
@@ -743,19 +768,19 @@ erDiagram
 
 ---
 
-#### Vista: Reports
+#### Vista: ControlNotas
 
-| Atributo        | Detalle                                                                   |
-| --------------- | ------------------------------------------------------------------------- |
-| **Ruta**        | `/dashboard/reports`                                                      |
-| **Descripción** | Generación y descarga de reportes institucionales.                        |
-| **Objetivo**    | Centralizar la generación de informes en múltiples formatos (PDF, Excel). |
+| Atributo        | Detalle                                                                       |
+| --------------- | ----------------------------------------------------------------------------- |
+| **Ruta**        | `/dashboard/controlNotas`                                                     |
+| **Descripción** | Panel de control y análisis de calificaciones por asignatura, grado y período.|
+| **Objetivo**    | Proveer una vista consolidada del rendimiento académico por grupos.           |
 
-**Acciones disponibles:**
+**Componentes principales:**
 
-- Selección de tipo de reporte
-- Configuración de parámetros (período, sede, grado)
-- Exportación a PDF (`exportPdf.js`) y Excel (`xlsx`)
+- Selectores en cascada (sede, grado, asignatura, jornada, período)
+- Tabla con promedios de calificaciones por estudiante y grupo
+- Métricas de rendimiento académico
 
 **Roles:** Administrador, Director, Coordinador.
 
@@ -879,11 +904,11 @@ erDiagram
 
 ---
 
-#### Vista: UploadStudentExcel
+#### Vista: UploadStudentExcel (Modal)
 
 | Atributo        | Detalle                                                                                   |
 | --------------- | ----------------------------------------------------------------------------------------- |
-| **Ruta**        | `/dashboard/uploadStudentExcel`                                                           |
+| **Ruta**        | Modal dentro de `/dashboard/manageStudent`                                                |
 | **Descripción** | Carga masiva de estudiantes desde archivo Excel.                                          |
 | **Objetivo**    | Reducir el tiempo de digitación al permitir importar múltiples registros simultáneamente. |
 
@@ -921,18 +946,6 @@ erDiagram
 
 ---
 
-#### Vista: ObservadorEstudiante
-
-| Atributo        | Detalle                                                                      |
-| --------------- | ---------------------------------------------------------------------------- |
-| **Ruta**        | `/dashboard/observadorEstudiante`                                            |
-| **Descripción** | Registro del observador disciplinario/conductual del estudiante.             |
-| **Objetivo**    | Documentar incidentes, logros conductuales y seguimiento del comportamiento. |
-
-**Roles:** Docente, Coordinador, Director.
-
----
-
 #### Vista: ManageObserver
 
 | Atributo        | Detalle                                                               |
@@ -958,24 +971,6 @@ erDiagram
 ---
 
 ### Dominio: Docentes
-
----
-
-#### Vista: RegisterTeacher
-
-| Atributo        | Detalle                                                                                |
-| --------------- | -------------------------------------------------------------------------------------- |
-| **Ruta**        | `/dashboard/registerTeacher`                                                           |
-| **Descripción** | Formulario de registro de un nuevo docente.                                            |
-| **Objetivo**    | Incorporar docentes al sistema con su información personal y asignación institucional. |
-
-**Acciones disponibles:**
-
-- Registro de docente (`POST /teachers`)
-- Asignación de sede y grado a cargo
-- Indicar si es director de grupo
-
-**Roles:** Administrador, Director.
 
 ---
 
@@ -1013,18 +1008,6 @@ erDiagram
 - Notas y logros registrados
 
 **Roles:** Administrador, Director, el propio Docente.
-
----
-
-#### Vista: RegisterAssistance
-
-| Atributo        | Detalle                                                      |
-| --------------- | ------------------------------------------------------------ |
-| **Ruta**        | `/dashboard/registerAssistance`                              |
-| **Descripción** | Registro de asistencia de estudiantes por sesión de clase.   |
-| **Objetivo**    | Permitir al docente marcar la asistencia de sus estudiantes. |
-
-**Roles:** Docente, Coordinador.
 
 ---
 
@@ -1091,6 +1074,18 @@ erDiagram
 | **Objetivo**    | Administrar los DBA definidos para cada asignatura y nivel. |
 
 **Roles:** Docente, Coordinador, Administrador.
+
+---
+
+#### Vista: ProfileNoteSede
+
+| Atributo        | Detalle                                                                                         |
+| --------------- | ----------------------------------------------------------------------------------------------- |
+| **Ruta**        | `/dashboard/profileNoteSede`                                                                    |
+| **Descripción** | Perfil detallado de notas filtradas por sede, asignatura, grado y período.                      |
+| **Objetivo**    | Visualizar y gestionar las calificaciones desde una vista consolidada por sede.                 |
+
+**Roles:** Administrador, Director, Coordinador.
 
 ---
 
@@ -1176,13 +1171,13 @@ erDiagram
 
 ---
 
-#### Vista: RegisterGrade
+#### Vista: RegisterGrade (Modal)
 
-| Atributo        | Detalle                                             |
-| --------------- | --------------------------------------------------- |
-| **Ruta**        | `/dashboard/registerGrade`                          |
-| **Descripción** | Formulario de creación de un nuevo grado académico. |
-| **Objetivo**    | Agregar nuevos niveles académicos al sistema.       |
+| Atributo        | Detalle                                                                 |
+| --------------- | ----------------------------------------------------------------------- |
+| **Ruta**        | Modal dentro de `/dashboard/manageGrade`                                |
+| **Descripción** | Formulario de creación de un nuevo grado académico.                     |
+| **Objetivo**    | Agregar nuevos niveles académicos al sistema.                           |
 
 **Roles:** Administrador, Director.
 
@@ -1212,11 +1207,29 @@ erDiagram
 
 ---
 
+#### Vista: ControlAccesoSalida
+
+| Atributo        | Detalle                                                                             |
+| --------------- | ----------------------------------------------------------------------------------- |
+| **Ruta**        | `/dashboard/controlAccesoSalida`                                                    |
+| **Descripción** | Control de acceso y salida de estudiantes y personal en la institución.             |
+| **Objetivo**    | Registrar y consultar los movimientos de entrada y salida en la sede.               |
+
+**Componentes principales:**
+
+- Registro de entrada/salida con fecha y hora
+- Filtros por rango de fechas, tipo de movimiento y persona
+- Reporte consolidado de accesos
+
+**Roles:** Administrador, Director.
+
+---
+
 #### Vista: RegisterStudentRecords
 
 | Atributo        | Detalle                                                                      |
 | --------------- | ---------------------------------------------------------------------------- |
-| **Ruta**        | `/dashboard/registerStudentRecords`                                          |
+| **Ruta**        | Acceso desde el menú dinámico de Gestión Escolar                             |
 | **Descripción** | Registro de hoja de vida académica del estudiante.                           |
 | **Objetivo**    | Documentar el historial académico completo del estudiante en la institución. |
 
@@ -1228,11 +1241,11 @@ erDiagram
 
 ---
 
-#### Vista: RegisterAsignature
+#### Vista: RegisterAsignature (Modal)
 
 | Atributo        | Detalle                                                      |
 | --------------- | ------------------------------------------------------------ |
-| **Ruta**        | `/dashboard/registerAsignature`                              |
+| **Ruta**        | Modal dentro de `/dashboard/manageAsignature`                |
 | **Descripción** | Formulario de asignación de asignaturas a docentes y grupos. |
 | **Objetivo**    | Configurar la carga académica por docente y período.         |
 
@@ -1240,11 +1253,11 @@ erDiagram
 
 ---
 
-#### Vista: RegisterRecords
+#### Vista: RegisterRecords (Modal)
 
 | Atributo        | Detalle                                                              |
 | --------------- | -------------------------------------------------------------------- |
-| **Ruta**        | `/dashboard/registerRecords`                                         |
+| **Ruta**        | Modal dentro de `/dashboard/manageNote`                              |
 | **Descripción** | Registro de calificaciones y evaluaciones en el historial académico. |
 | **Objetivo**    | Consolidar los resultados de las evaluaciones en el sistema.         |
 
@@ -1259,12 +1272,14 @@ erDiagram
 | **Autenticación JWT**         | Login con SHA-256 + token Bearer                                                   | Todas las rutas protegidas             | Obligatoria para acceder al dashboard        |
 | **Menú dinámico por rol**     | El menú de navegación se genera desde la API según el rol                          | Todas (DashboardTemplate)              | Requiere conexión al backend                 |
 | **Personalización de tema**   | Colores institucionales aplicados global y dinámicamente vía CSS Variables         | Todas                                  | Configurado por Administrador                |
-| **Sistema de notificaciones** | Alertas automáticas y manuales (error, éxito, advertencia, info) con deduplicación | Todas                                  | 600ms de ventana de deduplicación            |
+| **Sistema de notificaciones** | Alertas automáticas y manuales (error, éxito, advertencia, info) con deduplicación | Todas                                  | 600ms de ventana de deduplicación. Ver [`NOTIFICATION_GUIDE.md`](./NOTIFICATION_GUIDE.md) |
 | **Tours guiados**             | Onboarding interactivo paso a paso por funcionalidad (Driver.js)                   | 18+ vistas                             | Solo en primer uso / bajo demanda            |
 | **Exportación a PDF**         | Generación de boletines, carnés e informes                                         | ManageBoletin, ProfileStudent, Reports | Requiere datos completos del estudiante      |
 | **Carga masiva Excel**        | Importación de múltiples registros desde archivo `.xlsx`                           | UploadStudentExcel                     | Requiere formato de plantilla específico     |
 | **Captura de cámara**         | Fotografía directa desde dispositivo para perfil                                   | RegisterStudent, ProfileStudentPage    | Requiere permiso de cámara del navegador     |
 | **Firma digital**             | Captura de firma con canvas                                                        | RegisterParents, ReserveSpot           | Requiere dispositivo con puntero             |
+| **Códigos QR**                | Generación y escaneo de códigos QR                                                 | QRModal, QRScannerModal, CarnetModal   | Requiere permiso de cámara para escaneo     |
+| **reCAPTCHA**                 | Verificación de acceso humano en formularios públicos                              | ReserveSpot                            | Requiere clave pública configurada en `.env`|
 | **Auditoría**                 | Registro automático de acciones críticas                                           | Auditory                               | Solo lectura para usuarios no admin          |
 | **Multi-sede**                | Todas las operaciones están segmentadas por sede                                   | Todos los módulos                      | El usuario solo ve datos de su sede asignada |
 

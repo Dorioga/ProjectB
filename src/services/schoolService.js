@@ -810,27 +810,6 @@ export async function loadRecords(params = {}) {
 }
 
 /**
- * Obtiene todas las instituciones.
- *
- * Endpoint esperado: GET /institutions
- * @returns {Promise<Array>} Array de instituciones
- */
-export async function getSchools() {
-  try {
-    const res = await ApiClient.get("/institutions");
-    const data = Array.isArray(res) ? res : (res?.data ?? res);
-    if (Array.isArray(data)) return data;
-    if (data && typeof data === "object" && Array.isArray(data.data))
-      return data.data;
-    if (data !== undefined && data !== null) return data;
-    return [];
-  } catch (error) {
-    console.error("Error en getSchools:", error);
-    throw error;
-  }
-}
-
-/**
  * Actualiza una institución (alias de updateInstitution para compatibilidad).
  *
  * @param {string|number} id

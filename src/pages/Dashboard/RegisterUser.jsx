@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useState } from "react";
 import { sha256 } from "js-sha256";
 import Loader from "../../components/atoms/Loader";
 import SimpleButton from "../../components/atoms/SimpleButton";
@@ -7,7 +7,6 @@ import tourRegisterUser from "../../tour/tourRegisterUser";
 import RoleSelector from "../../components/molecules/RoleSelector";
 import TypeDocumentSelector from "../../components/molecules/TypeDocumentSelector";
 import InstitutionSelector from "../../components/molecules/InstitutionSelector";
-import useSchool from "../../lib/hooks/useSchool";
 import useData from "../../lib/hooks/useData";
 import useAuth from "../../lib/hooks/useAuth";
 import {
@@ -20,7 +19,6 @@ import {
 import { toUpperCaseField } from "../../utils/formatUtils";
 
 const RegisterUser = () => {
-  const { schools, loading, reload } = useSchool();
   const { registerUser, loadingRegisterUser, errorRegisterUser } = useData();
   const { idInstitution, rol } = useAuth();
   const { addNotification } = useNotification();
@@ -40,26 +38,6 @@ const RegisterUser = () => {
   });
 
   const [formErrors, setFormErrors] = useState({});
-
-  // Cargar las escuelas cuando se monta el componente
-  useEffect(() => {
-    reload();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const institutionOptions = useMemo(() => {
-    const source = Array.isArray(schools) ? schools : [];
-    return source
-      .filter(Boolean)
-      .map((s) => {
-        const id = String(s?.id ?? s?._id ?? "").trim();
-        const name = String(
-          s?.name ?? s?.nombre ?? s?.school_name ?? id,
-        ).trim();
-        return { id, name };
-      })
-      .filter((x) => x.id);
-  }, [schools]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

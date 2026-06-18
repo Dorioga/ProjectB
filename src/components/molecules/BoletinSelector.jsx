@@ -401,8 +401,7 @@ const useBoletinTransicionProcessed = (data) => {
       if (!m.has(asigKey)) {
         m.set(asigKey, {
           id_asignatura: r.id_asignatura,
-          nombre_asignatura_grado: r.nombre_asignatura_grado ?? "-",
-          nombre_docente: r.nombre_docente ?? "-",
+          nombre_asignatura_grado: r.nombre_asignatura_grado ?? r.nombre_asignatura ?? "-",
           filas: [],
         });
       }
@@ -418,28 +417,8 @@ const useBoletinTransicionProcessed = (data) => {
           id_proposito: r.id_proposito,
           nombre_proposito: r.nombre_proposito ?? "-",
           nombre_dba: r.nombre_dba ?? "-",
-          descripcion_notas: r.descripcion_nota
-            ? r.descripcion_nota
-                .split("|")
-                .map((s) => s.trim())
-                .filter(Boolean)
-            : [],
-          descripcion_nota_elegida: r.descripcion_nota_elegida ?? "-",
           comentario: r.comentario ?? "",
-          estado: r.estado ?? "",
         });
-      } else {
-        const notasParsed = r.descripcion_nota
-          ? r.descripcion_nota
-              .split("|")
-              .map((s) => s.trim())
-              .filter(Boolean)
-          : [];
-        for (const nota of notasParsed) {
-          if (!asig.filas[existingIdx].descripcion_notas.includes(nota)) {
-            asig.filas[existingIdx].descripcion_notas.push(nota);
-          }
-        }
       }
     }
     return Array.from(m.values());
@@ -452,14 +431,23 @@ const useBoletinTransicionProcessed = (data) => {
 const BoletinTransicionView = ({ boletinData, info }) => {
   const { asignaturas } = useBoletinTransicionProcessed(boletinData ?? []);
 
-  const colorNota = (nota) => {
-    if (!nota) return "#374151";
-    const n = nota.toLowerCase().trim();
-    if (n === "a") return "#15803d";
-    if (n === "b") return "#2563eb";
-    if (n === "c") return "#d97706";
-    return "#dc2626";
-  };
+  const flatRows = useMemo(() => {
+    const rows = [];
+    for (const asig of asignaturas) {
+      for (const fila of asig.filas) {
+        rows.push({ id_asignatura: asig.id_asignatura, nombre_asignatura_grado: asig.nombre_asignatura_grado, ...fila });
+      }
+    }
+    return rows;
+  }, [asignaturas]);
+
+  const rowSpanMap = useMemo(() => {
+    const map = new Map();
+    for (const row of flatRows) {
+      map.set(row.id_asignatura, (map.get(row.id_asignatura) || 0) + 1);
+    }
+    return map;
+  }, [flatRows]);
 
   return (
     <div
@@ -610,127 +598,47 @@ const BoletinTransicionView = ({ boletinData, info }) => {
         Boletín de Notas — Grado Transición
       </h2>
 
-      {/* Tabla por asignatura */}
-      {asignaturas.map((asig, asigIdx) => (
-        <div
-          key={asig.id_asignatura}
-          style={{ marginBottom: "20px", overflowX: "auto" }}
-        >
-          {/* Cabecera de asignatura */}
-          <div
-            style={{
-              backgroundColor: "#ffffff",
-              color: "#000000",
-              border: "1px solid #000000",
-              padding: "6px 10px",
-              fontWeight: "bold",
-              fontSize: "12px",
-              textAlign: "center",
-            }}
-          >
-            {asig.nombre_asignatura_grado}
-          </div>
-
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ backgroundColor: "#ffffff", color: "#000000" }}>
-                <th
-                  style={{
-                    ...S.th,
-                    width: "20%",
-                    fontSize: "8px",
-                  }}
-                >
-                  Propósito
-                </th>
-                <th
-                  style={{
-                    ...S.th,
-                    width: "25%",
-                    fontSize: "8px",
-                  }}
-                >
-                  DBA
-                </th>
-                <th style={{ ...S.th, width: "10%", fontSize: "8px" }}>
-                  Valor asignado
-                </th>
-                <th style={{ ...S.th, width: "20%", fontSize: "8px" }}>
-                  Otros posibles valores
-                </th>
-                <th style={{ ...S.th, width: "25%", fontSize: "8px" }}>
-                  Comentario
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {asig.filas.map((fila, filaIdx) => {
-                return (
-                  <tr
-                    key={`${fila.id_proposito}-${fila.id_dba}`}
-                    style={{ backgroundColor: "#ffffff" }}
-                  >
+      {/* Tabla única agrupada por asignatura */}
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead>
+          <tr style={{ backgroundColor: "#ffffff", color: "#000000" }}>
+            <th style={{ ...S.th, width: "20%", fontSize: "8px" }}>Asignatura</th>
+            <th style={{ ...S.th, width: "30%", fontSize: "8px" }}>DBA</th>
+            <th style={{ ...S.th, width: "25%", fontSize: "8px" }}>Propósito</th>
+            <th style={{ ...S.th, width: "25%", fontSize: "8px" }}>Comentario</th>
+          </tr>
+        </thead>
+        <tbody>
+          {(() => {
+            const seen = new Set();
+            return flatRows.map((row, idx) => {
+              const isFirst = !seen.has(row.id_asignatura);
+              if (isFirst) seen.add(row.id_asignatura);
+              return (
+                <tr key={idx} style={{ backgroundColor: "#ffffff" }}>
+                  {isFirst ? (
                     <td
-                      style={{
-                        ...S.tdLeft,
-                        fontSize: "9px",
-                        padding: "6px 10px",
-                      }}
+                      rowSpan={rowSpanMap.get(row.id_asignatura)}
+                      style={{ ...S.tdBold, verticalAlign: "middle", fontSize: "10px" }}
                     >
-                      {fila.nombre_proposito}
+                      {row.nombre_asignatura_grado}
                     </td>
-                    <td
-                      style={{
-                        ...S.tdLeft,
-                        fontSize: "9px",
-                        padding: "6px 10px",
-                      }}
-                    >
-                      {fila.nombre_dba}
-                    </td>
-                    <td
-                      style={{
-                        ...S.td,
-                        fontWeight: "bold",
-                        fontSize: "12px",
-                        color: "#111827",
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      {fila.descripcion_nota_elegida?.toUpperCase() ?? "-"}
-                    </td>
-                    <td
-                      style={{
-                        ...S.td,
-                        fontSize: "12px",
-                        padding: "6px 10px",
-                        textAlign: "left",
-                      }}
-                    >
-                      {fila.descripcion_notas.length > 0
-                        ? fila.descripcion_notas.map((n, i) => (
-                            <div key={i} style={{ lineHeight: "1.6" }}>
-                              - {n}
-                            </div>
-                          ))
-                        : "-"}
-                    </td>
-                    <td
-                      style={{
-                        ...S.td,
-                        fontSize: "12px",
-                        color: "#111827",
-                      }}
-                    >
-                      {fila.comentario || "-"}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      ))}
+                  ) : null}
+                  <td style={{ ...S.tdLeft, fontSize: "9px", padding: "6px 10px" }}>
+                    {row.nombre_dba}
+                  </td>
+                  <td style={{ ...S.tdLeft, fontSize: "9px", padding: "6px 10px" }}>
+                    {row.nombre_proposito}
+                  </td>
+                  <td style={{ ...S.td, fontSize: "9px", color: "#111827" }}>
+                    {row.comentario || "-"}
+                  </td>
+                </tr>
+              );
+            });
+          })()}
+        </tbody>
+      </table>
     </div>
   );
 };
@@ -1605,8 +1513,7 @@ async function generateBoletinTransicionPDF(info, boletinData, meta) {
     if (!asigMap.has(asigKey)) {
       asigMap.set(asigKey, {
         id_asignatura: r.id_asignatura,
-        nombre_asignatura_grado: r.nombre_asignatura_grado ?? "-",
-        nombre_docente: r.nombre_docente ?? "-",
+        nombre_asignatura_grado: r.nombre_asignatura_grado ?? r.nombre_asignatura ?? "-",
         filas: [],
       });
     }
@@ -1622,31 +1529,21 @@ async function generateBoletinTransicionPDF(info, boletinData, meta) {
         id_proposito: r.id_proposito,
         nombre_proposito: r.nombre_proposito ?? "-",
         nombre_dba: r.nombre_dba ?? "-",
-        descripcion_notas: r.descripcion_nota
-          ? r.descripcion_nota
-              .split("|")
-              .map((s) => s.trim())
-              .filter(Boolean)
-          : [],
-        descripcion_nota_elegida: r.descripcion_nota_elegida ?? "-",
         comentario: r.comentario ?? "",
-        estado: r.estado ?? "",
       });
-    } else {
-      const notasParsed = r.descripcion_nota
-        ? r.descripcion_nota
-            .split("|")
-            .map((s) => s.trim())
-            .filter(Boolean)
-        : [];
-      for (const nota of notasParsed) {
-        if (!asig.filas[existingIdx].descripcion_notas.includes(nota)) {
-          asig.filas[existingIdx].descripcion_notas.push(nota);
-        }
-      }
     }
   }
   const asignaturas = Array.from(asigMap.values());
+
+  /* ── Aplanar filas y calcular rowSpan ── */
+  const flatRows = [];
+  const rowSpanMap = new Map();
+  for (const asig of asignaturas) {
+    for (const fila of asig.filas) {
+      flatRows.push({ id_asignatura: asig.id_asignatura, nombre_asignatura_grado: asig.nombre_asignatura_grado, ...fila });
+      rowSpanMap.set(asig.id_asignatura, (rowSpanMap.get(asig.id_asignatura) || 0) + 1);
+    }
+  }
 
   /* ── Configuración PDF ── */
   const pdf = new jsPDF({
@@ -1706,108 +1603,84 @@ async function generateBoletinTransicionPDF(info, boletinData, meta) {
 
   /* ── Anchos de columnas ── */
   const colW = [
-    contentW * 0.18, // Propósito
-    contentW * 0.25, // DBA
-    contentW * 0.1, // Valor asignado
-    contentW * 0.22, // Otros posibles valores
+    contentW * 0.20, // Asignatura
+    contentW * 0.30, // DBA
+    contentW * 0.25, // Propósito
     contentW * 0.25, // Comentario
   ];
   const colX = [margin];
-  for (let i = 1; i < 5; i++) colX.push(colX[i - 1] + colW[i - 1]);
+  for (let i = 1; i < 4; i++) colX.push(colX[i - 1] + colW[i - 1]);
 
-  /* ── Tablas por asignatura ── */
-  for (const asig of asignaturas) {
-    /* Barra de asignatura */
-    addPageIfNeeded(16);
-    pdf.setFillColor(255, 255, 255);
-    pdf.setDrawColor(0, 0, 0);
-    pdf.setLineWidth(0.4);
-    pdf.rect(margin, y, contentW, 7, "FD");
-    pdf.setFontSize(9);
-    pdf.setFont("helvetica", "bold");
-    pdf.setTextColor(0, 0, 0);
-    pdf.text(asig.nombre_asignatura_grado, margin + contentW / 2, y + 5, {
+  /* ── Cabecera de tabla única ── */
+  const headerH = 6;
+  const headers = ["Asignatura", "DBA", "Propósito", "Comentario"];
+  const headerBg = [255, 255, 255];
+  const headerColor = [0, 0, 0];
+  addPageIfNeeded(headerH);
+  for (let c = 0; c < 4; c++) {
+    drawMultiCell(headers[c], colX[c], y, colW[c], headerH, {
+      bold: true,
+      fontSize: 6,
       align: "center",
+      color: headerColor,
+      bg: headerBg,
     });
-    y += 7;
+  }
+  y += headerH;
 
-    /* Cabecera de tabla */
-    const headerH = 6;
-    const headers = [
-      "Propósito",
-      "DBA",
-      "Valor asignado",
-      "Otros posibles valores",
-      "Comentario",
-    ];
-    const headerBg = [255, 255, 255];
-    const headerColor = [0, 0, 0];
-    for (let c = 0; c < 5; c++) {
-      drawMultiCell(headers[c], colX[c], y, colW[c], headerH, {
+  /* ── Filas de datos ── */
+  const asigCountMap = new Map();
+  for (const asig of asignaturas) {
+    asigCountMap.set(asig.id_asignatura, asig.filas.length);
+  }
+
+  const seenAsig = new Set();
+  for (let idx = 0; idx < flatRows.length; idx++) {
+    const row = flatRows[idx];
+    const isFirstAsig = !seenAsig.has(row.id_asignatura);
+    if (isFirstAsig) seenAsig.add(row.id_asignatura);
+
+    const rowBg = [255, 255, 255];
+
+    /* Calcular alto dinámico de la fila */
+    pdf.setFontSize(6);
+    const dbaLines = pdf.splitTextToSize(row.nombre_dba, colW[1] - 2);
+    const propLines = pdf.splitTextToSize(row.nombre_proposito, colW[2] - 2);
+    const comentLines = pdf.splitTextToSize(row.comentario || "-", colW[3] - 2);
+    const maxLines = Math.max(dbaLines.length, propLines.length, comentLines.length, 1);
+    const lineH = 6 * 0.45;
+    const rowH = Math.max(6, maxLines * lineH + 3);
+
+    addPageIfNeeded(rowH);
+
+    if (isFirstAsig) {
+      const span = asigCountMap.get(row.id_asignatura);
+      const spanH = (() => {
+        let total = 0;
+        for (let i = idx; i < idx + span; i++) {
+          const r = flatRows[i];
+          const dL = pdf.splitTextToSize(r.nombre_dba, colW[1] - 2).length;
+          const pL = pdf.splitTextToSize(r.nombre_proposito, colW[2] - 2).length;
+          const cL = pdf.splitTextToSize(r.comentario || "-", colW[3] - 2).length;
+          const mL = Math.max(dL, pL, cL, 1);
+          total += Math.max(6, mL * lineH + 3);
+        }
+        return total;
+      })();
+
+      drawMultiCell(row.nombre_asignatura_grado, colX[0], y, colW[0], spanH, {
         bold: true,
-        fontSize: 6,
+        fontSize: 7,
         align: "center",
-        color: headerColor,
-        bg: headerBg,
+        bg: rowBg,
       });
     }
-    y += headerH;
 
-    /* Filas de datos */
-    for (let fi = 0; fi < asig.filas.length; fi++) {
-      const fila = asig.filas[fi];
-      const rowBg = [255, 255, 255];
+    drawMultiCell(row.nombre_dba, colX[1], y, colW[1], rowH, { bg: rowBg });
+    drawMultiCell(row.nombre_proposito, colX[2], y, colW[2], rowH, { bg: rowBg });
+    drawMultiCell(row.comentario || "-", colX[3], y, colW[3], rowH, { bg: rowBg });
 
-      /* Calcular alto dinámico de la fila */
-      pdf.setFontSize(6);
-      const propLines = pdf.splitTextToSize(fila.nombre_proposito, colW[0] - 2);
-      const dbaLines = pdf.splitTextToSize(fila.nombre_dba, colW[1] - 2);
-      const notasText =
-        fila.descripcion_notas.length > 0
-          ? fila.descripcion_notas.join("\n")
-          : "-";
-      const notasLines = pdf.splitTextToSize(notasText, colW[3] - 2);
-      const comentLines = pdf.splitTextToSize(
-        fila.comentario || "-",
-        colW[4] - 2,
-      );
-      const maxLines = Math.max(
-        propLines.length,
-        dbaLines.length,
-        notasLines.length,
-        comentLines.length,
-        1,
-      );
-      const lineH = 6 * 0.45;
-      const rowH = Math.max(6, maxLines * lineH + 3);
-
-      addPageIfNeeded(rowH);
-
-      drawMultiCell(fila.nombre_proposito, colX[0], y, colW[0], rowH, {
-        bg: rowBg,
-      });
-      drawMultiCell(fila.nombre_dba, colX[1], y, colW[1], rowH, {
-        bg: rowBg,
-      });
-      drawMultiCell(
-        (fila.descripcion_nota_elegida ?? "-").toUpperCase(),
-        colX[2],
-        y,
-        colW[2],
-        rowH,
-        { bold: true, fontSize: 7, align: "center", bg: rowBg },
-      );
-      drawMultiCell(notasText, colX[3], y, colW[3], rowH, {
-        bg: rowBg,
-      });
-      drawMultiCell(fila.comentario || "-", colX[4], y, colW[4], rowH, {
-        color: [0, 0, 0],
-        bg: rowBg,
-      });
-      y += rowH;
-    }
-
-    y += 4;
+    y += rowH;
   }
 
   const nombreArchivoT =
@@ -1979,7 +1852,9 @@ const BoletinSelector = ({
 
   const handleExportPDF = async () => {
     if (!boletinData?.length) return;
-    const tieneNotas = boletinData.some((r) => r.tiene_nota === "SI");
+    const tieneNotas = isTransicion
+      ? boletinData.some((r) => r.descripcion_nota_elegida)
+      : boletinData.some((r) => r.tiene_nota === "SI");
     if (!tieneNotas) {
       setError("No tiene notas asignadas en ningún periodo.");
       return;
@@ -2325,11 +2200,18 @@ const BoletinSelector = ({
           </div>
 
           {/* ── Vista HTML del boletín ── */}
-          {!boletinData.some((r) => r.tiene_nota === "SI") ? (
-            <p className="text-center text-muted py-6">
-              No tiene notas asignadas en ningún periodo.
-            </p>
-          ) : (
+          {(() => {
+            const hasNotas = isTransicion
+              ? boletinData.some((r) => r.descripcion_nota_elegida)
+              : boletinData.some((r) => r.tiene_nota === "SI");
+            if (!hasNotas) {
+              return (
+                <p className="text-center text-muted py-6">
+                  No tiene notas asignadas en ningún periodo.
+                </p>
+              );
+            }
+            return (
             <div className="border rounded overflow-hidden shadow-sm">
               {isTransicion ? (
                 <BoletinTransicionView boletinData={boletinData} info={info} />
@@ -2937,9 +2819,10 @@ const BoletinSelector = ({
                 </div>
               )}
             </div>
-          )}
+          );
+          })()}
         </>
-      )}
+      )}    
     </div>
   );
 };

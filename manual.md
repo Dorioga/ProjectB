@@ -151,26 +151,22 @@ La navegación del sistema se organiza en torno a un **panel lateral (sidebar)**
 
 | Ruta                                | Vista                      | Acceso requerido            |
 | ----------------------------------- | -------------------------- | --------------------------- |
+| `/`                                 | Página de bienvenida       | Público                     |
 | `/login`                            | Inicio de sesión           | Público                     |
 | `/forgot-password`                  | Recuperación de contraseña | Público                     |
 | `/reserveSpot`                      | Reserva de cupos           | Público                     |
 | `/dashboard/home`                   | Panel principal            | Autenticado                 |
 | `/dashboard/registerUser`           | Registrar usuario          | Administrador / Director    |
 | `/dashboard/studentSchool`          | Listado de estudiantes     | Todos los roles             |
-| `/dashboard/registerStudent`        | Registrar estudiante       | Admin / Director / Coord.   |
-| `/dashboard/registerParents`        | Registrar acudiente        | Admin / Director / Coord.   |
 | `/dashboard/manageStudent`          | Gestión de estudiantes     | Admin / Director            |
 | `/dashboard/profileStudent`         | Perfil del estudiante      | Todos los roles             |
 | `/dashboard/searchStudents`         | Búsqueda de estudiantes    | Todos los roles             |
-| `/dashboard/uploadStudentExcel`     | Carga masiva Excel         | Admin / Director            |
+| `/dashboard/registerParents`        | Registrar acudiente        | Admin / Director / Coord.   |
 | `/dashboard/studentNotes`           | Notas del estudiante       | Docente / Coord. / Director |
 | `/dashboard/assistenceStudent`      | Asistencia del estudiante  | Docente / Coordinador       |
-| `/dashboard/observadorEstudiante`   | Observador disciplinario   | Docente / Coord. / Director |
 | `/dashboard/manageObserver`         | Gestión del observador     | Admin / Director / Coord.   |
-| `/dashboard/registerTeacher`        | Registrar docente          | Admin / Director            |
 | `/dashboard/manageTeacher`          | Gestión de docentes        | Admin / Director            |
 | `/dashboard/profileTeacher`         | Perfil del docente         | Admin / Director / Docente  |
-| `/dashboard/registerAssistance`     | Registrar asistencia       | Docente / Coordinador       |
 | `/dashboard/manageAssistance`       | Gestión de asistencia      | Coordinador / Admin         |
 | `/dashboard/controlAsistencia`      | Control de asistencia      | Director / Coord. / Admin   |
 | `/dashboard/manageLogro`            | Gestión de logros          | Docente / Coord. / Admin    |
@@ -181,14 +177,11 @@ La navegación del sistema se organiza en torno a un **panel lateral (sidebar)**
 | `/dashboard/manageSedes`            | Gestión de sedes           | Admin / Director            |
 | `/dashboard/manageAsignature`       | Gestión de asignaturas     | Admin / Director / Coord.   |
 | `/dashboard/manageGrade`            | Gestión de grados          | Admin / Director            |
-| `/dashboard/registerGrade`          | Registrar grado            | Admin / Director            |
 | `/dashboard/manageBoletin`          | Boletines académicos       | Admin / Director / Coord.   |
-| `/dashboard/registerStudentRecords` | Hoja de vida académica     | Admin / Coordinador         |
-| `/dashboard/registerAsignature`     | Asignar asignaturas        | Admin / Director / Coord.   |
-| `/dashboard/registerRecords`        | Registrar calificaciones   | Docente / Coordinador       |
-| `/dashboard/reports`                | Reportes                   | Admin / Director / Coord.   |
-| `/dashboard/auditory`               | Auditoría                  | Admin / Director            |
 | `/dashboard/slots`                  | Cupos                      | Admin / Director            |
+| `/dashboard/controlNotas`           | Control de notas           | Admin / Director / Coord.   |
+| `/dashboard/controlAccesoSalida`    | Control de acceso/salida   | Admin / Director            |
+| `/dashboard/profileNoteSede`        | Perfil de notas por sede   | Admin / Director / Coord.   |
 
 ### Roles y nivel de acceso
 
@@ -228,17 +221,18 @@ La navegación del sistema se organiza en torno a un **panel lateral (sidebar)**
 
 ### Registrar un nuevo estudiante
 
-1. En el menú lateral, ir a **Estudiantes → Registrar Estudiante**.
-2. Completar los datos personales: nombres, apellidos, tipo y número de identificación, fecha de nacimiento, dirección, ciudad y departamento.
-3. Seleccionar la **sede**, el **grado** y la **jornada** académica.
-4. (Opcional) Capturar la fotografía del estudiante usando el botón de cámara.
-5. (Opcional) Registrar información de beca si aplica.
-6. Hacer clic en **Guardar**. El sistema mostrará una notificación de éxito.
-7. Continuar al registro de acudiente si se solicita.
+1. En el menú lateral, ir a **Estudiantes → Gestión de Estudiantes**.
+2. Hacer clic en el botón **Registrar** para abrir el formulario modal.
+3. Completar los datos personales: nombres, apellidos, tipo y número de identificación, fecha de nacimiento, dirección, ciudad y departamento.
+4. Seleccionar la **sede**, el **grado** y la **jornada** académica.
+5. (Opcional) Capturar la fotografía del estudiante usando el botón de cámara.
+6. (Opcional) Registrar información de beca si aplica.
+7. Hacer clic en **Guardar**. El sistema mostrará una notificación de éxito.
+8. Continuar al registro de acudiente si se solicita.
 
 ### Registrar acudiente / responsable legal
 
-1. Tras registrar al estudiante, el sistema puede redirigir a **Registrar Acudiente**, o acceder desde **Estudiantes → Registrar Acudiente**.
+1. Tras registrar al estudiante, el sistema puede redirigir a la vista de **Registrar Acudiente**, o acceder desde **Estudiantes → Registrar Acudiente**.
 2. Completar los datos del responsable legal (nombre, identificación, teléfono, parentesco).
 3. Leer y aceptar los términos y condiciones.
 4. Firmar digitalmente en el área de firma habilitada.
@@ -246,11 +240,12 @@ La navegación del sistema se organiza en torno a un **panel lateral (sidebar)**
 
 ### Carga masiva de estudiantes (Excel)
 
-1. Ir a **Estudiantes → Cargar Excel**.
-2. Descargar la plantilla de ejemplo haciendo clic en **Descargar plantilla**.
-3. Completar la plantilla con los datos de los estudiantes a registrar.
-4. Subir el archivo haciendo clic en **Seleccionar archivo** y elegir el Excel completado.
-5. El sistema procesará el archivo y mostrará el resultado de la importación (registros exitosos y con error).
+1. Ir a **Estudiantes → Gestión de Estudiantes**.
+2. Hacer clic en el botón **Carga masiva** para abrir el modal de importación.
+3. Descargar la plantilla de ejemplo haciendo clic en **Descargar plantilla**.
+4. Completar la plantilla con los datos de los estudiantes a registrar.
+5. Subir el archivo haciendo clic en **Seleccionar archivo** y elegir el Excel completado.
+6. El sistema procesará el archivo y mostrará el resultado de la importación (registros exitosos y con error).
 
 ### Buscar un estudiante
 
@@ -280,11 +275,12 @@ El perfil del estudiante centraliza toda su información en una sola vista:
 
 ### Registrar un nuevo docente
 
-1. Ir a **Docentes → Registrar Docente**.
-2. Completar los datos personales del docente.
-3. Seleccionar la sede y el grado a cargo.
-4. Indicar si el docente es **director de grupo**.
-5. Hacer clic en **Guardar**.
+1. Ir a **Docentes → Gestión de Docentes**.
+2. Hacer clic en el botón **Registrar** para abrir el formulario modal.
+3. Completar los datos personales del docente.
+4. Seleccionar la sede y el grado a cargo.
+5. Indicar si el docente es **director de grupo**.
+6. Hacer clic en **Guardar**.
 
 ### Ver perfil del docente
 
@@ -305,10 +301,11 @@ El perfil del docente incluye:
 
 ### Registrar asistencia
 
-1. Ir a **Docentes → Registrar Asistencia**.
-2. Seleccionar la fecha, asignatura y grupo.
-3. Marcar la asistencia de cada estudiante (Presente / Ausente / Tardanza).
-4. Guardar el registro.
+1. Ir a **Docentes → Gestión de Asistencia**.
+2. Hacer clic en el botón **Registrar** para abrir el formulario modal.
+3. Seleccionar la fecha, asignatura y grupo.
+4. Marcar la asistencia de cada estudiante (Presente / Ausente / Tardanza).
+5. Guardar el registro.
 
 ### Gestionar logros y DBA
 
@@ -355,31 +352,31 @@ El perfil del docente incluye:
 
 ### Asignar asignaturas a docentes
 
-1. Ir a **Registros → Asignar Asignatura**.
+1. Ir a **Registros → Asignar Asignatura** (o acceder desde **Escuela → Gestionar Asignaturas**).
 2. Seleccionar el docente, la asignatura, el grado y el período.
 3. Confirmar la asignación. Esto habilita al docente para ingresar notas en dicha asignatura.
 
 ### Registrar calificaciones en el historial
 
-1. Ir a **Registros → Registrar Calificaciones**.
-2. Seleccionar el estudiante, asignatura y período.
+1. Ir a **Docentes → Ingresar Calificaciones** y seleccionar asignatura, período y grupo.
+2. Hacer clic en **Asignar notas** para registrar las calificaciones de los estudiantes.
 3. Ingresar las calificaciones y confirmar.
 
 ---
 
 ## 3.6 Módulo de Observador del Estudiante
 
-1. Ir a **Estudiantes → Observador** o acceder desde el perfil del estudiante.
-2. Seleccionar el estudiante correspondiente.
-3. Crear un nuevo registro indicando: tipo de novedad (disciplinaria, académica, conductual), descripción y fecha.
+1. Ir a **Estudiantes → Gestión del Observador**.
+2. Buscar al estudiante por número de identificación en el campo de búsqueda.
+3. Hacer clic en **Registrar** para crear una nueva observación indicando: tipo de novedad (disciplinaria, académica, conductual), descripción y fecha.
 4. El registro queda almacenado en el historial del estudiante.
-5. Para administrar (editar/eliminar) registros existentes ir a **Estudiantes → Gestionar Observador**.
+5. Para editar registros existentes, hacer clic en el botón **Editar** de la fila correspondiente.
 
 ---
 
 ## 3.7 Módulo de Reportes
 
-1. Ir a **Dashboard → Reportes**.
+1. Ir a **Dashboard → Reportes** (disponible mediante el menú dinámico según el rol).
 2. Seleccionar el tipo de reporte deseado (asistencia, calificaciones, estadísticas, etc.).
 3. Configurar los parámetros: período, sede, grado.
 4. Hacer clic en **Generar**.
@@ -389,7 +386,7 @@ El perfil del docente incluye:
 
 ## 3.8 Módulo de Auditoría
 
-1. Ir a **Dashboard → Auditoría** (solo Administrador y Director).
+1. Ir a **Dashboard → Auditoría** (solo Administrador y Director, según el menú dinámico).
 2. Consultar el historial de acciones del sistema filtrado por fecha, usuario o tipo de acción.
 3. Hacer clic en un registro para ver su detalle completo.
 
@@ -505,15 +502,23 @@ npm run preview
 
 ### Variables de entorno
 
-Crear un archivo `.env` en la raíz del proyecto con el siguiente contenido:
+Crear un archivo `.env` en la raíz del proyecto con el siguiente contenido según el entorno:
 
 ```env
-# URL base de la API REST del backend
+# (Desarrollo) URL base de la API REST del backend
 VITE_API_URL=https://backend-barranquilla.onrender.com
+
+# (Desarrollo) Clave pública de reCAPTCHA para formularios públicos
+VITE_CAPTCHA_PUBLIC_KEY=6Lc2m_YsAAAAAMIriXn9Y7phje3hn6ECZYqJgoN0
+
+# (Producción) URL alternativa de la API
+# VITE_API_URL=https://nexusplataforma.com/api/
+
+# (Opcional) URL de almacenamiento de archivos
+# VITE_STORAGE_URL=https://nexusplataforma.com
 ```
 
-> Si `VITE_API_URL` no se define, el sistema usará la URL de producción por defecto.  
-> Todas las variables deben incluir el prefijo `VITE_` (convención de Vite).
+> Todas las variables deben incluir el prefijo `VITE_` (convención de Vite) para ser accesibles desde el frontend.
 
 ### Despliegue en Vercel
 
@@ -709,7 +714,7 @@ Acceso público (sin autenticación):
 
 ---
 
-### Vista — Auditoría (`/dashboard/auditory`)
+### Vista — Auditoría
 
 **Propósito:** Registro histórico de todas las operaciones realizadas en el sistema para trazabilidad y control.
 
@@ -731,7 +736,7 @@ Acceso público (sin autenticación):
 
 ---
 
-### Vista — Reportes (`/dashboard/reports`)
+### Vista — Reportes
 
 **Propósito:** Generación centralizada de informes institucionales en múltiples formatos.
 
@@ -799,6 +804,26 @@ Acceso público (sin autenticación):
 
 ---
 
+### Vista — Control de Notas (`/dashboard/controlNotas`)
+
+**Propósito:** Panel de control y análisis de las calificaciones por asignatura, grado y período. Proporciona una vista consolidada del rendimiento académico de los grupos.
+
+**Captura de pantalla:**
+
+![Vista — Control de Notas](./screenshots/controlNotas.png)
+
+**Elementos de la pantalla:**
+
+| Elemento               | Descripción                                                         |
+| ---------------------- | ------------------------------------------------------------------- |
+| Selectores en cascada  | Sede, grado, asignatura, jornada y período                          |
+| Tabla de rendimiento   | Promedios de calificaciones por estudiante y grupo                  |
+| Métricas académicas    | Indicadores de desempeño por asignatura                             |
+
+**Roles:** Administrador, Director, Coordinador.
+
+---
+
 ## 5.5 Dominio: Estudiantes
 
 ### Vista — Listado de Estudiantes (`/dashboard/studentSchool`)
@@ -822,33 +847,6 @@ Acceso público (sin autenticación):
 
 ---
 
-### Vista — Registrar Estudiante (`/dashboard/registerStudent`)
-
-**Propósito:** Dar de alta a un nuevo estudiante en el sistema con toda su información personal y académica.
-
-**Captura de pantalla:**
-
-![Vista — Registrar Estudiante](./screenshots/registerStudent.png)
-
-**Secciones del formulario:**
-
-| Sección           | Campos incluidos                                                          |
-| ----------------- | ------------------------------------------------------------------------- |
-| Datos personales  | Nombres, apellidos, tipo de ID, número de ID, fecha de nacimiento, género |
-| Datos de contacto | Dirección, departamento, ciudad, teléfono                                 |
-| Datos académicos  | Sede, grado, jornada, estado de beca                                      |
-| Fotografía        | Captura directa desde cámara del dispositivo (CameraModal)                |
-
-**Validaciones clave:**
-
-- Todos los campos obligatorios deben estar completos antes de guardar.
-- El número de identificación debe ser único en el sistema.
-- El email debe tener formato válido si se proporciona.
-
-**Roles:** Administrador, Director, Coordinador.
-
----
-
 ### Vista — Registrar Acudiente (`/dashboard/registerParents`)
 
 **Propósito:** Vincular un responsable legal al estudiante previamente registrado.
@@ -866,27 +864,6 @@ Acceso público (sin autenticación):
 | Términos y firma    | Aceptación y firma digital del acudiente   |
 
 **Roles:** Administrador, Director, Coordinador.
-
----
-
-### Vista — Carga Masiva Excel (`/dashboard/uploadStudentExcel`)
-
-**Propósito:** Importar múltiples estudiantes simultáneamente desde un archivo Excel.
-
-**Captura de pantalla:**
-
-![Vista — Carga Masiva Excel](./screenshots/uploadStudentExcel.png)
-
-**Flujo de uso:**
-
-1. Descargar la **plantilla oficial** desde el botón habilitado.
-2. Completar la plantilla con los datos de los estudiantes.
-3. Subir el archivo Excel al sistema.
-4. El sistema procesa cada fila y reporta:
-   - Registros creados exitosamente.
-   - Filas con error (con descripción del problema por fila).
-
-**Roles:** Administrador, Director.
 
 ---
 
@@ -989,26 +966,6 @@ Acceso público (sin autenticación):
 
 ---
 
-### Vista — Observador del Estudiante (`/dashboard/observadorEstudiante`)
-
-**Propósito:** Registro de novedades disciplinarias, conductuales o académicas del estudiante.
-
-**Captura de pantalla:**
-
-![Vista — Observador del Estudiante](./screenshots/observadorEstudiante.png)
-
-**Elementos del formulario:**
-
-| Campo       | Descripción                                                   |
-| ----------- | ------------------------------------------------------------- |
-| Tipo        | Categoría del registro (disciplinario, académico, conductual) |
-| Descripción | Relato detallado de la novedad                                |
-| Fecha       | Fecha de ocurrencia del evento                                |
-
-**Roles:** Docente, Coordinador, Director.
-
----
-
 ### Vista — Gestión del Observador (`/dashboard/manageObserver`)
 
 **Propósito:** Administración centralizada de todos los registros del observador estudiantil. Permite registrar nuevas observaciones y editar las existentes, filtrando por número de documento del estudiante.
@@ -1043,30 +1000,9 @@ Acceso público (sin autenticación):
 
 ## 5.6 Dominio: Docentes
 
-### Vista — Registrar Docente (`/dashboard/registerTeacher`)
-
-**Propósito:** Incorporar un nuevo docente al sistema con su información personal y asignación institucional.
-
-**Captura de pantalla:**
-
-![Vista — Registrar Docente](./screenshots/registerTeacher.png)
-
-**Elementos del formulario:**
-
-| Campo             | Descripción                                         |
-| ----------------- | --------------------------------------------------- |
-| Datos personales  | Nombres, apellidos, tipo y número de identificación |
-| Sede asignada     | Sede a la que pertenece el docente                  |
-| Grado a cargo     | Grado del cual es responsable (si aplica)           |
-| Director de grupo | Indicador de si el docente dirige un grupo          |
-
-**Roles:** Administrador, Director.
-
----
-
 ### Vista — Gestión de Docentes (`/dashboard/manageTeacher`)
 
-**Propósito:** Panel CRUD de administración de docentes. Permite consultar el listado completo de docentes de la institución, registrar nuevos y actualizar su información personal y de asignación.
+**Propósito:** Panel CRUD de administración de docentes. Permite consultar el listado completo de docentes de la institución, registrar nuevos (modal) y actualizar su información personal y de asignación.
 
 **Captura de pantalla:**
 
@@ -1114,25 +1050,6 @@ Acceso público (sin autenticación):
 | Notas y logros          | Objetivos y calificaciones registradas   |
 
 **Roles:** Administrador, Director, el propio Docente.
-
----
-
-### Vista — Registrar Asistencia (`/dashboard/registerAssistance`)
-
-**Propósito:** Marcar la asistencia de los estudiantes en una sesión de clase.
-
-**Captura de pantalla:**
-
-![Vista — Registrar Asistencia](./screenshots/registerAssistance.png)
-
-**Flujo de uso:**
-
-1. Seleccionar fecha, asignatura y grupo.
-2. El sistema carga el listado de estudiantes del grupo.
-3. Marcar el estado de cada estudiante: **Presente**, **Ausente** o **Tardanza**.
-4. Guardar el registro.
-
-**Roles:** Docente, Coordinador.
 
 ---
 
@@ -1280,6 +1197,26 @@ Acceso público (sin autenticación):
 ![Vista — Gestión de DBA](./screenshots/manageDBA.png)
 
 **Roles:** Docente, Coordinador, Administrador.
+
+---
+
+### Vista — Perfil de Notas por Sede (`/dashboard/profileNoteSede`)
+
+**Propósito:** Visualización detallada de las calificaciones filtradas por sede, asignatura, grado y período académico.
+
+**Captura de pantalla:**
+
+![Vista — Perfil de Notas por Sede](./screenshots/profileNoteSede.png)
+
+**Elementos de la pantalla:**
+
+| Elemento               | Descripción                                                       |
+| ---------------------- | ----------------------------------------------------------------- |
+| Selectores en cascada  | Sede, grado, asignatura, jornada y período                        |
+| Tabla de notas         | Listado de estudiantes con sus calificaciones por asignatura      |
+| Acciones por fila      | Edición de notas individuales por estudiante                      |
+
+**Roles:** Administrador, Director, Coordinador.
 
 ---
 
@@ -1483,7 +1420,7 @@ Acceso público (sin autenticación):
 
 ---
 
-### Vista — Hoja de Vida Académica (`/dashboard/registerStudentRecords`)
+### Vista — Hoja de Vida Académica
 
 **Propósito:** Registro del historial académico completo del estudiante dentro de la institución.
 
@@ -1495,9 +1432,30 @@ Acceso público (sin autenticación):
 
 ---
 
+### Vista — Control de Acceso y Salida (`/dashboard/controlAccesoSalida`)
+
+**Propósito:** Registro y consulta de los movimientos de entrada y salida de estudiantes y personal en la institución.
+
+**Captura de pantalla:**
+
+![Vista — Control de Acceso y Salida](./screenshots/controlAccesoSalida.png)
+
+**Elementos de la pantalla:**
+
+| Elemento                | Descripción                                                |
+| ----------------------- | ---------------------------------------------------------- |
+| Registro de entrada     | Marca la hora de entrada de la persona                     |
+| Registro de salida      | Marca la hora de salida de la persona                      |
+| Filtros de consulta     | Búsqueda por rango de fechas, tipo de movimiento y persona |
+| Reporte de accesos      | Listado consolidado de los movimientos registrados         |
+
+**Roles:** Administrador, Director.
+
+---
+
 ## 5.8 Dominio: Registros Académicos
 
-### Vista — Asignar Asignaturas (`/dashboard/registerAsignature`)
+### Vista — Asignar Asignaturas
 
 **Propósito:** Configurar qué docente imparte qué asignatura, a qué grupo y en qué período.
 
@@ -1515,7 +1473,7 @@ Acceso público (sin autenticación):
 
 ---
 
-### Vista — Registrar Calificaciones (`/dashboard/registerRecords`)
+### Vista — Registrar Calificaciones
 
 **Propósito:** Consolidar los resultados de evaluaciones en el historial académico del sistema.
 
@@ -1628,7 +1586,7 @@ Disponible en el registro de acudientes y en la reserva de cupos. El acudiente d
 ### Flujo 2 — Registro completo de estudiante
 
 ```
-1. Administrador navega a /dashboard/registerStudent
+1. Administrador navega a /dashboard/manageStudent y hace clic en "Registrar"
 2. Completa el formulario multi-sección con datos personales y académicos
 3. (Opcional) Captura foto del estudiante con la cámara
 4. POST /students → el servidor crea el registro
@@ -1701,6 +1659,9 @@ Disponible en el registro de acudientes y en la reserva de cupos. El acudiente d
 | Generar boletines                 |   ✔   |    ✔     |      ✔      |         |           |
 | Generar reportes                  |   ✔   |    ✔     |      ✔      |         |           |
 | Auditoría del sistema             |   ✔   |    ✔     |             |         |           |
+| Control de notas                  |   ✔   |    ✔     |      ✔      |         |           |
+| Control de acceso y salida        |   ✔   |    ✔     |             |         |           |
+| Perfil de notas por sede          |   ✔   |    ✔     |      ✔      |         |           |
 | Reserva de cupos                  |   —   |    —     |      —      |    —    |     ✔     |
 
 > \* El Docente solo puede ver su propio perfil. El Acudiente solo puede ver el perfil del estudiante a su cargo.

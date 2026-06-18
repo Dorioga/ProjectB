@@ -162,21 +162,6 @@ export function SchoolProvider({ children }) {
     }
   }, []);
 
-  const loadSchools = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await schoolService.getSchools();
-      // Ajusta según la forma en que tu API devuelve los datos
-      setSchools(Array.isArray(res) ? res : (res?.data ?? []));
-    } catch (err) {
-      setError(err);
-      // No volver a lanzar aquí para no interrumpir el montaje
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   const addSchool = useCallback(async (payload) => {
     setLoading(true);
     setError(null);
@@ -637,7 +622,6 @@ export function SchoolProvider({ children }) {
       periods,
       loadingPeriods,
       errorPeriods,
-      reload: loadSchools,
       reloadSedes: loadSedes,
       reloadJourneys: loadJourneys,
       reloadRecords: loadRecords,
@@ -700,7 +684,6 @@ export function SchoolProvider({ children }) {
       periods,
       loadingPeriods,
       errorPeriods,
-      loadSchools,
       loadSedes,
       loadJourneys,
       loadRecords,

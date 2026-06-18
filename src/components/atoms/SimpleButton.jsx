@@ -1,18 +1,22 @@
 import React, { useId } from "react";
 import {
   Aperture, ArrowLeftCircle, BookOpen, CalendarCheck, Camera, Check,
-  ClipboardList, CreditCard, Download, DownloadCloud, Edit, ExternalLink,
-  Eye, FileDown, FileText, FileUp, HelpCircle, ListPlus, PanelLeftOpen,
-  PanelRightOpen, Pencil, Plus, RefreshCw, RotateCcw, Save, Search, Send,
-  Trash2, Upload, User, UserSearch, View, X,
+  CheckSquare, ChevronDown, ChevronUp, ClipboardList, CreditCard,
+  Download, DownloadCloud, Edit, ExternalLink, Eye, EyeOff, FileDown,
+  FileText, FileUp, HardDriveDownload, HelpCircle, IdCard, ListPlus,
+  Loader, Loader2, Maximize2, Minimize2, Minus, PanelLeftOpen,
+  PanelRightOpen, Pencil, Plus, QrCode, RefreshCw, RotateCcw, Save,
+  Search, Send, Square, Trash2, Upload, User, UserSearch, View, X,
 } from "lucide-react";
 
 const ICON_MAP = {
   Aperture, ArrowLeftCircle, BookOpen, CalendarCheck, Camera, Check,
-  ClipboardList, CreditCard, Download, DownloadCloud, Edit, ExternalLink,
-  Eye, FileDown, FileText, FileUp, HelpCircle, ListPlus, PanelLeftOpen,
-  PanelRightOpen, Pencil, Plus, RefreshCw, RotateCcw, Save, Search, Send,
-  Trash2, Upload, User, UserSearch, View, X,
+  CheckSquare, ChevronDown, ChevronUp, ClipboardList, CreditCard,
+  Download, DownloadCloud, Edit, ExternalLink, Eye, EyeOff, FileDown,
+  FileText, FileUp, HardDriveDownload, HelpCircle, IdCard, ListPlus,
+  Loader, Loader2, Maximize2, Minimize2, Minus, PanelLeftOpen,
+  PanelRightOpen, Pencil, Plus, QrCode, RefreshCw, RotateCcw, Save,
+  Search, Send, Square, Trash2, Upload, User, UserSearch, View, X,
 };
 const SimpleButton = ({
   msj = null,
@@ -45,7 +49,9 @@ const SimpleButton = ({
     <button
       type={type}
       aria-describedby={tooltipEnabled ? tooltipId : undefined}
-      className={`relative group flex flex-row w-full justify-center items-center cursor-pointer ${
+      className={`relative group flex flex-row w-full justify-center items-center ${
+        disabled ? "" : "cursor-pointer"
+      } ${
         noRounded ? "p-3" : "rounded-lg p-2"
       } ${bg} ${text} ${hover}  focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60 ${className}`}
       onClick={onClick}

@@ -36,6 +36,19 @@ const RegisterAsignature = ({ onSuccess }) => {
   const [loadingGrades, setLoadingGrades] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState({});
 
+  const isFormValid = useMemo(() => {
+    return (
+      String(formData.name ?? "").trim() &&
+      String(formData.code ?? "").trim() &&
+      String(formData.intensity_hours ?? "").trim() &&
+      Number(formData.intensity_hours) > 0 &&
+      formData.sedeId &&
+      formData.jornada &&
+      Array.isArray(formData.grades_scholar) &&
+      formData.grades_scholar.length > 0
+    );
+  }, [formData]);
+
   // Inicializar grupos expandidos cuando cambien los grados disponibles
   useEffect(() => {
     const groupNames = [
@@ -190,6 +203,8 @@ const RegisterAsignature = ({ onSuccess }) => {
       newErrors.code = "El código de la asignatura es obligatorio.";
     if (!formData.sedeId) newErrors.sedeId = "Selecciona una sede.";
     if (!formData.jornada) newErrors.jornada = "Selecciona una jornada.";
+    if (!String(formData.intensity_hours ?? "").trim() || Number(formData.intensity_hours) <= 0)
+      newErrors.intensity_hours = "La intensidad horaria es obligatoria.";
     if (
       !Array.isArray(formData.grades_scholar) ||
       formData.grades_scholar.length === 0
@@ -313,20 +328,26 @@ const RegisterAsignature = ({ onSuccess }) => {
           />
         </div>
         <div id="tour-intensity">
-          <label className={labelClassName}>Intensidad horaria</label>
+          <label className={labelClassName}>
+            Intensidad horaria <span className="text-error">*</span>
+          </label>
           <input
             className={inputClassName}
             type="number"
             min="0"
             placeholder="Ej: 40"
             value={formData.intensity_hours}
-            onChange={(e) =>
+            onChange={(e) => {
               setFormData({
                 ...formData,
                 intensity_hours: e.target.value,
-              })
-            }
+              });
+              setErrors((prev) => ({ ...prev, intensity_hours: "" }));
+            }}
           />
+          {errors.intensity_hours && (
+            <p className="text-xs text-error mt-1">{errors.intensity_hours}</p>
+          )}
         </div>
         <div id="tour-sede">
           <SedeSelect
@@ -513,7 +534,7 @@ const RegisterAsignature = ({ onSuccess }) => {
               text={"text-surface"}
               bg={"bg-secondary"}
               icon={"Save"}
-              disabled={isSubmitting || schoolLoading}
+              disabled={isSubmitting || schoolLoading || !isFormValid}
             />
           </div>
         </div>
