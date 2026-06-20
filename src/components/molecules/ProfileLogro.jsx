@@ -40,6 +40,7 @@ const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave }) => {
 
   const idCounter = useRef(0);
   const [periodRows, setPeriodRows] = useState({});
+  const [registeringAll, setRegisteringAll] = useState(false);
 
   // Teacher sedes (mismo comportamiento que en RegisterStudentRecords)
   const [teacherSedes, setTeacherSedes] = useState([]);
@@ -415,7 +416,7 @@ const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave }) => {
           : null,
     };
 
-    if (onSubmit) await onSubmit(payload);
+    if (onSubmit) return await onSubmit(payload);
   };
 
   const addRow = (periodId) => {
@@ -450,6 +451,29 @@ const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave }) => {
       return;
     }
     handleSearch(text, periodId);
+  };
+
+  const handleRegisterAll = async () => {
+    setRegisteringAll(true);
+    let count = 0;
+    for (const [periodId, rows] of Object.entries(periodRows)) {
+      for (const row of rows) {
+        const text = (row.text || "").trim();
+        if (!text) continue;
+        try {
+          await handleSearch(text, periodId);
+          count++;
+        } catch {
+          // error ya manejado por handleSearch/onSubmit
+        }
+      }
+    }
+    setRegisteringAll(false);
+    if (count > 0) {
+      notify.success(`Registro completado: ${count} logro(s) registrado(s).`);
+    } else {
+      notify.info("No hay descripciones pendientes por registrar.");
+    }
   };
 
   return (
@@ -615,7 +639,19 @@ const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave }) => {
           </select>
         </div>
       </div>
-
+      {!initialValues && (
+        <div className="grid grid-cols-5 gap-4">
+          <p className="col-span-4"></p>
+          <SimpleButton
+            msj={registeringAll ? "Registrando..." : "Registrar todas"}
+            bg="bg-secondary"
+            text="text-surface"
+            icon="Save"
+            disabled={registeringAll}
+            onClick={handleRegisterAll}
+          />
+        </div>
+      )}
       {initialValues ? (
         <div id="tour-pl-description">
           <label className="block text-sm font-medium mb-1">
@@ -658,18 +694,12 @@ const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave }) => {
                     className="grid grid-cols-5 items-center gap-2 py-2"
                   >
                     <input
-                      className="col-span-3 p-2 border rounded bg-surface text-sm"
+                      className="col-span-4 p-2 border rounded bg-surface text-sm"
                       value={row.text}
                       onChange={(e) =>
                         updateRowText(periodId, row.rowId, e.target.value)
                       }
                       placeholder="Escribe la descripción"
-                    />
-                    <SimpleButton
-                      bg="bg-secondary"
-                      icon="Save"
-                      text="text-surface"
-                      onClick={() => handleRegister(periodId, row.rowId)}
                     />
                     <SimpleButton
                       icon="Trash2"
@@ -692,6 +722,7 @@ const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave }) => {
           bg="bg-gray-200"
           text="text-gray-700"
         />
+
         {initialValues && (
           <SimpleButton
             msj="Guardar cambios"
