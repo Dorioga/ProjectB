@@ -84,9 +84,15 @@ const ManageLogro = () => {
   const teacherSubjectsParams = useMemo(
     () =>
       grade && idDocente
-        ? { idGrade: Number(grade), idTeacher: Number(idDocente) }
+        ? {
+            idGrade: Number(grade),
+            idTeacher: Number(idDocente),
+            ...(workdaySelected
+              ? { idWorkday: Number(workdaySelected) }
+              : {}),
+          }
         : {},
-    [grade, idDocente],
+    [grade, idDocente, workdaySelected],
   );
 
   const sedeWorkday = useMemo(() => {
@@ -400,7 +406,11 @@ const ManageLogro = () => {
             <div id="tour-ml-jornada">
               <JourneySelect
                 value={workdaySelected}
-                onChange={(e) => setWorkdaySelected(e.target.value)}
+                onChange={(e) => {
+                  setWorkdaySelected(e.target.value);
+                  setAsignature("");
+                  setDetectedJourney(null);
+                }}
                 filterValue={sedeWorkday}
                 subjectJourney={detectedJourney}
                 useTeacherSubjects={!asignature && !!grade}

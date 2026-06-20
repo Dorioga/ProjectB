@@ -32,8 +32,9 @@ const AsignatureSelector = ({
 
   // Cargar asignaturas cuando cambie la sede o jornada
   useEffect(() => {
+    let mounted = true;
+    const controller = new AbortController();
 
-    // No intentar cargar si no hay token (usuario desconectado)
     if (!token) {
       setAsignaturas([]);
       return;
@@ -41,14 +42,11 @@ const AsignatureSelector = ({
 
     if (!autoLoad) return;
 
-    // No cargar si el selector está deshabilitado
     if (disabled) {
       setAsignaturas([]);
       return;
     }
 
-    // Si hay customFetchMethod, solo verificar que haya additionalParams
-    // Si no hay customFetchMethod, verificar sedeId y workdayId válidos
     const isValidSedeId =
       sedeId && String(sedeId).trim() !== "" && Number(sedeId) > 0;
     const isValidWorkdayId =
@@ -57,7 +55,6 @@ const AsignatureSelector = ({
     const canLoad = customFetchMethod
       ? Object.keys(JSON.parse(additionalParamsStr)).length > 0
       : isValidSedeId && isValidWorkdayId;
-
 
     if (!canLoad) {
       setAsignaturas([]);
@@ -71,8 +68,6 @@ const AsignatureSelector = ({
         const parsedParams = JSON.parse(additionalParamsStr);
         const fetchMethod = customFetchMethod || getSedeAsignature;
 
-        // Si hay customFetchMethod, solo usar additionalParams
-        // Si no, usar el payload completo con idSede e idWorkDay
         const payload = customFetchMethod
           ? parsedParams
           : {
@@ -80,9 +75,12 @@ const AsignatureSelector = ({
               idWorkDay: Number(workdayId),
             };
 
-        const response = await fetchMethod(payload);
+        const response = await fetchMethod(payload, {
+          signal: controller.signal,
+        });
 
-        // Extraer las asignaturas de la respuesta
+        if (!mounted) return;
+
         const data = Array.isArray(response)
           ? response
           : Array.isArray(response?.data)
@@ -91,8 +89,9 @@ const AsignatureSelector = ({
 
         setAsignaturas(data);
       } catch (err) {
-        // Si el token es inválido, ApiClient ya limpiará el token del localStorage.
-        // Evitar spam en consola cuando el usuario está en proceso de logout.
+        if (err?.name === "AbortError") return;
+        if (!mounted) return;
+
         if (err?.message && /token|autenticaci/i.test(String(err.message))) {
           console.warn(
             "AsignatureSelector: petición abortada por token inválido",
@@ -103,11 +102,16 @@ const AsignatureSelector = ({
         setError(err);
         setAsignaturas([]);
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
 
     loadAsignaturas();
+
+    return () => {
+      mounted = false;
+      controller.abort();
+    };
   }, [
     sedeId,
     workdayId,
@@ -127,7 +131,11 @@ const AsignatureSelector = ({
         name: String(x?.nombre_asignatura || x?.nombre || x?.name || "").trim(),
         code: String(x?.codigo_asignatura || x?.codigo || x?.code || "").trim(),
       }))
-      .filter((x) => x.id && x.name);
+      .filter((x) => x.id && x.name)
+      .reduce((acc, x) => {
+        if (!acc.some((a) => a.id === x.id)) acc.push(x);
+        return acc;
+      }, []);
   }, [asignaturas]);
 
   const isLoading = loading || schoolLoading;

@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import AsignatureSelector from "../molecules/AsignatureSelector";
 import GradeSelector from "../atoms/GradeSelector";
-import PeriodSelector from "../atoms/PeriodSelector";
 import SedeSelect from "../atoms/SedeSelect";
 import JourneySelect from "../atoms/JourneySelect";
 import SimpleButton from "../atoms/SimpleButton";
@@ -31,17 +30,16 @@ const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave }) => {
   const [workdaySelected, setWorkdaySelected] = useState("");
   const [grade, setGrade] = useState("");
   const [asignature, setAsignature] = useState("");
-  const [period, setPeriod] = useState("");
 
   const [tipoLogro, setTipoLogro] = useState("");
-  const [descripcion, setDescripcion] = useState("");
 
   const notify = useNotify();
 
   const [tipos, setTipos] = useState([]);
   const [loadingTipos, setLoadingTipos] = useState(false);
 
-  const descripcionIsValid = String(descripcion || "").trim().length > 0;
+  const idCounter = useRef(0);
+  const [periodRows, setPeriodRows] = useState({});
 
   // Teacher sedes (mismo comportamiento que en RegisterStudentRecords)
   const [teacherSedes, setTeacherSedes] = useState([]);
@@ -68,10 +66,25 @@ const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave }) => {
   const teacherSubjectsParams = useMemo(
     () =>
       grade && idDocente
-        ? { idGrade: Number(grade), idTeacher: Number(idDocente) }
+        ? {
+            idGrade: Number(grade),
+            idTeacher: Number(idDocente),
+            ...(workdaySelected ? { idWorkday: Number(workdaySelected) } : {}),
+          }
         : {},
-    [grade, idDocente],
+    [grade, idDocente, workdaySelected],
   );
+
+  const { periods } = useSchool();
+  const periodOptions = useMemo(() => {
+    return (Array.isArray(periods) ? periods : [])
+      .filter(Boolean)
+      .map((p) => ({
+        id: String(p?.id_periodo ?? p?.id ?? "").trim(),
+        name: String(p?.nombre_periodo ?? p?.nombre ?? p?.name ?? "").trim(),
+      }))
+      .filter((p) => p.id);
+  }, [periods]);
 
   // Local caches para cargar y auto-seleccionar opciones en cascada (principalmente para docentes)
 
@@ -344,21 +357,17 @@ const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave }) => {
           String(iv.fk_asignatura ?? iv.id_asignatura ?? iv.idAsignatura ?? ""),
         );
       }
-      if (iv.fk_periodo || iv.id_periodo || iv.periodo) {
-        setPeriod(String(iv.fk_periodo ?? iv.id_periodo ?? iv.periodo ?? ""));
-      }
       if (iv.fk_tipo_logro || iv.fkTipoLogro) {
         setTipoLogro(String(iv.fk_tipo_logro ?? iv.fkTipoLogro ?? ""));
       }
-      if (iv.descripcion) setDescripcion(String(iv.descripcion));
     } catch (err) {
       // ignore malformed initialValues
       console.warn("ProfileLogro - invalid initialValues:", err);
     }
   }, [initialValues]);
 
-  const handleSearch = async () => {
-    if (!descripcionIsValid) {
+  const handleSearch = async (desc, periodId) => {
+    if (!desc || !desc.trim()) {
       notify.error("La descripción es obligatoria.");
       return;
     }
@@ -368,21 +377,6 @@ const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave }) => {
         ? (teacherSedeData[0]?.fk_institucion ?? null)
         : null;
 
-    const payload = {
-      fk_asignatura: asignature ? Number(asignature) : null,
-      fk_grado: grade ? Number(grade) : null,
-      fk_periodo: period ? Number(period) : null,
-      descripcion: descripcion.trim(),
-      fk_tipo_logro: tipoLogro ? Number(tipoLogro) : null,
-      // si es docente, preferir fk_institucion desde las sedes del docente
-      fk_institucion: teacherFkInstitution
-        ? Number(teacherFkInstitution)
-        : idInstitution
-          ? Number(idInstitution)
-          : null,
-    };
-
-    // Si estamos en modo edición (initialValues) y nos pasaron onSave, llamar a onSave
     if (initialValues && typeof onSave === "function") {
       try {
         const logroId =
@@ -392,9 +386,8 @@ const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave }) => {
           initialValues.fk_institute ??
           idInstitution;
 
-        // payload para update: { descripcion, estado, fk_tipo_logro }
         const updatePayload = {
-          descripcion: descripcion.trim(),
+          descripcion: desc.trim(),
           estado:
             initialValues.estado_logro ?? initialValues.estado ?? "Activo",
           fk_tipo_logro: tipoLogro ? Number(tipoLogro) : null,
@@ -409,7 +402,54 @@ const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave }) => {
       return;
     }
 
+    const payload = {
+      fk_asignatura: asignature ? Number(asignature) : null,
+      fk_grado: grade ? Number(grade) : null,
+      fk_periodo: periodId ? Number(periodId) : null,
+      descripcion: desc.trim(),
+      fk_tipo_logro: tipoLogro ? Number(tipoLogro) : null,
+      fk_institucion: teacherFkInstitution
+        ? Number(teacherFkInstitution)
+        : idInstitution
+          ? Number(idInstitution)
+          : null,
+    };
+
     if (onSubmit) await onSubmit(payload);
+  };
+
+  const addRow = (periodId) => {
+    const rowId = idCounter.current++;
+    setPeriodRows((prev) => ({
+      ...prev,
+      [periodId]: [...(prev[periodId] || []), { rowId, text: "" }],
+    }));
+  };
+
+  const removeRow = (periodId, rowId) => {
+    setPeriodRows((prev) => ({
+      ...prev,
+      [periodId]: (prev[periodId] || []).filter((r) => r.rowId !== rowId),
+    }));
+  };
+
+  const updateRowText = (periodId, rowId, text) => {
+    setPeriodRows((prev) => ({
+      ...prev,
+      [periodId]: (prev[periodId] || []).map((r) =>
+        r.rowId === rowId ? { ...r, text } : r,
+      ),
+    }));
+  };
+
+  const handleRegister = (periodId, rowId) => {
+    const row = (periodRows[periodId] || []).find((r) => r.rowId === rowId);
+    const text = (row?.text || "").trim();
+    if (!text) {
+      notify.error("La descripción es obligatoria.");
+      return;
+    }
+    handleSearch(text, periodId);
   };
 
   return (
@@ -426,7 +466,7 @@ const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave }) => {
           className="w-auto px-3 py-1.5"
         />
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {/* Sede siempre primero */}
         <div id="tour-pl-sede">
           <SedeSelect
@@ -488,7 +528,11 @@ const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave }) => {
             <div id="tour-pl-workday">
               <JourneySelect
                 value={workdaySelected}
-                onChange={(e) => setWorkdaySelected(e.target.value)}
+                onChange={(e) => {
+                  setWorkdaySelected(e.target.value);
+                  setAsignature("");
+                  setDetectedJourney(null);
+                }}
                 filterValue={sedeWorkday}
                 subjectJourney={detectedJourney}
                 useTeacherSubjects={!asignature && !!grade}
@@ -548,15 +592,6 @@ const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave }) => {
           </>
         )}
 
-        <div id="tour-pl-period">
-          <PeriodSelector
-            label="Periodo"
-            value={period}
-            onChange={(e) => setPeriod(e.target.value)}
-            autoLoad={true}
-          />
-        </div>
-
         <div id="tour-pl-type">
           <label className="">Tipo de logro</label>
           <select
@@ -581,22 +616,74 @@ const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave }) => {
         </div>
       </div>
 
-      <div id="tour-pl-description">
-        <label className="block text-sm font-medium mb-1">
-          Descripción <span className="text-red-600">*</span>
-        </label>
-        <input
-          className="w-full p-2 border rounded bg-surface"
-          value={descripcion}
-          onChange={(e) => setDescripcion(e.target.value)}
-          placeholder="Texto para filtrar descripción"
-        />
-        {!descripcionIsValid && (
-          <p className="text-sm text-red-600 mt-1">
-            La descripción es obligatoria.
-          </p>
-        )}
-      </div>
+      {initialValues ? (
+        <div id="tour-pl-description">
+          <label className="block text-sm font-medium mb-1">
+            Descripción <span className="text-red-600">*</span>
+          </label>
+          <input
+            className="w-full p-2 border rounded bg-surface"
+            value={periodRows["edit"]?.[0]?.text || ""}
+            onChange={(e) =>
+              setPeriodRows((prev) => ({
+                ...prev,
+                edit: [{ rowId: 0, text: e.target.value }],
+              }))
+            }
+            placeholder="Descripción del logro"
+          />
+        </div>
+      ) : (
+        <div id="tour-pl-periods" className="space-y-4">
+          {periodOptions.map((p) => {
+            const periodId = p.id;
+            const rows = periodRows[periodId] || [];
+            return (
+              <div key={periodId} className="border rounded-lg p-4 bg-surface">
+                <div className="grid grid-cols-5 items-center gap-2 py-2">
+                  <h4 className=" col-span-4 font-semibold text-sm mb-2">
+                    {p.name}
+                  </h4>
+                  <SimpleButton
+                    msj="Agregar descripción"
+                    icon="Plus"
+                    bg="bg-primary"
+                    text="text-surface"
+                    onClick={() => addRow(periodId)}
+                  />
+                </div>
+                {rows.map((row) => (
+                  <div
+                    key={row.rowId}
+                    className="grid grid-cols-5 items-center gap-2 py-2"
+                  >
+                    <input
+                      className="col-span-3 p-2 border rounded bg-surface text-sm"
+                      value={row.text}
+                      onChange={(e) =>
+                        updateRowText(periodId, row.rowId, e.target.value)
+                      }
+                      placeholder="Escribe la descripción"
+                    />
+                    <SimpleButton
+                      bg="bg-secondary"
+                      icon="Save"
+                      text="text-surface"
+                      onClick={() => handleRegister(periodId, row.rowId)}
+                    />
+                    <SimpleButton
+                      icon="Trash2"
+                      bg="bg-red-500"
+                      text="text-white"
+                      onClick={() => removeRow(periodId, row.rowId)}
+                    />
+                  </div>
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <div id="tour-pl-submit" className="flex gap-2 justify-end">
         <SimpleButton
@@ -605,13 +692,17 @@ const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave }) => {
           bg="bg-gray-200"
           text="text-gray-700"
         />
-        <SimpleButton
-          msj={initialValues ? "Guardar cambios" : "Agregar logros"}
-          onClick={handleSearch}
-          bg="bg-secondary"
-          text="text-surface"
-          disabled={!descripcionIsValid}
-        />
+        {initialValues && (
+          <SimpleButton
+            msj="Guardar cambios"
+            bg="bg-secondary"
+            text="text-surface"
+            onClick={() => {
+              const text = (periodRows["edit"]?.[0]?.text || "").trim();
+              if (text) handleSearch(text, "");
+            }}
+          />
+        )}
       </div>
     </div>
   );
