@@ -11,7 +11,7 @@ import useAuth from "../../lib/hooks/useAuth";
 import useData from "../../lib/hooks/useData";
 import useSchool from "../../lib/hooks/useSchool";
 
-const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave }) => {
+const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave, initialSede, initialWorkday, initialGrade, initialAsignature, initialTipoLogro }) => {
   const { idInstitution, idSede, nameSede, idDocente, token, rol } = useAuth();
   const { institutionSedes, loadInstitutionSedes } = useData();
   const {
@@ -32,6 +32,7 @@ const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave }) => {
   const [asignature, setAsignature] = useState("");
 
   const [tipoLogro, setTipoLogro] = useState("");
+  const [estadoLogro, setEstadoLogro] = useState("Activo");
 
   const notify = useNotify();
 
@@ -347,25 +348,35 @@ const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave }) => {
     if (!initialValues) return;
     try {
       const iv = initialValues || {};
-      if (iv.fk_sede || iv.id_sede || iv.idSede) {
-        setSedeSelected(String(iv.fk_sede ?? iv.id_sede ?? iv.idSede ?? ""));
-      }
-      if (iv.fk_grado || iv.id_grado || iv.idGrade) {
-        setGrade(String(iv.fk_grado ?? iv.id_grado ?? iv.idGrade ?? ""));
-      }
-      if (iv.fk_asignatura || iv.id_asignatura || iv.idAsignatura) {
-        setAsignature(
-          String(iv.fk_asignatura ?? iv.id_asignatura ?? iv.idAsignatura ?? ""),
-        );
-      }
-      if (iv.fk_tipo_logro || iv.fkTipoLogro) {
-        setTipoLogro(String(iv.fk_tipo_logro ?? iv.fkTipoLogro ?? ""));
+
+      // Sede: preferir initialSede del padre, fallback a campos del objeto
+      setSedeSelected(String(initialSede ?? iv.fk_sede ?? iv.id_sede ?? iv.idSede ?? ""));
+
+      // Grado: preferir initialGrade del padre
+      setGrade(String(initialGrade ?? iv.fk_grado ?? iv.id_grado ?? iv.idGrade ?? ""));
+
+      // Asignatura: preferir initialAsignature del padre
+      setAsignature(String(initialAsignature ?? iv.fk_asignatura ?? iv.id_asignatura ?? iv.idAsignatura ?? ""));
+
+      // Jornada: usar initialWorkday del padre
+      if (initialWorkday) setWorkdaySelected(String(initialWorkday));
+
+      // Tipo logro: preferir initialTipoLogro del padre
+      setTipoLogro(String(initialTipoLogro ?? iv.fk_tipo_logro ?? iv.fkTipoLogro ?? ""));
+
+      // Estado del logro
+      setEstadoLogro(iv.estado_logro ?? iv.estado ?? "Activo");
+
+      // Descripción
+      const desc = iv.descripcion || "";
+      if (desc) {
+        setPeriodRows({ edit: [{ rowId: 0, text: desc }] });
       }
     } catch (err) {
       // ignore malformed initialValues
       console.warn("ProfileLogro - invalid initialValues:", err);
     }
-  }, [initialValues]);
+  }, [initialValues, initialSede, initialWorkday, initialGrade, initialAsignature, initialTipoLogro]);
 
   const handleSearch = async (desc, periodId) => {
     if (!desc || !desc.trim()) {
@@ -379,6 +390,11 @@ const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave }) => {
         : null;
 
     if (initialValues && typeof onSave === "function") {
+      console.log(
+        "ProfileLogro - modo edición, payload a enviar:",
+        initialValues,
+      );
+
       try {
         const logroId =
           initialValues.id_logro ?? initialValues.id ?? initialValues.idLogro;
@@ -389,8 +405,7 @@ const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave }) => {
 
         const updatePayload = {
           descripcion: desc.trim(),
-          estado:
-            initialValues.estado_logro ?? initialValues.estado ?? "Activo",
+          estado: estadoLogro,
           fk_tipo_logro: tipoLogro ? Number(tipoLogro) : null,
         };
 
@@ -638,6 +653,20 @@ const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave }) => {
               ))}
           </select>
         </div>
+
+        {initialValues && (
+          <div id="tour-pl-estado">
+            <label className="">Estado del logro</label>
+            <select
+              className="w-full p-2 border rounded bg-surface"
+              value={estadoLogro}
+              onChange={(e) => setEstadoLogro(e.target.value)}
+            >
+              <option value="Activo">Activo</option>
+              <option value="Inactivo">Inactivo</option>
+            </select>
+          </div>
+        )}
       </div>
       {!initialValues && (
         <div className="grid grid-cols-5 gap-4">

@@ -46,6 +46,7 @@ const ManageLogro = () => {
   const [selectedLogro, setSelectedLogro] = useState(null);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const lastPayloadRef = useRef(null);
 
   // --- Select states ---
   const [sedeSelected, setSedeSelected] = useState("");
@@ -220,6 +221,7 @@ const ManageLogro = () => {
           fk_periodo: Number(period),
           fk_tipo_logro: Number(tipoLogro),
         };
+        lastPayloadRef.current = payload;
         const res = await getAllLogrosRef.current(payload);
         const data = Array.isArray(res) ? res : (res?.data ?? []);
         if (mounted) {
@@ -253,6 +255,7 @@ const ManageLogro = () => {
     async (payload) => {
       try {
         setLoading(true);
+        lastPayloadRef.current = payload;
         const res = await getLogroInstitution(payload);
         const data = Array.isArray(res) ? res : (res?.data ?? []);
         setResults(data);
@@ -266,6 +269,23 @@ const ManageLogro = () => {
     },
     [getLogroInstitution, notify],
   );
+
+  // --- Refresh logros con los filtros actuales (usa selectedLogro como fallback) ---
+  const refreshLogros = useCallback(async () => {
+    const payload = lastPayloadRef.current;
+    if (!payload) return;
+    try {
+      setLoading(true);
+      const list = await getAllLogrosRef.current(payload);
+      const data = Array.isArray(list) ? list : (list?.data ?? list);
+      setResults(data);
+    } catch (err) {
+      console.warn("ManageLogro - refreshLogros failed:", err);
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   const columns = [
     { accessorKey: "id_logro", header: "ID", meta: { hideOnLG: true } },
@@ -535,51 +555,28 @@ const ManageLogro = () => {
         onClose={() => {
           setIsEditOpen(false);
           setSelectedLogro(null);
+          refreshLogros();
         }}
         title="Editar logro"
         size="7xl"
       >
         <ProfileLogro
           initialValues={selectedLogro}
+          initialSede={sedeSelected}
+          initialWorkday={workdaySelected}
+          initialGrade={grade}
+          initialAsignature={asignature}
+          initialTipoLogro={tipoLogro}
           onClose={() => {
             setIsEditOpen(false);
             setSelectedLogro(null);
+            refreshLogros();
           }}
           onSave={async (logroId, institucionFk, payload) => {
             try {
               setLoading(true);
-              const res = await updateLogro(logroId, institucionFk, payload);
-              const updated = Array.isArray(res) ? res : (res?.data ?? res);
-
-              // Si los filtros actuales están completos, refrescar la consulta completa
-              if (asignature && grade && period && tipoLogro && fkInstitucion) {
-                try {
-                  const p = {
-                    fk_institucion: Number(fkInstitucion),
-                    fk_asignatura: Number(asignature),
-                    fk_grado: Number(grade),
-                    fk_periodo: Number(period),
-                    fk_tipo_logro: Number(tipoLogro),
-                  };
-                  const list = await getAllLogrosRef.current(p);
-                  const data = Array.isArray(list)
-                    ? list
-                    : (list?.data ?? list);
-                  setResults(data);
-                } catch (err) {
-                  console.warn(
-                    "ManageLogro - refresh after update failed:",
-                    err,
-                  );
-                }
-              } else {
-                // Reemplazar la fila editada en `results` si existe
-                setResults((prev) =>
-                  (prev || []).map((r) =>
-                    Number(r?.id_logro) === Number(logroId) ? updated || r : r,
-                  ),
-                );
-              }
+              await updateLogro(logroId, institucionFk, payload);
+              await refreshLogros();
 
               notify.success("Logro actualizado");
               setIsEditOpen(false);
