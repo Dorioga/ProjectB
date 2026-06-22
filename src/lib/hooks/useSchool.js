@@ -15,6 +15,7 @@ const EMPTY_CONTEXT = {
   getGradeOnlySede: noop,
   getTeacherSubjects: noop,
   getTeacherGrades: noop,
+  loadAreas: noop,
   getStudentGrades: noop,
   createNote: noop,
   validatorNotes: noop,

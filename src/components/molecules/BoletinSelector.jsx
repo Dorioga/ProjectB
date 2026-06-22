@@ -1211,12 +1211,14 @@ async function generateBoletinPDF(
   const headerColor = [0, 0, 0];
   drawCell("Asignatura", 0, y, rowH + subHeaderH, {
     bold: true,
+    fontSize: 9,
     color: headerColor,
     bg: headerBg,
     align: "center",
   });
   drawCell("IH", 1, y, rowH + subHeaderH, {
     bold: true,
+    fontSize: 9,
     color: headerColor,
     bg: headerBg,
     align: "center",
@@ -1229,19 +1231,19 @@ async function generateBoletinPDF(
     const base = 2 + pi * 4;
     drawCell("Nota", base, y, rowH + subHeaderH, {
       bold: true,
-      fontSize: 6,
+      fontSize: 9,
       color: subColor,
       bg: subBg,
     });
     drawCell("Escala", base + 1, y, rowH + subHeaderH, {
       bold: true,
-      fontSize: 6,
+      fontSize: 9,
       color: subColor,
       bg: subBg,
     });
     drawCell("Estado", base + 2, y, rowH + subHeaderH, {
       bold: true,
-      fontSize: 6,
+      fontSize: 9,
       color: subColor,
       bg: subBg,
     });

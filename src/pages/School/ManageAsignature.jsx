@@ -148,16 +148,15 @@ const ManageAsignature = () => {
   const columns = useMemo(
     () => [
       {
-        accessorKey: "id_asignatura",
-        header: "ID",
-        meta: {
-          hideOnMD: true,
-        },
+        accessorKey: "nombre_area",
+        header: "Área",
+        cell: ({ getValue }) => getValue() || "Sin área",
       },
       {
         accessorKey: "nombre_asignatura",
         header: "Nombre",
       },
+
       {
         accessorKey: "codigo_asignatura",
         header: "Código",

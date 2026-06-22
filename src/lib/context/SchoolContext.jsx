@@ -34,6 +34,9 @@ export function SchoolProvider({ children }) {
   const [pathSignature, setPathSignature] = useState(
     "https://a.storyblok.com/f/191576/1200x800/b7ad4902a2/signature_maker_after_.webp",
   );
+  const [areas, setAreas] = useState([]);
+  const [loadingAreas, setLoadingAreas] = useState(false);
+  const [errorAreas, setErrorAreas] = useState(null);
   const [valuesReservations, setValuesReservations] = useState([]);
   const [loadingValuesReservations, setLoadingValuesReservations] =
     useState(false);
@@ -605,6 +608,21 @@ export function SchoolProvider({ children }) {
     }
   }, []);
 
+  const loadAreas = useCallback(async () => {
+    setLoadingAreas(true);
+    setErrorAreas(null);
+    try {
+      const data = await schoolService.getAreas();
+      setAreas(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Error al cargar áreas:", err);
+      setErrorAreas(err);
+      setAreas([]);
+    } finally {
+      setLoadingAreas(false);
+    }
+  }, []);
+
   const value = useMemo(
     () => ({
       schools,
@@ -622,10 +640,14 @@ export function SchoolProvider({ children }) {
       periods,
       loadingPeriods,
       errorPeriods,
+      areas,
+      loadingAreas,
+      errorAreas,
       reloadSedes: loadSedes,
       reloadJourneys: loadJourneys,
       reloadRecords: loadRecords,
       loadPeriods,
+      loadAreas,
       addSchool,
       updateSchool,
       updateInstitution,
@@ -664,6 +686,10 @@ export function SchoolProvider({ children }) {
     }),
     [
       schools,
+      areas,
+      loadingAreas,
+      errorAreas,
+      loadAreas,
       valuesReservations,
       loadingValuesReservations,
       errorValuesReservations,

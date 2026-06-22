@@ -12,6 +12,9 @@ const RegisterAsignature = ({ onSuccess }) => {
   const {
     registerAsignature,
     getGradeSede,
+    loadAreas,
+    areas,
+    loadingAreas,
     loading: schoolLoading,
   } = useSchool();
   const { institutionSedes } = useData();
@@ -23,6 +26,7 @@ const RegisterAsignature = ({ onSuccess }) => {
     intensity_hours: "",
     jornada: "",
     sedeId: "",
+    fk_area: "",
     grades_scholar: [],
   });
 
@@ -40,6 +44,7 @@ const RegisterAsignature = ({ onSuccess }) => {
     return (
       String(formData.name ?? "").trim() &&
       String(formData.code ?? "").trim() &&
+      String(formData.fk_area ?? "").trim() &&
       String(formData.intensity_hours ?? "").trim() &&
       Number(formData.intensity_hours) > 0 &&
       formData.sedeId &&
@@ -169,6 +174,11 @@ const RegisterAsignature = ({ onSuccess }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.jornada, formData.sedeId]);
 
+  useEffect(() => {
+    loadAreas();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const toggleGrade = (gradeId) => {
     setFormData((prev) => {
       const current = Array.isArray(prev.grades_scholar)
@@ -203,6 +213,8 @@ const RegisterAsignature = ({ onSuccess }) => {
       newErrors.code = "El código de la asignatura es obligatorio.";
     if (!formData.sedeId) newErrors.sedeId = "Selecciona una sede.";
     if (!formData.jornada) newErrors.jornada = "Selecciona una jornada.";
+    if (!String(formData.fk_area ?? "").trim())
+      newErrors.fk_area = "Selecciona un área.";
     if (!String(formData.intensity_hours ?? "").trim() || Number(formData.intensity_hours) <= 0)
       newErrors.intensity_hours = "La intensidad horaria es obligatoria.";
     if (
@@ -230,6 +242,7 @@ const RegisterAsignature = ({ onSuccess }) => {
         code_asignature: formData.code.trim(),
         description: formData.description.trim(),
         intensity_hours: formData.intensity_hours.trim(),
+        fk_area: parseInt(formData.fk_area, 10),
       };
 
       await registerAsignature(payload);
@@ -242,6 +255,7 @@ const RegisterAsignature = ({ onSuccess }) => {
         intensity_hours: "",
         jornada: "",
         sedeId: "",
+        fk_area: "",
         grades_scholar: [],
       });
       setErrors({});
@@ -347,6 +361,32 @@ const RegisterAsignature = ({ onSuccess }) => {
           />
           {errors.intensity_hours && (
             <p className="text-xs text-error mt-1">{errors.intensity_hours}</p>
+          )}
+        </div>
+        <div id="tour-area">
+          <label className={labelClassName}>
+            Área <span className="text-error">*</span>
+          </label>
+          <select
+            name="fk_area"
+            value={formData.fk_area}
+            onChange={handleChange}
+            className={inputClassName}
+          >
+            <option value="">-- Seleccione un área --</option>
+            {loadingAreas ? (
+              <option disabled>Cargando áreas...</option>
+            ) : (
+              Array.isArray(areas) &&
+              areas.map((area) => (
+                <option key={area.id} value={area.id}>
+                  {area.name}
+                </option>
+              ))
+            )}
+          </select>
+          {errors.fk_area && (
+            <p className="text-xs text-error mt-1">{errors.fk_area}</p>
           )}
         </div>
         <div id="tour-sede">

@@ -764,6 +764,26 @@ export async function salidaQR(payload) {
 }
 
 /**
+ * Obtiene las áreas académicas.
+ *
+ * Endpoint esperado: GET /areas
+ * @returns {Promise<Array>} Array de áreas [{ id, name, description }]
+ */
+export async function getAreas() {
+  try {
+    const res = await ApiClient.get("/areas");
+    const data = Array.isArray(res) ? res : (res?.data ?? []);
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === "object" && Array.isArray(data.data))
+      return data.data;
+    throw new Error("Respuesta inesperada de /areas.");
+  } catch (error) {
+    console.error("Error en getAreas:", error);
+    throw error;
+  }
+}
+
+/**
  * Obtiene las sedes de la institución.
  *
  * Endpoint esperado: POST /sedes

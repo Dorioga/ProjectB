@@ -1,8 +1,10 @@
 ﻿import { useState, useEffect, useRef, useCallback } from "react";
 import SimpleButton from "../atoms/SimpleButton";
 import tourProfileAssignature from "../../tour/tourProfileAssignature";
+import useSchool from "../../lib/hooks/useSchool";
 
 const ProfileAssignature = ({ data, onSave, initialEditing = false }) => {
+  const { loadAreas, areas, loadingAreas } = useSchool();
   const safeData = data || {};
   const [isEditing, setIsEditing] = useState(Boolean(initialEditing));
   const [isSaving, setIsSaving] = useState(false);
@@ -61,7 +63,13 @@ const ProfileAssignature = ({ data, onSave, initialEditing = false }) => {
     description: safeData.descripcion || safeData.description || "",
     intensity_hours: safeData.intensity_hours || safeData.intensidad_horaria || "",
     estado: safeData.estado || "",
+    fk_area: safeData.fk_area || "",
   });
+
+  useEffect(() => {
+    loadAreas();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     setIsEditing(Boolean(initialEditing));
@@ -75,6 +83,7 @@ const ProfileAssignature = ({ data, onSave, initialEditing = false }) => {
       description: d.descripcion || d.description || "",
       intensity_hours: d.intensity_hours || d.intensidad_horaria || "",
       estado: d.estado || "",
+      fk_area: d.fk_area || "",
     });
     const parsed = parseGrades(d);
     setGrades(parsed);
@@ -97,6 +106,9 @@ const ProfileAssignature = ({ data, onSave, initialEditing = false }) => {
     if (!form.estado || !String(form.estado).trim()) {
       next.estado = "El estado es obligatorio.";
     }
+    if (!String(form.fk_area ?? "").trim()) {
+      next.fk_area = "Selecciona un área.";
+    }
 
     if (showErrors) setErrors(next);
     return Object.keys(next).length === 0;
@@ -106,7 +118,8 @@ const ProfileAssignature = ({ data, onSave, initialEditing = false }) => {
     Boolean(form.name_asignature && String(form.name_asignature).trim()) &&
     Boolean(form.code_asignature && String(form.code_asignature).trim()) &&
     Boolean(form.description && String(form.description).trim()) &&
-    Boolean(form.estado && String(form.estado).trim());
+    Boolean(form.estado && String(form.estado).trim()) &&
+    Boolean(form.fk_area && String(form.fk_area).trim());
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -136,6 +149,7 @@ const ProfileAssignature = ({ data, onSave, initialEditing = false }) => {
             descripcion: String(form.description || "").trim(),
             intensity_hours: form.intensity_hours || "",
             estado: form.estado || "",
+            fk_area: form.fk_area ? Number(form.fk_area) : null,
             grados_asignatura: grades.map((g) => ({
               fk_grade: Number(g.id),
               fk_asignature: Number(asignaturaId),
@@ -251,6 +265,31 @@ const ProfileAssignature = ({ data, onSave, initialEditing = false }) => {
           )}
         </div>
 
+        <div id="tour-pa-area">
+          <label className="font-semibold">Área</label>
+          <select
+            name="fk_area"
+            value={form.fk_area}
+            onChange={handleChange}
+            className={`w-full p-2 border rounded bg-surface ${isEditing && !isSaving ? "ring-2 ring-accent/30" : "opacity-80 text-gray-700"}`}
+            disabled={!isEditing || isSaving}
+          >
+            <option value="">-- Seleccione un área --</option>
+            {loadingAreas ? (
+              <option disabled>Cargando áreas...</option>
+            ) : (
+              Array.isArray(areas) &&
+              areas.map((area) => (
+                <option key={area.id} value={area.id}>
+                  {area.name}
+                </option>
+              ))
+            )}
+          </select>
+          {errors.fk_area && (
+            <div className="text-sm text-red-600 mt-1">{errors.fk_area}</div>
+          )}
+        </div>
         <div id="tour-pa-intensity">
           <label className="font-semibold">Intensidad horaria</label>
           <input
