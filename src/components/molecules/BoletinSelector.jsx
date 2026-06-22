@@ -141,10 +141,18 @@ const useBoletinProcessed = (data, periodId) => {
     return 0;
   }, [data]);
 
-  const asignaturas = useMemo(() => {
+  const { asignaturas, areas } = useMemo(() => {
     const m = new Map();
+    const areaInfoMap = new Map();
     for (const r of data) {
       const key = r.id_asignatura_grado;
+      if (!key) continue;
+      if (r.fk_area != null && !areaInfoMap.has(key)) {
+        areaInfoMap.set(key, {
+          fk_area: r.fk_area,
+          nombre_area: r.nombre_area || `Área ${r.fk_area}`,
+        });
+      }
       if (!m.has(key)) {
         m.set(key, {
           id_asignatura_grado: key,
@@ -216,17 +224,41 @@ const useBoletinProcessed = (data, periodId) => {
         per.observacion_enfasis = r.observacion_enfasis;
       }
     }
-    const result = Array.from(m.values()).sort((a, b) =>
-      a.nombre_asignatura_grado.localeCompare(b.nombre_asignatura_grado, "es", {
-        sensitivity: "base",
-      }),
-    );
-    for (const asig of result) {
-      for (const [, per] of asig.periodos) {
-        per.nota = _computeNotaEfectiva(per.nota, per.recuperacion);
+    const areaMap = new Map();
+    for (const [key, subject] of m) {
+      const info = areaInfoMap.get(key);
+      const areaKey = info?.fk_area ?? "sin-area";
+      const areaName = info?.nombre_area ?? "Sin área";
+      if (!areaMap.has(areaKey)) {
+        areaMap.set(areaKey, {
+          fk_area: info?.fk_area ?? null,
+          nombre_area: areaName,
+          asignaturas: [],
+        });
       }
+      areaMap.get(areaKey).asignaturas.push(subject);
     }
-    return result;
+    const areas = Array.from(areaMap.entries())
+      .sort(([aKey], [bKey]) => {
+        if (aKey === "sin-area") return 1;
+        if (bKey === "sin-area") return -1;
+        return Number(aKey) - Number(bKey);
+      })
+      .map(([, area]) => {
+        area.asignaturas.sort((a, b) =>
+          a.nombre_asignatura_grado.localeCompare(b.nombre_asignatura_grado, "es", {
+            sensitivity: "base",
+          }),
+        );
+        for (const asig of area.asignaturas) {
+          for (const [, per] of asig.periodos) {
+            per.nota = _computeNotaEfectiva(per.nota, per.recuperacion);
+          }
+        }
+        return area;
+      });
+    const asignaturas = areas.flatMap((a) => a.asignaturas);
+    return { asignaturas, areas };
   }, [data]);
 
   const promedioGeneral = useMemo(() => {
@@ -257,7 +289,7 @@ const useBoletinProcessed = (data, periodId) => {
     return `${prom} de ${total} asignaturas promovidas`;
   }, [asignaturas]);
 
-  return { periodos, asignaturas, promedioGeneral, resumenEstado };
+  return { periodos, areas, asignaturas, promedioGeneral, resumenEstado };
 };
 
 /* ── Función pura equivalente a useBoletinProcessed (para uso en loops) ── */
@@ -288,8 +320,16 @@ function computeBoletinData(data, periodId) {
   }
 
   const asigMap = new Map();
+  const areaInfoMap = new Map();
   for (const r of data) {
     const key = r.id_asignatura_grado;
+    if (!key) continue;
+    if (r.fk_area != null && !areaInfoMap.has(key)) {
+      areaInfoMap.set(key, {
+        fk_area: r.fk_area,
+        nombre_area: r.nombre_area || `Área ${r.fk_area}`,
+      });
+    }
     if (!asigMap.has(key)) {
       asigMap.set(key, {
         id_asignatura_grado: key,
@@ -355,16 +395,40 @@ function computeBoletinData(data, periodId) {
       per.observacion_enfasis = r.observacion_enfasis;
     }
   }
-  const asignaturas = Array.from(asigMap.values()).sort((a, b) =>
-    a.nombre_asignatura_grado.localeCompare(b.nombre_asignatura_grado, "es", {
-      sensitivity: "base",
-    }),
-  );
-  for (const asig of asignaturas) {
-    for (const [, per] of asig.periodos) {
-      per.nota = _computeNotaEfectiva(per.nota, per.recuperacion);
+  const areaMap2 = new Map();
+  for (const [key, subject] of asigMap) {
+    const info = areaInfoMap.get(key);
+    const areaKey = info?.fk_area ?? "sin-area";
+    const areaName = info?.nombre_area ?? "Sin área";
+    if (!areaMap2.has(areaKey)) {
+      areaMap2.set(areaKey, {
+        fk_area: info?.fk_area ?? null,
+        nombre_area: areaName,
+        asignaturas: [],
+      });
     }
+    areaMap2.get(areaKey).asignaturas.push(subject);
   }
+  const areas = Array.from(areaMap2.entries())
+    .sort(([aKey], [bKey]) => {
+      if (aKey === "sin-area") return 1;
+      if (bKey === "sin-area") return -1;
+      return Number(aKey) - Number(bKey);
+    })
+    .map(([, area]) => {
+      area.asignaturas.sort((a, b) =>
+        a.nombre_asignatura_grado.localeCompare(b.nombre_asignatura_grado, "es", {
+          sensitivity: "base",
+        }),
+      );
+      for (const asig of area.asignaturas) {
+        for (const [, per] of asig.periodos) {
+          per.nota = _computeNotaEfectiva(per.nota, per.recuperacion);
+        }
+      }
+      return area;
+    });
+  const asignaturas = areas.flatMap((a) => a.asignaturas);
   const pid = String(periodId);
   let promedioSum = 0;
   for (const asig of asignaturas) {
@@ -390,7 +454,7 @@ function computeBoletinData(data, periodId) {
     if (prom === 0) return "No promovido";
     return `${prom} de ${total} asignaturas promovidas`;
   })();
-  return { periodos, asignaturas, promedioGeneral, resumenEstado };
+  return { periodos, areas, asignaturas, promedioGeneral, resumenEstado };
 }
 
 /* ── Hook: procesamiento de boletín grado transición ── */
@@ -816,6 +880,7 @@ async function generateBoletinPDF(
   info,
   periodos,
   asignaturas,
+  areas,
   promedioGeneral,
   resumenEstado,
   escalas,
@@ -1190,183 +1255,200 @@ async function generateBoletinPDF(
   y += rowH + subHeaderH;
 
   /* Filas de datos */
-  for (let idx = 0; idx < asignaturas.length; idx++) {
-    const asig = asignaturas[idx];
-    const rowBg = [255, 255, 255];
-
-    // Altura dinámica según longitud del logro
-    let computedRowH = rowH;
-    for (let pi = 0; pi < periodos.length; pi++) {
-      const per = asig.periodos.get(periodos[pi].id);
-      {
-        const logroColW = colWidths[2 + pi * 4 + 3];
-        const lineH = 9 * 0.45;
-        const logros = per?.logros ?? [];
-        let logroHeight = 2; // padding top
-        if (logros.length === 0) {
-          logroHeight += lineH;
-        } else {
-          for (const logro of logros) {
-            const sep = logro.indexOf(": ");
-            if (sep === -1) {
-              pdf.setFontSize(9);
-              pdf.setFont("helvetica", "normal");
-              logroHeight +=
-                pdf.splitTextToSize(logro, logroColW - 1.5).length * lineH;
-            } else {
-              pdf.setFontSize(9);
-              pdf.setFont("helvetica", "bold");
-              logroHeight +=
-                pdf.splitTextToSize(logro.slice(0, sep), logroColW - 1.5)
-                  .length * lineH;
-              pdf.setFont("helvetica", "normal");
-              logroHeight +=
-                pdf.splitTextToSize(logro.slice(sep + 2), logroColW - 1.5)
-                  .length * lineH;
-            }
-            logroHeight += lineH * 0.5; // espaciado entre logros
-          }
-        }
-        // reserva dinámica para "Obs. énfasis:" (título + valor)
-        {
-          const obsValue = per?.observacion_enfasis ?? null;
-          let obsReserve = 8;
-          if (obsValue) {
-            pdf.setFontSize(9);
-            pdf.setFont("helvetica", "normal");
-            const obsLines = pdf.splitTextToSize(obsValue, logroColW - 1.5);
-            obsReserve += obsLines.length * lineH;
-          }
-          logroHeight += obsReserve;
-        }
-        if (logroHeight > computedRowH) computedRowH = logroHeight;
-      }
-      const estadoText = per?.estado || "-";
-      const estadoColW = colWidths[2 + pi * 4 + 2];
-      const estadoLines = pdf.splitTextToSize(estadoText, estadoColW - 1.5);
-      const estadoNeeded = estadoLines.length * (6 * 0.45) + 2;
-      if (estadoNeeded > computedRowH) computedRowH = estadoNeeded;
-    }
-    addPageIfNeeded(computedRowH);
-
-    drawCellMultiline(asig.nombre_asignatura_grado, 0, y, computedRowH, {
-      bold: true,
-      fontSize: 7,
-      align: "center",
-      bg: rowBg,
+  for (const area of areas) {
+    const areaHeaderH = 7;
+    addPageIfNeeded(areaHeaderH);
+    pdf.setFillColor(229, 231, 235);
+    pdf.rect(margin, y, contentW, areaHeaderH, "F");
+    pdf.setDrawColor(0, 0, 0);
+    pdf.setLineWidth(0.3);
+    pdf.rect(margin, y, contentW, areaHeaderH, "D");
+    pdf.setFontSize(8);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(0, 0, 0);
+    pdf.text(area.nombre_area.toUpperCase(), margin + 1.5, y + areaHeaderH / 2 + 1.5, {
+      align: "left",
     });
-    drawCell(asig.intensidad_horaria ?? "-", 1, y, computedRowH, {
-      bg: rowBg,
-    });
+    y += areaHeaderH;
 
-    for (let pi = 0; pi < periodos.length; pi++) {
-      const per = asig.periodos.get(periodos[pi].id);
-      const base = 2 + pi * 4;
-      drawCell(per?.nota ?? "-", base, y, computedRowH, {
-        bold: true,
-        bg: rowBg,
-      });
-      drawCell(per?.escala ?? "-", base + 1, y, computedRowH, { bg: rowBg });
-      const estColor = per?.estado
-        ? colorEstado(per.estado) === "#15803d"
-          ? [21, 128, 61]
-          : [220, 38, 38]
-        : [55, 65, 81];
-      drawCellMultiline(per?.estado ?? "-", base + 2, y, computedRowH, {
-        bold: true,
-        align: "center",
-        color: estColor,
-        bg: rowBg,
-      });
-      {
-        const cx = colX(base + 3);
-        const w = colWidths[base + 3];
-        pdf.setFillColor(...rowBg);
-        pdf.rect(cx, y, w, computedRowH, "F");
-        pdf.setDrawColor(0, 0, 0);
-        pdf.setLineWidth(0.3);
-        pdf.rect(cx, y, w, computedRowH, "D");
-        const logros = per?.logros ?? [];
-        const lineH = 9 * 0.45;
-        const obsY = y + computedRowH - 9;
-        const logroMaxY = obsY - 1;
-        if (logros.length === 0) {
-          pdf.setFontSize(9);
-          pdf.setFont("helvetica", "normal");
-          pdf.setTextColor(0, 0, 0);
-          pdf.text("-", cx + 1, y + 4);
-        } else {
-          let textY = y + 2;
-          outer: for (const logro of logros) {
-            const sep = logro.indexOf(": ");
-            if (sep === -1) {
-              pdf.setFontSize(9);
-              pdf.setFont("helvetica", "normal");
-              pdf.setTextColor(0, 0, 0);
-              for (const ln of pdf.splitTextToSize(logro, w - 1.5)) {
-                if (textY + lineH * 0.8 > logroMaxY) break outer;
-                pdf.text(ln, cx + 1, textY + lineH * 0.8);
-                textY += lineH;
-              }
-            } else {
-              const tipo = logro.slice(0, sep);
-              const desc = logro.slice(sep + 2);
-              pdf.setFontSize(9);
-              pdf.setFont("helvetica", "bold");
-              pdf.setTextColor(0, 0, 0);
-              for (const ln of pdf.splitTextToSize(tipo, w - 1.5)) {
-                if (textY + lineH * 0.8 > logroMaxY) break outer;
-                pdf.text(ln, cx + 1, textY + lineH * 0.8);
-                textY += lineH;
-              }
-              pdf.setFont("helvetica", "normal");
-              pdf.setTextColor(0, 0, 0);
-              for (const ln of pdf.splitTextToSize(desc, w - 1.5)) {
-                if (textY + lineH * 0.8 > logroMaxY) break outer;
-                pdf.text(ln, cx + 1, textY + lineH * 0.8);
-                textY += lineH;
-              }
-            }
-            textY += lineH * 0.5;
-          }
-        }
-        // Observaciones de énfasis al fondo de la celda de logro (flex-col)
+    for (let idx = 0; idx < area.asignaturas.length; idx++) {
+      const asig = area.asignaturas[idx];
+      const rowBg = [255, 255, 255];
+
+      // Altura dinámica según longitud del logro
+      let computedRowH = rowH;
+      for (let pi = 0; pi < periodos.length; pi++) {
+        const per = asig.periodos.get(periodos[pi].id);
         {
-          const obsValue = per?.observacion_enfasis ?? null;
+          const logroColW = colWidths[2 + pi * 4 + 3];
           const lineH = 9 * 0.45;
-          let obsNeeded = 8;
-          if (obsValue) {
+          const logros = per?.logros ?? [];
+          let logroHeight = 2; // padding top
+          if (logros.length === 0) {
+            logroHeight += lineH;
+          } else {
+            for (const logro of logros) {
+              const sep = logro.indexOf(": ");
+              if (sep === -1) {
+                pdf.setFontSize(9);
+                pdf.setFont("helvetica", "normal");
+                logroHeight +=
+                  pdf.splitTextToSize(logro, logroColW - 1.5).length * lineH;
+              } else {
+                pdf.setFontSize(9);
+                pdf.setFont("helvetica", "bold");
+                logroHeight +=
+                  pdf.splitTextToSize(logro.slice(0, sep), logroColW - 1.5)
+                    .length * lineH;
+                pdf.setFont("helvetica", "normal");
+                logroHeight +=
+                  pdf.splitTextToSize(logro.slice(sep + 2), logroColW - 1.5)
+                    .length * lineH;
+              }
+              logroHeight += lineH * 0.5; // espaciado entre logros
+            }
+          }
+          // reserva dinámica para "Obs. énfasis:" (título + valor)
+          {
+            const obsValue = per?.observacion_enfasis ?? null;
+            let obsReserve = 8;
+            if (obsValue) {
+              pdf.setFontSize(9);
+              pdf.setFont("helvetica", "normal");
+              const obsLines = pdf.splitTextToSize(obsValue, logroColW - 1.5);
+              obsReserve += obsLines.length * lineH;
+            }
+            logroHeight += obsReserve;
+          }
+          if (logroHeight > computedRowH) computedRowH = logroHeight;
+        }
+        const estadoText = per?.estado || "-";
+        const estadoColW = colWidths[2 + pi * 4 + 2];
+        const estadoLines = pdf.splitTextToSize(estadoText, estadoColW - 1.5);
+        const estadoNeeded = estadoLines.length * (6 * 0.45) + 2;
+        if (estadoNeeded > computedRowH) computedRowH = estadoNeeded;
+      }
+      addPageIfNeeded(computedRowH);
+
+      drawCellMultiline(asig.nombre_asignatura_grado, 0, y, computedRowH, {
+        bold: true,
+        fontSize: 7,
+        align: "center",
+        bg: rowBg,
+      });
+      drawCell(asig.intensidad_horaria ?? "-", 1, y, computedRowH, {
+        bg: rowBg,
+      });
+
+      for (let pi = 0; pi < periodos.length; pi++) {
+        const per = asig.periodos.get(periodos[pi].id);
+        const base = 2 + pi * 4;
+        drawCell(per?.nota ?? "-", base, y, computedRowH, {
+          bold: true,
+          bg: rowBg,
+        });
+        drawCell(per?.escala ?? "-", base + 1, y, computedRowH, { bg: rowBg });
+        const estColor = per?.estado
+          ? colorEstado(per.estado) === "#15803d"
+            ? [21, 128, 61]
+            : [220, 38, 38]
+          : [55, 65, 81];
+        drawCellMultiline(per?.estado ?? "-", base + 2, y, computedRowH, {
+          bold: true,
+          align: "center",
+          color: estColor,
+          bg: rowBg,
+        });
+        {
+          const cx = colX(base + 3);
+          const w = colWidths[base + 3];
+          pdf.setFillColor(...rowBg);
+          pdf.rect(cx, y, w, computedRowH, "F");
+          pdf.setDrawColor(0, 0, 0);
+          pdf.setLineWidth(0.3);
+          pdf.rect(cx, y, w, computedRowH, "D");
+          const logros = per?.logros ?? [];
+          const lineH = 9 * 0.45;
+          const obsY = y + computedRowH - 9;
+          const logroMaxY = obsY - 1;
+          if (logros.length === 0) {
             pdf.setFontSize(9);
             pdf.setFont("helvetica", "normal");
-            const vLines = pdf.splitTextToSize(obsValue, w - 2);
-            obsNeeded += vLines.length * lineH;
+            pdf.setTextColor(0, 0, 0);
+            pdf.text("-", cx + 1, y + 4);
+          } else {
+            let textY = y + 2;
+            outer: for (const logro of logros) {
+              const sep = logro.indexOf(": ");
+              if (sep === -1) {
+                pdf.setFontSize(9);
+                pdf.setFont("helvetica", "normal");
+                pdf.setTextColor(0, 0, 0);
+                for (const ln of pdf.splitTextToSize(logro, w - 1.5)) {
+                  if (textY + lineH * 0.8 > logroMaxY) break outer;
+                  pdf.text(ln, cx + 1, textY + lineH * 0.8);
+                  textY += lineH;
+                }
+              } else {
+                const tipo = logro.slice(0, sep);
+                const desc = logro.slice(sep + 2);
+                pdf.setFontSize(9);
+                pdf.setFont("helvetica", "bold");
+                pdf.setTextColor(0, 0, 0);
+                for (const ln of pdf.splitTextToSize(tipo, w - 1.5)) {
+                  if (textY + lineH * 0.8 > logroMaxY) break outer;
+                  pdf.text(ln, cx + 1, textY + lineH * 0.8);
+                  textY += lineH;
+                }
+                pdf.setFont("helvetica", "normal");
+                pdf.setTextColor(0, 0, 0);
+                for (const ln of pdf.splitTextToSize(desc, w - 1.5)) {
+                  if (textY + lineH * 0.8 > logroMaxY) break outer;
+                  pdf.text(ln, cx + 1, textY + lineH * 0.8);
+                  textY += lineH;
+                }
+              }
+              textY += lineH * 0.5;
+            }
           }
-          const obsY = y + computedRowH - obsNeeded;
-          const obsBottomY = y + computedRowH - 1;
-          pdf.setDrawColor(0, 0, 0);
-          pdf.setLineWidth(0.15);
-          pdf.line(cx + 1, obsY, cx + w - 1, obsY);
-          const labelY = obsY + 3.5;
-          pdf.setFontSize(9);
-          pdf.setFont("helvetica", "bold");
-          pdf.setTextColor(0, 0, 0);
-          const obsLabel = "Obs. énfasis:";
-          pdf.text(obsLabel, cx + 1, labelY);
-          if (obsValue) {
-            pdf.setFont("helvetica", "normal");
-            const obsLines = pdf.splitTextToSize(obsValue, w - 2);
-            let obsTextY = labelY + lineH + 1;
-            for (const ol of obsLines) {
-              if (obsTextY > obsBottomY) break;
-              pdf.text(ol, cx + 1, obsTextY);
-              obsTextY += lineH;
+          // Observaciones de énfasis al fondo de la celda de logro (flex-col)
+          {
+            const obsValue = per?.observacion_enfasis ?? null;
+            const lineH = 9 * 0.45;
+            let obsNeeded = 8;
+            if (obsValue) {
+              pdf.setFontSize(9);
+              pdf.setFont("helvetica", "normal");
+              const vLines = pdf.splitTextToSize(obsValue, w - 2);
+              obsNeeded += vLines.length * lineH;
+            }
+            const obsY = y + computedRowH - obsNeeded;
+            const obsBottomY = y + computedRowH - 1;
+            pdf.setDrawColor(0, 0, 0);
+            pdf.setLineWidth(0.15);
+            pdf.line(cx + 1, obsY, cx + w - 1, obsY);
+            const labelY = obsY + 3.5;
+            pdf.setFontSize(9);
+            pdf.setFont("helvetica", "bold");
+            pdf.setTextColor(0, 0, 0);
+            const obsLabel = "Obs. énfasis:";
+            pdf.text(obsLabel, cx + 1, labelY);
+            if (obsValue) {
+              pdf.setFont("helvetica", "normal");
+              const obsLines = pdf.splitTextToSize(obsValue, w - 2);
+              let obsTextY = labelY + lineH + 1;
+              for (const ol of obsLines) {
+                if (obsTextY > obsBottomY) break;
+                pdf.text(ol, cx + 1, obsTextY);
+                obsTextY += lineH;
+              }
             }
           }
         }
       }
-    }
 
-    y += computedRowH;
+      y += computedRowH;
+    }
   }
 
   /* ── Sección inferior boletín (4 filas) ── */
@@ -1877,7 +1959,7 @@ const BoletinSelector = ({
     };
   }, [isGuardian, idPersona]);
 
-  const { periodos, asignaturas, promedioGeneral, resumenEstado } =
+  const { periodos, areas, asignaturas, promedioGeneral, resumenEstado } =
     useBoletinProcessed(!isTransicion ? (boletinData ?? []) : [], periodId);
 
   // Todos los periodos presentes en la respuesta (para tabla histórica)
@@ -1996,6 +2078,7 @@ const BoletinSelector = ({
           info,
           periodos,
           asignaturas,
+          areas,
           promedioGeneral,
           resumenEstado,
           escalas,
@@ -2068,6 +2151,7 @@ const BoletinSelector = ({
             }
             const {
               periodos: p,
+              areas: areas0,
               asignaturas: a,
               promedioGeneral: pg,
               resumenEstado: re,
@@ -2077,6 +2161,7 @@ const BoletinSelector = ({
               info0,
               p,
               a,
+              areas0,
               pg,
               re,
               escalas0,
@@ -2614,98 +2699,116 @@ const BoletinSelector = ({
                         </tr>
                       </thead>
                       <tbody>
-                        {asignaturas.map((asig) => (
-                          <tr
-                            key={asig.id_asignatura_grado}
-                            style={{ backgroundColor: "#ffffff" }}
-                          >
-                            <td style={{ ...S.tdBold, textAlign: "center" }}>
-                              {asig.nombre_asignatura_grado}
-                            </td>
-                            <td style={S.td}>
-                              {asig.intensidad_horaria ?? "-"}
-                            </td>
-                            {periodos.map((p) => {
-                              const per = asig.periodos.get(p.id);
-                              return (
-                                <React.Fragment key={p.id}>
-                                  <td
-                                    style={{
-                                      ...S.td,
-                                      fontWeight: "600",
-                                    }}
-                                  >
-                                    {per?.nota ?? "-"}
-                                  </td>
-                                  <td style={S.td}>{per?.escala ?? "-"}</td>
-                                  <td
-                                    style={{
-                                      ...S.td,
-                                      color: per
-                                        ? colorEstado(per.estado)
-                                        : "#374151",
-                                      fontWeight: "600",
-                                      fontSize: "9px",
-                                    }}
-                                  >
-                                    {per?.estado ?? "-"}
-                                  </td>
-                                  <td
-                                    style={{
-                                      ...S.tdLeft,
-                                      fontSize: "8px",
-                                      color: "#111827",
-                                      fontStyle: "italic",
-                                    }}
-                                  >
-                                    {per?.logros?.length
-                                      ? per.logros.map((l, i) => {
-                                          const sep = l.indexOf(": ");
-                                          if (sep === -1)
-                                            return <div key={i}>{l}</div>;
-                                          return (
-                                            <div key={i}>
-                                              <span
-                                                style={{
-                                                  fontWeight: 900,
-                                                  fontStyle: "normal",
-                                                }}
-                                              >
-                                                {l.slice(0, sep)}
-                                              </span>
-                                              {l.slice(sep)}
-                                            </div>
-                                          );
-                                        })
-                                      : "-"}
-                                    <div
-                                      style={{
-                                        marginTop: "4px",
-                                        fontWeight: "bold",
-                                        fontStyle: "normal",
-                                        color: "#111827",
-                                        fontSize: "8px",
-                                        borderTop: "1px solid #000000",
-                                        paddingTop: "2px",
-                                      }}
-                                    >
-                                      Obs. énfasis:
-                                      {per?.observacion_enfasis ? (
-                                        <span
+                        {areas.map((area) => (
+                          <React.Fragment key={area.fk_area ?? "sin-area"}>
+                            <tr style={{ backgroundColor: "#e5e7eb" }}>
+                              <td
+                                colSpan={6}
+                                style={{
+                                  ...S.tdLeft,
+                                  fontWeight: "bold",
+                                  textAlign: "left",
+                                  fontSize: "10px",
+                                  padding: "4px",
+                                }}
+                              >
+                                {area.nombre_area.toUpperCase()}
+                              </td>
+                            </tr>
+                            {area.asignaturas.map((asig) => (
+                              <tr
+                                key={asig.id_asignatura_grado}
+                                style={{ backgroundColor: "#ffffff" }}
+                              >
+                                <td style={{ ...S.tdBold, textAlign: "center" }}>
+                                  {asig.nombre_asignatura_grado}
+                                </td>
+                                <td style={S.td}>
+                                  {asig.intensidad_horaria ?? "-"}
+                                </td>
+                                {periodos.map((p) => {
+                                  const per = asig.periodos.get(p.id);
+                                  return (
+                                    <React.Fragment key={p.id}>
+                                      <td
+                                        style={{
+                                          ...S.td,
+                                          fontWeight: "600",
+                                        }}
+                                      >
+                                        {per?.nota ?? "-"}
+                                      </td>
+                                      <td style={S.td}>{per?.escala ?? "-"}</td>
+                                      <td
+                                        style={{
+                                          ...S.td,
+                                          color: per
+                                            ? colorEstado(per.estado)
+                                            : "#374151",
+                                          fontWeight: "600",
+                                          fontSize: "9px",
+                                        }}
+                                      >
+                                        {per?.estado ?? "-"}
+                                      </td>
+                                      <td
+                                        style={{
+                                          ...S.tdLeft,
+                                          fontSize: "8px",
+                                          color: "#111827",
+                                          fontStyle: "italic",
+                                        }}
+                                      >
+                                        {per?.logros?.length
+                                          ? per.logros.map((l, i) => {
+                                              const sep = l.indexOf(": ");
+                                              if (sep === -1)
+                                                return <div key={i}>{l}</div>;
+                                              return (
+                                                <div key={i}>
+                                                  <span
+                                                    style={{
+                                                      fontWeight: 900,
+                                                      fontStyle: "normal",
+                                                    }}
+                                                  >
+                                                    {l.slice(0, sep)}
+                                                  </span>
+                                                  {l.slice(sep)}
+                                                </div>
+                                              );
+                                            })
+                                          : "-"}
+                                        <div
                                           style={{
-                                            fontWeight: "normal",
-                                            marginLeft: "4px",
+                                            marginTop: "4px",
+                                            fontWeight: "bold",
+                                            fontStyle: "normal",
+                                            color: "#111827",
+                                            fontSize: "8px",
+                                            borderTop: "1px solid #000000",
+                                            paddingTop: "2px",
                                           }}
                                         >
-                                          {per.observacion_enfasis}
-                                        </span>
-                                      ) : null}
-                                    </div>
-                                  </td>
-                                </React.Fragment>
-                              );
-                            })}
-                          </tr>
+                                          Obs. énfasis:
+                                          {per?.observacion_enfasis ? (
+                                            <span
+                                              style={{
+                                                fontWeight: "normal",
+                                                marginLeft: "4px",
+                                              }}
+                                            >
+                                              {per.observacion_enfasis}
+                                            </span>
+                                          ) : null}
+                                        </div>
+                                      </td>
+                                    </React.Fragment>
+                                  );
+                                })}
+                              </tr>
+                            ))}
+                          </React.Fragment>
                         ))}
                       </tbody>
                     </table>
