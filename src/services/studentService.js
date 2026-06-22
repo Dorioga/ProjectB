@@ -428,6 +428,42 @@ export async function getBoletinDocente(payload) {
  * @param {{ studentId: number, sedeId: number }} payload
  * @returns {Promise<Array>} Listado de registros de asistencia.
  */
+/**
+ * Guarda o actualiza la convivencia de un estudiante.
+ *
+ * Endpoint: POST /convivencia
+ * @param {{ fk_estudiante: number, fk_docente: number, descripcion: string, fk_periodo: number, fk_sede: number }} payload
+ * @returns {Promise<Object>} Respuesta del servidor.
+ */
+export async function saveConvivencia(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+  const res = await ApiClient.instance.post("/convivencia", payload);
+  const data = res;
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+  throw new Error("Respuesta inesperada de /convivencia.");
+}
+
+/**
+ * Actualiza la convivencia de un estudiante.
+ *
+ * Endpoint: POST /existe/convivencia
+ * @param {{ fk_estudiante: number, fk_docente: number, descripcion: string, fk_periodo: number, fk_sede: number }} payload
+ * @returns {Promise<Object>} Respuesta del servidor.
+ */
+export async function updateConvivencia(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+  const res = await ApiClient.instance.post("/existe/convivencia", payload);
+  const data = res;
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+  throw new Error("Respuesta inesperada de /existe/convivencia.");
+}
+
 export async function getStudentAssistence(payload) {
   if (!payload?.studentId || !payload?.sedeId) {
     throw new Error("studentId y sedeId son requeridos.");

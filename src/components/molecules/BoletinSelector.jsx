@@ -10,6 +10,7 @@ import { abreviarAsignatura } from "../../utils/formatUtils";
 import PeriodSelector from "../atoms/PeriodSelector";
 import SimpleButton from "../atoms/SimpleButton";
 import useAuth from "../../lib/hooks/useAuth";
+import useStudent from "../../lib/hooks/useStudent";
 
 /* ── Helpers ── */
 const cleanPeriodoLabel = (label) => {
@@ -401,7 +402,8 @@ const useBoletinTransicionProcessed = (data) => {
       if (!m.has(asigKey)) {
         m.set(asigKey, {
           id_asignatura: r.id_asignatura,
-          nombre_asignatura_grado: r.nombre_asignatura_grado ?? r.nombre_asignatura ?? "-",
+          nombre_asignatura_grado:
+            r.nombre_asignatura_grado ?? r.nombre_asignatura ?? "-",
           filas: [],
         });
       }
@@ -435,7 +437,11 @@ const BoletinTransicionView = ({ boletinData, info }) => {
     const rows = [];
     for (const asig of asignaturas) {
       for (const fila of asig.filas) {
-        rows.push({ id_asignatura: asig.id_asignatura, nombre_asignatura_grado: asig.nombre_asignatura_grado, ...fila });
+        rows.push({
+          id_asignatura: asig.id_asignatura,
+          nombre_asignatura_grado: asig.nombre_asignatura_grado,
+          ...fila,
+        });
       }
     }
     return rows;
@@ -602,10 +608,16 @@ const BoletinTransicionView = ({ boletinData, info }) => {
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
           <tr style={{ backgroundColor: "#ffffff", color: "#000000" }}>
-            <th style={{ ...S.th, width: "20%", fontSize: "8px" }}>Asignatura</th>
+            <th style={{ ...S.th, width: "20%", fontSize: "8px" }}>
+              Asignatura
+            </th>
             <th style={{ ...S.th, width: "30%", fontSize: "8px" }}>DBA</th>
-            <th style={{ ...S.th, width: "25%", fontSize: "8px" }}>Propósito</th>
-            <th style={{ ...S.th, width: "25%", fontSize: "8px" }}>Comentario</th>
+            <th style={{ ...S.th, width: "25%", fontSize: "8px" }}>
+              Propósito
+            </th>
+            <th style={{ ...S.th, width: "25%", fontSize: "8px" }}>
+              Comentario
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -619,15 +631,31 @@ const BoletinTransicionView = ({ boletinData, info }) => {
                   {isFirst ? (
                     <td
                       rowSpan={rowSpanMap.get(row.id_asignatura)}
-                      style={{ ...S.tdBold, verticalAlign: "middle", fontSize: "10px" }}
+                      style={{
+                        ...S.tdBold,
+                        verticalAlign: "middle",
+                        fontSize: "10px",
+                      }}
                     >
                       {row.nombre_asignatura_grado}
                     </td>
                   ) : null}
-                  <td style={{ ...S.tdLeft, fontSize: "9px", padding: "6px 10px" }}>
+                  <td
+                    style={{
+                      ...S.tdLeft,
+                      fontSize: "9px",
+                      padding: "6px 10px",
+                    }}
+                  >
                     {row.nombre_dba}
                   </td>
-                  <td style={{ ...S.tdLeft, fontSize: "9px", padding: "6px 10px" }}>
+                  <td
+                    style={{
+                      ...S.tdLeft,
+                      fontSize: "9px",
+                      padding: "6px 10px",
+                    }}
+                  >
                     {row.nombre_proposito}
                   </td>
                   <td style={{ ...S.td, fontSize: "9px", color: "#111827" }}>
@@ -716,12 +744,9 @@ async function drawPDFHeader(pdf, info, title, options = {}) {
   if (info.alias) {
     pdf.setFontSize(10);
     pdf.setFont("helvetica", "bold");
-    pdf.text(
-      `${info.alias} — ${info.sede_tip ?? "-"}`,
-      textCenter,
-      y + 3,
-      { align: "center" },
-    );
+    pdf.text(`${info.alias} — ${info.sede_tip ?? "-"}`, textCenter, y + 3, {
+      align: "center",
+    });
     y += 5;
   }
   pdf.setFontSize(9);
@@ -855,9 +880,14 @@ async function generateBoletinPDF(
     pdf.setFontSize(9);
     pdf.setFont("helvetica", "bold");
     pdf.setTextColor(0, 0, 0);
-    pdf.text("INFORME EVALUATIVO", margin + contentW / 2, y + titleH / 2 + 1.5, {
-      align: "center",
-    });
+    pdf.text(
+      "INFORME EVALUATIVO",
+      margin + contentW / 2,
+      y + titleH / 2 + 1.5,
+      {
+        align: "center",
+      },
+    );
 
     const drawFlexRowCell = (label, value, cx, cw, yPos, h) => {
       pdf.setFontSize(8);
@@ -877,7 +907,14 @@ async function generateBoletinPDF(
 
     // Row 2: Estudiante (2) | Acudiente (2) | Año (1)
     const row2Y = y + titleH;
-    drawFlexRowCell("ESTUDIANTE:", nombreCompleto, margin, estudianteW, row2Y, rowH);
+    drawFlexRowCell(
+      "ESTUDIANTE:",
+      nombreCompleto,
+      margin,
+      estudianteW,
+      row2Y,
+      rowH,
+    );
     drawFlexRowCell(
       "ACUDIENTE:",
       info.nombre_acudiente ?? "-",
@@ -886,14 +923,42 @@ async function generateBoletinPDF(
       row2Y,
       rowH,
     );
-    drawFlexRowCell("AÑO:", anioTexto, margin + estudianteW + acudienteW, anioW, row2Y, rowH);
+    drawFlexRowCell(
+      "AÑO:",
+      anioTexto,
+      margin + estudianteW + acudienteW,
+      anioW,
+      row2Y,
+      rowH,
+    );
 
     // Row 3: Grado | Periodo | Promedio | Puesto (inline flex-row)
     const row3Y = y + titleH + rowH;
     drawFlexRowCell("GRADO:", gradoTexto, margin, colW, row3Y, rowH);
-    drawFlexRowCell("PERIODO:", periodoNombre, margin + colW, colW, row3Y, rowH);
-    drawFlexRowCell("PROMEDIO:", promTexto, margin + colW * 2, colW, row3Y, rowH);
-    drawFlexRowCell("PUESTO:", posicionTexto, margin + colW * 3, colW, row3Y, rowH);
+    drawFlexRowCell(
+      "PERIODO:",
+      periodoNombre,
+      margin + colW,
+      colW,
+      row3Y,
+      rowH,
+    );
+    drawFlexRowCell(
+      "PROMEDIO:",
+      promTexto,
+      margin + colW * 2,
+      colW,
+      row3Y,
+      rowH,
+    );
+    drawFlexRowCell(
+      "PUESTO:",
+      posicionTexto,
+      margin + colW * 3,
+      colW,
+      row3Y,
+      rowH,
+    );
 
     y += totalH + 1;
   }
@@ -1433,8 +1498,36 @@ async function generateBoletinPDF(
       y += dataRowH;
     }
   }
-  // Fila 2: Observaciones generales
-  drawLabelRow("OBSERVACIONES GENERALES:", 22);
+  // Fila 2: Convivencia
+  {
+    const convText = info.convivencia || "";
+    const convLabelW = contentW * 0.15;
+    const convContentW = contentW - convLabelW;
+    const lineH = 4.5;
+    const minH = 10;
+    const textH = convText
+      ? pdf.splitTextToSize(convText, convContentW - 4).length * lineH
+      : 0;
+    const rowH = Math.max(minH, 5 + textH);
+    addPageIfNeeded(rowH);
+    pdf.rect(margin, y, convLabelW, rowH, "D");
+    pdf.rect(margin + convLabelW, y, convContentW, rowH, "D");
+    pdf.setFontSize(8);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(0, 0, 0);
+    pdf.text("CONVIVENCIA:", margin + 2, y + 5);
+    if (convText) {
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(8);
+      const lines = pdf.splitTextToSize(convText, convContentW - 4);
+      let textY = y + 5;
+      for (const line of lines) {
+        pdf.text(line, margin + convLabelW + 2, textY);
+        textY += lineH;
+      }
+    }
+    y += rowH;
+  }
   // Fila 4: Firma del director de grupo (celda completa)
   const firmaRowH = 28;
   addPageIfNeeded(firmaRowH);
@@ -1513,7 +1606,8 @@ async function generateBoletinTransicionPDF(info, boletinData, meta) {
     if (!asigMap.has(asigKey)) {
       asigMap.set(asigKey, {
         id_asignatura: r.id_asignatura,
-        nombre_asignatura_grado: r.nombre_asignatura_grado ?? r.nombre_asignatura ?? "-",
+        nombre_asignatura_grado:
+          r.nombre_asignatura_grado ?? r.nombre_asignatura ?? "-",
         filas: [],
       });
     }
@@ -1540,8 +1634,15 @@ async function generateBoletinTransicionPDF(info, boletinData, meta) {
   const rowSpanMap = new Map();
   for (const asig of asignaturas) {
     for (const fila of asig.filas) {
-      flatRows.push({ id_asignatura: asig.id_asignatura, nombre_asignatura_grado: asig.nombre_asignatura_grado, ...fila });
-      rowSpanMap.set(asig.id_asignatura, (rowSpanMap.get(asig.id_asignatura) || 0) + 1);
+      flatRows.push({
+        id_asignatura: asig.id_asignatura,
+        nombre_asignatura_grado: asig.nombre_asignatura_grado,
+        ...fila,
+      });
+      rowSpanMap.set(
+        asig.id_asignatura,
+        (rowSpanMap.get(asig.id_asignatura) || 0) + 1,
+      );
     }
   }
 
@@ -1603,8 +1704,8 @@ async function generateBoletinTransicionPDF(info, boletinData, meta) {
 
   /* ── Anchos de columnas ── */
   const colW = [
-    contentW * 0.20, // Asignatura
-    contentW * 0.30, // DBA
+    contentW * 0.2, // Asignatura
+    contentW * 0.3, // DBA
     contentW * 0.25, // Propósito
     contentW * 0.25, // Comentario
   ];
@@ -1647,7 +1748,12 @@ async function generateBoletinTransicionPDF(info, boletinData, meta) {
     const dbaLines = pdf.splitTextToSize(row.nombre_dba, colW[1] - 2);
     const propLines = pdf.splitTextToSize(row.nombre_proposito, colW[2] - 2);
     const comentLines = pdf.splitTextToSize(row.comentario || "-", colW[3] - 2);
-    const maxLines = Math.max(dbaLines.length, propLines.length, comentLines.length, 1);
+    const maxLines = Math.max(
+      dbaLines.length,
+      propLines.length,
+      comentLines.length,
+      1,
+    );
     const lineH = 6 * 0.45;
     const rowH = Math.max(6, maxLines * lineH + 3);
 
@@ -1660,8 +1766,14 @@ async function generateBoletinTransicionPDF(info, boletinData, meta) {
         for (let i = idx; i < idx + span; i++) {
           const r = flatRows[i];
           const dL = pdf.splitTextToSize(r.nombre_dba, colW[1] - 2).length;
-          const pL = pdf.splitTextToSize(r.nombre_proposito, colW[2] - 2).length;
-          const cL = pdf.splitTextToSize(r.comentario || "-", colW[3] - 2).length;
+          const pL = pdf.splitTextToSize(
+            r.nombre_proposito,
+            colW[2] - 2,
+          ).length;
+          const cL = pdf.splitTextToSize(
+            r.comentario || "-",
+            colW[3] - 2,
+          ).length;
           const mL = Math.max(dL, pL, cL, 1);
           total += Math.max(6, mL * lineH + 3);
         }
@@ -1677,8 +1789,12 @@ async function generateBoletinTransicionPDF(info, boletinData, meta) {
     }
 
     drawMultiCell(row.nombre_dba, colX[1], y, colW[1], rowH, { bg: rowBg });
-    drawMultiCell(row.nombre_proposito, colX[2], y, colW[2], rowH, { bg: rowBg });
-    drawMultiCell(row.comentario || "-", colX[3], y, colW[3], rowH, { bg: rowBg });
+    drawMultiCell(row.nombre_proposito, colX[2], y, colW[2], rowH, {
+      bg: rowBg,
+    });
+    drawMultiCell(row.comentario || "-", colX[3], y, colW[3], rowH, {
+      bg: rowBg,
+    });
 
     y += rowH;
   }
@@ -1703,7 +1819,9 @@ const BoletinSelector = ({
   students = [],
 }) => {
   const { getInstitutionScales } = useSchool();
-  const { rol, idPersona, userName, firmaDocente } = useAuth();
+  const { rol, idPersona, userName, firmaDocente, idDocente, idSede } =
+    useAuth();
+  const { saveConvivencia, updateConvivencia } = useStudent();
   const isGuardian = rol === 5 || rol === "5";
   const isStudent = rol === 6 || rol === "6";
   const currentYear = new Date().getFullYear();
@@ -1722,6 +1840,10 @@ const BoletinSelector = ({
   // Progreso para modo "all": null = no iniciado, { current, total, errors[] }
   const [progress, setProgress] = useState(null);
   const [isTransicion, setIsTransicion] = useState(false);
+  const [editingConvivencia, setEditingConvivencia] = useState(false);
+  const [convivenciaText, setConvivenciaText] = useState("");
+  const [savingConvivencia, setSavingConvivencia] = useState(false);
+  const [convivenciaExists, setConvivenciaExists] = useState(false);
 
   // ── Estados para acudiente (rol 5) ─────────────────────────────────────
   const [guardianStudents, setGuardianStudents] = useState([]);
@@ -1800,6 +1922,7 @@ const BoletinSelector = ({
       studentInfoProp?.numero_identificacion ??
       studentInfoProp?.identificacion,
     firma_docente: firmaDocente ?? null,
+    convivencia: convivenciaText,
   };
 
   const handleConsultar = async () => {
@@ -1833,6 +1956,10 @@ const BoletinSelector = ({
       const rows = Array.isArray(result) ? result : [];
       setBoletinData(rows);
       setConsultado(true);
+      const convRow = rows.find((r) => r.convivencia != null);
+      setConvivenciaText(convRow?.convivencia ?? "");
+      setConvivenciaExists(convRow?.convivencia != null);
+      setEditingConvivencia(false);
 
       const instRow = rows.find((r) => r.id_institucion != null);
       if (instRow?.id_institucion) {
@@ -2212,434 +2339,454 @@ const BoletinSelector = ({
               );
             }
             return (
-            <div className="border rounded overflow-hidden shadow-sm">
-              {isTransicion ? (
-                <BoletinTransicionView boletinData={boletinData} info={info} />
-              ) : (
-                <div
-                  style={{
-                    background: "#ffffff",
-                    color: "#111827",
-                    padding: "24px",
-                    fontFamily: "Arial, Helvetica, sans-serif",
-                    fontSize: "11px",
-                  }}
-                >
-                  {/* ── Encabezado institución ── */}
+              <div className="border rounded overflow-hidden shadow-sm">
+                {isTransicion ? (
+                  <BoletinTransicionView
+                    boletinData={boletinData}
+                    info={info}
+                  />
+                ) : (
                   <div
                     style={{
-                      position: "relative",
-                      borderBottom: "2px solid #000000",
-                      paddingBottom: "12px",
-                      marginBottom: "10px",
-                      textAlign: "center",
-                    }}
-                  >
-                    {info.link_logo && (
-                      <img
-                        src={info.link_logo}
-                        alt="Logo institución"
-                        crossOrigin="anonymous"
-                        style={{
-                          position: "absolute",
-                          left: 0,
-                          top: 0,
-                          width: 64,
-                          height: 64,
-                          objectFit: "contain",
-                        }}
-                      />
-                    )}
-                    <div style={{ textAlign: "center" }}>
-                      <p
-                        style={{
-                          fontWeight: "bold",
-                          fontSize: "14px",
-                          textTransform: "uppercase",
-                          margin: 0,
-                        }}
-                      >
-                        {info.nombre_institucion ?? "-"}
-                      </p>
-                      {info.nit && (
-                        <p style={{ margin: "2px 0", fontSize: "10px" }}>
-                          NIT: {info.nit}
-                        </p>
-                      )}
-                      {info.membrete && (
-                        <p
-                          style={{
-                            margin: "2px 0",
-                            fontSize: "10px",
-                            color: "#374151",
-                          }}
-                        >
-                          {info.membrete}
-                        </p>
-                      )}
-                      {info.cod_dane && (
-                        <p
-                          style={{
-                            margin: "2px 0",
-                            fontSize: "10px",
-                            color: "#374151",
-                          }}
-                        >
-                          Cód. DANE: {info.cod_dane}
-                        </p>
-                      )}
-                      {info.alias && (
-                        <p
-                          style={{
-                            margin: "2px 0",
-                            fontWeight: "600",
-                            fontSize: "11px",
-                          }}
-                        >
-                          {info.alias}
-                          {info.sede_tip ? ` — ${info.sede_tip}` : ""}
-                        </p>
-                      )}
-                      {info.resolucion && (
-                        <p
-                          style={{
-                            margin: "6px 0 0",
-                            fontSize: "9px",
-                            fontStyle: "italic",
-                            color: "#374151",
-                          }}
-                        >
-                          {info.resolucion}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* ── Bloque datos del estudiante ── */}
-                  <div
-                    style={{
-                      border: "1px solid #000000",
-                      fontSize: "10px",
-                      marginBottom: "0px",
-                    }}
-                  >
-                    {/* Row 1: Title */}
-                    <div
-                      style={{
-                        textAlign: "center",
-                        fontWeight: "bold",
-                        padding: "6px",
-
-                        fontSize: "10px",
-                      }}
-                    >
-                      INFORME EVALUATIVO
-                    </div>
-
-                    {/* Row 2: Estudiante (2) | Acudiente (2) | Año (1) */}
-                    <div style={{ display: "flex", flexDirection: "row" }}>
-                      <div style={{ flex: 2, padding: "2px 8px" }}>
-                        <strong>ESTUDIANTE:</strong>{" "}
-                        {[info.nombre_estudiante, info.apellido_estudiante]
-                          .filter(Boolean)
-                          .join(" ") || "-"}
-                      </div>
-                      <div style={{ flex: 2, padding: "2px 8px" }}>
-                        <strong>ACUDIENTE:</strong>{" "}
-                        {info.nombre_acudiente ?? "-"}
-                      </div>
-                      <div style={{ flex: 1, padding: "2px 8px" }}>
-                        <strong>AÑO:</strong>{" "}
-                        {year}
-                      </div>
-                    </div>
-
-                    {/* Row 3: Grado | Periodo | Promedio | Puesto (flex-row) */}
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "row",
-                        borderTop: "1px solid #000000",
-                      }}
-                    >
-                      <div style={{ flex: 1, padding: "2px 8px" }}>
-                        <strong>GRADO:</strong> {info.grado ?? "-"}
-                      </div>
-                      <div style={{ flex: 1, padding: "2px 8px" }}>
-                        <strong>PERIODO:</strong>{" "}
-                        {cleanPeriodoLabel(periodos[0]?.nombre)}
-                      </div>
-                      <div style={{ flex: 1, padding: "2px 8px" }}>
-                        <strong>PROMEDIO:</strong> {promedioGeneral ?? "-"}
-                      </div>
-                      <div style={{ flex: 1, padding: "2px 8px" }}>
-                        <strong>PUESTO:</strong>{" "}
-                        {rankingMap.get(String(periodId))?.posicion ??
-                          info.posicion ??
-                          "-"}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* ── Escala Valorativa ── */}
-                  {escalas.length > 0 &&
-                    (() => {
-                      const umbralValue = String(
-                        escalas.find((e) => e.umbral != null)?.umbral ?? "-",
-                      );
-                      const levels = escalas.map((e) => ({
-                        label: String(e.escala ?? ""),
-                        range: `(${e.desde} - ${e.hasta})`,
-                      }));
-                      return (
-                        <table
-                          style={{
-                            width: "100%",
-                            borderCollapse: "collapse",
-                            border: "1px solid #000000",
-                            fontSize: "9px",
-                            marginBottom: "8px",
-                          }}
-                        >
-                          <tbody>
-                            <tr>
-                              <td
-                                colSpan={levels.length + 1}
-                                style={{
-                                  border: "1px solid #000000",
-                                  padding: "3px 6px",
-                                  fontWeight: "bold",
-                                  textAlign: "center",
-                                  fontSize: "10px",
-                                }}
-                              >
-                                ESCALA VALORATIVA
-                              </td>
-                            </tr>
-                            <tr>
-                              {levels.map((lvl, i) => (
-                                <td
-                                  key={i}
-                                  style={{
-                                    border: "1px solid #000000",
-                                    padding: "3px 6px",
-                                    width: `${86 / levels.length}%`,
-                                    textAlign: "center",
-                                  }}
-                                >
-                                  <strong>{lvl.label}</strong> = {lvl.range}
-                                </td>
-                              ))}
-                              <td
-                                style={{
-                                  border: "1px solid #000000",
-                                  padding: "3px 6px",
-                                  width: "14%",
-                                  textAlign: "center",
-                                }}
-                              >
-                                <strong>Umbral:</strong> {umbralValue}
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      );
-                    })()}
-
-                  {/* ── Tabla de asignaturas (encabezado único) ── */}
-                  <table
-                    style={{
-                      width: "100%",
-                      borderCollapse: "collapse",
-                      tableLayout: "fixed",
-                    }}
-                  >
-                    <colgroup>
-                      <col style={{ width: "18%" }} />
-                      <col style={{ width: "4%" }} />
-                      <col style={{ width: "7%" }} />
-                      <col style={{ width: "7%" }} />
-                      <col style={{ width: "14%" }} />
-                      <col style={{ width: "50%" }} />
-                    </colgroup>
-                    <thead>
-                      <tr
-                        style={{ backgroundColor: "#ffffff", color: "#000000" }}
-                      >
-                        <th style={{ ...S.thLeft, verticalAlign: "middle" }}>
-                          Asignatura
-                        </th>
-                        <th style={{ ...S.th, fontSize: "8px" }}>IH</th>
-                        <th
-                          style={{ ...S.th, fontSize: "8px" }}
-                          title="Nota final periodo"
-                        >
-                          Nota
-                        </th>
-                        <th style={{ ...S.th, fontSize: "8px" }}>Escala</th>
-                        <th style={{ ...S.th, fontSize: "8px" }}>Estado</th>
-                        <th style={{ ...S.th, fontSize: "8px" }}>Logro</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {asignaturas.map((asig) => (
-                        <tr
-                          key={asig.id_asignatura_grado}
-                          style={{ backgroundColor: "#ffffff" }}
-                        >
-                          <td style={{ ...S.tdBold, textAlign: "center" }}>
-                            {asig.nombre_asignatura_grado}
-                          </td>
-                          <td style={S.td}>
-                            {asig.intensidad_horaria ?? "-"}
-                          </td>
-                          {periodos.map((p) => {
-                            const per = asig.periodos.get(p.id);
-                            return (
-                              <React.Fragment key={p.id}>
-                                <td
-                                  style={{
-                                    ...S.td,
-                                    fontWeight: "600",
-                                  }}
-                                >
-                                  {per?.nota ?? "-"}
-                                </td>
-                                <td style={S.td}>{per?.escala ?? "-"}</td>
-                                <td
-                                  style={{
-                                    ...S.td,
-                                    color: per
-                                      ? colorEstado(per.estado)
-                                      : "#374151",
-                                    fontWeight: "600",
-                                    fontSize: "9px",
-                                  }}
-                                >
-                                  {per?.estado ?? "-"}
-                                </td>
-                                <td
-                                  style={{
-                                    ...S.tdLeft,
-                                    fontSize: "8px",
-                                    color: "#111827",
-                                    fontStyle: "italic",
-                                  }}
-                                >
-                                  {per?.logros?.length
-                                    ? per.logros.map((l, i) => {
-                                        const sep = l.indexOf(": ");
-                                        if (sep === -1)
-                                          return <div key={i}>{l}</div>;
-                                        return (
-                                          <div key={i}>
-                                            <span
-                                              style={{
-                                                fontWeight: 900,
-                                                fontStyle: "normal",
-                                              }}
-                                            >
-                                              {l.slice(0, sep)}
-                                            </span>
-                                            {l.slice(sep)}
-                                          </div>
-                                        );
-                                      })
-                                    : "-"}
-                                  <div
-                                    style={{
-                                      marginTop: "4px",
-                                      fontWeight: "bold",
-                                      fontStyle: "normal",
-                                      color: "#111827",
-                                      fontSize: "8px",
-                                      borderTop: "1px solid #000000",
-                                      paddingTop: "2px",
-                                    }}
-                                  >
-                                    Obs. énfasis:
-                                    {per?.observacion_enfasis ? (
-                                      <span
-                                        style={{
-                                          fontWeight: "normal",
-                                          marginLeft: "4px",
-                                        }}
-                                      >
-                                        {per.observacion_enfasis}
-                                      </span>
-                                    ) : null}
-                                  </div>
-                                </td>
-                              </React.Fragment>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-
-                  {/* ── Sección inferior boletín ── */}
-                  <table
-                    style={{
-                      width: "100%",
-                      borderCollapse: "collapse",
-                      marginTop: "16px",
-                      border: "1px solid #000000",
+                      background: "#ffffff",
+                      color: "#111827",
+                      padding: "24px",
+                      fontFamily: "Arial, Helvetica, sans-serif",
                       fontSize: "11px",
                     }}
                   >
-                    <tbody>
-                      {/* Fila 1: Histórico de periodo */}
-                      <tr>
-                        <td
-                          colSpan={2}
+                    {/* ── Encabezado institución ── */}
+                    <div
+                      style={{
+                        position: "relative",
+                        borderBottom: "2px solid #000000",
+                        paddingBottom: "12px",
+                        marginBottom: "10px",
+                        textAlign: "center",
+                      }}
+                    >
+                      {info.link_logo && (
+                        <img
+                          src={info.link_logo}
+                          alt="Logo institución"
+                          crossOrigin="anonymous"
                           style={{
-                            border: "1px solid #000000",
-                            padding: "0px",
-                            verticalAlign: "top",
+                            position: "absolute",
+                            left: 0,
+                            top: 0,
+                            width: 64,
+                            height: 64,
+                            objectFit: "contain",
+                          }}
+                        />
+                      )}
+                      <div style={{ textAlign: "center" }}>
+                        <p
+                          style={{
+                            fontWeight: "bold",
+                            fontSize: "14px",
+                            textTransform: "uppercase",
+                            margin: 0,
                           }}
                         >
-                          {/* Tabla histórico de asignaturas por periodo */}
+                          {info.nombre_institucion ?? "-"}
+                        </p>
+                        {info.nit && (
+                          <p style={{ margin: "2px 0", fontSize: "10px" }}>
+                            NIT: {info.nit}
+                          </p>
+                        )}
+                        {info.membrete && (
+                          <p
+                            style={{
+                              margin: "2px 0",
+                              fontSize: "10px",
+                              color: "#374151",
+                            }}
+                          >
+                            {info.membrete}
+                          </p>
+                        )}
+                        {info.cod_dane && (
+                          <p
+                            style={{
+                              margin: "2px 0",
+                              fontSize: "10px",
+                              color: "#374151",
+                            }}
+                          >
+                            Cód. DANE: {info.cod_dane}
+                          </p>
+                        )}
+                        {info.alias && (
+                          <p
+                            style={{
+                              margin: "2px 0",
+                              fontWeight: "600",
+                              fontSize: "11px",
+                            }}
+                          >
+                            {info.alias}
+                            {info.sede_tip ? ` — ${info.sede_tip}` : ""}
+                          </p>
+                        )}
+                        {info.resolucion && (
+                          <p
+                            style={{
+                              margin: "6px 0 0",
+                              fontSize: "9px",
+                              fontStyle: "italic",
+                              color: "#374151",
+                            }}
+                          >
+                            {info.resolucion}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* ── Bloque datos del estudiante ── */}
+                    <div
+                      style={{
+                        border: "1px solid #000000",
+                        fontSize: "10px",
+                        marginBottom: "0px",
+                      }}
+                    >
+                      {/* Row 1: Title */}
+                      <div
+                        style={{
+                          textAlign: "center",
+                          fontWeight: "bold",
+                          padding: "6px",
+
+                          fontSize: "10px",
+                        }}
+                      >
+                        INFORME EVALUATIVO
+                      </div>
+
+                      {/* Row 2: Estudiante (2) | Acudiente (2) | Año (1) */}
+                      <div style={{ display: "flex", flexDirection: "row" }}>
+                        <div style={{ flex: 2, padding: "2px 8px" }}>
+                          <strong>ESTUDIANTE:</strong>{" "}
+                          {[info.nombre_estudiante, info.apellido_estudiante]
+                            .filter(Boolean)
+                            .join(" ") || "-"}
+                        </div>
+                        <div style={{ flex: 2, padding: "2px 8px" }}>
+                          <strong>ACUDIENTE:</strong>{" "}
+                          {info.nombre_acudiente ?? "-"}
+                        </div>
+                        <div style={{ flex: 1, padding: "2px 8px" }}>
+                          <strong>AÑO:</strong> {year}
+                        </div>
+                      </div>
+
+                      {/* Row 3: Grado | Periodo | Promedio | Puesto (flex-row) */}
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "row",
+                          borderTop: "1px solid #000000",
+                        }}
+                      >
+                        <div style={{ flex: 1, padding: "2px 8px" }}>
+                          <strong>GRADO:</strong> {info.grado ?? "-"}
+                        </div>
+                        <div style={{ flex: 1, padding: "2px 8px" }}>
+                          <strong>PERIODO:</strong>{" "}
+                          {cleanPeriodoLabel(periodos[0]?.nombre)}
+                        </div>
+                        <div style={{ flex: 1, padding: "2px 8px" }}>
+                          <strong>PROMEDIO:</strong> {promedioGeneral ?? "-"}
+                        </div>
+                        <div style={{ flex: 1, padding: "2px 8px" }}>
+                          <strong>PUESTO:</strong>{" "}
+                          {rankingMap.get(String(periodId))?.posicion ??
+                            info.posicion ??
+                            "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* ── Escala Valorativa ── */}
+                    {escalas.length > 0 &&
+                      (() => {
+                        const umbralValue = String(
+                          escalas.find((e) => e.umbral != null)?.umbral ?? "-",
+                        );
+                        const levels = escalas.map((e) => ({
+                          label: String(e.escala ?? ""),
+                          range: `(${e.desde} - ${e.hasta})`,
+                        }));
+                        return (
                           <table
                             style={{
                               width: "100%",
                               borderCollapse: "collapse",
-                              fontSize: "8px",
+                              border: "1px solid #000000",
+                              fontSize: "9px",
+                              marginBottom: "8px",
                             }}
                           >
-                            <thead>
+                            <tbody>
                               <tr>
-                                <th
-                                  colSpan={asignaturas.length + 3}
+                                <td
+                                  colSpan={levels.length + 1}
                                   style={{
                                     border: "1px solid #000000",
                                     padding: "3px 6px",
-                                    textAlign: "center",
                                     fontWeight: "bold",
-                                    fontSize: "9px",
-                                    backgroundColor: "#ffffff",
+                                    textAlign: "center",
+                                    fontSize: "10px",
                                   }}
                                 >
-                                  HISTÓRICO DE PERIODOS — ASIGNATURAS
-                                </th>
+                                  ESCALA VALORATIVA
+                                </td>
                               </tr>
                               <tr>
-                                <th
+                                {levels.map((lvl, i) => (
+                                  <td
+                                    key={i}
+                                    style={{
+                                      border: "1px solid #000000",
+                                      padding: "3px 6px",
+                                      width: `${86 / levels.length}%`,
+                                      textAlign: "center",
+                                    }}
+                                  >
+                                    <strong>{lvl.label}</strong> = {lvl.range}
+                                  </td>
+                                ))}
+                                <td
                                   style={{
                                     border: "1px solid #000000",
-                                    padding: "3px 4px",
+                                    padding: "3px 6px",
+                                    width: "14%",
                                     textAlign: "center",
-                                    fontWeight: "bold",
-                                    backgroundColor: "#ffffff",
-                                    whiteSpace: "nowrap",
                                   }}
                                 >
-                                  PER.
-                                </th>
-                                {asignaturas.map((asig) => (
+                                  <strong>Umbral:</strong> {umbralValue}
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        );
+                      })()}
+
+                    {/* ── Tabla de asignaturas (encabezado único) ── */}
+                    <table
+                      style={{
+                        width: "100%",
+                        borderCollapse: "collapse",
+                        tableLayout: "fixed",
+                      }}
+                    >
+                      <colgroup>
+                        <col style={{ width: "18%" }} />
+                        <col style={{ width: "4%" }} />
+                        <col style={{ width: "7%" }} />
+                        <col style={{ width: "7%" }} />
+                        <col style={{ width: "14%" }} />
+                        <col style={{ width: "50%" }} />
+                      </colgroup>
+                      <thead>
+                        <tr
+                          style={{
+                            backgroundColor: "#ffffff",
+                            color: "#000000",
+                          }}
+                        >
+                          <th style={{ ...S.thLeft, verticalAlign: "middle" }}>
+                            Asignatura
+                          </th>
+                          <th style={{ ...S.th, fontSize: "8px" }}>IH</th>
+                          <th
+                            style={{ ...S.th, fontSize: "8px" }}
+                            title="Nota final periodo"
+                          >
+                            Nota
+                          </th>
+                          <th style={{ ...S.th, fontSize: "8px" }}>Escala</th>
+                          <th style={{ ...S.th, fontSize: "8px" }}>Estado</th>
+                          <th style={{ ...S.th, fontSize: "8px" }}>Logro</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {asignaturas.map((asig) => (
+                          <tr
+                            key={asig.id_asignatura_grado}
+                            style={{ backgroundColor: "#ffffff" }}
+                          >
+                            <td style={{ ...S.tdBold, textAlign: "center" }}>
+                              {asig.nombre_asignatura_grado}
+                            </td>
+                            <td style={S.td}>
+                              {asig.intensidad_horaria ?? "-"}
+                            </td>
+                            {periodos.map((p) => {
+                              const per = asig.periodos.get(p.id);
+                              return (
+                                <React.Fragment key={p.id}>
+                                  <td
+                                    style={{
+                                      ...S.td,
+                                      fontWeight: "600",
+                                    }}
+                                  >
+                                    {per?.nota ?? "-"}
+                                  </td>
+                                  <td style={S.td}>{per?.escala ?? "-"}</td>
+                                  <td
+                                    style={{
+                                      ...S.td,
+                                      color: per
+                                        ? colorEstado(per.estado)
+                                        : "#374151",
+                                      fontWeight: "600",
+                                      fontSize: "9px",
+                                    }}
+                                  >
+                                    {per?.estado ?? "-"}
+                                  </td>
+                                  <td
+                                    style={{
+                                      ...S.tdLeft,
+                                      fontSize: "8px",
+                                      color: "#111827",
+                                      fontStyle: "italic",
+                                    }}
+                                  >
+                                    {per?.logros?.length
+                                      ? per.logros.map((l, i) => {
+                                          const sep = l.indexOf(": ");
+                                          if (sep === -1)
+                                            return <div key={i}>{l}</div>;
+                                          return (
+                                            <div key={i}>
+                                              <span
+                                                style={{
+                                                  fontWeight: 900,
+                                                  fontStyle: "normal",
+                                                }}
+                                              >
+                                                {l.slice(0, sep)}
+                                              </span>
+                                              {l.slice(sep)}
+                                            </div>
+                                          );
+                                        })
+                                      : "-"}
+                                    <div
+                                      style={{
+                                        marginTop: "4px",
+                                        fontWeight: "bold",
+                                        fontStyle: "normal",
+                                        color: "#111827",
+                                        fontSize: "8px",
+                                        borderTop: "1px solid #000000",
+                                        paddingTop: "2px",
+                                      }}
+                                    >
+                                      Obs. énfasis:
+                                      {per?.observacion_enfasis ? (
+                                        <span
+                                          style={{
+                                            fontWeight: "normal",
+                                            marginLeft: "4px",
+                                          }}
+                                        >
+                                          {per.observacion_enfasis}
+                                        </span>
+                                      ) : null}
+                                    </div>
+                                  </td>
+                                </React.Fragment>
+                              );
+                            })}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+
+                    {/* ── Sección inferior boletín ── */}
+                    <table
+                      style={{
+                        width: "100%",
+                        borderCollapse: "collapse",
+                        marginTop: "16px",
+                        border: "1px solid #000000",
+                        fontSize: "11px",
+                      }}
+                    >
+                      <tbody>
+                        {/* Fila 1: Histórico de periodo */}
+                        <tr>
+                          <td
+                            colSpan={2}
+                            style={{
+                              border: "1px solid #000000",
+                              padding: "0px",
+                              verticalAlign: "top",
+                            }}
+                          >
+                            {/* Tabla histórico de asignaturas por periodo */}
+                            <table
+                              style={{
+                                width: "100%",
+                                borderCollapse: "collapse",
+                                fontSize: "8px",
+                              }}
+                            >
+                              <thead>
+                                <tr>
                                   <th
-                                    key={asig.id_asignatura_grado}
-                                    title={asig.nombre_asignatura_grado}
+                                    colSpan={asignaturas.length + 3}
+                                    style={{
+                                      border: "1px solid #000000",
+                                      padding: "3px 6px",
+                                      textAlign: "center",
+                                      fontWeight: "bold",
+                                      fontSize: "9px",
+                                      backgroundColor: "#ffffff",
+                                    }}
+                                  >
+                                    HISTÓRICO DE PERIODOS — ASIGNATURAS
+                                  </th>
+                                </tr>
+                                <tr>
+                                  <th
+                                    style={{
+                                      border: "1px solid #000000",
+                                      padding: "3px 4px",
+                                      textAlign: "center",
+                                      fontWeight: "bold",
+                                      backgroundColor: "#ffffff",
+                                      whiteSpace: "nowrap",
+                                    }}
+                                  >
+                                    PER.
+                                  </th>
+                                  {asignaturas.map((asig) => (
+                                    <th
+                                      key={asig.id_asignatura_grado}
+                                      title={asig.nombre_asignatura_grado}
+                                      style={{
+                                        border: "1px solid #000000",
+                                        padding: "3px 2px",
+                                        textAlign: "center",
+                                        fontWeight: "bold",
+                                        backgroundColor: "#ffffff",
+                                        whiteSpace: "nowrap",
+                                      }}
+                                    >
+                                      {abreviarAsignatura(
+                                        asig.nombre_asignatura_grado,
+                                      )}
+                                    </th>
+                                  ))}
+                                  <th
                                     style={{
                                       border: "1px solid #000000",
                                       padding: "3px 2px",
@@ -2649,180 +2796,274 @@ const BoletinSelector = ({
                                       whiteSpace: "nowrap",
                                     }}
                                   >
-                                    {abreviarAsignatura(
-                                      asig.nombre_asignatura_grado,
-                                    )}
+                                    Prom.
                                   </th>
-                                ))}
-                                <th
-                                  style={{
-                                    border: "1px solid #000000",
-                                    padding: "3px 2px",
-                                    textAlign: "center",
-                                    fontWeight: "bold",
-                                    backgroundColor: "#ffffff",
-                                    whiteSpace: "nowrap",
-                                  }}
-                                >
-                                  Prom.
-                                </th>
-                                <th
-                                  style={{
-                                    border: "1px solid #000000",
-                                    padding: "3px 2px",
-                                    textAlign: "center",
-                                    fontWeight: "bold",
-                                    backgroundColor: "#ffffff",
-                                    whiteSpace: "nowrap",
-                                  }}
-                                >
-                                  Puesto
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {todosPeriodos.map((p, pIdx) => {
-                                const rk = rankingMap.get(String(p.id));
-                                return (
-                                  <tr key={p.id}>
-                                    <td
-                                      style={{
-                                        border: "1px solid #000000",
-                                        padding: "2px 4px",
-                                        textAlign: "center",
-                                        fontWeight: "bold",
-                                        whiteSpace: "nowrap",
-                                      }}
-                                    >
-                                      {pIdx + 1}
-                                    </td>
-                                    {asignaturas.map((asig) => {
-                                      const per = asig.periodos.get(p.id);
-                                      return (
-                                        <td
-                                          key={asig.id_asignatura_grado}
-                                          style={{
-                                            border: "1px solid #000000",
-                                            padding: "2px 2px",
-                                            textAlign: "center",
-                                          }}
-                                        >
-                                          {per?.nota ?? "-"}
-                                        </td>
-                                      );
-                                    })}
-                                    <td
-                                      style={{
-                                        border: "1px solid #000000",
-                                        padding: "2px 2px",
-                                        textAlign: "center",
-                                        fontWeight: "bold",
-                                      }}
-                                    >
-                                      {rk?.promedio ?? "-"}
-                                    </td>
-                                    <td
-                                      style={{
-                                        border: "1px solid #000000",
-                                        padding: "2px 2px",
-                                        textAlign: "center",
-                                        fontWeight: "bold",
-                                      }}
-                                    >
-                                      {rk?.posicion ?? "-"}
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        </td>
-                      </tr>
-                      {/* Fila 2: Observaciones generales */}
-                      <tr>
-                        <td
-                          colSpan={2}
-                          style={{
-                            border: "1px solid #000000",
-                            padding: "6px 8px",
-                            height: "50px",
-                            verticalAlign: "top",
-                          }}
-                        >
-                          <strong>OBSERVACIONES GENERALES:</strong>
-                        </td>
-                      </tr>
-                      {/* Fila 4: Firma del director de grupo */}
-                      <tr>
-                        <td
-                          colSpan={2}
-                          style={{
-                            border: "1px solid #000000",
-                            padding: "6px 8px",
-                            height: "70px",
-                            verticalAlign: "bottom",
-                          }}
-                        >
-                          <div
+                                  <th
+                                    style={{
+                                      border: "1px solid #000000",
+                                      padding: "3px 2px",
+                                      textAlign: "center",
+                                      fontWeight: "bold",
+                                      backgroundColor: "#ffffff",
+                                      whiteSpace: "nowrap",
+                                    }}
+                                  >
+                                    Puesto
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {todosPeriodos.map((p, pIdx) => {
+                                  const rk = rankingMap.get(String(p.id));
+                                  return (
+                                    <tr key={p.id}>
+                                      <td
+                                        style={{
+                                          border: "1px solid #000000",
+                                          padding: "2px 4px",
+                                          textAlign: "center",
+                                          fontWeight: "bold",
+                                          whiteSpace: "nowrap",
+                                        }}
+                                      >
+                                        {pIdx + 1}
+                                      </td>
+                                      {asignaturas.map((asig) => {
+                                        const per = asig.periodos.get(p.id);
+                                        return (
+                                          <td
+                                            key={asig.id_asignatura_grado}
+                                            style={{
+                                              border: "1px solid #000000",
+                                              padding: "2px 2px",
+                                              textAlign: "center",
+                                            }}
+                                          >
+                                            {per?.nota ?? "-"}
+                                          </td>
+                                        );
+                                      })}
+                                      <td
+                                        style={{
+                                          border: "1px solid #000000",
+                                          padding: "2px 2px",
+                                          textAlign: "center",
+                                          fontWeight: "bold",
+                                        }}
+                                      >
+                                        {rk?.promedio ?? "-"}
+                                      </td>
+                                      <td
+                                        style={{
+                                          border: "1px solid #000000",
+                                          padding: "2px 2px",
+                                          textAlign: "center",
+                                          fontWeight: "bold",
+                                        }}
+                                      >
+                                        {rk?.posicion ?? "-"}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </td>
+                        </tr>
+                        {/* Fila 2: Convivencia */}
+                        <tr>
+                          <td
+                            colSpan={2}
                             style={{
-                              display: "flex",
-                              justifyContent: "center",
-                              alignItems: "flex-end",
-                              height: "100%",
-                              paddingBottom: "4px",
+                              border: "1px solid #000000",
+                              padding: "6px 8px",
+                              minHeight: "50px",
+                              verticalAlign: "top",
                             }}
                           >
-                            <div style={{ textAlign: "center" }}>
-                              {info.firma_docente ? (
-                                <img
-                                  src={info.firma_docente}
-                                  alt="Firma director"
-                                  crossOrigin="anonymous"
-                                  style={{
-                                    maxHeight: "40px",
-                                    maxWidth: "160px",
-                                    objectFit: "contain",
-                                    display: "block",
-                                    margin: "0 auto 4px",
+                            <div className=" grid grid-cols-10">
+                              <strong className="col-span-9">
+                                CONVIVENCIA:
+                              </strong>
+                              {idDocente && !editingConvivencia && (
+                                <SimpleButton
+                                  type="button"
+                                  msj="Editar"
+                                  icon="Edit"
+                                  bg="bg-primary"
+                                  text="text-surface"
+                                  noRounded={false}
+                                  onClick={() => {
+                                    if (convivenciaText.trim()) {
+                                      setConvivenciaExists(true);
+                                    }
+                                    setEditingConvivencia(true);
                                   }}
                                 />
-                              ) : (
-                                <p
+                              )}
+                            </div>
+                            {editingConvivencia ? (
+                              <div style={{ marginTop: "6px" }}>
+                                <textarea
+                                  value={convivenciaText}
+                                  onChange={(e) =>
+                                    setConvivenciaText(e.target.value)
+                                  }
                                   style={{
-                                    fontSize: "9px",
-                                    color: "#9ca3af",
-                                    fontStyle: "italic",
-                                    marginBottom: "4px",
+                                    width: "100%",
+                                    minHeight: "80px",
+                                    padding: "6px",
+                                    fontSize: "11px",
+                                    border: "1px solid #9ca3af",
+                                    borderRadius: "4px",
+                                    fontFamily: "Arial, sans-serif",
+                                    resize: "vertical",
+                                  }}
+                                />
+                                <div
+                                  style={{
+                                    marginTop: "6px",
+                                    display: "flex",
+                                    gap: "8px",
                                   }}
                                 >
-                                  Sin Firma en el sistema
-                                </p>
-                              )}
-                              <div
+                                  <SimpleButton
+                                    type="button"
+                                    msj="Guardar"
+                                    icon="Save"
+                                    bg="bg-primary"
+                                    text="text-surface"
+                                    noRounded={false}
+                                    disabled={savingConvivencia}
+                                    onClick={async () => {
+                                      const effStudentId = isGuardian
+                                        ? selectedGuardianStudentId
+                                        : studentId;
+                                      if (!effStudentId) return;
+                                      setSavingConvivencia(true);
+                                      try {
+                                        const payload = {
+                                          fk_estudiante: Number(effStudentId),
+                                          fk_docente: Number(idDocente),
+                                          descripcion: convivenciaText,
+                                          fk_periodo: Number(periodId),
+                                          fk_sede: Number(idSede),
+                                        };
+                                        if (convivenciaExists) {
+                                          await updateConvivencia(payload);
+                                        } else {
+                                          await saveConvivencia(payload);
+                                        }
+                                        setEditingConvivencia(false);
+                                      } catch (err) {
+                                        console.error(
+                                          "Error guardando convivencia:",
+                                          err,
+                                        );
+                                      } finally {
+                                        setSavingConvivencia(false);
+                                      }
+                                    }}
+                                  />
+                                  <SimpleButton
+                                    type="button"
+                                    msj="Cancelar"
+                                    icon="X"
+                                    bg="bg-red-500"
+                                    text="text-surface"
+                                    noRounded={false}
+                                    onClick={() => setEditingConvivencia(false)}
+                                  />
+                                </div>
+                              </div>
+                            ) : (
+                              <p
                                 style={{
-                                  borderBottom: "1px solid #111827",
-                                  minWidth: "200px",
-                                  marginBottom: "4px",
+                                  margin: "6px 0 0",
+                                  fontSize: "11px",
+                                  whiteSpace: "pre-wrap",
+                                  color: "#111827",
                                 }}
-                              />
-                              <span
-                                style={{ fontWeight: "bold", fontSize: "10px" }}
                               >
-                                FIRMA DEL DIRECTOR DE GRUPO
-                              </span>
+                                {convivenciaText || "Sin observaciones."}
+                              </p>
+                            )}
+                          </td>
+                        </tr>
+                        {/* Fila 4: Firma del director de grupo */}
+                        <tr>
+                          <td
+                            colSpan={2}
+                            style={{
+                              border: "1px solid #000000",
+                              padding: "6px 8px",
+                              height: "70px",
+                              verticalAlign: "bottom",
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                justifyContent: "center",
+                                alignItems: "flex-end",
+                                height: "100%",
+                                paddingBottom: "4px",
+                              }}
+                            >
+                              <div style={{ textAlign: "center" }}>
+                                {info.firma_docente ? (
+                                  <img
+                                    src={info.firma_docente}
+                                    alt="Firma director"
+                                    crossOrigin="anonymous"
+                                    style={{
+                                      maxHeight: "40px",
+                                      maxWidth: "160px",
+                                      objectFit: "contain",
+                                      display: "block",
+                                      margin: "0 auto 4px",
+                                    }}
+                                  />
+                                ) : (
+                                  <p
+                                    style={{
+                                      fontSize: "9px",
+                                      color: "#9ca3af",
+                                      fontStyle: "italic",
+                                      marginBottom: "4px",
+                                    }}
+                                  >
+                                    Sin Firma en el sistema
+                                  </p>
+                                )}
+                                <div
+                                  style={{
+                                    borderBottom: "1px solid #111827",
+                                    minWidth: "200px",
+                                    marginBottom: "4px",
+                                  }}
+                                />
+                                <span
+                                  style={{
+                                    fontWeight: "bold",
+                                    fontSize: "10px",
+                                  }}
+                                >
+                                  FIRMA DEL DIRECTOR DE GRUPO
+                                </span>
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          );
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            );
           })()}
         </>
-      )}    
+      )}
     </div>
   );
 };

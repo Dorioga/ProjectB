@@ -40,7 +40,6 @@ export function StudentProvider({ children }) {
   // }, [loadStudents]);
 
   const getStudent = useCallback(async (payload) => {
-
     // Aceptar tanto identificación simple como objeto payload
     const arg =
       payload === null || payload === undefined
@@ -270,6 +269,19 @@ export function StudentProvider({ children }) {
     }
   }, []);
 
+  const saveConvivencia = useCallback(async (payload) => {
+    const result = await studentService.saveConvivencia(payload);
+    console.log("Resultado de saveConvivencia:", result);
+    eventBus.emit("¡Convivencia guardada correctamente!", "success");
+    return result;
+  }, []);
+
+  const updateConvivencia = useCallback(async (payload) => {
+    const result = await studentService.updateConvivencia(payload);
+    eventBus.emit("¡Convivencia actualizada correctamente!", "success");
+    return result;
+  }, []);
+
   const value = useMemo(
     () => ({
       students,
@@ -290,6 +302,8 @@ export function StudentProvider({ children }) {
       registerStudent,
       removeStudent,
       uploadStudentsExcel,
+      saveConvivencia,
+      updateConvivencia,
     }),
     [
       students,
@@ -308,6 +322,8 @@ export function StudentProvider({ children }) {
       updateObservation,
       removeStudent,
       uploadStudentsExcel,
+      saveConvivencia,
+      updateConvivencia,
     ],
   );
 

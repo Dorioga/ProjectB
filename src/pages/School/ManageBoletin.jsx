@@ -14,7 +14,8 @@ import { useNotify } from "../../lib/hooks/useNotify";
 const ManageBoletin = () => {
   const { getStudentGrades, getGradeOnlySede } = useSchool();
   const { getTeacherSede, getTeacherGrades } = useTeacher();
-  const { idSede, nameSede, idDocente, token, gradoAcargo, rol } = useAuth();
+  const { idSede, nameSede, idDocente, token, /* gradoAcargo, */ rol } =
+    useAuth();
   const notify = useNotify();
 
   // ── Filtros ─────────────────────────────────────────────────────────────
@@ -42,30 +43,29 @@ const ManageBoletin = () => {
   const isTeacher = Boolean(idDocente);
   const isRol3 = useMemo(() => String(rol) === "3", [rol]);
 
-  // Extraer el ID numérico de gradoAcargo (puede ser número u objeto)
-  const gradoAcargoId = useMemo(() => {
-    if (!gradoAcargo) return null;
-    if (typeof gradoAcargo === "object") {
-      return (
-        gradoAcargo.id_grade ?? gradoAcargo.id ?? gradoAcargo.id_grado ?? null
-      );
-    }
-    return gradoAcargo;
-  }, [gradoAcargo]);
+  // ── Revisión pendiente: filtrar grados por gradoAcargo del director de grupo ──
+  // const gradoAcargoId = useMemo(() => {
+  //   if (!gradoAcargo) return null;
+  //   if (typeof gradoAcargo === "object") {
+  //     return (
+  //       gradoAcargo.id_grade ?? gradoAcargo.id ?? gradoAcargo.id_grado ?? null
+  //     );
+  //   }
+  //   return gradoAcargo;
+  // }, [gradoAcargo]);
 
-  // CustomFetch para docente: obtiene los grados desde la API y filtra por gradoAcargo
-  const teacherGradeFilteredFetch = useCallback(
-    async (payload) => {
-      const res = await getTeacherGrades(payload);
-      const list = Array.isArray(res) ? res : (res?.data ?? []);
-      if (!gradoAcargoId) return list;
-      return list.filter((g) => {
-        const gId = g.id_grade ?? g.id ?? g.id_grado;
-        return String(gId) === String(gradoAcargoId);
-      });
-    },
-    [getTeacherGrades, gradoAcargoId],
-  );
+  // const teacherGradeFilteredFetch = useCallback(
+  //   async (payload) => {
+  //     const res = await getTeacherGrades(payload);
+  //     const list = Array.isArray(res) ? res : (res?.data ?? []);
+  //     if (!gradoAcargoId) return list;
+  //     return list.filter((g) => {
+  //       const gId = g.id_grade ?? g.id ?? g.id_grado;
+  //       return String(gId) === String(gradoAcargoId);
+  //     });
+  //   },
+  //   [getTeacherGrades, gradoAcargoId],
+  // );
 
   const teacherGradesParams = useMemo(
     () => ({
@@ -240,7 +240,7 @@ const ManageBoletin = () => {
           data={teacherSedeData}
           loading={loadingTeacherSedes}
         />
-
+        {/* ← cambiar a teacherGradeFilteredFetch para filtro por gradoAcargo */}
         {isTeacher ? (
           <GradeSelector
             label="Grado"
@@ -248,7 +248,7 @@ const ManageBoletin = () => {
             value={gradeId}
             onChange={(e) => setGradeId(e.target.value)}
             sedeId={sedeId}
-            customFetchMethod={teacherGradeFilteredFetch}
+            customFetchMethod={getTeacherGrades}
             additionalParams={teacherGradesParams}
             disabled={!sedeId}
           />
