@@ -245,11 +245,19 @@ const useBoletinProcessed = (data, periodId) => {
         return Number(aKey) - Number(bKey);
       })
       .map(([, area]) => {
-        area.asignaturas.sort((a, b) =>
-          a.nombre_asignatura_grado.localeCompare(b.nombre_asignatura_grado, "es", {
-            sensitivity: "base",
-          }),
-        );
+        area.asignaturas.sort((a, b) => {
+          const aConv = a.nombre_asignatura_grado?.includes("CONVIVENCIA");
+          const bConv = b.nombre_asignatura_grado?.includes("CONVIVENCIA");
+          if (aConv && !bConv) return 1;
+          if (!aConv && bConv) return -1;
+          return a.nombre_asignatura_grado.localeCompare(
+            b.nombre_asignatura_grado,
+            "es",
+            {
+              sensitivity: "base",
+            },
+          );
+        });
         for (const asig of area.asignaturas) {
           for (const [, per] of asig.periodos) {
             per.nota = _computeNotaEfectiva(per.nota, per.recuperacion);
@@ -416,11 +424,23 @@ function computeBoletinData(data, periodId) {
       return Number(aKey) - Number(bKey);
     })
     .map(([, area]) => {
-      area.asignaturas.sort((a, b) =>
-        a.nombre_asignatura_grado.localeCompare(b.nombre_asignatura_grado, "es", {
-          sensitivity: "base",
-        }),
-      );
+      area.asignaturas.sort((a, b) => {
+        const aConv = a.nombre_asignatura_grado?.includes(
+          "CONVIVENCIA SIEMPRE",
+        );
+        const bConv = b.nombre_asignatura_grado?.includes(
+          "CONVIVENCIA SIEMPRE",
+        );
+        if (aConv && !bConv) return 1;
+        if (!aConv && bConv) return -1;
+        return a.nombre_asignatura_grado.localeCompare(
+          b.nombre_asignatura_grado,
+          "es",
+          {
+            sensitivity: "base",
+          },
+        );
+      });
       for (const asig of area.asignaturas) {
         for (const [, per] of asig.periodos) {
           per.nota = _computeNotaEfectiva(per.nota, per.recuperacion);
@@ -1268,9 +1288,14 @@ async function generateBoletinPDF(
     pdf.setFontSize(8);
     pdf.setFont("helvetica", "bold");
     pdf.setTextColor(0, 0, 0);
-    pdf.text(area.nombre_area.toUpperCase(), margin + 1.5, y + areaHeaderH / 2 + 1.5, {
-      align: "left",
-    });
+    pdf.text(
+      area.nombre_area.toUpperCase(),
+      margin + 1.5,
+      y + areaHeaderH / 2 + 1.5,
+      {
+        align: "left",
+      },
+    );
     y += areaHeaderH;
 
     for (let idx = 0; idx < area.asignaturas.length; idx++) {
@@ -1585,7 +1610,7 @@ async function generateBoletinPDF(
   // Fila 2: Convivencia
   {
     const convText = info.convivencia || "";
-    const convLabelW = contentW * 0.15;
+    const convLabelW = contentW * 0.25;
     const convContentW = contentW - convLabelW;
     const lineH = 4.5;
     const minH = 10;
@@ -1599,7 +1624,7 @@ async function generateBoletinPDF(
     pdf.setFontSize(8);
     pdf.setFont("helvetica", "bold");
     pdf.setTextColor(0, 0, 0);
-    pdf.text("CONVIVENCIA:", margin + 2, y + 5);
+    pdf.text("OBSERVACIONES GENERALES:", margin + 2, y + 5);
     if (convText) {
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(8);
@@ -2722,7 +2747,9 @@ const BoletinSelector = ({
                                 key={asig.id_asignatura_grado}
                                 style={{ backgroundColor: "#ffffff" }}
                               >
-                                <td style={{ ...S.tdBold, textAlign: "center" }}>
+                                <td
+                                  style={{ ...S.tdBold, textAlign: "center" }}
+                                >
                                   {asig.nombre_asignatura_grado}
                                 </td>
                                 <td style={S.td}>
@@ -2988,7 +3015,7 @@ const BoletinSelector = ({
                           >
                             <div className=" grid grid-cols-10">
                               <strong className="col-span-9">
-                                CONVIVENCIA:
+                                OBSERVACIONES GENERALES:
                               </strong>
                               {idDocente && !editingConvivencia && (
                                 <SimpleButton

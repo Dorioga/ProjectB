@@ -44,9 +44,6 @@ const RegisterAsignature = ({ onSuccess }) => {
     return (
       String(formData.name ?? "").trim() &&
       String(formData.code ?? "").trim() &&
-      String(formData.fk_area ?? "").trim() &&
-      String(formData.intensity_hours ?? "").trim() &&
-      Number(formData.intensity_hours) > 0 &&
       formData.sedeId &&
       formData.jornada &&
       Array.isArray(formData.grades_scholar) &&
@@ -213,10 +210,7 @@ const RegisterAsignature = ({ onSuccess }) => {
       newErrors.code = "El código de la asignatura es obligatorio.";
     if (!formData.sedeId) newErrors.sedeId = "Selecciona una sede.";
     if (!formData.jornada) newErrors.jornada = "Selecciona una jornada.";
-    if (!String(formData.fk_area ?? "").trim())
-      newErrors.fk_area = "Selecciona un área.";
-    if (!String(formData.intensity_hours ?? "").trim() || Number(formData.intensity_hours) <= 0)
-      newErrors.intensity_hours = "La intensidad horaria es obligatoria.";
+
     if (
       !Array.isArray(formData.grades_scholar) ||
       formData.grades_scholar.length === 0
@@ -343,7 +337,7 @@ const RegisterAsignature = ({ onSuccess }) => {
         </div>
         <div id="tour-intensity">
           <label className={labelClassName}>
-            Intensidad horaria <span className="text-error">*</span>
+            Intensidad horaria
           </label>
           <input
             className={inputClassName}
@@ -365,7 +359,7 @@ const RegisterAsignature = ({ onSuccess }) => {
         </div>
         <div id="tour-area">
           <label className={labelClassName}>
-            Área <span className="text-error">*</span>
+            Área
           </label>
           <select
             name="fk_area"
