@@ -51,9 +51,12 @@ const ProfileAssignature = ({ data, onSave, initialEditing = false }) => {
   };
 
   const [grades, setGrades] = useState(() => parseGrades(safeData));
+  console.log("ProfileAssignature - data:", grades);
   const [selectedGradeIds, setSelectedGradeIds] = useState(() =>
     parseGrades(safeData).map((g) => g.id),
   );
+  const selectedGradeIdsRef = useRef(selectedGradeIds);
+  selectedGradeIdsRef.current = selectedGradeIds;
 
   const [form, setForm] = useState({
     name_asignature:
@@ -61,7 +64,8 @@ const ProfileAssignature = ({ data, onSave, initialEditing = false }) => {
     code_asignature:
       safeData.codigo_asignatura || safeData.code_asignature || "",
     description: safeData.descripcion || safeData.description || "",
-    intensity_hours: safeData.intensity_hours || safeData.intensidad_horaria || "",
+    intensity_hours:
+      safeData.intensity_hours || safeData.intensidad_horaria || "",
     estado: safeData.estado || "",
     fk_area: safeData.fk_area || "",
   });
@@ -153,7 +157,9 @@ const ProfileAssignature = ({ data, onSave, initialEditing = false }) => {
             grados_asignatura: grades.map((g) => ({
               fk_grade: Number(g.id),
               fk_asignature: Number(asignaturaId),
-              estado: selectedGradeIds.includes(g.id) ? "Activo" : "Inactivo",
+              estado: selectedGradeIdsRef.current.includes(g.id)
+                ? "Activo"
+                : "Inactivo",
             })),
           };
 

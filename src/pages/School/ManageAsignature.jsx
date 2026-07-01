@@ -143,7 +143,7 @@ const ManageAsignature = () => {
       fetchAsignatures,
     ],
   );
-  console.log("Table data ", tableData);
+
   // Define las columnas para la tabla
   const columns = useMemo(
     () => [

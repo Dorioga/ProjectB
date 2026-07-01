@@ -7,11 +7,16 @@ import { upload } from "./uploadService";
  * Ajusta las rutas según tu backend.
  */
 export async function login(credentials) {
+  const { captchaToken, ...rest } = credentials;
   const payload = {
-    ...credentials,
+    ...rest,
     // En este proyecto el campo de contraseña del form se llama `infokey`.
-    infokey: credentials.infokey ? sha256(String(credentials.infokey)) : "",
+    infokey: rest.infokey ? sha256(String(rest.infokey)) : "",
   };
+
+  if (captchaToken) {
+    payload.captchaToken = captchaToken;
+  }
 
   const res = await ApiClient.instance.post("/auth/login", payload);
   // ApiClient tiene interceptor que normalmente devuelve res.data.

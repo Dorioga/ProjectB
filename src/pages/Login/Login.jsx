@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import ReCAPTCHA from "react-google-recaptcha";
+import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import Loader from "../../components/atoms/Loader";
 import useAuth from "../../lib/hooks/useAuth";
 import { institutionAbbreviation } from "../../utils/formatUtils";
@@ -13,8 +13,7 @@ const Login = () => {
     infokey: "",
   });
   const [pendingIdPersona, setPendingIdPersona] = useState(null);
-  const [captchaToken, setCaptchaToken] = useState(null);
-  const recaptchaRef = useRef(null);
+  const { executeRecaptcha } = useGoogleReCaptcha();
   const {
     login,
     loading,
@@ -61,12 +60,19 @@ const Login = () => {
 
   const isFormValid =
     formData.email.trim() !== "" && formData.infokey.trim() !== "";
-  const canSubmit = isFormValid && !!captchaToken;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    let captchaToken = "";
     try {
-      const loginData = await login(formData);
+      captchaToken = await executeRecaptcha("login");
+    } catch {
+      // Si falla la obtención del token, se envía vacío y el backend lo rechazará
+    }
+
+    try {
+      const loginData = await login({ ...formData, captchaToken });
       // Si hay términos pendientes el modal se muestra; la navegación
       // ocurre únicamente al pulsar "Continuar" en el modal (closeTermsModal).
       if (loginData?.pendingTerms) {
@@ -76,8 +82,6 @@ const Login = () => {
       }
     } catch {
       // El error ya queda en el AuthContext.
-      recaptchaRef.current?.reset();
-      setCaptchaToken(null);
     }
   };
   return (
@@ -158,20 +162,10 @@ const Login = () => {
             </div>
 
             <div className="flex flex-col justify-between pt-2 gap-2">
-              {isFormValid && import.meta.env.VITE_CAPTCHA_PUBLIC_KEY && (
-                <div className="flex justify-center">
-                  <ReCAPTCHA
-                    ref={recaptchaRef}
-                    sitekey={import.meta.env.VITE_CAPTCHA_PUBLIC_KEY}
-                    onChange={(token) => setCaptchaToken(token)}
-                    onExpired={() => setCaptchaToken(null)}
-                  />
-                </div>
-              )}
               <SimpleButton
                 msj={"Iniciar sesión"}
                 type="submit"
-                disabled={loading || !canSubmit}
+                disabled={loading || !isFormValid}
                 bg={"bg-secondary"}
                 text={"text-surface"}
                 hover={"hover:bg-secondary/80"}

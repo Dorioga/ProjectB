@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useContext } from "react";
 import jsPDF from "jspdf";
 import Modal from "../atoms/Modal";
 import Loader from "../atoms/Loader";
 import SimpleButton from "../atoms/SimpleButton";
 import { getDataStudentGuardian } from "../../services/studentService";
+import { AuthContext } from "../../lib/context/AuthContext";
 
-/** Comprime una imagen (URL/base64/blob:) a JPEG usando canvas */
 const compressToJpeg = (src, quality = 0.75, maxWidth = 400) =>
   new Promise((resolve, reject) => {
     const img = new Image();
@@ -27,46 +27,79 @@ const compressToJpeg = (src, quality = 0.75, maxWidth = 400) =>
     img.src = src;
   });
 
-const EMPTY_ROW = {
-  dia: "",
-  mes: "",
-  anio: "",
-  grado: "",
-  edad: "",
-  promovido: false,
-  firma_alumno: "",
-  firma_padre: "",
-};
+const GRADOS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+
+const EMPTY_HISTORIA_ROW = { anio: "", institucion: "" };
 
 const EMPTY_FORM = {
-  apellido_nombre: "",
+  // Header - Jornada / Grado
+  jornada_manana: false,
+  jornada_tarde: false,
+  grado_cursar: "",
+  // Información del Alumno
   tipo_id: "TI",
   numero_id: "",
-  ciudad_id: "",
-  lugar_nacimiento: "",
+  primer_apellido: "",
+  segundo_apellido: "",
+  primero_nombre: "",
+  segundo_nombre: "",
   fecha_nacimiento: "",
   edad: "",
-  residencia: "",
-  telefono_estudiante: "",
-  eps: "",
-  rh: "",
+
+  genero_texto: "",
+  municipio_nacimiento: "",
+  departamento_nacimiento: "",
+  // Ubicación del Alumno
+  direccion_residencia: "",
+  barrio: "",
+  municipio: "",
+  telefono_fijo: "",
+  telefono_celular: "",
+  estrato: "",
+  nivel_sisben: "",
+  // Víctimas de Conflicto
+  en_desplazamiento: false,
+  desvinculado: false,
+  depto_expulsor: "",
+  municipio_expulsor: "",
+  grupo_etnico: "",
+  // Limitaciones
+  limitacion_sindrome_down: false,
+  limitacion_baja_vision: false,
+  limitacion_paralisis_cerebral: false,
+  limitacion_retraso_mental: false,
+  limitacion_ceguera: false,
+  limitacion_lesion_neuromuscular: false,
+  limitacion_sordera: false,
+  limitacion_autismo: false,
+  limitacion_multi_impedido: false,
+  // Capacidades Excepcionales
+  capacidad_superdotado: false,
+  capacidad_tecnologico: false,
+  capacidad_cientifico: false,
+  capacidad_artistico_deportivo: false,
+  puntaje_coeficiente: "",
+  // Padres y Acudientes
   nombre_padre: "",
   cc_padre: "",
-  trabajo_padre: "",
   tel_padre: "",
   nombre_madre: "",
   cc_madre: "",
-  trabajo_madre: "",
   tel_madre: "",
   nombre_acudiente: "",
-  direccion_acudiente: "",
+  cc_acudiente: "",
   tel_acudiente: "",
-  col_procedencia: "",
+  // Salud
+  problematicas_salud: "",
+  eps: "",
+  grupo_sanguineo: "",
+  ips: "",
+  rh: "",
+  // Retiro
   motivo_retiro: "",
-  codigo_matricula: "",
+  fecha_retiro: "",
 };
 
-/** Calcula la edad en años a partir de una fecha ISO o string */
 function calcularEdad(fechaStr) {
   if (!fechaStr) return "";
   const birth = new Date(fechaStr);
@@ -78,7 +111,6 @@ function calcularEdad(fechaStr) {
   return String(age);
 }
 
-/** Campo de texto con borde inferior al estilo formulario */
 const Field = ({
   value,
   onChange,
@@ -91,47 +123,66 @@ const Field = ({
     value={value ?? ""}
     onChange={(e) => onChange(e.target.value)}
     placeholder={placeholder}
-    className={`border-b border-gray-500 bg-transparent focus:outline-none focus:border-primary px-1 min-w-0 ${className}`}
+    className={` bg-transparent focus:outline-none focus:border-primary px-1 min-w-0 ${className}`}
   />
 );
 
+const TdField = ({
+  value,
+  onChange,
+  placeholder,
+  className = "",
+  type = "text",
+  colSpan,
+}) => (
+  <td className="border border-gray-400 px-1 py-0.5" colSpan={colSpan}>
+    <input
+      type={type}
+      value={value ?? ""}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className={`w-full bg-transparent focus:outline-none text-center text-xs ${className}`}
+    />
+  </td>
+);
+
+const TdLabel = ({ children, className = "", colSpan }) => (
+  <td
+    className={`border border-gray-400 px-1 py-0.5 font-semibold text-xs whitespace-nowrap ${className}`}
+    colSpan={colSpan}
+  >
+    {children}
+  </td>
+);
+
+const TdCheck = ({ checked, onChange, label }) => (
+  <td className="border border-gray-400 px-1 py-0.5 text-left text-xs">
+    <label className="inline-flex items-start gap-1 cursor-pointer">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="w-3.5 h-3.5 mt-0.5"
+      />
+      {label && <span>{label}</span>}
+    </label>
+  </td>
+);
+
 const MatriculaModal = ({ isOpen, onClose, data }) => {
+  console.log("MatriculaModal data:", data);
+  const { imgSchool } = useContext(AuthContext);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
-  const [historial, setHistorial] = useState([{ ...EMPTY_ROW }]);
+  const [historia, setHistoria] = useState(
+    GRADOS.map(() => ({ ...EMPTY_HISTORIA_ROW })),
+  );
   const [logoBase64, setLogoBase64] = useState("");
+  const [fotoBase64, setFotoBase64] = useState("");
 
-  /* ── Rellena el formulario desde el objeto de datos ── */
   const prefillFromData = (d) => {
+    console.log("Prefill data:", d);
     if (!d) return;
-    const apellidoNombre = [
-      d.papellido_estudiante || d.primer_apellido || d.first_lastname,
-      d.sapellido_estudiante || d.segundo_apellido || d.second_lastname,
-      d.pnombre_estudiante || d.primero_nombre || d.first_name,
-      d.snombre_estudiante || d.segundo_nombre || d.second_name,
-    ]
-      .filter(Boolean)
-      .join(" ");
-
-    const nombreAcudiente =
-      d.nombre_acudiente ||
-      [
-        d.primer_apellido_acudiente,
-        d.segundo_apellido_acudiente,
-        d.primero_nombre_acudiente,
-        d.segundo_nombre_acudiente,
-      ]
-        .filter(Boolean)
-        .join(" ") ||
-      // Fallback con campos del acudiente del response (orden: apellido primero)
-      [
-        d.primer_apellido,
-        d.segundo_apellido,
-        d.primero_nombre,
-        d.segundo_nombre,
-      ]
-        .filter(Boolean)
-        .join(" ");
 
     const fechaNac = d.fecha_nacimiento
       ? d.fecha_nacimiento.split("T")[0]
@@ -139,7 +190,6 @@ const MatriculaModal = ({ isOpen, onClose, data }) => {
         ? d.birthday.split("T")[0]
         : "";
 
-    // Tipo de identificación del estudiante
     let tipoId = "TI";
     const rawTipo =
       d.t_identificacion_estudiante ||
@@ -169,26 +219,76 @@ const MatriculaModal = ({ isOpen, onClose, data }) => {
 
     setForm((prev) => ({
       ...prev,
-      apellido_nombre: apellidoNombre || prev.apellido_nombre,
-      tipo_id: tipoId,
+      primer_apellido:
+        d.papellido_estudiante ||
+        d.primer_apellido ||
+        d.first_lastname ||
+        prev.primer_apellido,
+      segundo_apellido:
+        d.sapellido_estudiante ||
+        d.segundo_apellido ||
+        d.second_lastname ||
+        prev.segundo_apellido,
+      primero_nombre:
+        d.pnombre_estudiante ||
+        d.primero_nombre ||
+        d.first_name ||
+        prev.primero_nombre,
+      segundo_nombre:
+        d.snombre_estudiante ||
+        d.segundo_nombre ||
+        d.second_name ||
+        prev.segundo_nombre,
+      tipo_id: d.nombre_identi_estudiante,
       numero_id:
         d.identificacion_estudiante || d.identification || prev.numero_id,
       fecha_nacimiento: fechaNac || prev.fecha_nacimiento,
       edad: calcularEdad(fechaNac) || prev.edad,
-      telefono_estudiante:
-        d.telefono || d.telephone || prev.telefono_estudiante,
-      nombre_acudiente: nombreAcudiente || prev.nombre_acudiente,
+      genero_texto: d.genero || d.genre || "",
+      direccion_residencia:
+        d.direccion || d.address || prev.direccion_residencia,
+      telefono_celular: d.telefono || d.telephone || prev.telefono_celular,
+      nombre_padre: d.nombre_padre || "",
+      cc_padre: d.cc_padre || "",
+      tel_padre: d.tel_padre || "",
+      nombre_madre: d.nombre_madre || "",
+      cc_madre: d.cc_madre || "",
+      tel_madre: d.tel_madre || "",
+      nombre_acudiente:
+        d.nombre_acudiente ||
+        [
+          d.primer_apellido_acudiente,
+          d.segundo_apellido_acudiente,
+          d.primero_nombre_acudiente,
+          d.segundo_nombre_acudiente,
+        ]
+          .filter(Boolean)
+          .join(" ") ||
+        [
+          d.primer_apellido,
+          d.segundo_apellido,
+          d.primero_nombre,
+          d.segundo_nombre,
+        ]
+          .filter(Boolean)
+          .join(" ") ||
+        prev.nombre_acudiente,
+      cc_acudiente:
+        d.numero_identificacion_acudiente ||
+        d.cc_acudiente ||
+        prev.cc_acudiente,
       tel_acudiente: d.telefono_acudiente || prev.tel_acudiente,
-      direccion_acudiente: d.direccion || d.address || prev.direccion_acudiente,
+      eps: d.eps || prev.eps,
+      rh: d.rh || prev.rh,
     }));
   };
 
-  /* ── Al abrir el modal, carga datos ── */
   useEffect(() => {
     if (!isOpen || !data) return;
-
     setForm(EMPTY_FORM);
-    setHistorial([{ ...EMPTY_ROW }]);
+    setHistoria(GRADOS.map(() => ({ ...EMPTY_HISTORIA_ROW })));
+    setFotoBase64("");
+    setLogoBase64("");
 
     const loadData = async () => {
       setLoading(true);
@@ -198,7 +298,6 @@ const MatriculaModal = ({ isOpen, onClose, data }) => {
           data?.id_persona_acudiente ||
           data?.fk_persona_acudiente ||
           data?.id_acudiente;
-
         if (idPersonaGuardian && idEstudiante) {
           const res = await getDataStudentGuardian({
             idPersonaGuardian: Number(idPersonaGuardian),
@@ -209,7 +308,6 @@ const MatriculaModal = ({ isOpen, onClose, data }) => {
             return;
           }
         }
-        // Fallback con los datos ya disponibles
         prefillFromData(data);
       } catch (err) {
         console.warn(
@@ -221,800 +319,1593 @@ const MatriculaModal = ({ isOpen, onClose, data }) => {
         setLoading(false);
       }
     };
-
     loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, data]);
 
-  /* ── Carga el logo institucional cuando abre el modal ── */
   useEffect(() => {
-    if (!isOpen) {
-      setLogoBase64("");
-      return;
-    }
-    const url = data?.link_logo;
-    if (!url) {
-      setLogoBase64("");
-      return;
-    }
-    fetch(url)
-      .then((r) => {
-        if (!r.ok) throw new Error("Error cargando logo");
-        return r.blob();
-      })
-      .then(
-        (blob) =>
-          new Promise((res, rej) => {
-            const reader = new FileReader();
-            reader.onloadend = () => res(reader.result);
-            reader.onerror = rej;
-            reader.readAsDataURL(blob);
-          }),
-      )
-      .then((b64) => compressToJpeg(b64, 0.8, 300))
-      .then(setLogoBase64)
-      .catch(() => setLogoBase64(""));
+    if (!isOpen) return;
+    const loadImage = (url, setter) => {
+      if (!url) {
+        setter("");
+        return;
+      }
+      fetch(url)
+        .then((r) => {
+          if (!r.ok) throw new Error();
+          return r.blob();
+        })
+        .then(
+          (blob) =>
+            new Promise((res, rej) => {
+              const reader = new FileReader();
+              reader.onloadend = () => res(reader.result);
+              reader.onerror = rej;
+              reader.readAsDataURL(blob);
+            }),
+        )
+        .then((b64) => compressToJpeg(b64, 0.8, 300))
+        .then(setter)
+        .catch(() => setter(""));
+    };
+    loadImage(data?.link_logo, setLogoBase64);
+    loadImage(data?.link_foto || data?.url_photo, setFotoBase64);
   }, [isOpen, data]);
 
-  /* ── Generación PDF ── */
   const handleGeneratePDF = useCallback(() => {
     const doc = new jsPDF({
       orientation: "portrait",
       unit: "mm",
-      format: "letter",
+      format: "legal",
     });
     const pw = doc.internal.pageSize.getWidth();
     const ph = doc.internal.pageSize.getHeight();
-    const ml = 15,
-      mr = 15;
+    const ml = 8,
+      mr = 8;
     const uw = pw - ml - mr;
-    let y = 15;
-    const lh = 6.5;
-    const fs = 8.5;
+    let y = 10;
+    const lh = 6;
+    const rowH = 7;
 
-    const checkPage = (needed = lh) => {
-      if (y + needed > ph - 12) {
+    const checkPage = (needed = rowH) => {
+      if (y + needed > ph - 10) {
         doc.addPage();
-        y = 15;
+        y = 10;
       }
     };
 
-    // Dibuja etiqueta (negrita) + valor + subrayado dentro de [x, x+width]
-    const fld = (label, value, x, width, yRef) => {
-      doc.setFontSize(fs);
+    const bold = () => {
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(40, 40, 40);
-      const lb = `${label}: `;
-      const lw = doc.getTextWidth(lb);
-      doc.text(lb, x, yRef);
+    };
+    const normal = () => {
       doc.setFont("helvetica", "normal");
-      doc.text(
-        doc.splitTextToSize(
-          String(value || "—"),
-          Math.max(width - lw - 1, 8),
-        )[0],
-        x + lw,
-        yRef,
-      );
+    };
+    const setFs = (s) => {
+      doc.setFontSize(s);
+    };
+    const text = (t, x, yPos, opts) => {
+      doc.text(t, x, yPos, opts);
+    };
+    const cell = (x, yPos, w, h, label, val = "", isLabel = true) => {
       doc.setDrawColor(180, 180, 180);
-      doc.setLineWidth(0.2);
-      doc.line(x + lw, yRef + 0.7, x + width, yRef + 0.7);
+      doc.setLineWidth(0.3);
+      doc.rect(x, yPos, w, h);
+      if (isLabel) {
+        bold();
+        setFs(6.5);
+        doc.setTextColor(40, 40, 40);
+        text(label, x + 1, yPos + h / 2 + 1.5);
+        if (val) {
+          normal();
+          setFs(6.5);
+          const lw = doc.getTextWidth(label + " ");
+          text(String(val), x + 1 + lw, yPos + h / 2 + 1.5);
+        }
+      } else {
+        normal();
+        setFs(6.5);
+        doc.setTextColor(40, 40, 40);
+        text(String(val || ""), x + 1, yPos + h / 2 + 1.5);
+      }
     };
 
-    // ── Encabezado institucional ────────────────────────────
-    const logoW = 28,
-      logoH = 28;
-    const hasLogo = !!logoBase64;
-    const hdTextX = hasLogo ? ml + logoW + 5 : ml;
-    const hdTextW = pw - hdTextX - mr;
-    const cx = hdTextX + hdTextW / 2;
-    const headerStartY = y;
+    const sectionTitle = (title) => {
+      checkPage(lh + 2);
+      doc.setFillColor(41, 98, 160);
+      doc.setDrawColor(41, 98, 160);
+      doc.rect(ml, y, uw, lh - 1, "FD");
+      doc.setTextColor(255, 255, 255);
+      bold();
+      setFs(8);
+      text(title, ml + 2, y + lh / 2 + 1.5);
+      doc.setTextColor(40, 40, 40);
+      y += lh + 0.5;
+    };
 
-    if (hasLogo) {
-      doc.addImage(logoBase64, "JPEG", ml, headerStartY, logoW, logoH);
+    const drawRow = (cols) => {
+      checkPage(rowH);
+      let x = ml;
+      cols.forEach(({ w, label, val, isLabel = true }) => {
+        cell(x, y, w, rowH, label, val, isLabel);
+        x += w;
+      });
+      y += rowH;
+    };
+
+    const checkboxPdf = (x, yPos, checked) => {
+      doc.setDrawColor(80, 80, 80);
+      doc.setLineWidth(0.4);
+      doc.rect(x, yPos - 3, 3.5, 3.5);
+      if (checked) {
+        doc.setDrawColor(0, 0, 0);
+        doc.setLineWidth(0.6);
+        doc.line(x + 0.5, yPos - 1.5, x + 3, yPos - 1.5);
+        doc.line(x + 1.8, yPos - 2.5, x + 1.8, yPos - 0.5);
+      }
+    };
+
+    // ── Header ──
+    const hasFoto = !!fotoBase64;
+    const fotoW = 22,
+      fotoH = 28;
+    const imgschoolW = 22,
+      imgschoolH = 22;
+    const headerInitialY = y;
+    let hdrX = ml;
+
+    if (hasFoto) {
+      doc.addImage(fotoBase64, "JPEG", hdrX, headerInitialY, fotoW, fotoH);
+      hdrX += fotoW + 3;
     }
 
-    const nombreInst =
+    if (imgSchool) {
+      doc.addImage(
+        imgSchool,
+        "JPEG",
+        pw - mr - imgschoolW,
+        headerInitialY,
+        imgschoolW,
+        imgschoolH,
+      );
+    }
+    const rightBound = imgSchool ? pw - mr - imgschoolW - 2 : pw - mr;
+    const centerW = rightBound - hdrX;
+
+    bold();
+    setFs(10);
+    doc.setTextColor(30, 60, 130);
+    text("HOJA DE MATRICULA AÑO LECTIVO 2026", hdrX + centerW / 2, y + 4, {
+      align: "center",
+    });
+    y += lh;
+
+    const instName =
       data?.nombre_sede ||
       data?.nombre_institucion ||
       data?.name_school ||
       "INSTITUCIÓN EDUCATIVA";
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
+    bold();
+    setFs(8);
     doc.setTextColor(30, 60, 130);
-    doc.text(nombreInst, cx, y + 4, { align: "center" });
+    text(instName, hdrX + centerW / 2, y + 2, { align: "center" });
+
     y += lh;
 
-    if (data?.eslogan) {
-      doc.setFont("helvetica", "italic");
-      doc.setFontSize(8);
-      doc.setTextColor(70, 70, 70);
-      doc.text(data.eslogan, cx, y + 3, { align: "center" });
-      y += lh;
-    }
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(70, 70, 70);
-
-    if (data?.nit) {
-      doc.text(`NIT: ${data.nit}`, cx, y + 3, { align: "center" });
-      y += lh;
-    }
+    doc.setTextColor(40, 40, 40);
     if (data?.cod_dane) {
-      doc.setFont("helvetica", "bold");
-      doc.text(`Código DANE: ${data.cod_dane}`, cx, y + 3, { align: "center" });
-      doc.setFont("helvetica", "normal");
-      y += lh;
+      bold();
+      setFs(7);
+      text(`DANE: ${data.cod_dane}`, hdrX, y);
     }
-    const contactParts = [];
-    if (data?.direccion_sede) contactParts.push(`Dir: ${data.direccion_sede}`);
-    if (data?.telefono_sede) contactParts.push(`Tel: ${data.telefono_sede}`);
-    if (contactParts.length) {
-      doc.text(contactParts.join("   "), cx, y + 3, { align: "center" });
-      y += lh;
-    }
+    y += lh - 1;
 
-    // Asegurar que y esté debajo del logo
-    const logoBottom = headerStartY + logoH + 2;
-    if (y + 3 < logoBottom) y = logoBottom - 3;
-
-    // Línea decorativa azul
-    doc.setDrawColor(30, 60, 130);
-    doc.setLineWidth(0.7);
-    doc.line(ml, y + 3, pw - mr, y + 3);
-    y += lh + 1;
-    doc.setTextColor(40, 40, 40);
-
-    // ── Título ───────────────────────────────────────────────
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.setTextColor(30, 60, 130);
-    doc.text("TARJETA ACUMULATIVA DE MATRÍCULA", pw / 2, y, {
-      align: "center",
-    });
-    y += lh;
-    doc.setTextColor(40, 40, 40);
-    doc.setFontSize(8);
-
-    if (form.codigo_matricula) {
-      doc.setFont("helvetica", "bold");
-      doc.text("Código: ", pw - mr - 42, y);
-      doc.setFont("helvetica", "normal");
-      doc.text(
-        form.codigo_matricula,
-        pw - mr - 42 + doc.getTextWidth("Código: "),
-        y,
-      );
-      y += lh - 1;
-    }
-    // EPS / RH
-    doc.setFont("helvetica", "bold");
-    doc.text("EPS: ", pw - mr - 50, y);
-    doc.setFont("helvetica", "normal");
-    doc.text(form.eps || "—", pw - mr - 50 + doc.getTextWidth("EPS: "), y);
-    doc.setFont("helvetica", "bold");
-    doc.text("  RH: ", pw - mr - 22, y);
-    doc.setFont("helvetica", "normal");
-    doc.text(form.rh || "—", pw - mr - 22 + doc.getTextWidth("  RH: "), y);
-    y += lh + 1;
-
-    // ── Campos del formulario ─────────────────────────────────
-    checkPage();
-    fld("Apellido y Nombre", form.apellido_nombre, ml, uw, y);
-    y += lh;
-
-    checkPage();
-    fld(
-      "Identificación",
-      `${form.tipo_id}   No. ${form.numero_id || "—"}   de: ${form.ciudad_id || "—"}`,
-      ml,
-      uw,
+    bold();
+    setFs(7);
+    text("JORNADA:", hdrX, y);
+    normal();
+    setFs(7);
+    text(
+      String(data?.nombre_jornada_estudiante || ""),
+      doc.getTextWidth("JORNADA: ") + hdrX,
       y,
     );
     y += lh;
 
-    checkPage();
-    {
-      const nacW = uw * 0.4,
-        fecW = uw * 0.32,
-        edW = uw * 0.2;
-      const fecX = ml + nacW + 3,
-        edX = ml + nacW + 3 + fecW + 3;
-      fld("Lug. Nacimiento", form.lugar_nacimiento, ml, nacW, y);
-      fld("Fecha", form.fecha_nacimiento, fecX, fecW, y);
-      fld("Edad", form.edad ? `${form.edad} años` : "", edX, edW, y);
-    }
-    y += lh;
-
-    checkPage();
-    {
-      const resW = uw * 0.6,
-        telX = ml + uw * 0.6 + 3,
-        telW = uw * 0.35;
-      fld("Residencia", form.residencia, ml, resW, y);
-      fld("Teléfono", form.telefono_estudiante, telX, telW, y);
-    }
-    y += lh;
-
-    checkPage();
-    {
-      const c1 = uw * 0.32,
-        c2 = uw * 0.18,
-        c3 = uw * 0.28,
-        c4 = uw * 0.16;
-      fld("Nombre del Padre", form.nombre_padre, ml, c1, y);
-      fld("C.C. No", form.cc_padre, ml + c1 + 2, c2, y);
-      fld("Lug. Trabajo", form.trabajo_padre, ml + c1 + c2 + 4, c3, y);
-      fld("Tel", form.tel_padre, ml + c1 + c2 + c3 + 6, c4, y);
-    }
-    y += lh;
-
-    checkPage();
-    {
-      const c1 = uw * 0.32,
-        c2 = uw * 0.18,
-        c3 = uw * 0.28,
-        c4 = uw * 0.16;
-      fld("Nombre de la Madre", form.nombre_madre, ml, c1, y);
-      fld("C.C. No", form.cc_madre, ml + c1 + 2, c2, y);
-      fld("Lug. Trabajo", form.trabajo_madre, ml + c1 + c2 + 4, c3, y);
-      fld("Tel", form.tel_madre, ml + c1 + c2 + c3 + 6, c4, y);
-    }
-    y += lh;
-
-    checkPage();
-    {
-      const c1 = uw * 0.38,
-        c2 = uw * 0.36,
-        c3 = uw * 0.18;
-      fld("Acudiente", form.nombre_acudiente, ml, c1, y);
-      fld("Dirección", form.direccion_acudiente, ml + c1 + 3, c2, y);
-      fld("Tel", form.tel_acudiente, ml + c1 + c2 + 6, c3, y);
-    }
-    y += lh;
-
-    checkPage();
-    {
-      const half = uw / 2 - 2;
-      fld("Col. de Procedencia", form.col_procedencia, ml, half, y);
-      fld("Motivo de Retiro", form.motivo_retiro, ml + half + 4, half, y);
-    }
+    bold();
+    setFs(7);
+    text("GRADO A CURSAR AÑO:", hdrX, y);
+    normal();
+    setFs(7);
+    const gradoText = [data?.nombre_grado, data?.grupo]
+      .filter(Boolean)
+      .join(" - ");
+    text(
+      gradoText || "_______________",
+      doc.getTextWidth("GRADO A CURSAR AÑO: ") + hdrX,
+      y,
+    );
     y += lh + 2;
 
-    // ── Texto legal ─────────────────────────────────────────
-    checkPage(10);
-    doc.setFontSize(7.5);
-    doc.setFont("helvetica", "italic");
-    doc.setTextColor(80, 80, 80);
-    const legalTxt = doc.splitTextToSize(
-      "Al firmar el presente documento nos comprometemos a cumplir totalmente el manual de convivencia del colegio, el cual conocemos.",
-      uw - 4,
-    );
-    doc.setDrawColor(180, 180, 180);
-    doc.setLineWidth(0.2);
-    doc.rect(ml, y - 3.5, uw, legalTxt.length * 4.5 + 4);
-    doc.text(legalTxt, ml + 2, y);
-    y += legalTxt.length * 4.5 + 6;
+    // ── Información Del Alumno ──
+    sectionTitle("Información Del Alumno");
 
-    // ── Historial de matrícula ────────────────────────────────
-    checkPage(22);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    doc.setTextColor(30, 60, 130);
-    doc.text("HISTORIAL DE MATRÍCULA", ml, y);
-    y += lh;
+    drawRow([
+      { w: uw * 0.5, label: "TIPO DE IDENTIFICACIÓN:", val: form.tipo_id },
+      { w: uw * 0.5, label: "NÚMERO DE IDENTIFICACIÓN:", val: form.numero_id },
+    ]);
 
-    // Columnas: DIA | MES | AÑO | GRADO | EDAD | PROMOVIDO | FIRMA ALUMNO | FIRMA PADRE
-    const cols = [8, 8, 10, 20, 11, 17, 48, 64]; // suma ≈ 186 ≈ uw
-    const colXs = [];
-    let cxTbl = ml;
-    cols.forEach((w) => {
-      colXs.push(cxTbl);
-      cxTbl += w;
-    });
-    const tableW = cols.reduce((a, b) => a + b, 0);
-    const headH1 = 5,
-      headH2 = 5,
-      rowH = 7;
-
-    // Helper: dibuja celda con relleno y borde, luego texto centrado
-    const hdrCell = (x, cellY, w, h, text, isSubRow = false) => {
-      // Fila 1 del encabezado: azul sólido. Fila 2 (sub-encabezado): azul más claro
-      if (isSubRow) {
-        doc.setFillColor(70, 130, 180);
-      } else {
-        doc.setFillColor(41, 98, 160);
-      }
-      doc.setDrawColor(200, 200, 200);
-      doc.setLineWidth(0.3);
-      doc.rect(x, cellY, w, h, "FD");
-      doc.setTextColor(255, 255, 255);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(6.5);
-      const lines = text.split("\n");
-      const totalTextH = lines.length * 3.2;
-      const startTextY = cellY + h / 2 - totalTextH / 2 + 2.5;
-      lines.forEach((ln, li) =>
-        doc.text(ln, x + w / 2, startTextY + li * 3.2, { align: "center" }),
-      );
-    };
-
-    // Fila 1: "FECHA" (span DIA+MES+AÑO) + columnas que abarcan ambas filas
-    hdrCell(colXs[0], y, 26, headH1, "FECHA");
-
-    const spanHdrs = [
-      [3, "GRADO"],
-      [4, "EDAD"],
-      [5, "PROMO-\nVIDO"],
-      [6, "FIRMA DEL\nALUMNO"],
-      [7, "FIRMA DEL PADRE\nO ACUDIENTE"],
+    // Apellidos / Nombres (label arriba, valor abajo)
+    checkPage(rowH);
+    const nameCols = [
+      { label: "1er APELLIDO", val: form.primer_apellido },
+      { label: "2do APELLIDO", val: form.segundo_apellido },
+      { label: "1er NOMBRE", val: form.primero_nombre },
+      { label: "2do NOMBRE", val: form.segundo_nombre },
     ];
-    for (const [ci, label] of spanHdrs) {
-      hdrCell(colXs[ci], y, cols[ci], headH1 + headH2, label);
-    }
-    y += headH1;
-
-    // Fila 2: sub-encabezado DIA / MES / AÑO
-    ["DIA", "MES", "AÑO"].forEach((lbl, i) => {
-      hdrCell(colXs[i], y, cols[i], headH2, lbl, true);
+    let xNm = ml;
+    nameCols.forEach(({ label, val }) => {
+      const cw = uw / nameCols.length;
+      doc.setDrawColor(180, 180, 180);
+      doc.setLineWidth(0.3);
+      doc.rect(xNm, y, cw, rowH);
+      bold();
+      setFs(6);
+      doc.setTextColor(40, 40, 40);
+      text(label, xNm + cw / 2, y + rowH * 0.35, { align: "center" });
+      normal();
+      setFs(6.5);
+      text(val || "", xNm + cw / 2, y + rowH * 0.75, { align: "center" });
+      xNm += cw;
     });
-    y += headH2;
+    y += rowH;
 
-    // Filas de datos con separadores verticales de columna
-    doc.setFont("helvetica", "normal");
+    // Fecha Nacimiento (2 filas: header + valores)
+    checkPage(rowH * 2);
+    const f1 = uw * 0.14,
+      f2a = uw * 0.12,
+      f2b = uw * 0.12,
+      f2c = uw * 0.12;
+    const f3 = uw * 0.25,
+      f4 = uw * 0.25;
+    let xF = ml;
+
+    doc.setDrawColor(180, 180, 180);
+    doc.setLineWidth(0.3);
+    // FECHA NACIMIENTO (rowSpan=2)
+    doc.rect(xF, y, f1, rowH * 2);
+    bold();
+    setFs(6.5);
     doc.setTextColor(40, 40, 40);
-    doc.setFontSize(7);
-    for (const row of historial) {
+    text("FECHA NACIMIENTO", xF + f1 / 2, y + rowH, { align: "center" });
+    xF += f1;
+
+    // DIA header
+    doc.rect(xF, y, f2a, rowH);
+    bold();
+    setFs(6);
+    text("DIA", xF + f2a / 2, y + rowH / 2 + 1.5, { align: "center" });
+    xF += f2a;
+
+    // MES header
+    doc.rect(xF, y, f2b, rowH);
+    text("MES", xF + f2b / 2, y + rowH / 2 + 1.5, { align: "center" });
+    xF += f2b;
+
+    // AÑO header
+    doc.rect(xF, y, f2c, rowH);
+    text("AÑO", xF + f2c / 2, y + rowH / 2 + 1.5, { align: "center" });
+    xF += f2c;
+
+    // EDAD header
+    doc.rect(xF, y, f3, rowH);
+    text("EDAD", xF + f3 / 2, y + rowH / 2 + 1.5, { align: "center" });
+    xF += f3;
+
+    // GENERO header
+    doc.rect(xF, y, f4, rowH);
+    text("GENERO", xF + f4 / 2, y + rowH / 2 + 1.5, { align: "center" });
+
+    y += rowH;
+
+    // Row 2 - values
+    xF = ml + f1;
+    const diaVal = form.fecha_nacimiento
+      ? form.fecha_nacimiento.split("-")[2] || ""
+      : "";
+    const mesVal = form.fecha_nacimiento
+      ? form.fecha_nacimiento.split("-")[1] || ""
+      : "";
+    const anioVal = form.fecha_nacimiento
+      ? form.fecha_nacimiento.split("-")[0] || ""
+      : "";
+
+    // DIA value
+    doc.rect(xF, y, f2a, rowH);
+    normal();
+    setFs(6.5);
+    doc.setTextColor(40, 40, 40);
+    text(diaVal || "", xF + f2a / 2, y + rowH / 2 + 1.5, { align: "center" });
+    xF += f2a;
+
+    // MES value
+    doc.rect(xF, y, f2b, rowH);
+    text(mesVal || "", xF + f2b / 2, y + rowH / 2 + 1.5, { align: "center" });
+    xF += f2b;
+
+    // AÑO value
+    doc.rect(xF, y, f2c, rowH);
+    text(anioVal || "", xF + f2c / 2, y + rowH / 2 + 1.5, { align: "center" });
+    xF += f2c;
+
+    doc.rect(xF, y, f3, rowH);
+    text(form.edad || "", xF + f3 / 2, y + rowH / 2 + 1.5, { align: "center" });
+    xF += f3;
+
+    doc.rect(xF, y, f4, rowH);
+    text(form.genero_texto || "—", xF + f4 / 2, y + rowH / 2 + 1.5, {
+      align: "center",
+    });
+    y += rowH;
+
+    // Municipio / Departamento
+    drawRow([
+      {
+        w: uw * 0.5,
+        label: "MUNICIPIO DE NACIMIENTO",
+        val: form.municipio_nacimiento,
+      },
+      {
+        w: uw * 0.5,
+        label: "DEPARTAMENTO DE NACIMIENTO",
+        val: form.departamento_nacimiento,
+      },
+    ]);
+
+    // ── Ubicación Del Alumno ──
+    sectionTitle("Ubicación Del Alumno");
+    checkPage(rowH);
+    const ubicCols = [
+      { w: uw * 0.22, label: "DIRECCIÓN", val: form.direccion_residencia },
+      { w: uw * 0.14, label: "BARRIO", val: form.barrio },
+      { w: uw * 0.14, label: "MUNICIPIO", val: form.municipio },
+      { w: uw * 0.13, label: "TEL. FIJO", val: form.telefono_fijo },
+      { w: uw * 0.14, label: "TEL. CELULAR", val: form.telefono_celular },
+      { w: uw * 0.115, label: "ESTRATO", val: form.estrato },
+      { w: uw * 0.115, label: "SISBEN", val: form.nivel_sisben },
+    ];
+    let xUb = ml;
+    ubicCols.forEach(({ w, label, val }) => {
+      doc.setDrawColor(180, 180, 180);
+      doc.setLineWidth(0.3);
+      doc.rect(xUb, y, w, rowH);
+      bold();
+      setFs(6);
+      doc.setTextColor(40, 40, 40);
+      text(label, xUb + w / 2, y + rowH * 0.35, { align: "center" });
+      normal();
+      setFs(6.5);
+      text(val || "", xUb + w / 2, y + rowH * 0.75, { align: "center" });
+      xUb += w;
+    });
+    y += rowH;
+
+    // ── Historia Académica ──
+    sectionTitle("Historia Académica");
+    const colW = uw / 6;
+    const histHeaders = [
+      "Grado",
+      "Año",
+      "Institución",
+      "Grado",
+      "Año",
+      "Institución",
+    ];
+    checkPage(rowH);
+    let xH = ml;
+    histHeaders.forEach((h) => {
+      doc.setFillColor(41, 98, 160);
+      doc.setDrawColor(180, 180, 180);
+      doc.rect(xH, y, colW, rowH, "FD");
+      doc.setTextColor(255, 255, 255);
+      bold();
+      setFs(6.5);
+      text(h, xH + colW / 2, y + rowH / 2 + 1.5, { align: "center" });
+      xH += colW;
+    });
+    y += rowH;
+
+    for (let i = 0; i < 6; i++) {
+      const left = historia[i] || { anio: "", institucion: "" };
+      const right = historia[i + 6] || { anio: "", institucion: "" };
       checkPage(rowH);
-      // Fondo alterno blanco / gris muy claro
-      doc.setFillColor(255, 255, 255);
-      doc.setDrawColor(160, 160, 160);
-      doc.setLineWidth(0.2);
-      // Borde exterior de la fila
-      doc.rect(colXs[0], y, tableW, rowH, "FD");
-      // Separadores verticales internos
-      for (let ci = 1; ci < cols.length; ci++) {
-        doc.setDrawColor(200, 200, 200);
-        doc.line(colXs[ci], y, colXs[ci], y + rowH);
-      }
-      // Texto de cada celda
-      const textY = y + rowH / 2 + 1.5;
+      xH = ml;
       [
-        row.dia,
-        row.mes,
-        row.anio,
-        row.grado,
-        row.edad,
-        row.promovido ? "SÍ" : "",
-        row.firma_alumno,
-        row.firma_padre,
-      ].forEach((v, i) => {
-        if (v)
-          doc.text(String(v), colXs[i] + cols[i] / 2, textY, {
+        i,
+        left.anio,
+        left.institucion,
+        i + 6,
+        right.anio,
+        right.institucion,
+      ].forEach((val) => {
+        doc.setDrawColor(180, 180, 180);
+        doc.setLineWidth(0.3);
+        doc.rect(xH, y, colW, rowH);
+        normal();
+        setFs(6.5);
+        doc.setTextColor(40, 40, 40);
+        if (val !== undefined && val !== "")
+          text(String(val), xH + colW / 2, y + rowH / 2 + 1.5, {
             align: "center",
           });
+        xH += colW;
       });
       y += rowH;
     }
 
-    doc.save("tarjeta_matricula.pdf");
-  }, [form, historial, logoBase64, data]);
+    // ── Víctimas de Conflicto ──
+    sectionTitle("Víctimas de Conflicto");
+    checkPage(rowH);
+    let xV = ml;
+    cell(xV, y, uw * 0.5, rowH, "DESPLAZAMIENTO", "", true);
+    checkboxPdf(
+      xV + doc.getTextWidth("DESPLAZAMIENTO: ") + 1,
+      y + rowH / 2 + 1.5,
+      form.en_desplazamiento,
+    );
+    xV += uw * 0.5;
+    cell(xV, y, uw * 0.5, rowH, "DESVINCULADO", "", true);
+    checkboxPdf(
+      xV + doc.getTextWidth("DESVINCULADO: ") + 1,
+      y + rowH / 2 + 1.5,
+      form.desvinculado,
+    );
+    y += rowH;
 
-  /* ── Handlers ── */
-  const set = (field) => (val) =>
-    setForm((prev) => ({ ...prev, [field]: val }));
+    drawRow([
+      { w: uw * 0.5, label: "DPTO EXPULSOR", val: form.depto_expulsor },
+      {
+        w: uw * 0.5,
+        label: "MUNICIPIO EXPULSOR",
+        val: form.municipio_expulsor,
+      },
+    ]);
 
-  const addRow = () => setHistorial((prev) => [...prev, { ...EMPTY_ROW }]);
-  const removeRow = (i) =>
-    setHistorial((prev) => prev.filter((_, idx) => idx !== i));
-  const updateRow = (i, field, value) =>
-    setHistorial((prev) =>
-      prev.map((row, idx) => (idx === i ? { ...row, [field]: value } : row)),
+    checkPage(rowH);
+    const etnias = ["RAIZALES", "AFROCOLOMBIANO", "INDIGENAS", "ROM"];
+    let xE = ml;
+    doc.setDrawColor(180, 180, 180);
+    doc.setLineWidth(0.3);
+    doc.rect(xE, y, uw * 0.2, rowH);
+    bold();
+    setFs(6.5);
+    doc.setTextColor(40, 40, 40);
+    text("GRUPO ÉTNICO", xE + (uw * 0.2) / 2, y + rowH / 2 + 1.5, {
+      align: "center",
+    });
+    xE += uw * 0.2;
+    const etW = (uw * 0.8) / etnias.length;
+    etnias.forEach((g) => {
+      doc.rect(xE, y, etW, rowH);
+      normal();
+      setFs(6.5);
+      if (form.grupo_etnico === g) {
+        doc.setDrawColor(0, 0, 0);
+        doc.setLineWidth(0.6);
+        doc.circle(xE + 3, y + rowH / 2, 1.5, "S");
+        doc.circle(xE + 3, y + rowH / 2, 0.8, "F");
+        doc.setDrawColor(180, 180, 180);
+        doc.setLineWidth(0.3);
+      } else {
+        doc.setDrawColor(80, 80, 80);
+        doc.setLineWidth(0.4);
+        doc.circle(xE + 3, y + rowH / 2, 1.5, "S");
+      }
+      doc.setTextColor(40, 40, 40);
+      text(g, xE + 7, y + rowH / 2 + 1.5);
+      xE += etW;
+    });
+    y += rowH;
+
+    // ── Limitaciones / Capacidades ──
+    sectionTitle(
+      "Limitaciones o Capacidades Excepcionales (Anexar Soporte Médico – Especialista)",
     );
 
-  /* ── Estilos reutilizables ── */
-  const labelCls = "font-semibold text-xs whitespace-nowrap";
-  const cellCls = "border border-gray-400 px-1 py-0.5 text-center";
+    const drawLimCheckCell = (x, yPos, w, limKey, txt) => {
+      doc.setDrawColor(180, 180, 180);
+      doc.setLineWidth(0.3);
+      doc.rect(x, yPos, w, rowH);
+      if (txt) {
+        normal();
+        setFs(6);
+        doc.setTextColor(40, 40, 40);
+        if (limKey) checkboxPdf(x + 2, yPos + rowH / 2 + 1.5, form[limKey]);
+        doc.text(txt, x + 8, yPos + rowH / 2 + 1.5);
+      }
+    };
+
+    const col25 = uw * 0.25;
+
+    // LIMITACIONES — 3 rows with label spanning
+    checkPage(rowH * 3);
+    doc.setDrawColor(180, 180, 180);
+    doc.setLineWidth(0.3);
+    doc.rect(ml, y, col25, rowH * 3);
+    bold();
+    setFs(6.5);
+    doc.setTextColor(40, 40, 40);
+    text("LIMITACIONES", ml + col25 / 2, y + rowH * 1.5, { align: "center" });
+
+    drawLimCheckCell(
+      ml + col25,
+      y,
+      col25,
+      "limitacion_sindrome_down",
+      "Síndrome Down",
+    );
+    drawLimCheckCell(
+      ml + col25 * 2,
+      y,
+      col25,
+      "limitacion_baja_vision",
+      "Baja Visión",
+    );
+    drawLimCheckCell(
+      ml + col25 * 3,
+      y,
+      col25,
+      "limitacion_paralisis_cerebral",
+      "Parálisis Cerebral",
+    );
+    y += rowH;
+
+    drawLimCheckCell(
+      ml + col25,
+      y,
+      col25,
+      "limitacion_retraso_mental",
+      "Retraso Mental Leve",
+    );
+    drawLimCheckCell(ml + col25 * 2, y, col25, "limitacion_ceguera", "Ceguera");
+    drawLimCheckCell(
+      ml + col25 * 3,
+      y,
+      col25,
+      "limitacion_lesion_neuromuscular",
+      "Lesión Neuromuscular",
+    );
+    y += rowH;
+
+    drawLimCheckCell(ml + col25, y, col25, "limitacion_sordera", "Sordera");
+    drawLimCheckCell(ml + col25 * 2, y, col25, "limitacion_autismo", "Autismo");
+    drawLimCheckCell(
+      ml + col25 * 3,
+      y,
+      col25,
+      "limitacion_multi_impedido",
+      "Multi-Impedido",
+    );
+    y += rowH;
+
+    // CAPACIDADES EXCEPCIONALES — 2 rows with label spanning
+    checkPage(rowH * 2);
+    doc.setDrawColor(180, 180, 180);
+    doc.setLineWidth(0.3);
+    doc.rect(ml, y, col25, rowH * 2);
+    bold();
+    setFs(6);
+    doc.setTextColor(40, 40, 40);
+    text("CAPACIDADES", ml + col25 / 2, y + rowH * 0.6, { align: "center" });
+    text("EXCEPCIONALES", ml + col25 / 2, y + rowH * 1.4, { align: "center" });
+
+    drawLimCheckCell(
+      ml + col25,
+      y,
+      col25,
+      "capacidad_superdotado",
+      "Superdotado",
+    );
+    drawLimCheckCell(
+      ml + col25 * 2,
+      y,
+      col25,
+      "capacidad_tecnologico",
+      "Tecnológico",
+    );
+    drawLimCheckCell(
+      ml + col25 * 3,
+      y,
+      col25,
+      "capacidad_cientifico",
+      "Científico",
+    );
+    y += rowH;
+
+    drawLimCheckCell(
+      ml + col25,
+      y,
+      col25,
+      "capacidad_artistico_deportivo",
+      "Artístico/Deportivo",
+    );
+    drawLimCheckCell(ml + col25 * 2, y, col25, null, "");
+    // merged cell for PUNTAJE (col 3 + 4)
+    doc.setDrawColor(180, 180, 180);
+    doc.setLineWidth(0.3);
+    doc.rect(ml + col25 * 2, y, col25 * 2, rowH);
+    bold();
+    setFs(6);
+    doc.setTextColor(40, 40, 40);
+    text(
+      "PUNTAJE COEFICIENTE INTELECTUAL:",
+      ml + col25 * 2 + 2,
+      y + rowH / 2 + 1.5,
+    );
+    normal();
+    setFs(6);
+    doc.setTextColor(60, 60, 60);
+    text(
+      form.puntaje_coeficiente || "",
+      ml +
+        col25 * 2 +
+        doc.getTextWidth("PUNTAJE COEFICIENTE INTELECTUAL: ") +
+        3,
+      y + rowH / 2 + 1.5,
+    );
+    y += rowH;
+
+    // ── Padres y Acudientes ──
+    sectionTitle("Información de los Padres y Acudientes");
+
+    const drawParentRow = (label, nameVal, ccVal, telVal) => {
+      checkPage(rowH);
+      const c1 = uw * 0.18,
+        c2 = uw * 0.28,
+        c3 = uw * 0.26,
+        c4 = uw * 0.28;
+      let xP = ml;
+      doc.setDrawColor(180, 180, 180);
+      doc.setLineWidth(0.3);
+      doc.rect(xP, y, c1, rowH);
+      bold();
+      setFs(6.5);
+      doc.setTextColor(40, 40, 40);
+      text(label, xP + c1 / 2, y + rowH / 2 + 1.5, { align: "center" });
+      xP += c1;
+      doc.rect(xP, y, c2, rowH);
+      normal();
+      setFs(6);
+      doc.setTextColor(40, 40, 40);
+      text("NOMBRE:", xP + 1, y + rowH / 2 + 1.5);
+      setFs(6);
+      text(
+        nameVal || "",
+        xP + doc.getTextWidth("NOMBRE: ") + 2,
+        y + rowH / 2 + 1.5,
+      );
+      xP += c2;
+      doc.rect(xP, y, c3, rowH);
+      doc.setTextColor(40, 40, 40);
+      bold();
+      setFs(6);
+      text("N° CEDULA:", xP + 1, y + rowH / 2 + 1.5);
+      normal();
+      setFs(6);
+      text(
+        String(ccVal || ""),
+        xP + doc.getTextWidth("N° CEDULA: ") + 1,
+        y + rowH / 2 + 1.5,
+      );
+      xP += c3;
+      doc.rect(xP, y, c4, rowH);
+      bold();
+      setFs(6);
+      text("TEL. CELULAR:", xP + 1, y + rowH / 2 + 1.5);
+      normal();
+      setFs(6);
+      text(
+        String(telVal || ""),
+        xP + doc.getTextWidth("TEL. CELULAR: ") + 1,
+        y + rowH / 2 + 1.5,
+      );
+      y += rowH;
+    };
+
+    drawParentRow("PADRE", form.nombre_padre, form.cc_padre, form.tel_padre);
+    drawParentRow("MADRE", form.nombre_madre, form.cc_madre, form.tel_madre);
+    drawParentRow(
+      "ACUDIENTE",
+      form.nombre_acudiente,
+      form.cc_acudiente,
+      form.tel_acudiente,
+    );
+
+    // ── Salud ──
+    sectionTitle("Información de Salud");
+    checkPage(rowH * 2);
+    doc.setDrawColor(180, 180, 180);
+    doc.setLineWidth(0.3);
+    doc.rect(ml, y, uw, rowH * 2);
+    bold();
+    setFs(6.5);
+    doc.setTextColor(40, 40, 40);
+    text(
+      "Problemáticas de Salud presentadas por el estudiante (Anexar soporte médico):",
+      ml + 1,
+      y + rowH / 2 + 1.5,
+    );
+    normal();
+    doc.setTextColor(100, 100, 100);
+    text(form.problematicas_salud || "", ml + 1, y + rowH + 3);
+    y += rowH * 2;
+
+    drawRow([
+      { w: uw * 0.5, label: "EPS", val: form.eps },
+      { w: uw * 0.5, label: "GRUPO SANGUÍNEO", val: form.grupo_sanguineo },
+    ]);
+    drawRow([
+      { w: uw * 0.5, label: "IPS", val: form.ips },
+      { w: uw * 0.5, label: "RH", val: form.rh },
+    ]);
+
+    // ── Retiro ──
+    sectionTitle("Retiro del estudiante");
+    checkPage(rowH * 2);
+    doc.setDrawColor(180, 180, 180);
+    doc.setLineWidth(0.3);
+    doc.rect(ml, y, uw, rowH * 2);
+    bold();
+    setFs(6.5);
+    doc.setTextColor(40, 40, 40);
+    text("Motivo o Causa del retiro:", ml + 1, y + rowH / 2 + 1.5);
+    normal();
+    doc.setTextColor(100, 100, 100);
+    text(form.motivo_retiro || "", ml + 1, y + rowH + 3);
+    y += rowH * 2;
+
+    drawRow([{ w: uw, label: "FECHA DEL RETIRO", val: form.fecha_retiro }]);
+
+    // ── Aceptación ──
+    checkPage(lh * 3 + 10);
+    y += 2;
+    doc.setDrawColor(41, 98, 160);
+    doc.setLineWidth(0.5);
+    doc.rect(ml, y, uw, lh * 2 + 4);
+    bold();
+    setFs(7);
+    doc.setTextColor(30, 60, 130);
+    text(
+      "ACEPTAMOS CUMPLIR CON EL PROYECTO EDUCATIVO INSTITUCIONAL (PEI) Y EL MANUAL DE CONVIVENCIA Y DEMAS DISPOSICIONES",
+      ml + uw / 2,
+      y + lh / 2 + 2,
+      { align: "center" },
+    );
+    y += lh * 2 + 6;
+
+    // ── Firmas ──
+    checkPage(lh * 3 + 10);
+    const sigW = uw / 2 - 5;
+    doc.setDrawColor(180, 180, 180);
+    doc.setLineWidth(0.3);
+    doc.line(ml, y, ml + sigW, y);
+    doc.line(ml + sigW + 10, y, ml + sigW * 2 + 10, y);
+    bold();
+    setFs(6);
+    doc.setTextColor(80, 80, 80);
+    text("Firma del Alumno", ml + sigW / 2, y + 4, { align: "center" });
+    text("Firma del Padre o Acudiente", ml + sigW + 10 + sigW / 2, y + 4, {
+      align: "center",
+    });
+    y += lh + 4;
+    doc.line(ml, y, ml + sigW, y);
+    doc.line(ml + sigW + 10, y, ml + sigW * 2 + 10, y);
+    text("Firma del Rector(a)", ml + sigW / 2, y + 4, { align: "center" });
+    text("Firma de la Secretaria", ml + sigW + 10 + sigW / 2, y + 4, {
+      align: "center",
+    });
+
+    doc.save("hoja_matricula_2026.pdf");
+  }, [form, historia, logoBase64, fotoBase64, data]);
+
+  const set = (field) => (val) =>
+    setForm((prev) => ({ ...prev, [field]: val }));
+  const setHistRow = (i, field, val) =>
+    setHistoria((prev) =>
+      prev.map((r, idx) => (idx === i ? { ...r, [field]: val } : r)),
+    );
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Tarjeta Acumulativa de Matrícula"
-      size="5xl"
+      title="HOJA DE MATRICULA - AÑO LECTIVO 2026"
+      size="6xl"
     >
       {loading ? (
         <div className="flex justify-center p-10">
           <Loader />
         </div>
       ) : (
-        <div className="flex flex-col gap-3 text-sm text-gray-800">
-          {/* ── Fila EPS / RH ── */}
-          <div className="flex justify-end gap-6">
-            <div className="flex items-center gap-2">
-              <span className={labelCls}>EPS:</span>
-              <Field
-                value={form.eps}
-                onChange={set("eps")}
-                placeholder="Ej: Sura"
-                className="w-32"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className={labelCls}>RH:</span>
-              <Field
-                value={form.rh}
-                onChange={set("rh")}
-                placeholder="Ej: O+"
-                className="w-16"
-              />
-            </div>
-          </div>
+        <div className="flex flex-col gap-2 text-xs text-gray-800 overflow-x-auto">
+          {/* ============= HEADER ============= */}
+          <table className="w-full border-collapse border border-gray-400">
+            <tbody>
+              <tr>
+                <td
+                  className="border border-gray-400 w-24 h-28 text-center align-middle"
+                  rowSpan={4}
+                >
+                  {fotoBase64 ? (
+                    <img
+                      src={fotoBase64}
+                      alt="Foto"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-[9px] text-gray-400">Foto 3x4</span>
+                  )}
+                </td>
+                <td
+                  className="border border-gray-400 px-2 py-1 text-center font-bold text-sm text-blue-900"
+                  colSpan={3}
+                >
+                  HOJA DE MATRICULA AÑO LECTIVO 2026
+                </td>
+                <td
+                  className="border border-gray-400 w-24 h-24 text-center align-middle"
+                  rowSpan={4}
+                >
+                  {imgSchool ? (
+                    <img
+                      src={imgSchool}
+                      alt="School"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-[9px] text-gray-400">School</span>
+                  )}
+                </td>
+              </tr>
+              <tr>
+                <td
+                  className="border border-gray-400 px-2 py-1 text-center font-bold text-blue-900 text-xs"
+                  colSpan={3}
+                >
+                  {data?.nombre_sede ||
+                    data?.nombre_institucion ||
+                    data?.name_school ||
+                    "INSTITUCIÓN EDUCATIVA"}
+                </td>
+              </tr>
+              <tr>
+                <td
+                  className="border border-gray-400 px-2 py-1 text-xs"
+                  colSpan={2}
+                >
+                  <span className="font-bold">DANE:</span>{" "}
+                  {data?.cod_dane || "_______________"}
+                </td>
+                <td className="border border-gray-400 px-2 py-1 text-xs">
+                  <span className="font-bold">JORNADA:</span>
+                  <span className="ml-2 text-xs">
+                    {data?.nombre_jornada_estudiante || ""}
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td
+                  className="border border-gray-400 px-2 py-1 text-xs"
+                  colSpan={3}
+                >
+                  <span className="font-bold">GRADO A CURSAR AÑO:</span>
+                  <span className="ml-2 text-xs">
+                    {[data?.nombre_grado, data?.grupo]
+                      .filter(Boolean)
+                      .join(" - ")}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
 
-          {/* ── CÓDIGO DE MATRÍCULA ── */}
-          <div className="flex items-center gap-2 justify-end">
-            <span className={`${labelCls} text-xs`}>
-              TARJETA ACUMULATIVA DE MATRÍCULA CÓDIGO:
-            </span>
-            <Field
-              value={form.codigo_matricula}
-              onChange={set("codigo_matricula")}
-              placeholder="Código"
-              className="w-28"
-            />
-          </div>
+          {/* ============= INFORMACIÓN DEL ALUMNO ============= */}
+          <table className="w-full border-collapse border border-gray-400">
+            <tbody>
+              <tr>
+                <td
+                  className="bg-blue-800 text-white font-bold px-2 py-0.5 text-xs"
+                  colSpan={100}
+                >
+                  Información Del Alumno
+                </td>
+              </tr>
+              <tr>
+                <td
+                  className="border border-gray-400 px-1 py-0.5 text-xs"
+                  colSpan={2}
+                >
+                  <span className="font-bold">TIPO DE IDENTIFICACIÓN:</span>
+                  <span className="ml-1 text-xs">{form.tipo_id}</span>
+                </td>
+                <td
+                  className="border border-gray-400 px-1 py-0.5 text-xs"
+                  colSpan={2}
+                >
+                  <span className="font-bold">NÚMERO DE IDENTIFICACIÓN:</span>
+                  <span className="ml-1 text-xs">{form.numero_id}</span>
+                </td>
+              </tr>
+              <tr>
+                <td className="border border-gray-400 px-1 py-0.5 text-xs text-center w-1/4">
+                  <div className="font-bold">1er APELLIDO</div>
+                  <div className="mt-0.5 text-xs">{form.primer_apellido}</div>
+                </td>
+                <td className="border border-gray-400 px-1 py-0.5 text-xs text-center w-1/4">
+                  <div className="font-bold">2do APELLIDO</div>
+                  <div className="mt-0.5 text-xs">{form.segundo_apellido}</div>
+                </td>
+                <td className="border border-gray-400 px-1 py-0.5 text-xs text-center w-1/4">
+                  <div className="font-bold">1er NOMBRE</div>
+                  <div className="mt-0.5 text-xs">{form.primero_nombre}</div>
+                </td>
+                <td className="border border-gray-400 px-1 py-0.5 text-xs text-center w-1/4">
+                  <div className="font-bold">2do NOMBRE</div>
+                  <div className="mt-0.5 text-xs">{form.segundo_nombre}</div>
+                </td>
+              </tr>
+              <tr>
+                <td
+                  className="border border-gray-400 px-1 py-0.5 text-center text-xs font-bold align-middle"
+                  rowSpan={2}
+                >
+                  FECHA NACIMIENTO
+                </td>
+                <td className="border border-gray-400 px-0 py-0.5 text-center text-xs">
+                  <div className="flex items-stretch">
+                    <div className="flex-1 py-0.5 border-r border-gray-300">
+                      <span className="font-semibold text-[9px]">DIA</span>
+                    </div>
+                    <div className="flex-1 py-0.5 border-r border-gray-300">
+                      <span className="font-semibold text-[9px]">MES</span>
+                    </div>
+                    <div className="flex-1 py-0.5">
+                      <span className="font-semibold text-[9px]">AÑO</span>
+                    </div>
+                  </div>
+                </td>
+                <td className="border border-gray-400 px-1 py-0.5 text-center text-xs">
+                  <div className="font-semibold text-[9px]">EDAD</div>
+                </td>
+                <td className="border border-gray-400 px-1 py-0.5 text-center text-xs">
+                  <div className="font-semibold text-[9px]">GENERO</div>
+                </td>
+              </tr>
+              <tr>
+                <td className="border border-gray-400 px-0 py-0.5 text-center text-xs">
+                  <div className="flex items-stretch">
+                    <div className="flex-1 border-r border-gray-300 py-0.5">
+                      {form.fecha_nacimiento
+                        ? form.fecha_nacimiento.split("-")[2] || ""
+                        : ""}
+                    </div>
+                    <div className="flex-1 border-r border-gray-300 py-0.5">
+                      {form.fecha_nacimiento
+                        ? form.fecha_nacimiento.split("-")[1] || ""
+                        : ""}
+                    </div>
+                    <div className="flex-1 py-0.5">
+                      {form.fecha_nacimiento
+                        ? form.fecha_nacimiento.split("-")[0] || ""
+                        : ""}
+                    </div>
+                  </div>
+                </td>
+                <td className="border border-gray-400 px-1 py-0.5 text-center text-xs">
+                  {form.edad}
+                </td>
+                <td className="border border-gray-400 px-1 py-0.5 text-center text-xs">
+                  <div className="text-xs">{form.genero_texto || "—"}</div>
+                </td>
+              </tr>
+              <tr>
+                <td
+                  className="border border-gray-400 px-1 py-0.5 text-xs"
+                  colSpan={2}
+                >
+                  <div className="font-semibold">MUNICIPIO DE NACIMIENTO</div>
+                  <input
+                    type="text"
+                    value={form.municipio_nacimiento}
+                    onChange={(e) =>
+                      set("municipio_nacimiento")(e.target.value)
+                    }
+                    placeholder="Municipio"
+                    className="w-full bg-transparent focus:outline-none border-b border-gray-400 text-xs"
+                  />
+                </td>
+                <td
+                  className="border border-gray-400 px-1 py-0.5 text-xs"
+                  colSpan={2}
+                >
+                  <div className="font-semibold">
+                    DEPARTAMENTO DE NACIMIENTO
+                  </div>
+                  <input
+                    type="text"
+                    value={form.departamento_nacimiento}
+                    onChange={(e) =>
+                      set("departamento_nacimiento")(e.target.value)
+                    }
+                    placeholder="Departamento"
+                    className="w-full bg-transparent focus:outline-none border-b border-gray-400 text-xs"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
 
-          {/* ── Apellido y Nombre ── */}
-          <div className="flex items-center gap-2 border-b border-gray-300 pb-1">
-            <span className={labelCls}>Apellido y Nombre:</span>
-            <Field
-              value={form.apellido_nombre}
-              onChange={set("apellido_nombre")}
-              placeholder="Apellidos y nombres"
-              className="flex-1"
-            />
-          </div>
+          {/* ============= UBICACIÓN DEL ALUMNO ============= */}
+          <table className="w-full border-collapse border border-gray-400">
+            <tbody>
+              <tr>
+                <td
+                  className="bg-blue-800 text-white font-bold px-2 py-0.5 text-xs"
+                  colSpan={100}
+                >
+                  Ubicación Del Alumno
+                </td>
+              </tr>
+              <tr>
+                <td className="border border-gray-400 px-1 py-0.5 text-xs">
+                  <span className="font-bold">DIRECCIÓN:</span>
+                  <Field
+                    value={form.direccion_residencia}
+                    onChange={set("direccion_residencia")}
+                    placeholder="Dirección"
+                    className="w-full"
+                  />
+                </td>
+                <td className="border border-gray-400 px-1 py-0.5 text-xs">
+                  <span className="font-bold">BARRIO:</span>
+                  <Field
+                    value={form.barrio}
+                    onChange={set("barrio")}
+                    placeholder="Barrio"
+                    className="w-full"
+                  />
+                </td>
+                <td className="border border-gray-400 px-1 py-0.5 text-xs">
+                  <span className="font-bold">MUNICIPIO:</span>
+                  <Field
+                    value={form.municipio}
+                    onChange={set("municipio")}
+                    placeholder="Municipio"
+                    className="w-full"
+                  />
+                </td>
+                <td className="border border-gray-400 px-1 py-0.5 text-xs">
+                  <span className="font-bold">TEL. FIJO:</span>
+                  <Field
+                    value={form.telefono_fijo}
+                    onChange={set("telefono_fijo")}
+                    placeholder="Fijo"
+                    className="w-full"
+                  />
+                </td>
+                <td className="border border-gray-400 px-1 py-0.5 text-xs">
+                  <span className="font-bold">TEL. CELULAR:</span>
+                  <Field
+                    value={form.telefono_celular}
+                    onChange={set("telefono_celular")}
+                    placeholder="Celular"
+                    className="w-full"
+                  />
+                </td>
+                <td className="border border-gray-400 px-1 py-0.5 text-xs">
+                  <span className="font-bold">ESTRATO:</span>
+                  <Field
+                    value={form.estrato}
+                    onChange={set("estrato")}
+                    placeholder="Estrato"
+                    className="w-full"
+                  />
+                </td>
+                <td className="border border-gray-400 px-1 py-0.5 text-xs">
+                  <span className="font-bold">SISBEN:</span>
+                  <Field
+                    value={form.nivel_sisben}
+                    onChange={set("nivel_sisben")}
+                    placeholder="Nivel"
+                    className="w-full"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
 
-          {/* ── Identificación ── */}
-          <div className="flex flex-wrap items-center gap-3 border-b border-gray-300 pb-1">
-            <span className={labelCls}>Identificación:</span>
-            <select
-              value={form.tipo_id}
-              onChange={(e) => set("tipo_id")(e.target.value)}
-              className="border border-gray-400 rounded px-1 py-0.5 bg-surface text-xs"
-            >
-              <option value="TI">TI</option>
-              <option value="CC">CC</option>
-              <option value="RC">RC</option>
-              <option value="CE">CE</option>
-            </select>
-            <span className={labelCls}>No.</span>
-            <Field
-              value={form.numero_id}
-              onChange={set("numero_id")}
-              placeholder="Número"
-              className="w-36"
-            />
-            <span className={labelCls}>de:</span>
-            <Field
-              value={form.ciudad_id}
-              onChange={set("ciudad_id")}
-              placeholder="Ciudad expedición"
-              className="w-40"
-            />
-          </div>
-
-          {/* ── Lugar de Nacimiento / Fecha / Edad ── */}
-          <div className="flex flex-wrap items-center gap-3 border-b border-gray-300 pb-1">
-            <span className={labelCls}>Lugar de Nacimiento:</span>
-            <Field
-              value={form.lugar_nacimiento}
-              onChange={set("lugar_nacimiento")}
-              placeholder="Ciudad"
-              className="w-36"
-            />
-            <span className={labelCls}>Fecha:</span>
-            <Field
-              value={form.fecha_nacimiento}
-              onChange={set("fecha_nacimiento")}
-              placeholder="AAAA-MM-DD"
-              type="date"
-              className="w-36"
-            />
-            <span className={labelCls}>Edad:</span>
-            <Field
-              value={form.edad}
-              onChange={set("edad")}
-              placeholder="Años"
-              className="w-12"
-            />
-          </div>
-
-          {/* ── Residencia / Teléfono ── */}
-          <div className="flex flex-wrap items-center gap-3 border-b border-gray-300 pb-1">
-            <span className={labelCls}>Residencia:</span>
-            <Field
-              value={form.residencia}
-              onChange={set("residencia")}
-              placeholder="Dirección"
-              className="flex-1 min-w-[200px]"
-            />
-            <span className={labelCls}>Teléfono:</span>
-            <Field
-              value={form.telefono_estudiante}
-              onChange={set("telefono_estudiante")}
-              placeholder="Teléfono"
-              className="w-36"
-            />
-          </div>
-
-          {/* ── Padre ── */}
-          <div className="flex flex-wrap items-center gap-3 border-b border-gray-300 pb-1">
-            <span className={labelCls}>Nombre del Padre:</span>
-            <Field
-              value={form.nombre_padre}
-              onChange={set("nombre_padre")}
-              placeholder="Nombre completo"
-              className="flex-1 min-w-40"
-            />
-            <span className={labelCls}>C.C. No.</span>
-            <Field
-              value={form.cc_padre}
-              onChange={set("cc_padre")}
-              placeholder="Cédula"
-              className="w-28"
-            />
-            <span className={labelCls}>Lugar de Trabajo:</span>
-            <Field
-              value={form.trabajo_padre}
-              onChange={set("trabajo_padre")}
-              placeholder="Empresa"
-              className="w-28"
-            />
-            <span className={labelCls}>Tel.:</span>
-            <Field
-              value={form.tel_padre}
-              onChange={set("tel_padre")}
-              placeholder="Teléfono"
-              className="w-28"
-            />
-          </div>
-
-          {/* ── Madre ── */}
-          <div className="flex flex-wrap items-center gap-3 border-b border-gray-300 pb-1">
-            <span className={labelCls}>Nombre de la Madre:</span>
-            <Field
-              value={form.nombre_madre}
-              onChange={set("nombre_madre")}
-              placeholder="Nombre completo"
-              className="flex-1 min-w-40"
-            />
-            <span className={labelCls}>C.C. No.</span>
-            <Field
-              value={form.cc_madre}
-              onChange={set("cc_madre")}
-              placeholder="Cédula"
-              className="w-28"
-            />
-            <span className={labelCls}>Lugar de Trabajo:</span>
-            <Field
-              value={form.trabajo_madre}
-              onChange={set("trabajo_madre")}
-              placeholder="Empresa"
-              className="w-28"
-            />
-            <span className={labelCls}>Tel.:</span>
-            <Field
-              value={form.tel_madre}
-              onChange={set("tel_madre")}
-              placeholder="Teléfono"
-              className="w-28"
-            />
-          </div>
-
-          {/* ── Acudiente ── */}
-          <div className="flex flex-wrap items-center gap-3 border-b border-gray-300 pb-1">
-            <span className={labelCls}>Acudiente:</span>
-            <Field
-              value={form.nombre_acudiente}
-              onChange={set("nombre_acudiente")}
-              placeholder="Nombre del acudiente"
-              className="flex-1 min-w-40"
-            />
-            <span className={labelCls}>Dirección:</span>
-            <Field
-              value={form.direccion_acudiente}
-              onChange={set("direccion_acudiente")}
-              placeholder="Dirección"
-              className="w-40"
-            />
-            <span className={labelCls}>Tel.:</span>
-            <Field
-              value={form.tel_acudiente}
-              onChange={set("tel_acudiente")}
-              placeholder="Teléfono"
-              className="w-28"
-            />
-          </div>
-
-          {/* ── Col. de Procedencia / Motivo de Retiro ── */}
-          <div className="flex flex-wrap items-center gap-3 border-b border-gray-300 pb-1">
-            <span className={labelCls}>Col. de Procedencia:</span>
-            <Field
-              value={form.col_procedencia}
-              onChange={set("col_procedencia")}
-              placeholder="Colegio anterior"
-              className="flex-1 min-w-40"
-            />
-            <span className={labelCls}>Motivo de Retiro:</span>
-            <Field
-              value={form.motivo_retiro}
-              onChange={set("motivo_retiro")}
-              placeholder="Motivo"
-              className="flex-1 min-w-40"
-            />
-          </div>
-
-          {/* ── Texto legal ── */}
-          <p className="text-xs text-gray-500 italic border border-gray-200 rounded p-2">
-            Al firmar el presente documento nos comprometemos a cumplir
-            totalmente el manual de convivencia del colegio, el cual conocemos.
-          </p>
-
-          {/* ── Tabla historial ── */}
-          <div className="mt-2">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold text-sm">Historial de matrícula</h3>
-              <SimpleButton
-                onClick={addRow}
-                msj="Agregar fila"
-                icon="Plus"
-                bg="bg-primary"
-                text="text-surface"
-                className="text-xs px-2 py-1"
-              />
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse border border-gray-400 text-xs">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className={`${cellCls} font-semibold`} colSpan={3}>
-                      FECHA
-                    </th>
-                    <th className={`${cellCls} font-semibold`} rowSpan={2}>
-                      GRADO
-                    </th>
-                    <th className={`${cellCls} font-semibold`} rowSpan={2}>
-                      EDAD
-                    </th>
-                    <th className={`${cellCls} font-semibold`} rowSpan={2}>
-                      PROMO-
-                      <br />
-                      VIDO
-                    </th>
-                    <th className={`${cellCls} font-semibold`} rowSpan={2}>
-                      FIRMA DEL ALUMNO
-                    </th>
-                    <th className={`${cellCls} font-semibold`} rowSpan={2}>
-                      FIRMA DEL PADRE O ACUDIENTE
-                    </th>
-                    <th className={`${cellCls} font-semibold`} rowSpan={2}>
-                      &nbsp;
-                    </th>
+          {/* ============= HISTORIA ACADÉMICA ============= */}
+          <table className="w-full border-collapse border border-gray-400">
+            <tbody>
+              <tr>
+                <td
+                  className="bg-blue-800 text-white font-bold px-2 py-0.5 text-xs"
+                  colSpan={100}
+                >
+                  Historia Académica
+                </td>
+              </tr>
+              <tr className="bg-blue-700 text-white text-[9px]">
+                <th className="border border-gray-400 px-1 py-0.5 font-bold">
+                  Grado
+                </th>
+                <th className="border border-gray-400 px-1 py-0.5 font-bold">
+                  Año
+                </th>
+                <th className="border border-gray-400 px-1 py-0.5 font-bold">
+                  Institución
+                </th>
+                <th className="border border-gray-400 px-1 py-0.5 font-bold">
+                  Grado
+                </th>
+                <th className="border border-gray-400 px-1 py-0.5 font-bold">
+                  Año
+                </th>
+                <th className="border border-gray-400 px-1 py-0.5 font-bold">
+                  Institución
+                </th>
+              </tr>
+              {[0, 1, 2, 3, 4, 5].map((i) => {
+                const left = historia[i] || { anio: "", institucion: "" };
+                const right = historia[i + 6] || { anio: "", institucion: "" };
+                return (
+                  <tr key={i}>
+                    <td className="border border-gray-400 px-1 py-0.5 text-center font-bold text-xs bg-gray-50">
+                      {i}
+                    </td>
+                    <TdField
+                      value={left.anio}
+                      onChange={(v) => setHistRow(i, "anio", v)}
+                      placeholder="Año"
+                    />
+                    <TdField
+                      value={left.institucion}
+                      onChange={(v) => setHistRow(i, "institucion", v)}
+                      placeholder="Institución"
+                    />
+                    <td className="border border-gray-400 px-1 py-0.5 text-center font-bold text-xs bg-gray-50">
+                      {i + 6}
+                    </td>
+                    <TdField
+                      value={right.anio}
+                      onChange={(v) => setHistRow(i + 6, "anio", v)}
+                      placeholder="Año"
+                    />
+                    <TdField
+                      value={right.institucion}
+                      onChange={(v) => setHistRow(i + 6, "institucion", v)}
+                      placeholder="Institución"
+                    />
                   </tr>
-                  <tr className="bg-gray-100">
-                    <th className={`${cellCls} font-semibold`}>DIA</th>
-                    <th className={`${cellCls} font-semibold`}>MES</th>
-                    <th className={`${cellCls} font-semibold`}>AÑO</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {historial.map((row, i) => (
-                    <tr key={i}>
-                      <td className={cellCls}>
-                        <input
-                          type="text"
-                          value={row.dia}
-                          onChange={(e) => updateRow(i, "dia", e.target.value)}
-                          placeholder="DD"
-                          maxLength={2}
-                          className="w-8 text-center bg-transparent focus:outline-none"
-                        />
-                      </td>
-                      <td className={cellCls}>
-                        <input
-                          type="text"
-                          value={row.mes}
-                          onChange={(e) => updateRow(i, "mes", e.target.value)}
-                          placeholder="MM"
-                          maxLength={2}
-                          className="w-8 text-center bg-transparent focus:outline-none"
-                        />
-                      </td>
-                      <td className={cellCls}>
-                        <input
-                          type="text"
-                          value={row.anio}
-                          onChange={(e) => updateRow(i, "anio", e.target.value)}
-                          placeholder="AAAA"
-                          maxLength={4}
-                          className="w-12 text-center bg-transparent focus:outline-none"
-                        />
-                      </td>
-                      <td className={cellCls}>
-                        <input
-                          type="text"
-                          value={row.grado}
-                          onChange={(e) =>
-                            updateRow(i, "grado", e.target.value)
-                          }
-                          placeholder="Grado"
-                          className="w-14 text-center bg-transparent focus:outline-none"
-                        />
-                      </td>
-                      <td className={cellCls}>
-                        <input
-                          type="text"
-                          value={row.edad}
-                          onChange={(e) => updateRow(i, "edad", e.target.value)}
-                          placeholder="Edad"
-                          maxLength={3}
-                          className="w-10 text-center bg-transparent focus:outline-none"
-                        />
-                      </td>
-                      <td className={`${cellCls} text-center`}>
-                        <input
-                          type="checkbox"
-                          checked={row.promovido}
-                          onChange={(e) =>
-                            updateRow(i, "promovido", e.target.checked)
-                          }
-                          className="w-4 h-4"
-                        />
-                      </td>
-                      <td className={cellCls}>
-                        <input
-                          type="text"
-                          value={row.firma_alumno}
-                          onChange={(e) =>
-                            updateRow(i, "firma_alumno", e.target.value)
-                          }
-                          placeholder="Firma alumno"
-                          className="w-28 bg-transparent focus:outline-none"
-                        />
-                      </td>
-                      <td className={cellCls}>
-                        <input
-                          type="text"
-                          value={row.firma_padre}
-                          onChange={(e) =>
-                            updateRow(i, "firma_padre", e.target.value)
-                          }
-                          placeholder="Firma padre/acudiente"
-                          className="w-36 bg-transparent focus:outline-none"
-                        />
-                      </td>
-                      <td className={cellCls}>
-                        <button
-                          type="button"
-                          onClick={() => removeRow(i)}
-                          className="text-red-500 hover:text-red-700 font-bold px-1"
-                          title="Eliminar fila"
-                          disabled={historial.length === 1}
+                );
+              })}
+            </tbody>
+          </table>
+
+          {/* ============= VÍCTIMAS DE CONFLICTO ============= */}
+          <table className="w-full border-collapse border border-gray-400">
+            <tbody>
+              <tr>
+                <td
+                  className="bg-blue-800 text-white font-bold px-2 py-0.5 text-xs"
+                  colSpan={100}
+                >
+                  Víctimas de Conflicto
+                </td>
+              </tr>
+              <tr>
+                <TdLabel>DESPLAZAMIENTO</TdLabel>
+                <TdCheck
+                  checked={form.en_desplazamiento}
+                  onChange={set("en_desplazamiento")}
+                />
+                <TdLabel>DESVINCULADO</TdLabel>
+                <TdCheck
+                  checked={form.desvinculado}
+                  onChange={set("desvinculado")}
+                />
+              </tr>
+              <tr>
+                <TdLabel>DPTO EXPULSOR</TdLabel>
+                <TdField
+                  value={form.depto_expulsor}
+                  onChange={set("depto_expulsor")}
+                  placeholder="Departamento"
+                />
+                <TdLabel>MUNICIPIO EXPULSOR</TdLabel>
+                <TdField
+                  value={form.municipio_expulsor}
+                  onChange={set("municipio_expulsor")}
+                  placeholder="Municipio"
+                />
+              </tr>
+              <tr>
+                <TdLabel>GRUPO ÉTNICO</TdLabel>
+                <td className="border border-gray-400 px-1 py-0.5" colSpan={3}>
+                  <div className="flex gap-3 text-xs">
+                    {["RAIZALES", "AFROCOLOMBIANO", "INDIGENAS", "ROM"].map(
+                      (g) => (
+                        <label
+                          key={g}
+                          className="inline-flex items-center gap-1 cursor-pointer"
                         >
-                          ✕
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                          <input
+                            type="radio"
+                            name="grupo_etnico"
+                            value={g}
+                            checked={form.grupo_etnico === g}
+                            onChange={() => set("grupo_etnico")(g)}
+                            className="w-3 h-3"
+                          />
+                          {g}
+                        </label>
+                      ),
+                    )}
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
 
-          {/* ── Botón Descargar PDF ── */}
+          {/* ============= LIMITACIONES / CAPACIDADES ============= */}
+          <table className="w-full border-collapse border border-gray-400">
+            <tbody>
+              <tr>
+                <td
+                  className="bg-blue-800 text-white font-bold px-2 py-0.5 text-xs"
+                  colSpan={100}
+                >
+                  Limitaciones o Capacidades Excepcionales (Anexar Soporte
+                  Médico – Especialista)
+                </td>
+              </tr>
+              <tr>
+                <td
+                  className="border border-gray-400 px-1 py-0.5 font-bold text-xs bg-gray-50"
+                  rowSpan={3}
+                >
+                  LIMITACIONES
+                </td>
+                <TdCheck
+                  checked={form.limitacion_sindrome_down}
+                  onChange={set("limitacion_sindrome_down")}
+                  label="Síndrome Down"
+                />
+                <TdCheck
+                  checked={form.limitacion_baja_vision}
+                  onChange={set("limitacion_baja_vision")}
+                  label="Baja Visión"
+                />
+                <TdCheck
+                  checked={form.limitacion_paralisis_cerebral}
+                  onChange={set("limitacion_paralisis_cerebral")}
+                  label="Parálisis Cerebral"
+                />
+              </tr>
+              <tr>
+                <TdCheck
+                  checked={form.limitacion_retraso_mental}
+                  onChange={set("limitacion_retraso_mental")}
+                  label="Retraso Mental Leve"
+                />
+                <TdCheck
+                  checked={form.limitacion_ceguera}
+                  onChange={set("limitacion_ceguera")}
+                  label="Ceguera"
+                />
+                <TdCheck
+                  checked={form.limitacion_lesion_neuromuscular}
+                  onChange={set("limitacion_lesion_neuromuscular")}
+                  label="Lesión Neuromuscular"
+                />
+              </tr>
+              <tr>
+                <TdCheck
+                  checked={form.limitacion_sordera}
+                  onChange={set("limitacion_sordera")}
+                  label="Sordera"
+                />
+                <TdCheck
+                  checked={form.limitacion_autismo}
+                  onChange={set("limitacion_autismo")}
+                  label="Autismo"
+                />
+                <TdCheck
+                  checked={form.limitacion_multi_impedido}
+                  onChange={set("limitacion_multi_impedido")}
+                  label="Multi-Impedido"
+                />
+              </tr>
+              <tr>
+                <td
+                  className="border border-gray-400 px-1 py-0.5 font-bold text-xs bg-gray-50"
+                  rowSpan={2}
+                >
+                  CAPACIDADES EXCEPCIONALES
+                </td>
+                <TdCheck
+                  checked={form.capacidad_superdotado}
+                  onChange={set("capacidad_superdotado")}
+                  label="Superdotado"
+                />
+                <TdCheck
+                  checked={form.capacidad_tecnologico}
+                  onChange={set("capacidad_tecnologico")}
+                  label="Tecnológico"
+                />
+                <TdCheck
+                  checked={form.capacidad_cientifico}
+                  onChange={set("capacidad_cientifico")}
+                  label="Científico"
+                />
+              </tr>
+              <tr>
+                <TdCheck
+                  checked={form.capacidad_artistico_deportivo}
+                  onChange={set("capacidad_artistico_deportivo")}
+                  label="Artístico/Deportivo"
+                />
+                <td className="border border-gray-400 px-1 py-0.5" colSpan={2}>
+                  <span className="font-bold text-xs">
+                    PUNTAJE COEFICIENTE INTELECTUAL:
+                  </span>
+                  <Field
+                    value={form.puntaje_coeficiente}
+                    onChange={set("puntaje_coeficiente")}
+                    placeholder="Puntaje"
+                    className="w-16 ml-1"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          {/* ============= PADRES Y ACUDIENTES ============= */}
+          <table className="w-full border-collapse border border-gray-400">
+            <tbody>
+              <tr>
+                <td
+                  className="bg-blue-800 text-white font-bold px-2 py-0.5 text-xs"
+                  colSpan={100}
+                >
+                  Información de los Padres y Acudientes
+                </td>
+              </tr>
+              <tr>
+                <TdLabel>PADRE</TdLabel>
+                <TdField
+                  value={form.nombre_padre}
+                  onChange={set("nombre_padre")}
+                  placeholder="Nombre"
+                />
+                <td
+                  className="border border-gray-400 px-1 py-0.5 text-xs"
+                  colSpan={2}
+                >
+                  <span className="font-bold">N° CEDULA:</span>
+                  <Field
+                    value={form.cc_padre}
+                    onChange={set("cc_padre")}
+                    placeholder="Cédula"
+                    className="w-20 ml-1"
+                  />
+                  <span className="font-bold ml-2">TEL. CELULAR:</span>
+                  <Field
+                    value={form.tel_padre}
+                    onChange={set("tel_padre")}
+                    placeholder="Teléfono"
+                    className="w-20 ml-1"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <TdLabel>MADRE</TdLabel>
+                <TdField
+                  value={form.nombre_madre}
+                  onChange={set("nombre_madre")}
+                  placeholder="Nombre"
+                />
+                <td
+                  className="border border-gray-400 px-1 py-0.5 text-xs"
+                  colSpan={2}
+                >
+                  <span className="font-bold">N° CEDULA:</span>
+                  <Field
+                    value={form.cc_madre}
+                    onChange={set("cc_madre")}
+                    placeholder="Cédula"
+                    className="w-20 ml-1"
+                  />
+                  <span className="font-bold ml-2">TEL. CELULAR:</span>
+                  <Field
+                    value={form.tel_madre}
+                    onChange={set("tel_madre")}
+                    placeholder="Teléfono"
+                    className="w-20 ml-1"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <TdLabel>ACUDIENTE</TdLabel>
+                <TdField
+                  value={form.nombre_acudiente}
+                  onChange={set("nombre_acudiente")}
+                  placeholder="Nombre"
+                />
+                <td
+                  className="border border-gray-400 px-1 py-0.5 text-xs"
+                  colSpan={2}
+                >
+                  <span className="font-bold">N° CEDULA:</span>
+                  <Field
+                    value={form.cc_acudiente}
+                    onChange={set("cc_acudiente")}
+                    placeholder="Cédula"
+                    className="w-20 ml-1"
+                  />
+                  <span className="font-bold ml-2">TEL. CELULAR:</span>
+                  <Field
+                    value={form.tel_acudiente}
+                    onChange={set("tel_acudiente")}
+                    placeholder="Teléfono"
+                    className="w-20 ml-1"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          {/* ============= SALUD ============= */}
+          <table className="w-full border-collapse border border-gray-400">
+            <tbody>
+              <tr>
+                <td
+                  className="bg-blue-800 text-white font-bold px-2 py-0.5 text-xs"
+                  colSpan={100}
+                >
+                  Información de Salud
+                </td>
+              </tr>
+              <tr>
+                <td
+                  className="border border-gray-400 px-2 py-1 text-xs"
+                  colSpan={4}
+                >
+                  <span className="font-bold">
+                    Problemáticas de Salud presentadas por el estudiante (Anexar
+                    soporte médico):
+                  </span>
+                  <textarea
+                    value={form.problematicas_salud}
+                    onChange={(e) => set("problematicas_salud")(e.target.value)}
+                    placeholder="Describa las problemáticas de salud..."
+                    className="w-full mt-1 border border-gray-300 rounded p-1 text-xs bg-transparent focus:outline-none focus:border-primary"
+                    rows={2}
+                  />
+                </td>
+              </tr>
+              <tr>
+                <TdLabel>EPS</TdLabel>
+                <TdField
+                  value={form.eps}
+                  onChange={set("eps")}
+                  placeholder="EPS"
+                />
+                <TdLabel>GRUPO SANGUÍNEO</TdLabel>
+                <TdField
+                  value={form.grupo_sanguineo}
+                  onChange={set("grupo_sanguineo")}
+                  placeholder="Grupo"
+                />
+              </tr>
+              <tr>
+                <TdLabel>IPS</TdLabel>
+                <TdField
+                  value={form.ips}
+                  onChange={set("ips")}
+                  placeholder="IPS"
+                />
+                <TdLabel>RH</TdLabel>
+                <TdField
+                  value={form.rh}
+                  onChange={set("rh")}
+                  placeholder="RH"
+                />
+              </tr>
+            </tbody>
+          </table>
+
+          {/* ============= RETIRO ============= */}
+          <table className="w-full border-collapse border border-gray-400">
+            <tbody>
+              <tr>
+                <td
+                  className="bg-blue-800 text-white font-bold px-2 py-0.5 text-xs"
+                  colSpan={100}
+                >
+                  Retiro del estudiante
+                </td>
+              </tr>
+              <tr>
+                <td
+                  className="border border-gray-400 px-2 py-1 text-xs"
+                  colSpan={2}
+                >
+                  <span className="font-bold">
+                    Motivo o Causa del retiro del estudiante:
+                  </span>
+                  <textarea
+                    value={form.motivo_retiro}
+                    onChange={(e) => set("motivo_retiro")(e.target.value)}
+                    placeholder="Describa el motivo del retiro..."
+                    className="w-full mt-1 border border-gray-300 rounded p-1 text-xs bg-transparent focus:outline-none focus:border-primary"
+                    rows={2}
+                  />
+                </td>
+              </tr>
+              <tr>
+                <TdLabel>FECHA DEL RETIRO</TdLabel>
+                <TdField
+                  value={form.fecha_retiro}
+                  onChange={set("fecha_retiro")}
+                  placeholder="AAAA-MM-DD"
+                  type="date"
+                />
+              </tr>
+            </tbody>
+          </table>
+
+          {/* ============= ACEPTACIÓN ============= */}
+          <table className="w-full border-collapse border border-gray-400">
+            <tbody>
+              <tr>
+                <td className="border border-gray-400 px-2 py-2 text-center font-bold text-xs text-blue-900">
+                  ACEPTAMOS CUMPLIR CON EL PROYECTO EDUCATIVO INSTITUCIONAL
+                  (PEI) Y EL MANUAL DE CONVIVENCIA Y DEMAS DISPOSICIONES
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          {/* ============= FIRMAS ============= */}
+          <table className="w-full border-collapse">
+            <tbody>
+              <tr>
+                <td className="w-1/2 px-2 py-3 text-center border-b border-gray-500">
+                  <span className="text-[10px] text-gray-500">
+                    Firma del Alumno
+                  </span>
+                </td>
+                <td className="w-1/2 px-2 py-3 text-center border-b border-gray-500">
+                  <span className="text-[10px] text-gray-500">
+                    Firma del Padre o Acudiente
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td className="w-1/2 px-2 py-3 text-center border-b border-gray-500">
+                  <span className="text-[10px] text-gray-500">
+                    Firma del Rector(a)
+                  </span>
+                </td>
+                <td className="w-1/2 px-2 py-3 text-center border-b border-gray-500">
+                  <span className="text-[10px] text-gray-500">
+                    Firma de la Secretaria
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          {/* ============= BOTÓN PDF ============= */}
           <div className="flex justify-end pt-3 border-t border-gray-200 mt-2">
             <SimpleButton
               type="button"

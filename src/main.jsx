@@ -20,6 +20,7 @@ try {
   console.warn("No fue posible actualizar el favicon:", err);
 }
 import { BrowserRouter } from "react-router-dom";
+import { GoogleReCaptchaProvider } from "react-google-recaptcha-v3";
 import { SchoolProvider } from "./lib/context/SchoolContext.jsx";
 import { TeacherProvider } from "./lib/context/TeacherContext.jsx";
 import { AuthProvider } from "./lib/context/AuthContext.jsx";
@@ -31,6 +32,7 @@ import { AuditProvider } from "./lib/context/AuditContext.jsx";
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
+      <GoogleReCaptchaProvider reCaptchaKey={import.meta.env.VITE_CAPTCHA_PUBLIC_KEY}>
       <NotificationProvider>
         <AuthProvider>
           <DataProvider>
@@ -46,6 +48,7 @@ createRoot(document.getElementById("root")).render(
           </DataProvider>
         </AuthProvider>
       </NotificationProvider>
+      </GoogleReCaptchaProvider>
     </BrowserRouter>
   </StrictMode>,
 );

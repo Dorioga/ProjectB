@@ -228,7 +228,7 @@ const useBoletinProcessed = (data, periodId) => {
     for (const [key, subject] of m) {
       const info = areaInfoMap.get(key);
       const areaKey = info?.fk_area ?? "sin-area";
-      const areaName = info?.nombre_area ?? "Sin área";
+      const areaName = info?.nombre_area ?? "";
       if (!areaMap.has(areaKey)) {
         areaMap.set(areaKey, {
           fk_area: info?.fk_area ?? null,
@@ -239,10 +239,14 @@ const useBoletinProcessed = (data, periodId) => {
       areaMap.get(areaKey).asignaturas.push(subject);
     }
     const areas = Array.from(areaMap.entries())
-      .sort(([aKey], [bKey]) => {
-        if (aKey === "sin-area") return 1;
-        if (bKey === "sin-area") return -1;
-        return Number(aKey) - Number(bKey);
+      .sort(([, aVal], [, bVal]) => {
+        if (aVal.fk_area == null) return 1;
+        if (bVal.fk_area == null) return -1;
+        return (aVal.nombre_area ?? "").localeCompare(
+          bVal.nombre_area ?? "",
+          "es",
+          { sensitivity: "base" },
+        );
       })
       .map(([, area]) => {
         area.asignaturas.sort((a, b) => {
@@ -407,7 +411,7 @@ function computeBoletinData(data, periodId) {
   for (const [key, subject] of asigMap) {
     const info = areaInfoMap.get(key);
     const areaKey = info?.fk_area ?? "sin-area";
-    const areaName = info?.nombre_area ?? "Sin área";
+    const areaName = info?.nombre_area ?? "";
     if (!areaMap2.has(areaKey)) {
       areaMap2.set(areaKey, {
         fk_area: info?.fk_area ?? null,
@@ -418,10 +422,14 @@ function computeBoletinData(data, periodId) {
     areaMap2.get(areaKey).asignaturas.push(subject);
   }
   const areas = Array.from(areaMap2.entries())
-    .sort(([aKey], [bKey]) => {
-      if (aKey === "sin-area") return 1;
-      if (bKey === "sin-area") return -1;
-      return Number(aKey) - Number(bKey);
+    .sort(([, aVal], [, bVal]) => {
+      if (aVal.fk_area == null) return 1;
+      if (bVal.fk_area == null) return -1;
+      return (aVal.nombre_area ?? "").localeCompare(
+        bVal.nombre_area ?? "",
+        "es",
+        { sensitivity: "base" },
+      );
     })
     .map(([, area]) => {
       area.asignaturas.sort((a, b) => {
@@ -2739,7 +2747,7 @@ const BoletinSelector = ({
                                   padding: "4px",
                                 }}
                               >
-                                {area.nombre_area.toUpperCase()}
+                                {area.nombre_area?.toUpperCase() ?? ""}
                               </td>
                             </tr>
                             {area.asignaturas.map((asig) => (
