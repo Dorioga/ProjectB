@@ -17,6 +17,28 @@ import { getCurrentTheme } from "../../utils/themeManager";
 import Loader from "../../components/atoms/Loader";
 import AlertTable from "../../components/molecules/AlertTable";
 
+const getResolvedBecaStatus = (student) => {
+  const rawStatus = (
+    student?.status_beca ??
+    student?.statusBeca ??
+    student?.estado_beca ??
+    student?.beca_status ??
+    ""
+  )
+    .toString()
+    .trim();
+
+  if (rawStatus) return rawStatus;
+
+  return (
+    student?.beca_estudiante ??
+    student?.becaEstudiante ??
+    ""
+  )
+    .toString()
+    .trim();
+};
+
 const DashHome = () => {
   const { reload } = useStudent();
   const { fetchAllStudents, fetchStudentAlerts } = useSchool();
@@ -167,15 +189,7 @@ const DashHome = () => {
   const becaStatuses = useMemo(() => {
     const set = new Set();
     (sourceStudents || []).forEach((s) => {
-      const b = (
-        s?.status_beca ??
-        s?.statusBeca ??
-        s?.estado_beca ??
-        s?.beca_status ??
-        ""
-      )
-        .toString()
-        .trim();
+      const b = getResolvedBecaStatus(s);
       if (b) set.add(b);
     });
     return Array.from(set).sort((a, b) => a.localeCompare(b));
@@ -241,13 +255,7 @@ const DashHome = () => {
 
       // Beca filter (status_beca)
       if (selectedBeca) {
-        const sb = String(
-          student.status_beca ??
-            student.statusBeca ??
-            student.estado_beca ??
-            student.beca_status ??
-            "",
-        ).trim();
+        const sb = getResolvedBecaStatus(student);
         if (!sb || sb !== String(selectedBeca).trim()) return false;
       }
 
