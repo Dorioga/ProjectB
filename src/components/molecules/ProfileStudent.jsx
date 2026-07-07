@@ -4,11 +4,13 @@ import PreviewIMG from "../atoms/PreviewIMG";
 import PeriodSelector from "../atoms/PeriodSelector";
 import SimpleButton from "../atoms/SimpleButton";
 import FileChooser from "../atoms/FileChooser";
+import Modal from "../atoms/Modal";
 import CameraModal from "./CameraModal";
 import ExcuseModal from "./ExcuseModal";
 import PDFViewerModal from "./PDFViewerModal.jsx";
 import MatriculaModal from "./MatriculaModal.jsx";
 import CarnetModal from "./CarnetModal.jsx";
+import StudentNotes from "../../pages/Student/StudentNotes";
 import {
   formatDateToDisplay,
   getIdentificationLabel,
@@ -34,7 +36,9 @@ const ProfileStudent = ({
   const isRol6 = String(rol) === "6";
   const isRol7 = String(rol) === "7";
   const isRol9 = String(rol) === "9";
+  const isRol10 = String(rol) === "10";
   const [isTourMode, setIsTourMode] = useState(false);
+  const [isOpenNotes, setIsOpenNotes] = useState(false);
 
   const startTour = useCallback(() => {
     setIsTourMode(true);
@@ -357,7 +361,7 @@ const ProfileStudent = ({
     <div className="w-full flex flex-col items-center justify-center">
       <div className="w-11/12 flex flex-col gap-4">
         <div id="tour-ps-edit" className="w-full flex justify-end">
-          <div className="flex gap-2">
+          <div className=" w-full flex gap-2">
             {!isDocente && (
               <SimpleButton
                 type="button"
@@ -379,7 +383,7 @@ const ProfileStudent = ({
                 text="text-surface"
               />
             )}
-            {(!isDocente || isRol7) && !isRol6 && (
+            {(!isDocente || isRol7) && !isRol6 && !isRol10 && (
               <SimpleButton
                 onClick={() => setIsEditing(true)}
                 msj="Editar"
@@ -387,6 +391,15 @@ const ProfileStudent = ({
                 icon="Pencil"
                 text="text-surface"
                 disabled={isEditing}
+              />
+            )}
+            {isRol10 && (
+              <SimpleButton
+                onClick={() => setIsOpenNotes(true)}
+                msj="Ver Notas"
+                bg="bg-accent"
+                icon="FileText"
+                text="text-surface"
               />
             )}
             <SimpleButton
@@ -1076,6 +1089,14 @@ const ProfileStudent = ({
         onClose={() => setIsOpenMatricula(false)}
         data={data}
       />
+      <Modal
+        isOpen={isOpenNotes}
+        onClose={() => setIsOpenNotes(false)}
+        title="Notas del Estudiante"
+        size="6xl"
+      >
+        <StudentNotes studentId={data?.id_estudiante} />
+      </Modal>
       <CarnetModal
         isOpen={isOpenCarnet}
         onClose={() => setIsOpenCarnet(false)}

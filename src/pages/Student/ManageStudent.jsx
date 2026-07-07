@@ -226,9 +226,9 @@ const ManageStudent = () => {
           <h2 className="text-2xl font-bold">Datos de Estudiantes</h2>
         </div>
         <div
-          className={`w-full grid gap-2 lg:col-span-5 xl:col-span-8 2xl:col-span-5 ${Number(rol) === 9 ? "grid-cols-5" : "grid-cols-7"}`}
+          className={`w-full grid gap-2 lg:col-span-5 xl:col-span-8 2xl:col-span-5 ${Number(rol) === 10 ? "grid-cols-1" : Number(rol) === 9 ? "grid-cols-5" : "grid-cols-7"}`}
         >
-          {Number(rol) !== 9 && (
+          {Number(rol) !== 9 && Number(rol) !== 10 && (
             <div id="tour-mst-add-btn" className="col-span-2">
               <SimpleButton
                 onClick={() => setIsAddOpen(true)}
@@ -240,7 +240,7 @@ const ManageStudent = () => {
               />
             </div>
           )}
-          {Number(rol) !== 9 && (
+          {Number(rol) !== 9 && Number(rol) !== 10 && (
             <div id="tour-mst-bulk-excel" className="col-span-2">
               <SimpleButton
                 onClick={() => setIsBulkOpen(true)}
@@ -252,7 +252,7 @@ const ManageStudent = () => {
               />
             </div>
           )}
-          {Number(rol) !== 9 && (
+          {Number(rol) !== 9 && Number(rol) !== 10 && (
             <div id="tour-mst-bulk-pdf" className="col-span-2">
               <SimpleButton
                 onClick={() => setIsBulkPdfOpen(true)}

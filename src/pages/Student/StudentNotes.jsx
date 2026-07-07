@@ -176,9 +176,11 @@ async function generateNotesPDF(grouped, studentName, nameSchool) {
   );
 }
 
-const StudentNotes = () => {
+const StudentNotes = ({ studentId }) => {
+  console.log("StudentNotes rendered with studentId:", studentId);
   const { getStudentNotesById } = useStudent();
-  const { idEstudiante, userName, nameSchool } = useAuth();
+  const { idEstudiante: authIdEstudiante, userName, nameSchool } = useAuth();
+  const idEstudiante = studentId || authIdEstudiante;
   const [pdfLoading, setPdfLoading] = useState(false);
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
