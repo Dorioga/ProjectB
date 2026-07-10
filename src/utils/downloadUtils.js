@@ -25,7 +25,8 @@ export const downloadBlob = (blob, fileName) => {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  // Retrasar la revocación para dar tiempo al navegador a iniciar la descarga
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
 };
 
 /**

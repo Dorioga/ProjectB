@@ -194,7 +194,7 @@ const ManageStudent = () => {
         />
       </div>
     );
-  }, [rol, selectedSedeFilter, selectedGradoFilter, sedes, grados]);
+  }, [rol, selectedSedeFilter, selectedGradoFilter, sedes, grados, filteredTableData, isDownloading, downloadProgress, notify]);
 
   // Abrir modal (ver o editar) y cargar datos del estudiante
   const openStudentModal = useCallback(

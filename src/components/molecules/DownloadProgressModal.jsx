@@ -109,7 +109,15 @@ const DownloadProgressModal = ({
               <ul className="text-xs space-y-1">
                 {downloadLog.map((entry, idx) => (
                   <li key={idx} className="flex gap-2">
-                    <span className="text-green-600 shrink-0">✓</span>
+                    <span
+                      className={`shrink-0 ${
+                        isDownloading
+                          ? "text-yellow-500 animate-pulse"
+                          : "text-green-600"
+                      }`}
+                    >
+                      {isDownloading ? "⏳" : "✓"}
+                    </span>
                     <span className="text-gray-700">
                       {idx + 1}. {entry.name} — {entry.status}
                     </span>

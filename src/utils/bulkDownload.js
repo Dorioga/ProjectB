@@ -153,7 +153,8 @@ export async function bulkDownloadDocuments(students, options, onProgress) {
           }
         }
 
-        const pdf = generateMatriculaPDF(data, guardianData, fotoBase64, imgSchool);
+        const mergedData = { ...student, ...data };
+        const pdf = generateMatriculaPDF(mergedData, guardianData, fotoBase64, imgSchool);
         const blob = pdf.output("blob");
         zip.file(`${folderPath}/Ficha_Matricula.pdf`, blob);
         hasAnyFile = true;
@@ -243,8 +244,16 @@ export async function bulkDownloadDocuments(students, options, onProgress) {
   });
 
   const sedeName = students[0]?.nombre_sede || "Documentos";
-  const zipBlob = await zip.generateAsync({ type: "blob" });
-  downloadBlob(zipBlob, `${sedeName}.zip`);
+  try {
+    const zipBlob = await zip.generateAsync({ type: "blob" });
+    downloadBlob(zipBlob, `${sedeName}.zip`);
+  } catch (err) {
+    errores.push({
+      estudiante: "N/A",
+      tipo: "ZIP",
+      error: "Error al generar el archivo ZIP: " + (err?.message || err),
+    });
+  }
 
   return { errores };
 }
