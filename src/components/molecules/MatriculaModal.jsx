@@ -170,7 +170,6 @@ const TdCheck = ({ checked, onChange, label }) => (
 );
 
 const MatriculaModal = ({ isOpen, onClose, data }) => {
-  console.log("MatriculaModal data:", data);
   const { imgSchool } = useContext(AuthContext);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -179,9 +178,7 @@ const MatriculaModal = ({ isOpen, onClose, data }) => {
   );
   const [logoBase64, setLogoBase64] = useState("");
   const [fotoBase64, setFotoBase64] = useState("");
-
   const prefillFromData = (d) => {
-    console.log("Prefill data:", d);
     if (!d) return;
 
     const fechaNac = d.fecha_nacimiento
@@ -247,6 +244,7 @@ const MatriculaModal = ({ isOpen, onClose, data }) => {
       genero_texto: d.genero || d.genre || "",
       direccion_residencia:
         d.direccion || d.address || prev.direccion_residencia,
+      municipio: d.nombre_municipio || prev.municipio,
       telefono_celular: d.telefono || d.telephone || prev.telefono_celular,
       nombre_padre: d.nombre_padre || "",
       cc_padre: d.cc_padre || "",

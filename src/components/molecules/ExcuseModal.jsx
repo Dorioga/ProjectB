@@ -5,28 +5,77 @@ import SimpleButton from "../atoms/SimpleButton";
 import PDFViewer from "../atoms/PDFViewer";
 import { FileText } from "lucide-react";
 import excusePDF from "../../assets/formulario.pdf";
+import { upload } from "../../services/uploadService";
+import { registerExcuse } from "../../services/studentService";
+import { useNotify } from "../../lib/hooks/useNotify";
 
 const ExcuseModal = ({
   isOpen,
   onClose,
-  onSubmit,
   mode = "load",
   file = excusePDF,
+  fk_estudiante,
+  fk_sede,
+  etapa,
+  identificacion,
 }) => {
+  const notify = useNotify();
   const [selectedFile, setSelectedFile] = useState(
     mode === "view" ? file : null,
   );
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleFileSelect = (file) => {
     setSelectedFile(file);
   };
 
-  const handleSubmit = () => {
-    if (onSubmit) {
-      onSubmit({ file: selectedFile });
+  const handleSubmit = async () => {
+    if (!selectedFile) return;
+
+    setIsUploading(true);
+    try {
+      const form = new FormData();
+      form.append("identificacion", identificacion || "");
+      form.append("excusa", selectedFile);
+      form.append("etapa", etapa?.replace(" etapa", "") || "");
+
+      const uploadRes = await upload(form, "upload/excusas");
+
+      let linkExcuse = null;
+      if (
+        uploadRes &&
+        uploadRes.status === 200 &&
+        Array.isArray(uploadRes.data)
+      ) {
+        const entry = uploadRes.data.find((e) => e.field === "excusa");
+        if (entry?.files?.[0]) {
+          const folder = entry.files[0].folder?.replace("/var/www", "") ?? "";
+          const fileName = entry.files[0].fileName ?? "";
+          linkExcuse = `https://www.nexusplataforma.com${folder}/${fileName}`;
+        }
+      }
+
+      if (!linkExcuse) {
+        notify.error("Error al subir el archivo de excusa.");
+        return;
+      }
+
+      await registerExcuse({
+        fk_estudiante,
+        fk_sede,
+        link_excuse: linkExcuse,
+        etapa,
+      });
+
+      notify.success("Excusa registrada correctamente.");
+      setSelectedFile(null);
+      onClose();
+    } catch (err) {
+      console.error("Error registrando excusa:", err);
+      notify.error("Error al registrar la excusa.");
+    } finally {
+      setIsUploading(false);
     }
-    setSelectedFile(null);
-    onClose();
   };
 
   const handleDownload = () => {
@@ -195,9 +244,9 @@ const ExcuseModal = ({
           <>
             <div className="form-group">
               <FileChooser
-                onFileSelect={handleFileSelect}
+                onChange={handleFileSelect}
                 accept=".pdf,.doc,.docx,.jpg,.png,.jpeg"
-                selectedFile={selectedFile}
+                value={selectedFile}
               />
 
               {selectedFile && (
@@ -217,14 +266,15 @@ const ExcuseModal = ({
                 bg="bg-secondary"
                 icon="X"
                 text="text-surface"
+                disabled={isUploading}
               />
               <SimpleButton
                 onClick={handleSubmit}
-                msj="Enviar"
+                msj={isUploading ? "Subiendo..." : "Enviar"}
                 bg="bg-accent"
                 icon="Send"
                 text="text-surface"
-                disabled={!selectedFile}
+                disabled={!selectedFile || isUploading}
               />
             </div>
           </>

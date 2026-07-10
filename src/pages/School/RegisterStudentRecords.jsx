@@ -1456,7 +1456,7 @@ const RegisterStudentRecords = () => {
           fk_tipo_logro: Number(tipoId),
         };
         const res = await getAllLogros(payload);
-        console.log("getAllLogros response for tipoId", tipoId, res);
+
         const list = Array.isArray(res) ? res : (res?.data ?? []);
         const mapped = (Array.isArray(list) ? list : []).map((l) => ({
           id: l.id_logro ?? l.id,
@@ -2016,8 +2016,12 @@ const RegisterStudentRecords = () => {
         <CustomSelect
           value={tipoValue}
           options={tipoLogroOptionsRef.current}
-          onChange={(val) => handleTipoSelectForStudentRef.current(studentKey, val)}
-          disabled={loadingDataRef.current || loadingTipoLogroOptionsRef.current}
+          onChange={(val) =>
+            handleTipoSelectForStudentRef.current(studentKey, val)
+          }
+          disabled={
+            loadingDataRef.current || loadingTipoLogroOptionsRef.current
+          }
           loading={loadingTipoLogroOptionsRef.current}
           placeholder="-- Tipo de logro --"
           placeholderLoading="Cargando..."

@@ -11,7 +11,17 @@ import useAuth from "../../lib/hooks/useAuth";
 import useData from "../../lib/hooks/useData";
 import useSchool from "../../lib/hooks/useSchool";
 
-const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave, initialSede, initialWorkday, initialGrade, initialAsignature, initialTipoLogro }) => {
+const ProfileLogro = ({
+  onSubmit,
+  onClose,
+  initialValues,
+  onSave,
+  initialSede,
+  initialWorkday,
+  initialGrade,
+  initialAsignature,
+  initialTipoLogro,
+}) => {
   const { idInstitution, idSede, nameSede, idDocente, token, rol } = useAuth();
   const { institutionSedes, loadInstitutionSedes } = useData();
   const {
@@ -350,19 +360,33 @@ const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave, initialSede, i
       const iv = initialValues || {};
 
       // Sede: preferir initialSede del padre, fallback a campos del objeto
-      setSedeSelected(String(initialSede ?? iv.fk_sede ?? iv.id_sede ?? iv.idSede ?? ""));
+      setSedeSelected(
+        String(initialSede ?? iv.fk_sede ?? iv.id_sede ?? iv.idSede ?? ""),
+      );
 
       // Grado: preferir initialGrade del padre
-      setGrade(String(initialGrade ?? iv.fk_grado ?? iv.id_grado ?? iv.idGrade ?? ""));
+      setGrade(
+        String(initialGrade ?? iv.fk_grado ?? iv.id_grado ?? iv.idGrade ?? ""),
+      );
 
       // Asignatura: preferir initialAsignature del padre
-      setAsignature(String(initialAsignature ?? iv.fk_asignatura ?? iv.id_asignatura ?? iv.idAsignatura ?? ""));
+      setAsignature(
+        String(
+          initialAsignature ??
+            iv.fk_asignatura ??
+            iv.id_asignatura ??
+            iv.idAsignatura ??
+            "",
+        ),
+      );
 
       // Jornada: usar initialWorkday del padre
       if (initialWorkday) setWorkdaySelected(String(initialWorkday));
 
       // Tipo logro: preferir initialTipoLogro del padre
-      setTipoLogro(String(initialTipoLogro ?? iv.fk_tipo_logro ?? iv.fkTipoLogro ?? ""));
+      setTipoLogro(
+        String(initialTipoLogro ?? iv.fk_tipo_logro ?? iv.fkTipoLogro ?? ""),
+      );
 
       // Estado del logro
       setEstadoLogro(iv.estado_logro ?? iv.estado ?? "Activo");
@@ -376,7 +400,14 @@ const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave, initialSede, i
       // ignore malformed initialValues
       console.warn("ProfileLogro - invalid initialValues:", err);
     }
-  }, [initialValues, initialSede, initialWorkday, initialGrade, initialAsignature, initialTipoLogro]);
+  }, [
+    initialValues,
+    initialSede,
+    initialWorkday,
+    initialGrade,
+    initialAsignature,
+    initialTipoLogro,
+  ]);
 
   const handleSearch = async (desc, periodId) => {
     if (!desc || !desc.trim()) {
@@ -390,11 +421,6 @@ const ProfileLogro = ({ onSubmit, onClose, initialValues, onSave, initialSede, i
         : null;
 
     if (initialValues && typeof onSave === "function") {
-      console.log(
-        "ProfileLogro - modo edición, payload a enviar:",
-        initialValues,
-      );
-
       try {
         const logroId =
           initialValues.id_logro ?? initialValues.id ?? initialValues.idLogro;

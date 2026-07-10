@@ -271,7 +271,7 @@ export function StudentProvider({ children }) {
 
   const saveConvivencia = useCallback(async (payload) => {
     const result = await studentService.saveConvivencia(payload);
-    console.log("Resultado de saveConvivencia:", result);
+
     eventBus.emit("¡Convivencia guardada correctamente!", "success");
     return result;
   }, []);

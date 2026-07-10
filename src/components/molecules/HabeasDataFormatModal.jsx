@@ -1,231 +1,325 @@
-﻿import React, { useState, useEffect } from "react";
+﻿import { useState } from "react";
+import jsPDF from "jspdf";
 import Modal from "../atoms/Modal.jsx";
-import useStudent from "../../lib/hooks/useStudent.js";
-import useData from "../../lib/hooks/useData";
-import SedeSelect from "../atoms/SedeSelect.jsx";
+import useAuth from "../../lib/hooks/useAuth";
 import SimpleButton from "../atoms/SimpleButton.jsx";
-import RegisterParentsModal from "./RegisterParentsModal.jsx";
-const HabeasDataModal = ({ isOpen, onClose, idEstudiante, mode = "view" }) => {
-  const [isLoading, setIsLoading] = useState(false);
+import { getIdentificationLabel } from "../../utils/formatUtils";
 
-  const { getStudent } = useStudent();
-  const { institutionSedes } = useData();
+const buildFullName = (data, suffix = "") => {
+  const parts = [
+    data[`primero_nombre${suffix}`] || data[`first_name${suffix}`] || "",
+    data[`segundo_nombre${suffix}`] || data[`second_name${suffix}`] || "",
+    data[`primer_apellido${suffix}`] || data[`first_lastname${suffix}`] || "",
+    data[`segundo_apellido${suffix}`] || data[`second_lastname${suffix}`] || "",
+  ];
+  return parts.filter(Boolean).join(" ");
+};
 
-  const [idStudentSelected, setIdStudentSelected] = useState(
-    idEstudiante || "",
+const HabeasDataModal = ({ isOpen, onClose, data }) => {
+  const { nameSchool } = useAuth();
+
+  const nombreEstudiante = buildFullName(data);
+  const tipoDocEstudiante = getIdentificationLabel(
+    Number(data?.fk_tipo_identificacion),
   );
-  const [sedeSelected, setSedeSelected] = useState("");
-  const [studentSelected, setStudentSelected] = useState(null);
-  const [isOpenRegisterParents, setIsOpenRegisterParents] = useState(false);
-  const [stateFormParents, setStateFormParents] = useState(false);
-  const [loadingStudent, setLoadingStudent] = useState(false);
+  const numDocEstudiante =
+    data?.numero_identificacion || data?.identification || "";
+  const gradoGrupo = [data?.nombre_grado, data?.grupo]
+    .filter(Boolean)
+    .join(" - ");
+  const nombreInstitucion =
+    nameSchool || data?.nombre_institucion || data?.nombre_sede || "";
 
-  // controla visibilidad del bloque de pregunta y la confirmación para mostrar la vista previa
-  const [showAcudienteQuestion, setShowAcudienteQuestion] = useState(false);
-  const [confirmedAcudiente, setConfirmedAcudiente] = useState(false);
+  const [nombreAcudiente, setNombreAcudiente] = useState("");
+  const [identificacionAcudiente, setIdentificacionAcudiente] = useState("");
+  const [calidadDe, setCalidadDe] = useState("");
+  const [telefonoAcudiente, setTelefonoAcudiente] = useState("");
 
-  // considera prop inicial y valor del input, evita cadenas vacías o espacios
-  const hasId = Boolean(
-    (idEstudiante || idStudentSelected || "").toString().trim(),
-  );
+  const handleDownloadPDF = () => {
+    const pdf = new jsPDF({ orientation: "p", unit: "mm", format: "letter" });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const margin = 15;
+    const contentW = pageW - margin * 2;
+    let y = 20;
 
-  const handleStudentChange = async (id = null) => {
-    const idToUse = id ?? idStudentSelected;
-    if (!idToUse) return;
+    pdf.setFontSize(14);
+    pdf.setFont("helvetica", "bold");
+    const titleLines = pdf.splitTextToSize(
+      "AUTORIZACIÓN PARA LA TOMA Y TRATAMIENTO DE DATOS BIOMÉTRICOS Y REGISTROS FOTOGRÁFICOS",
+      contentW,
+    );
+    pdf.text(titleLines, pageW / 2, y, { align: "center" });
+    y += titleLines.length * 6;
 
-    // asegurarse de tener sede seleccionada
-    const sedeId =
-      sedeSelected ||
-      (Array.isArray(institutionSedes) && institutionSedes.length
-        ? String(institutionSedes[0].id)
-        : "");
-    if (!sedeId) {
-      alert("Selecciona una sede antes de buscar.");
-      return;
-    }
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(11);
+    pdf.text(`Fecha: ${new Date().toLocaleDateString()}`, margin, (y += 6));
 
-    setLoadingStudent(true);
-    // resetear estados relacionados a la confirmación antes de nueva búsqueda
-    setConfirmedAcudiente(false);
-    setShowAcudienteQuestion(false);
-    try {
-      const payload = {
-        id_estudiante: Number(idToUse),
-        fk_sede: Number(sedeId),
-      };
+    y += 6;
+    const legalText =
+      "En cumplimiento de lo dispuesto en el artículo 288 del Código Civil Colombiano, el artículo 24 del Decreto 2820 de 1974, la Ley 1098 de 2006 (Código de la Infancia y la Adolescencia) y la Ley 1581 de 2012 sobre Protección de Datos Personales, la Secretaría de Educación Municipal de Soledad solicita la presente autorización para la toma y tratamiento de datos biométricos y registros fotográficos de los estudiantes beneficiarios de la matrícula contratada.";
+    const legalLines = pdf.splitTextToSize(legalText, contentW);
+    pdf.text(legalLines, margin, y, { align: "justify", maxWidth: contentW });
+    y += legalLines.length * 5;
 
-      const student = await getStudent(payload);
-      setStudentSelected(student);
-      setStateFormParents(true);
-      // mostrar la pregunta después de obtener el estudiante
-      setShowAcudienteQuestion(true);
-    } catch (err) {
-      setStudentSelected(null);
-      console.error("Error buscando estudiante:", err);
-    } finally {
-      setLoadingStudent(false);
-    }
+    pdf.setFont("helvetica", "bold");
+    pdf.text("DATOS DEL ESTUDIANTE", margin, y);
+    y += 2;
+    pdf.setFont("helvetica", "normal");
+    pdf.text(`Nombre completo: ${nombreEstudiante}`, margin, (y += 5));
+    pdf.text(
+      `Tipo y número de documento: ${tipoDocEstudiante} ${numDocEstudiante}`,
+      margin,
+      (y += 5),
+    );
+    pdf.text(`Institución educativa: ${nombreInstitucion}`, margin, (y += 5));
+    pdf.text(`Grado: ${gradoGrupo || "_______________"}`, margin, (y += 5));
+
+    y += 6;
+    pdf.setFont("helvetica", "bold");
+    pdf.text(
+      "DATOS DEL PADRE, MADRE, ACUDIENTE O REPRESENTANTE LEGAL",
+      margin,
+      y,
+    );
+    pdf.setFont("helvetica", "normal");
+    pdf.text("Nombre completo: ", margin, (y += 8));
+    const nameW = pdf.getTextWidth("Nombre completo: ");
+    const barEnd0 = margin + contentW * 0.9;
+    pdf.line(margin + nameW, y + 0.5, barEnd0, y + 0.5);
+    pdf.text("Tipo y número de documento:", margin, (y += 8));
+    const ParentW = pdf.getTextWidth("Tipo y número de documento: ");
+    const barEnd1 = margin + contentW * 0.9;
+    pdf.line(margin + ParentW, y + 0.5, barEnd1, y + 0.5);
+    pdf.text("Parentesco o calidad en que actúa:", margin, (y += 8));
+    const ParentW2 = pdf.getTextWidth("Parentesco o calidad en que actúa: ");
+    const barEnd2 = margin + contentW * 0.9;
+    pdf.line(margin + ParentW2, y + 0.5, barEnd2, y + 0.5);
+    pdf.text("Teléfono de contacto:", margin, (y += 8));
+    const contactW = pdf.getTextWidth("Teléfono de contacto: ");
+    const barEnd3 = margin + contentW * 0.9;
+    pdf.line(margin + contactW, y + 0.5, barEnd3, y + 0.5);
+    y += 6;
+
+    pdf.setFont("helvetica", "bold");
+    pdf.text("AUTORIZACIÓN", margin, y);
+    y += 6;
+    pdf.setFont("helvetica", "normal");
+    pdf.text("Yo", margin, y);
+    const yoW = pdf.getTextWidth("Yo ");
+    const barEnd = margin + contentW * 0.9;
+    pdf.line(margin + yoW, y + 0.5, barEnd, y + 0.5);
+    y += 6;
+    const authText = `identificado(a) como aparece al pie de mi correspondiente firma, actuando en calidad de padre, madre, acudiente o representante legal del estudiante anteriormente identificado, autorizo de manera libre, previa expresa e informada a la Secretaría de Educación Municipal de Soledad para realizar la toma de datos biométricos (huellas dactilares) y registros fotográficos del estudiante.\n\nDeclaro que he sido informado(a) de que dichos datos serán recolectados y tratados exclusivamente para las actividades de inspección, vigilancia, seguimiento y control de los recursos del Sistema General de Participaciones (SGP) asignados a la matrícula contratada, de la cual mi hijo es beneficiario, así como para la verificación de la información relacionada con la prestación del servicio educativo.\n\nIgualmente, manifiesto conocer que la información será tratada conforme a la Ley 1581 de 2012 y demás normas aplicables sobre protección de datos personales, garantizando la confidencialidad, seguridad y uso exclusivo para las finalidades aquí descritas.\n\nLa presente autorización se otorga de manera voluntaria y permanecerá vigente durante el tiempo requerido para el cumplimiento de las finalidades señaladas y las obligaciones legales correspondientes.`;
+    const authLines = pdf.splitTextToSize(authText, contentW);
+    pdf.text(authLines, margin, y, { align: "justify", maxWidth: contentW });
+    y += authLines.length * 5 + 2;
+
+    pdf.setFont("helvetica", "bold");
+    pdf.text("Firma del padre, madre o acudiente:", margin, y);
+    const f = pdf.getTextWidth("Firma del padre, madre o acudiente: ");
+    const barf = margin + contentW * 1;
+    pdf.line(margin + f, y + 0.5, barf, y + 0.5);
+    y += 1;
+    pdf.setFont("helvetica", "bold");
+    pdf.text("Nombre completo: ", margin, (y += 8));
+    const nameW1 = pdf.getTextWidth("Nombre completo: ");
+    const barEnd01 = margin + contentW * 1;
+    pdf.line(margin + nameW1, y + 0.5, barEnd01, y + 0.5);
+    pdf.text("Documento de identidad: ", margin, (y += 8));
+    const idW1 = pdf.getTextWidth("Documento de identidad: ");
+    const barEnd02 = margin + contentW * 1;
+    pdf.line(margin + idW1, y + 0.5, barEnd02, y + 0.5);
+    const safeName = nombreEstudiante.replace(/\s+/g, "_");
+    pdf.save(`Habeas_data_${safeName}.pdf`);
   };
 
-  useEffect(() => {
-    // si llega id_student por prop, sincronizar input y disparar la búsqueda
-    if (idEstudiante) {
-      setIdStudentSelected(idEstudiante);
-      // si ya hay sedes cargadas, preseleccionar la primera
-      if (Array.isArray(institutionSedes) && institutionSedes.length) {
-        setSedeSelected(String(institutionSedes[0].id));
-        handleStudentChange(idEstudiante);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idEstudiante, institutionSedes]);
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Formato de firma" size="xl">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Formato de firma"
+      size="6xl"
+    >
       <div className="signature-format-modal">
         <div className="modal-content">
           <div className="p-4 border-2 border-dashed rounded-lg w-full">
-            <h3 className="text-center font-bold text-lg">Habeas Data</h3>
+            <h3 className="font-bold text-lg text-center mb-2">
+              AUTORIZACIÓN PARA LA TOMA Y TRATAMIENTO DE DATOS BIOMÉTRICOS Y
+              REGISTROS FOTOGRÁFICOS
+            </h3>
 
-            <div className="mt-2 mb-2 w-full max-w-md mx-auto">
-              <label className="block mb-1">Sede</label>
-              <div className="flex gap-2">
-                <SedeSelect
-                  value={sedeSelected}
-                  onChange={(e) => setSedeSelected(e.target.value)}
+            <p className="text-sm mb-4">
+              Fecha: {new Date().toLocaleDateString()}
+            </p>
+
+            <p className="text-sm text-justify mb-4">
+              En cumplimiento de lo dispuesto en el artículo 288 del Código
+              Civil Colombiano, el artículo 24 del Decreto 2820 de 1974, la Ley
+              1098 de 2006 (Código de la Infancia y la Adolescencia) y la Ley
+              1581 de 2012 sobre Protección de Datos Personales, la Secretaría
+              de Educación Municipal de Soledad solicita la presente
+              autorización para la toma y tratamiento de datos biométricos y
+              registros fotográficos de los estudiantes beneficiarios de la
+              matrícula contratada.
+            </p>
+
+            <hr className="border-dashed my-4" />
+
+            <h4 className="font-bold text-sm mb-2">DATOS DEL ESTUDIANTE</h4>
+            <div className="flex flex-col gap-1 text-sm mb-4">
+              <p>
+                <span className="font-medium">Nombre completo:</span>{" "}
+                {nombreEstudiante}
+              </p>
+              <p>
+                <span className="font-medium">Tipo y número de documento:</span>{" "}
+                {tipoDocEstudiante} {numDocEstudiante}
+              </p>
+              <p>
+                <span className="font-medium">Institución educativa:</span>{" "}
+                {nombreInstitucion}
+              </p>
+              <p>
+                <span className="font-medium">Grado:</span>{" "}
+                {gradoGrupo || "_______________"}
+              </p>
+            </div>
+
+            <h4 className="font-bold text-sm mb-2">
+              DATOS DEL PADRE, MADRE, ACUDIENTE O REPRESENTANTE LEGAL
+            </h4>
+            <div className="flex flex-col gap-3 mb-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Nombre completo:
+                </label>
+                <input
+                  type="text"
+                  value={nombreAcudiente}
+                  onChange={(e) => setNombreAcudiente(e.target.value)}
                   className="w-full p-2 border rounded bg-surface"
                 />
-                {idEstudiante ? (
-                  <SimpleButton
-                    msj="Buscar"
-                    bg="bg-blue-600"
-                    text="text-surface"
-                    icon="Search"
-                    onClick={() => handleStudentChange(idStudentSelected)}
-                    disabled={!sedeSelected}
-                  />
-                ) : null}
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Tipo y número de documento:
+                </label>
+                <input
+                  type="text"
+                  value={identificacionAcudiente}
+                  onChange={(e) => setIdentificacionAcudiente(e.target.value)}
+                  className="w-full p-2 border rounded bg-surface"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Parentesco o calidad en que actúa:
+                </label>
+                <input
+                  type="text"
+                  value={calidadDe}
+                  onChange={(e) => setCalidadDe(e.target.value)}
+                  className="w-full p-2 border rounded bg-surface"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Teléfono de contacto:
+                </label>
+                <input
+                  type="text"
+                  value={telefonoAcudiente}
+                  onChange={(e) => setTelefonoAcudiente(e.target.value)}
+                  className="w-full p-2 border rounded bg-surface"
+                />
               </div>
             </div>
 
-            {/* Mostrar input mientras no exista idEstudiante prop */}
-            {!idEstudiante && !loadingStudent && (
-              <div className="w-full flex flex-col gap-4">
-                <p>
-                  No se ha seleccionado ningún estudiante. Ingresa la
-                  identificación para buscarlo.
-                </p>
-                <div className="grid grid-cols-3 gap-2 max-w-md">
-                  <SedeSelect
-                    value={sedeSelected}
-                    onChange={(e) => setSedeSelected(e.target.value)}
-                    className="w-full p-2 border rounded bg-surface col-span-1"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Identificación"
-                    value={idStudentSelected}
-                    onChange={(e) => setIdStudentSelected(e.target.value)}
-                    className="w-full p-2 border rounded bg-surface col-span-1"
-                  />
-                  <SimpleButton
-                    msj="Buscar"
-                    bg="bg-blue-600"
-                    text="text-surface"
-                    icon="Search"
-                    onClick={() => handleStudentChange()}
-                    disabled={!idStudentSelected || !sedeSelected}
-                  />
-                </div>
+            <hr className="border-dashed my-4" />
+
+            <h4 className="font-bold text-sm mb-2">AUTORIZACIÓN</h4>
+            <p className="text-sm text-justify mb-2">
+              Yo _________________________________________________
+              identificado(a) como aparece al pie de mi correspondiente firma,
+              actuando en calidad de padre, madre, acudiente o representante
+              legal del estudiante anteriormente identificado, autorizo de
+              manera libre, previa expresa e informada a la Secretaría de
+              Educación Municipal de Soledad para realizar la toma de datos
+              biométricos (huellas dactilares) y registros fotográficos del
+              estudiante.
+            </p>
+            <p className="text-sm text-justify mb-2">
+              Declaro que he sido informado(a) de que dichos datos serán
+              recolectados y tratados exclusivamente para las actividades de
+              inspección, vigilancia, seguimiento y control de los recursos del
+              Sistema General de Participaciones (SGP) asignados a la matrícula
+              contratada, de la cual mi hijo es beneficiario, así como para la
+              verificación de la información relacionada con la prestación del
+              servicio educativo.
+            </p>
+            <p className="text-sm text-justify mb-2">
+              Igualmente, manifiesto conocer que la información será tratada
+              conforme a la Ley 1581 de 2012 y demás normas aplicables sobre
+              protección de datos personales, garantizando la confidencialidad,
+              seguridad y uso exclusivo para las finalidades aquí descritas.
+            </p>
+            <p className="text-sm text-justify mb-4">
+              La presente autorización se otorga de manera voluntaria y
+              permanecerá vigente durante el tiempo requerido para el
+              cumplimiento de las finalidades señaladas y las obligaciones
+              legales correspondientes.
+            </p>
+
+            <hr className="border-dashed my-4" />
+
+            <div className="flex flex-col gap-3">
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Firma del padre, madre o acudiente:
+                </label>
+                <div className="border-b border-black h-10" />
               </div>
-            )}
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Nombre completo:
+                </label>
+                <input
+                  type="text"
+                  value={nombreAcudiente}
+                  onChange={(e) => setNombreAcudiente(e.target.value)}
+                  className="w-full p-2 border rounded bg-surface"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Documento de identidad:
+                </label>
+                <input
+                  type="text"
+                  value={identificacionAcudiente}
+                  onChange={(e) => setIdentificacionAcudiente(e.target.value)}
+                  className="w-full p-2 border rounded bg-surface"
+                />
+              </div>
+            </div>
 
-            {/* Caso: hay id pero aún cargando */}
-            {hasId && loadingStudent && (
-              <div className="mt-4">Buscando estudiante...</div>
-            )}
-
-            {/* Pregunta: se muestra cuando la búsqueda fue exitosa y existe un id (input o prop) */}
-            {showAcudienteQuestion &&
-              studentSelected &&
-              Boolean(
-                (idEstudiante || idStudentSelected || "").toString().trim(),
-              ) && (
-                <div className="gap-2 mt-4 flex flex-row items-center">
-                  <h3>¿Es usted el acudiente actual del estudiante?</h3>
-                  <div className="w-1/3 flex flex-row gap-4">
-                    <SimpleButton
-                      msj="Sí"
-                      bg="bg-accent"
-                      text="text-surface"
-                      icon="Check"
-                      onClick={() => setConfirmedAcudiente(true)}
-                    />
-                    <SimpleButton
-                      msj="No"
-                      bg="bg-error"
-                      text="text-surface"
-                      icon="X"
-                      onClick={() => setIsOpenRegisterParents(true)}
-                    />
-                  </div>
-                </div>
-              )}
-
-            {/* Mostrar autorización solo si se confirmó "Si" */}
-            {hasId &&
-              !loadingStudent &&
-              studentSelected &&
-              confirmedAcudiente && (
-                <div>
-                  <div>
-                    <p className="mt-4 text-sm">
-                      AUTORIZACIÓN. Yo,
-                      <strong>
-                        {" " + studentSelected?.nombre_acudiente + ", "}
-                      </strong>
-                      identificado(a) con{" "}
-                      {studentSelected?.tipo_documento_acudiente} n.º{" "}
-                      <strong>
-                        {studentSelected?.numero_identificacion_acudiente}
-                      </strong>
-                      , en calidad de acudiente del estudiante{" "}
-                      <strong>
-                        {studentSelected?.first_name +
-                          " " +
-                          studentSelected?.second_name +
-                          " " +
-                          studentSelected?.first_lastname +
-                          " " +
-                          studentSelected?.second_lastname}
-                      </strong>
-                      , identificado(a) con{" "}
-                      {studentSelected?.identificationType} n.º{" "}
-                      {studentSelected?.identification}, autorizo de manera
-                      expresa a la institución{" "}
-                      <strong>{studentSelected?.name_school}</strong> para la
-                      expedición correspondiente al estudiante mencionado.
-                    </p>
-                    <p className="mt-6 text-center text-xs">
-                      Válido hasta: {new Date().toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="w-full grid grid-cols-4 mt-8">
-                    <div className="col-end-6 ">
-                      <SimpleButton
-                        msj="Descargar"
-                        bg="bg-green-600"
-                        text="text-surface"
-                        icon="DownloadCloud"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-            <RegisterParentsModal
-              isOpen={isOpenRegisterParents}
-              onClose={() => setIsOpenRegisterParents(false)}
-            />
+            <div className="flex justify-end gap-2 mt-6">
+              <SimpleButton
+                msj="Descargar PDF"
+                bg="bg-green-600"
+                text="text-surface"
+                icon="DownloadCloud"
+                onClick={handleDownloadPDF}
+              />
+              <SimpleButton
+                msj="Cerrar"
+                bg="bg-secondary"
+                text="text-surface"
+                icon="X"
+                onClick={onClose}
+              />
+            </div>
           </div>
         </div>
       </div>

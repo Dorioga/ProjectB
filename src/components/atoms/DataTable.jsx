@@ -39,6 +39,8 @@ const DataTable = ({
   exportWithoutHeaders = false,
   // optional: string[] — filas de encabezado institucional que se insertan antes de los datos en el Excel
   exportHeaderRows = null,
+  // optional: ReactNode — contenido extra en la barra de herramientas (selects, botones, etc.)
+  toolbarExtra = null,
 }) => {
   const [sorting, setSorting] = useState(initialSorting);
   const [globalFilter, setGlobalFilter] = useState("");
@@ -306,16 +308,24 @@ const DataTable = ({
           mode !== null ? "grid-cols-7 " : "grid-cols-1"
         } `}
       >
-        <input
-          type="text"
-          value={globalFilter ?? ""}
-          onChange={(e) => setGlobalFilter(e.target.value)}
-          placeholder="Buscar en la tabla..."
-          className="border p-2 rounded col-span-3 bg-surface"
-        />
+        <div className="flex flex-col gap-1 col-span-3">
+          <label className="text-xs font-semibold text-gray-600">Buscar</label>
+          <input
+            type="text"
+            value={globalFilter ?? ""}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            placeholder="Buscar en la tabla..."
+            className="border p-2 rounded bg-surface"
+          />
+        </div>
 
-        <div className="grid grid-cols-3  col-span-4  gap-4">
-          {mode !== null && showDownloadButtons && (
+        <div className="grid grid-cols-5  col-span-4  gap-4">
+          {toolbarExtra && (
+            <div className="grid grid-cols-1 gap-2 col-span-4">
+              {toolbarExtra}
+            </div>
+          )}
+          {/* {mode !== null && showDownloadButtons && (
             <>
               <SimpleButton
                 onClick={() => {
@@ -338,9 +348,10 @@ const DataTable = ({
                 msj="Descargar archivos de auditoria"
               />
             </>
-          )}
+          )} */}
+
           <div
-            className={` grid w-full col-end-8 gap-2  ${
+            className={` grid w-full col-span-1 gap-2  ${
               mode !== null ? "" : ""
             } `}
           >

@@ -9,9 +9,12 @@ import UploadStudentExcel from "./UploadStudentExcel";
 import UploadStudentPDF from "./UploadStudentPDF";
 import StudentModal from "../../components/molecules/StudentModal";
 import AuditBulkModal from "../../components/molecules/AuditBulkModal";
+import DownloadProgressModal from "../../components/molecules/DownloadProgressModal";
+import DownloadErrorModal from "../../components/molecules/DownloadErrorModal";
 import useStudent from "../../lib/hooks/useStudent";
 import { useNotify } from "../../lib/hooks/useNotify";
 import tourManageStudent from "../../tour/tourManageStudent";
+import { bulkDownloadDocuments } from "../../utils/bulkDownload";
 
 const ManageStudent = () => {
   const { idInstitution, idSede, rol } = useAuth();
@@ -30,6 +33,12 @@ const ManageStudent = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [initialEditing, setInitialEditing] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
+  const [selectedSedeFilter, setSelectedSedeFilter] = useState("");
+  const [selectedGradoFilter, setSelectedGradoFilter] = useState("");
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(null);
+  const [downloadErrors, setDownloadErrors] = useState(null);
+  const [downloadLog, setDownloadLog] = useState([]);
 
   // Cargar estudiantes - memoizado para evitar recreación en cada render
   const fetchStudentsData = useCallback(async () => {
@@ -61,6 +70,131 @@ const ManageStudent = () => {
   useEffect(() => {
     fetchStudentsData();
   }, [fetchStudentsData]);
+
+  const sedes = useMemo(
+    () => [...new Set(tableData.map((s) => s.nombre_sede).filter(Boolean))],
+    [tableData],
+  );
+
+  const grados = useMemo(
+    () => [...new Set(tableData.map((s) => s.nombre_grado).filter(Boolean))],
+    [tableData],
+  );
+
+  const filteredTableData = useMemo(() => {
+    return tableData.filter((s) => {
+      if (selectedSedeFilter && s.nombre_sede !== selectedSedeFilter)
+        return false;
+      if (selectedGradoFilter && s.nombre_grado !== selectedGradoFilter)
+        return false;
+      return true;
+    });
+  }, [tableData, selectedSedeFilter, selectedGradoFilter]);
+
+  const toolbarExtra = useMemo(() => {
+    if (Number(rol) !== 9) return null;
+    return (
+      <div className="grid grid-cols-3 gap-2 lg:flex-row lg:items-center lg:gap-4">
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-semibold text-gray-600">Sede</label>
+          <select
+            value={selectedSedeFilter}
+            onChange={(e) => setSelectedSedeFilter(e.target.value)}
+            className="border p-2 rounded bg-surface"
+          >
+            <option value="">Todas las sedes</option>
+            {sedes.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-semibold text-gray-600">Grado</label>
+          <select
+            value={selectedGradoFilter}
+            onChange={(e) => setSelectedGradoFilter(e.target.value)}
+            className="border p-2 rounded bg-surface"
+          >
+            <option value="">Todos los grados</option>
+            {grados.map((g) => (
+              <option key={g} value={g}>
+                {g}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <SimpleButton
+          msj={
+            isDownloading
+              ? `${downloadProgress?.current || 0}/${downloadProgress?.total || 0}`
+              : "Descarga documentos"
+          }
+          bg="bg-green-600"
+          icon="Download"
+          text="text-surface"
+          disabled={isDownloading}
+          onClick={async () => {
+            setIsDownloading(true);
+            setDownloadErrors(null);
+            setDownloadLog([]);
+            setDownloadProgress({
+              current: 0,
+              total: filteredTableData.length,
+              studentName: "",
+              status: "Iniciando...",
+            });
+            try {
+              const { errores } = await bulkDownloadDocuments(
+                filteredTableData,
+                {
+                  generateHabeasData: true,
+                  generateMatricula: true,
+                  downloadIdentificacion: true,
+                  downloadAcudiente: true,
+                },
+                (p) => {
+                  setDownloadProgress(p);
+                  setDownloadLog((prev) => {
+                    if (
+                      p.studentName &&
+                      (prev.length === 0 ||
+                        prev[prev.length - 1].name !== p.studentName)
+                    ) {
+                      return [
+                        ...prev,
+                        { name: p.studentName, status: p.status },
+                      ];
+                    }
+                    if (prev.length > 0) {
+                      const updated = [...prev];
+                      updated[updated.length - 1] = {
+                        ...updated[updated.length - 1],
+                        status: p.status,
+                      };
+                      return updated;
+                    }
+                    return prev;
+                  });
+                },
+              );
+              if (errores.length > 0) setDownloadErrors(errores);
+              else notify.success("Descarga completada exitosamente.");
+            } catch (err) {
+              notify.error(
+                "Error en la descarga masiva: " + (err?.message || err),
+              );
+            } finally {
+              setIsDownloading(false);
+              setDownloadProgress(null);
+            }
+          }}
+        />
+      </div>
+    );
+  }, [rol, selectedSedeFilter, selectedGradoFilter, sedes, grados]);
 
   // Abrir modal (ver o editar) y cargar datos del estudiante
   const openStudentModal = useCallback(
@@ -177,12 +311,16 @@ const ManageStudent = () => {
               header: "Etapa 2",
             },
             {
-              accessorKey: "etapa3",
-              header: "Etapa 3",
+              accessorKey: "nombre_proceso",
+              header: "Proceso",
             },
             {
               accessorKey: "status_beca",
               header: "Status Beca",
+              cell: ({ row }) =>
+                row.original.status_beca ??
+                row.original.beca_estudiante ??
+                "N/A",
             },
           ]
         : []),
@@ -304,7 +442,7 @@ const ManageStudent = () => {
       <div id="tour-mst-table" className="relative flex-1 p-4">
         <DataTable
           key="students-table"
-          data={tableData || []}
+          data={filteredTableData || []}
           columns={columns}
           fileName="Export_Students"
           initialSorting={[{ id: "nombre_sede", desc: false }]}
@@ -312,6 +450,7 @@ const ManageStudent = () => {
           showDownloadButtons={false}
           loading={isFetching}
           loaderMessage="Cargando estudiantes..."
+          toolbarExtra={toolbarExtra}
           groupBy="nombre_sede"
           groupSummary={(rows, isOpen) => {
             if (!isOpen) return null;
@@ -418,7 +557,10 @@ const ManageStudent = () => {
 
         <StudentModal
           isOpen={isModalOpen}
-          onClose={() => { setIsModalOpen(false); fetchStudentsData(); }}
+          onClose={() => {
+            setIsModalOpen(false);
+            fetchStudentsData();
+          }}
           student={selectedStudent}
           initialEditing={initialEditing}
           isLoading={isFetching}
@@ -433,6 +575,23 @@ const ManageStudent = () => {
               notify.error(err?.message || "Error al actualizar estudiante.");
             }
           }}
+        />
+
+        <DownloadProgressModal
+          isOpen={isDownloading}
+          onClose={() => {}}
+          progress={downloadProgress}
+          downloadLog={downloadLog}
+          isDownloading={isDownloading}
+        />
+
+        <DownloadErrorModal
+          isOpen={!isDownloading && downloadErrors && downloadErrors.length > 0}
+          onClose={() => {
+            setDownloadErrors(null);
+            setDownloadLog([]);
+          }}
+          errors={downloadErrors}
         />
       </div>
     </div>

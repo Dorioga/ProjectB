@@ -147,9 +147,7 @@ const Sidebar = () => {
                 <div className="flex w-full flex-row px-4 py-1 items-center gap-2">
                   <LucideIcons.CalendarCheck className="text-surface hover:text-primary text-2xl" />
                   {showContent && (
-                    <span className="px-2 text-md text-surface">
-                      Fecha Corte
-                    </span>
+                    <span className=" text-md text-surface">Fecha Corte</span>
                   )}
                 </div>
               </li>

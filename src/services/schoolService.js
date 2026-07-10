@@ -683,18 +683,23 @@ export async function getValuesReservations(payload = {}) {
 /**
  * Obtiene las alertas documentales de estudiantes.
  *
- * Endpoint esperado: GET /student/alerts
+ * Endpoint esperado: POST /student/alerts
+ * @param {{ fk_institucion: number }} payload
  * @returns {Promise<Array>} Array de alertas de estudiantes
  */
-export async function getStudentAlerts() {
-  try {
-    const res = await ApiClient.get("/student/alerts");
-    const data = Array.isArray(res) ? res : (res?.data ?? []);
-    return Array.isArray(data) ? data : [];
-  } catch (error) {
-    console.error("Error en getStudentAlerts:", error);
-    throw error;
+export async function getStudentAlerts(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
   }
+
+  const res = await ApiClient.instance.post("/student/alerts", payload);
+
+  const data = res;
+
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+
+  throw new Error("Respuesta inesperada de /student/alerts.");
 }
 
 export async function allstudent(payload) {

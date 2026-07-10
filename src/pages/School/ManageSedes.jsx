@@ -57,7 +57,7 @@ const ManageSedes = () => {
 
       // Guardar la respuesta cruda para depuración
       lastResponseRef.current = response;
-      console.log("Respuesta de loadInstitutionSedes:", response);
+
       const newSedes = Array.isArray(response)
         ? response
         : (response?.data ?? []);
@@ -150,12 +150,7 @@ const ManageSedes = () => {
     },
     [getDataSede, idInstitution],
   );
-  console.log(
-    "ManageSedes render - sedes:",
-    tableData,
-    "fetchError:",
-    fetchError,
-  );
+
   // Define las columnas para la tabla
   const columns = useMemo(
     () => [

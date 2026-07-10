@@ -51,20 +51,11 @@ const UploadStudentPDF = ({ onSuccess } = {}) => {
       return;
     }
 
-    console.log(
-      "handleUpload iniciado —",
-      files.length,
-      "archivos seleccionados",
-    );
-
     // validar tamaño máximo 2 MB por archivo
     const oversized = files.filter((f) => f.size > 2 * 1024 * 1024);
     if (oversized.length > 0) {
       const names = oversized.map((f) => f.name).join(", ");
-      console.log(
-        "Archivos que exceden 2MB:",
-        oversized.map((f) => f.name),
-      );
+
       const msg = `El(los) archivo(s) ${names} pesa(n) más de 2 MB.`;
       setStatus({ type: "error", message: msg });
       notify.error(msg);
@@ -81,8 +72,6 @@ const UploadStudentPDF = ({ onSuccess } = {}) => {
       }
     }
 
-    console.log("Validaciones pasadas —", files.length, "archivos listos");
-
     setSubmitting(true);
     setStatus(null);
 
@@ -92,15 +81,7 @@ const UploadStudentPDF = ({ onSuccess } = {}) => {
 
       for (let i = 0; i < files.length; i += CHUNK_SIZE) {
         const chunk = files.slice(i, i + CHUNK_SIZE);
-        console.log(
-          "Lote",
-          Math.floor(i / CHUNK_SIZE) + 1,
-          "de",
-          Math.ceil(files.length / CHUNK_SIZE),
-          "—",
-          chunk.length,
-          "archivos",
-        );
+
         const form = new FormData();
         chunk.forEach((f) => form.append("file", f));
 
@@ -110,8 +91,6 @@ const UploadStudentPDF = ({ onSuccess } = {}) => {
           throw new Error("Error en la subida de archivos.");
         }
       }
-
-      console.log("Todos los lotes procesados (simulado, sin llamada real)");
 
       setFiles([]);
       const successMessage = "PDF(s) subidos correctamente.";

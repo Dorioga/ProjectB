@@ -51,7 +51,7 @@ const ProfileAssignature = ({ data, onSave, initialEditing = false }) => {
   };
 
   const [grades, setGrades] = useState(() => parseGrades(safeData));
-  console.log("ProfileAssignature - data:", grades);
+
   const [selectedGradeIds, setSelectedGradeIds] = useState(() =>
     parseGrades(safeData).map((g) => g.id),
   );

@@ -9,6 +9,9 @@ const AlertTable = ({ alerts, onRefresh }) => {
       {
         accessorKey: "numero_identificacion",
         header: "Documento",
+        meta: {
+          hideOnXL: true,
+        },
       },
       {
         accessorKey: "nombre_estudiante",
@@ -27,13 +30,21 @@ const AlertTable = ({ alerts, onRefresh }) => {
               .join(" - ")}
           </span>
         ),
-        meta: {
-          hideOnXL: true,
-        },
       },
       {
         accessorKey: "nombre_sede",
         header: "Sede",
+        cell: ({ getValue }) => {
+          const value = getValue() || "";
+          return (
+            <span
+              className="block max-w-[150px] truncate text-left"
+              title={value}
+            >
+              {value}
+            </span>
+          );
+        },
         meta: {
           hideOnXL: true,
         },
@@ -55,6 +66,24 @@ const AlertTable = ({ alerts, onRefresh }) => {
           if (!a.Doc_estudiante) motivos.push("Sin doc. estudiante");
           if (!a.Doc_acudiente) motivos.push("Sin doc. acudiente");
           if (a.sin_acudiente) motivos.push("Sin acudiente");
+          if (
+            a.primera_etapa === "Excusa" &&
+            (!Array.isArray(a.excusas) ||
+              !a.excusas.some(
+                (e) => e.etapa?.toLowerCase() === "primera etapa" && e.link,
+              ))
+          ) {
+            motivos.push("Sin doc. excusa etapa1");
+          }
+          if (
+            a.segunda_etapa === "Excusa" &&
+            (!Array.isArray(a.excusas) ||
+              !a.excusas.some(
+                (e) => e.etapa?.toLowerCase() === "segunda etapa" && e.link,
+              ))
+          ) {
+            motivos.push("Sin doc. excusa etapa2");
+          }
           return (
             <span className="text-sm">
               {motivos.join(", ") || "Sin alerta"}

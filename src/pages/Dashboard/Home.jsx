@@ -63,7 +63,7 @@ const DashHome = () => {
     if (!(rol === 3 || rol === "3")) return;
 
     try {
-      const raw = await fetchStudentAlerts();
+      const raw = await fetchStudentAlerts({ fk_institucion: idInstitution });
       setStudentAlerts(Array.isArray(raw) ? raw : []);
     } catch (err) {
       console.error("Home - error loading alerts:", err);

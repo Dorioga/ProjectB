@@ -10,6 +10,7 @@ import ExcuseModal from "./ExcuseModal";
 import PDFViewerModal from "./PDFViewerModal.jsx";
 import MatriculaModal from "./MatriculaModal.jsx";
 import CarnetModal from "./CarnetModal.jsx";
+import HabeasDataFormatModal from "./HabeasDataFormatModal.jsx";
 import StudentNotes from "../../pages/Student/StudentNotes";
 import {
   formatDateToDisplay,
@@ -83,6 +84,9 @@ const ProfileStudent = ({
   const [isOpenDocument, setIsOpenDocument] = useState(false);
   const [isOpenMatricula, setIsOpenMatricula] = useState(false);
   const [isOpenCarnet, setIsOpenCarnet] = useState(false);
+  const [isOpenHabeasData, setIsOpenHabeasData] = useState(false);
+  const [isOpenExcuseView, setIsOpenExcuseView] = useState(false);
+  const [excuseFile, setExcuseFile] = useState(null);
   const [documentSelected, setDocumentSelected] = useState({
     file: null,
     name: "",
@@ -156,6 +160,11 @@ const ProfileStudent = ({
     Activo: 1,
     Retirado: 0,
   };
+
+  const findExcuseLink = (etapa) =>
+    (data?.excusas || []).find(
+      (e) => e.etapa?.toLowerCase() === etapa.toLowerCase() && e.link,
+    )?.link || null;
 
   const toggleEditing = async () => {
     if (isEditing) {
@@ -351,11 +360,7 @@ const ProfileStudent = ({
       [field]: value,
     }));
   };
-  const handleExcuseSubmit = ({ file }) => {
-    if (file) {
-    } else {
-    }
-  };
+  const handleExcuseSubmit = () => {};
 
   return (
     <div className="w-full flex flex-col items-center justify-center">
@@ -599,9 +604,7 @@ const ProfileStudent = ({
         </div>
         {showStates && (
           <div id="tour-ps-states" className="p-4 bg-bg rounded-lg shadow-md">
-            <h2 className="text-2xl font-semibold pb-4">
-              Documentos Auditoria
-            </h2>
+            <h2 className="text-2xl font-semibold pb-4">Proceso auditoria</h2>
 
             <div className="flex flex-col gap-3">
               {/* Estado Primera Etapa */}
@@ -658,6 +661,36 @@ const ProfileStudent = ({
                     />
                   </div>
                 ) : null}
+                {isEditing &&
+                  !isRol6 &&
+                  editedData.state_first === "Excusa" && (
+                    <div>
+                      <SimpleButton
+                        onClick={() => {
+                          setCurrentEtapa("et1");
+                          setIsOpenExcuse(true);
+                        }}
+                        msj="Cargar excusa"
+                        bg="bg-accent"
+                        icon="Save"
+                        text="text-surface"
+                      />
+                    </div>
+                  )}
+                {!isEditing && findExcuseLink("primera etapa") && (
+                  <div>
+                    <SimpleButton
+                      onClick={() => {
+                        setExcuseFile(findExcuseLink("primera etapa"));
+                        setIsOpenExcuseView(true);
+                      }}
+                      msj="Ver excusa"
+                      bg="bg-accent"
+                      icon="View"
+                      text="text-surface"
+                    />
+                  </div>
+                )}
               </div>
               {/* Estado Segunda Etapa */}
               <div className="grid grid-cols-3 gap-4 items-center">
@@ -714,6 +747,36 @@ const ProfileStudent = ({
                     />
                   </div>
                 )}
+                {isEditing &&
+                  !isRol6 &&
+                  editedData.state_second === "Excusa" && (
+                    <div>
+                      <SimpleButton
+                        onClick={() => {
+                          setCurrentEtapa("et2");
+                          setIsOpenExcuse(true);
+                        }}
+                        msj="Cargar excusa"
+                        bg="bg-accent"
+                        icon="Save"
+                        text="text-surface"
+                      />
+                    </div>
+                  )}
+                {!isEditing && findExcuseLink("segunda etapa") && (
+                  <div>
+                    <SimpleButton
+                      onClick={() => {
+                        setExcuseFile(findExcuseLink("segunda etapa"));
+                        setIsOpenExcuseView(true);
+                      }}
+                      msj="Ver excusa"
+                      bg="bg-accent"
+                      icon="View"
+                      text="text-surface"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Estado Institucional */}
@@ -759,14 +822,26 @@ const ProfileStudent = ({
                 {isEditing ? (
                   <select
                     value={editedData.fk_process}
-                    onChange={(e) =>
-                      handleStateChange("fk_process", e.target.value)
-                    }
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const processLabelMap = {
+                        1: "Conforme",
+                        // 2: "Excusa",
+                        // 3: "SinExcusa",
+                        4: "Retirado",
+                        5: "Reasignado",
+                      };
+                      handleStateChange("fk_process", val);
+                      handleStateChange(
+                        "state_process",
+                        processLabelMap[val] || "Conforme",
+                      );
+                    }}
                     className="border p-2 rounded bg-surface text-center"
                   >
                     <option value="1">Conforme</option>
-                    <option value="2">Excusa</option>
-                    <option value="3">Sin Excusa</option>
+                    {/* <option value="2">Excusa</option> */}
+                    {/* <option value="3">Sin Excusa</option> */}
                     <option value="4">Retirado</option>
                     <option value="5">Reasignado</option>
                   </select>
@@ -868,67 +943,21 @@ const ProfileStudent = ({
             </div>
           </div>
 
-          {/* PIAR - checkbox + FileChooser (edit) / descarga (view) w-full grid grid-cols-1 lg:grid-cols-4 gap-4 items-center */}
-
-          <div
-            className={`w-full grid grid-cols-1 lg:grid-cols-3 gap-4 items-center `}
-          >
-            <label className="text-lg font-medium">Cuenta con PIAR:</label>
-            <div
-              className={` flex items-center justify-center w-full gap-3 col-span-1 `}
-            >
-              {isEditing && (
-                <input
-                  type="checkbox"
-                  checked={hasPiar}
-                  onChange={(e) => setHasPiar(!!e.target.checked)}
-                  className="w-4 h-4"
-                />
-              )}
-              <span
-                className={`px-3 py-1 w-full rounded-lg text-sm font-semibold text-center border border-solid  ${
-                  hasPiar
-                    ? "bg-green-100 text-green-800 border-green-200"
-                    : "bg-yellow-100 text-yellow-800 border-yellow-200"
-                }`}
-              >
-                {hasPiar ? "Sí" : "No"}
-              </span>
-            </div>
-            <div className={` w-full gap-3 col-span-1`}>
-              {hasPiar && (
-                <div className="flex">
-                  <FileChooser
-                    editing={isEditing}
-                    accept=".xlsx,.xls"
-                    onChange={(file) => handleDocumentChange("piar", file)}
-                    label={
-                      documentFiles.piar
-                        ? documentFiles.piar.name
-                        : "Cargar (.xlsx)"
-                    }
-                  />
-                </div>
-              )}
-              {!isEditing &&
-              (String(data?.auDoc_piar || "").includes("https://") ||
-                data?.link_piar) ? (
-                <SimpleButton
-                  onClick={() =>
-                    window.open(
-                      data.auDoc_piar || data?.link_piar,
-                      "_blank",
-                      "noreferrer",
-                    )
-                  }
-                  msj="Descargar PIAR"
-                  bg="bg-accent"
-                  icon="Download"
-                  text="text-surface"
-                />
-              ) : null}
+          <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-4 items-center">
+            <label className="text-lg font-medium">Habeas Data:</label>
+            <div className="flex gap-2">
+              <SimpleButton
+                onClick={() => setIsOpenHabeasData(true)}
+                msj="Habeas Data"
+                bg="bg-primary"
+                icon="FileText"
+                text="text-surface"
+              />
             </div>
           </div>
+
+          {/* PIAR - checkbox + FileChooser (edit) / descarga (view) w-full grid grid-cols-1 lg:grid-cols-4 gap-4 items-center */}
+
           <div
             className={`w-full grid grid-cols-1  gap-4 items-center ${
               documentFiles.id_Student ? "grid-cols-5" : "grid-cols-3"
@@ -1045,6 +1074,65 @@ const ProfileStudent = ({
               <div />
             )}
           </div>
+          <div
+            className={`w-full grid grid-cols-1 lg:grid-cols-3 gap-4 items-center border-t border-black pt-2`}
+          >
+            <label className="text-lg font-medium">Cuenta con PIAR:</label>
+            <div
+              className={` flex items-center justify-center w-full gap-3 col-span-1 `}
+            >
+              {isEditing && (
+                <input
+                  type="checkbox"
+                  checked={hasPiar}
+                  onChange={(e) => setHasPiar(!!e.target.checked)}
+                  className="w-4 h-4"
+                />
+              )}
+              <span
+                className={`px-3 py-1 w-full rounded-lg text-sm font-semibold text-center border border-solid  ${
+                  hasPiar
+                    ? "bg-green-100 text-green-800 border-green-200"
+                    : "bg-yellow-100 text-yellow-800 border-yellow-200"
+                }`}
+              >
+                {hasPiar ? "Sí" : "No"}
+              </span>
+            </div>
+            <div className={` w-full gap-3 col-span-1`}>
+              {hasPiar && (
+                <div className="flex">
+                  <FileChooser
+                    editing={isEditing}
+                    accept=".xlsx,.xls"
+                    onChange={(file) => handleDocumentChange("piar", file)}
+                    label={
+                      documentFiles.piar
+                        ? documentFiles.piar.name
+                        : "Cargar (.xlsx)"
+                    }
+                  />
+                </div>
+              )}
+              {!isEditing &&
+              (String(data?.auDoc_piar || "").includes("https://") ||
+                data?.link_piar) ? (
+                <SimpleButton
+                  onClick={() =>
+                    window.open(
+                      data.auDoc_piar || data?.link_piar,
+                      "_blank",
+                      "noreferrer",
+                    )
+                  }
+                  msj="Descargar PIAR"
+                  bg="bg-accent"
+                  icon="Download"
+                  text="text-surface"
+                />
+              ) : null}
+            </div>
+          </div>
         </div>
         <div id="tour-ps-history" className="p-4 bg-bg rounded-lg shadow-md">
           <h2 className="text-2xl font-semibold pb-4">Historial</h2>
@@ -1074,8 +1162,11 @@ const ProfileStudent = ({
       <ExcuseModal
         isOpen={isOpenExcuse}
         onClose={() => setIsOpenExcuse(false)}
-        mode={isEditing ? "upload" : "view"}
-        onSubmit={handleExcuseSubmit}
+        mode="load"
+        fk_estudiante={data?.id_estudiante}
+        fk_sede={data?.id_sede}
+        etapa={currentEtapa === "et1" ? "primera etapa" : "segunda etapa"}
+        identificacion={data?.numero_identificacion || data?.identification}
       />
 
       <PDFViewerModal
@@ -1083,6 +1174,12 @@ const ProfileStudent = ({
         onClose={() => setIsOpenDocument(false)}
         pdfUrl={documentSelected.file}
         title={documentSelected.name}
+      />
+      <PDFViewerModal
+        isOpen={isOpenExcuseView}
+        onClose={() => setIsOpenExcuseView(false)}
+        pdfUrl={excuseFile}
+        title="Documento de Excusa"
       />
       <MatriculaModal
         isOpen={isOpenMatricula}
@@ -1122,6 +1219,11 @@ const ProfileStudent = ({
           group_grade: data.grupo || data.group_grade,
           name_school: data.nombre_sede || data.name_school,
         }}
+      />
+      <HabeasDataFormatModal
+        isOpen={isOpenHabeasData}
+        onClose={() => setIsOpenHabeasData(false)}
+        data={data}
       />
     </div>
   );

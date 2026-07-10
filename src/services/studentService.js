@@ -239,6 +239,26 @@ export async function registerObservation(payload) {
 }
 
 /**
+ * Registra una excusa de un estudiante.
+ *
+ * Endpoint: POST /excuse
+ * @param {{ fk_estudiante: number, fk_sede: number, link_excuse: string, etapa: string }} payload
+ * @returns {Promise<Object>} Respuesta del servidor
+ */
+export async function registerExcuse(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+
+  const res = await ApiClient.instance.post("/excuse", payload);
+
+  if (res && typeof res === "object" && "data" in res) return res;
+  if (res !== undefined && res !== null) return res;
+
+  throw new Error("Respuesta inesperada de /excuse.");
+}
+
+/**
  * Consulta observaciones de un estudiante por número de identificación.
  *
  * Endpoint: POST /data/observation

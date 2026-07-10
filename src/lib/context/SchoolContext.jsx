@@ -598,9 +598,9 @@ export function SchoolProvider({ children }) {
     }
   }, []);
 
-  const fetchStudentAlerts = useCallback(async () => {
+  const fetchStudentAlerts = useCallback(async (payload) => {
     try {
-      const alerts = await schoolService.getStudentAlerts();
+      const alerts = await schoolService.getStudentAlerts(payload);
       return Array.isArray(alerts) ? alerts : [];
     } catch (error) {
       console.error("Error al obtener alertas de estudiantes:", error);
