@@ -304,11 +304,15 @@ const DataTable = ({
       {/* Loader modal (se usa el Loader global que ya es un modal) */}
       {loading ? <Loader message={loaderMessage} size={loaderSize} /> : null}
       <div
-        className={` grid w-full  gap-2  ${
-          mode !== null ? "grid-cols-7 " : "grid-cols-1"
-        } `}
+        className={`grid w-full gap-2 ${
+          mode !== null ? "grid-cols-7" : "grid-cols-1"
+        }`}
       >
-        <div className="flex flex-col gap-1 col-span-3">
+        <div
+          className={`flex flex-col gap-1 ${
+            toolbarExtra ? "col-span-3" : "col-span-6"
+          }`}
+        >
           <label className="text-xs font-semibold text-gray-600">Buscar</label>
           <input
             type="text"
@@ -319,42 +323,23 @@ const DataTable = ({
           />
         </div>
 
-        <div className="grid grid-cols-5  col-span-4  gap-4">
-          {toolbarExtra && (
+        {toolbarExtra ? (
+          <div className="grid grid-cols-5 col-span-4 gap-4">
             <div className="grid grid-cols-1 gap-2 col-span-4">
               {toolbarExtra}
             </div>
-          )}
-          {/* {mode !== null && showDownloadButtons && (
-            <>
+            <div className="grid w-full col-span-1 gap-2">
               <SimpleButton
-                onClick={() => {
-                  setIsOpen(true);
-                  setDownloadTypeMode("habeasData");
-                }}
+                onClick={handleExport}
                 bg="bg-green-600"
-                icon="Download"
+                icon="FileUp"
                 text="text-surface"
-                msj="Descargar archivos (Habeas Data)"
+                msj="Exportar a Excel"
               />
-              <SimpleButton
-                onClick={() => {
-                  setIsOpen(true);
-                  setDownloadTypeMode("all");
-                }}
-                bg="bg-green-600"
-                icon="Download"
-                text="text-surface"
-                msj="Descargar archivos de auditoria"
-              />
-            </>
-          )} */}
-
-          <div
-            className={` grid w-full col-span-1 gap-2  ${
-              mode !== null ? "" : ""
-            } `}
-          >
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-end col-span-1">
             <SimpleButton
               onClick={handleExport}
               bg="bg-green-600"
@@ -363,7 +348,7 @@ const DataTable = ({
               msj="Exportar a Excel"
             />
           </div>
-        </div>
+        )}
       </div>
 
       <div className="rounded-lg border">
