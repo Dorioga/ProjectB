@@ -712,7 +712,13 @@ async function generateBoletinPDF(
         .filter(Boolean)
         .join(" ") || "-";
     const gradoTexto = info.grado ?? "-";
-    const periodoNombre = cleanPeriodoLabel(periodos[0]?.nombre);
+    const periodoNombre = esTransicion && transicionData?.todosPeriodos
+      ? cleanPeriodoLabel(
+          transicionData.todosPeriodos.find(
+            (p) => String(p.id) === String(meta.periodId),
+          )?.nombre,
+        )
+      : cleanPeriodoLabel(periodos[0]?.nombre);
     const anioTexto = String(meta.year ?? new Date().getFullYear());
     const promTexto = promedioGeneral !== null ? String(promedioGeneral) : "-";
     const rankingEntry = rankingMap?.get(String(meta.periodId)) ?? null;
@@ -951,12 +957,12 @@ async function generateBoletinPDF(
       return x;
     };
     const tHeaderH = 8;
-    const lineH = 6 * 0.45;
+    const lineH = 7 * 0.45;
 
     const drawTCellMultiline = (text, col, cy, h, opts = {}) => {
       const {
         bold = false,
-        fontSize = 6,
+        fontSize = 7,
         color = [0, 0, 0],
         bg = null,
         align = "left",
@@ -988,7 +994,7 @@ async function generateBoletinPDF(
     // Header
     addPageIfNeeded(tHeaderH);
     const thBg = [255, 255, 255];
-    pdf.setFontSize(8);
+    pdf.setFontSize(9);
     pdf.setFont("helvetica", "bold");
     for (let c = 0; c < 4; c++) {
       const cx = tColX(c);
@@ -1052,7 +1058,7 @@ async function generateBoletinPDF(
         pdf.setDrawColor(0, 0, 0);
         pdf.setLineWidth(0.3);
         pdf.rect(cx, y, w, spanTotalH, "D");
-        pdf.setFontSize(6);
+        pdf.setFontSize(7);
         pdf.setFont("helvetica", "bold");
         pdf.setTextColor(0, 0, 0);
         const lines = pdf.splitTextToSize(row.nombre_asignatura_grado, w - 1.5);
