@@ -496,10 +496,14 @@ const useBoletinTransicionProcessed = (data) => {
           id_asignatura: r.id_asignatura,
           nombre_asignatura_grado:
             r.nombre_asignatura_grado ?? r.nombre_asignatura ?? "-",
+          intensidad_horaria: r.intensidad_horaria,
           filas: [],
         });
       }
       const asig = m.get(asigKey);
+      if (asig.intensidad_horaria == null && r.intensidad_horaria != null) {
+        asig.intensidad_horaria = r.intensidad_horaria;
+      }
       const existingIdx = asig.filas.findIndex(
         (d) =>
           String(d.id_dba) === String(r.id_dba) &&
@@ -906,10 +910,14 @@ async function generateBoletinPDF(
           id_asignatura: r.id_asignatura,
           nombre_asignatura_grado:
             r.nombre_asignatura_grado ?? r.nombre_asignatura ?? "-",
+          intensidad_horaria: r.intensidad_horaria,
           filas: [],
         });
       }
       const asig = asigMap.get(asigKey);
+      if (asig.intensidad_horaria == null && r.intensidad_horaria != null) {
+        asig.intensidad_horaria = r.intensidad_horaria;
+      }
       const existingIdx = asig.filas.findIndex(
         (d) =>
           String(d.id_dba) === String(r.id_dba) &&
@@ -935,6 +943,7 @@ async function generateBoletinPDF(
         flatRows.push({
           id_asignatura: asig.id_asignatura,
           nombre_asignatura_grado: asig.nombre_asignatura_grado,
+          intensidad_horaria: asig.intensidad_horaria,
           ...fila,
         });
         rowSpanMap.set(
@@ -946,7 +955,8 @@ async function generateBoletinPDF(
 
     // Configurar columnas
     const tColWidths = [
-      contentW * 0.22,
+      contentW * 0.18,
+      contentW * 0.04,
       contentW * 0.26,
       contentW * 0.26,
       contentW * 0.26,
@@ -996,7 +1006,7 @@ async function generateBoletinPDF(
     const thBg = [255, 255, 255];
     pdf.setFontSize(9);
     pdf.setFont("helvetica", "bold");
-    for (let c = 0; c < 4; c++) {
+    for (let c = 0; c < 5; c++) {
       const cx = tColX(c);
       const w = tColWidths[c];
       pdf.setFillColor(...thBg);
@@ -1004,7 +1014,7 @@ async function generateBoletinPDF(
       pdf.setDrawColor(0, 0, 0);
       pdf.setLineWidth(0.3);
       pdf.rect(cx, y, w, tHeaderH, "D");
-      const headers = ["Asignatura", "DBA", "Propósito", "Comentario"];
+      const headers = ["Asignatura", "IH", "DBA", "Propósito", "Comentario"];
       pdf.text(headers[c], cx + w / 2, y + tHeaderH / 2 + 1.5, {
         align: "center",
       });
@@ -1020,8 +1030,8 @@ async function generateBoletinPDF(
 
       // Calcular altura dinámica según el contenido más largo
       let computedRowH = 7;
-      for (let ci = 1; ci <= 3; ci++) {
-        const text = [row.nombre_dba, row.nombre_proposito, row.comentario][ci - 1];
+      for (let ci = 2; ci <= 4; ci++) {
+        const text = [row.nombre_dba, row.nombre_proposito, row.comentario][ci - 2];
         const colW = tColWidths[ci];
         const lines = pdf.splitTextToSize(String(text ?? "-"), colW - 1.5);
         const needed = lines.length * lineH + 4;
@@ -1035,8 +1045,8 @@ async function generateBoletinPDF(
         for (let i = idx; i < idx + span; i++) {
           const r = flatRows[i];
           let spanRowH = 7;
-          for (let ci = 1; ci <= 3; ci++) {
-            const text = [r.nombre_dba, r.nombre_proposito, r.comentario][ci - 1];
+          for (let ci = 2; ci <= 4; ci++) {
+            const text = [r.nombre_dba, r.nombre_proposito, r.comentario][ci - 2];
             const colW = tColWidths[ci];
             const lines = pdf.splitTextToSize(String(text ?? "-"), colW - 1.5);
             const needed = lines.length * lineH + 4;
@@ -1070,8 +1080,24 @@ async function generateBoletinPDF(
         }
       }
 
-      for (let ci = 1; ci <= 3; ci++) {
-        const text = [row.nombre_dba, row.nombre_proposito, row.comentario][ci - 1];
+      // IH cell (col 1)
+      {
+        const cx = tColX(1);
+        const w = tColWidths[1];
+        pdf.setFillColor(...rowBg);
+        pdf.rect(cx, y, w, computedRowH, "F");
+        pdf.setDrawColor(0, 0, 0);
+        pdf.setLineWidth(0.3);
+        pdf.rect(cx, y, w, computedRowH, "D");
+        pdf.setFontSize(7);
+        pdf.setFont("helvetica", "normal");
+        pdf.setTextColor(0, 0, 0);
+        const val = String(row.intensidad_horaria ?? "-");
+        pdf.text(val, cx + w / 2, y + computedRowH / 2 + 1.5, { align: "center" });
+      }
+
+      for (let ci = 2; ci <= 4; ci++) {
+        const text = [row.nombre_dba, row.nombre_proposito, row.comentario][ci - 2];
         drawTCellMultiline(text, ci, y, computedRowH, { bg: rowBg });
       }
 
@@ -1731,6 +1757,7 @@ const BoletinSelector = ({
         rows.push({
           id_asignatura: asig.id_asignatura,
           nombre_asignatura_grado: asig.nombre_asignatura_grado,
+          intensidad_horaria: asig.intensidad_horaria,
           ...fila,
         });
       }
@@ -2481,8 +2508,9 @@ const BoletinSelector = ({
                         }}
                       >
                         <colgroup>
-                          <col style={{ width: "20%" }} />
-                          <col style={{ width: "30%" }} />
+                          <col style={{ width: "18%" }} />
+                          <col style={{ width: "4%" }} />
+                          <col style={{ width: "28%" }} />
                           <col style={{ width: "25%" }} />
                           <col style={{ width: "25%" }} />
                         </colgroup>
@@ -2496,6 +2524,7 @@ const BoletinSelector = ({
                             <th style={{ ...S.thLeft, verticalAlign: "middle" }}>
                               Asignatura
                             </th>
+                            <th style={{ ...S.th, fontSize: "8px" }}>IH</th>
                             <th style={{ ...S.th, fontSize: "8px" }}>DBA</th>
                             <th style={{ ...S.th, fontSize: "8px" }}>
                               Propósito
@@ -2530,6 +2559,14 @@ const BoletinSelector = ({
                                       {row.nombre_asignatura_grado}
                                     </td>
                                   ) : null}
+                                  <td
+                                    style={{
+                                      ...S.td,
+                                      fontSize: "9px",
+                                    }}
+                                  >
+                                    {row.intensidad_horaria ?? "-"}
+                                  </td>
                                   <td
                                     style={{
                                       ...S.tdLeft,
