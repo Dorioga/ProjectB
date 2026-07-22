@@ -364,7 +364,7 @@ export function sortAlphabetically(data, field, order = "asc") {
 }
 
 /** Campos que NO se convierten a mayúsculas (sensibles a capitalización). */
-const _LOWERCASE_FIELDS = new Set(["email", "password"]);
+const _LOWERCASE_FIELDS = new Set(["email", "password", "gender"]);
 
 /**
  * Convierte el valor de un campo de texto a mayúsculas,

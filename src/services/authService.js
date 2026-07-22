@@ -1,5 +1,4 @@
 import { ApiClient } from "./ApiClient";
-import { sha256 } from "js-sha256";
 import { upload } from "./uploadService";
 
 /**
@@ -11,7 +10,7 @@ export async function login(credentials) {
   const payload = {
     ...rest,
     // En este proyecto el campo de contraseña del form se llama `infokey`.
-    infokey: rest.infokey ? sha256(String(rest.infokey)) : "",
+    infokey: rest.infokey,
   };
 
   if (captchaToken) {
@@ -71,7 +70,7 @@ export async function valuesAccessData(payload) {
     throw new Error("Payload inválido para valuesAccessData");
   }
   // El interceptor de ApiClient ya devuelve res.data en la mayoría de los casos.
-  return ApiClient.instance.post("/values_access_data", payload);
+  return ApiClient.instance.post("/values_access_data", payload, { skipSessionExpiry: true });
 }
 
 /**
@@ -83,7 +82,7 @@ export async function accessData(payload) {
   if (!payload || typeof payload !== "object") {
     throw new Error("Payload inválido para accessData");
   }
-  return ApiClient.instance.post("/access_data", payload);
+  return ApiClient.instance.post("/access_data", payload, { skipSessionExpiry: true });
 }
 
 /**
@@ -164,13 +163,13 @@ export async function getTeacherInstitution(payload) {
  * Actualiza la contraseña del usuario autenticado.
  * PATCH /user/:userId
  * @param {string|number} personaId - ID de la persona.
- * @param {string} nuevaContrasena - Nueva contraseña en texto plano (se hashea con sha256).
+ * @param {string} nuevaContrasena - Nueva contraseña en texto plano.
  * @returns {Promise} Respuesta del servidor.
  */
 export async function updatePassword(userId, nuevaContrasena) {
   if (!userId) throw new Error("userId es requerido");
   if (!nuevaContrasena) throw new Error("La nueva contraseña es requerida");
-  const payload = { contrasena: sha256(String(nuevaContrasena)) };
+  const payload = { contrasena: String(nuevaContrasena) };
   return ApiClient.patch(`/user/${userId}`, payload);
 }
 

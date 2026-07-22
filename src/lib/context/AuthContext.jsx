@@ -209,7 +209,7 @@ export function AuthProvider({ children }) {
     if (token) {
       localStorage.setItem("token", token);
       setAuthToken(token);
-    } else {
+    } else if (!localStorage.getItem("token")) {
       localStorage.removeItem("token");
       setAuthToken(null);
     }

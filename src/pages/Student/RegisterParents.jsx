@@ -1,5 +1,4 @@
 ﻿import React, { useState } from "react";
-import { sha256 } from "js-sha256";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import TypeDocumentSelector from "../../components/molecules/TypeDocumentSelector";
 import { useNotify } from "../../lib/hooks/useNotify";
@@ -161,7 +160,7 @@ const RegisterParents = ({ fkEstudiante, onSuccess }) => {
       identification: form.identification.trim(),
       identificationtype: Number(form.identificationtype),
       sede: resolvedSede,
-      password: sha256(form.password.trim()),
+      password: form.password.trim(),
       fk_estudiante: Number(foundStudentId),
     };
 

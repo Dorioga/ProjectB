@@ -158,7 +158,6 @@ graph TD
 | Visualización de PDF    | react-pdf + pdfjs-dist      | ^10.2.0 / ^5.4.394 |
 | Exportación de pantalla | html2canvas                 | ^1.4.1             |
 | Archivos Excel          | xlsx                        | ^0.18.5            |
-| Criptografía            | js-sha256                   | ^0.11.1            |
 | Iconografía             | Lucide React                | ^0.548.0           |
 | Tours guiados           | Driver.js                   | ^1.4.0             |
 | Webcam                  | react-webcam                | ^7.2.0             |

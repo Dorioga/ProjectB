@@ -113,7 +113,7 @@ apiClient.interceptors.response.use(
     const config = error?.config || {};
 
     // Manejar errores de autenticación (token inválido/expirado)
-    if (res?.status === 401 || res?.data?.code === "UN001") {
+    if ((res?.status === 401 || res?.data?.code === "UN001") && !config.skipSessionExpiry) {
       console.warn("Token inválido o expirado:", res?.data);
       // Limpiar token inválido del localStorage
       try {
