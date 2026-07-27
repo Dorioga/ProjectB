@@ -2,6 +2,32 @@
 import DataTable from "../atoms/DataTable";
 import SimpleButton from "../atoms/SimpleButton";
 
+const computeMotivoAlerta = (row) => {
+  const motivos = [];
+  if (!row.Doc_estudiante) motivos.push("Sin doc. estudiante");
+  if (!row.Doc_acudiente) motivos.push("Sin doc. acudiente");
+  if (row.sin_acudiente) motivos.push("Sin acudiente");
+  if (
+    row.primera_etapa === "Excusa" &&
+    (!Array.isArray(row.excusas) ||
+      !row.excusas.some(
+        (e) => e.etapa?.toLowerCase() === "primera etapa" && e.link,
+      ))
+  ) {
+    motivos.push("Sin doc. excusa etapa1");
+  }
+  if (
+    row.segunda_etapa === "Excusa" &&
+    (!Array.isArray(row.excusas) ||
+      !row.excusas.some(
+        (e) => e.etapa?.toLowerCase() === "segunda etapa" && e.link,
+      ))
+  ) {
+    motivos.push("Sin doc. excusa etapa2");
+  }
+  return motivos.join(", ") || "Sin alerta";
+};
+
 const AlertTable = ({ alerts, onRefresh }) => {
   // Definir las columnas para el DataTable
   const columns = useMemo(
@@ -60,36 +86,10 @@ const AlertTable = ({ alerts, onRefresh }) => {
       {
         id: "motivoAlerta",
         header: "Motivo de alerta",
-        cell: ({ row }) => {
-          const a = row.original;
-          const motivos = [];
-          if (!a.Doc_estudiante) motivos.push("Sin doc. estudiante");
-          if (!a.Doc_acudiente) motivos.push("Sin doc. acudiente");
-          if (a.sin_acudiente) motivos.push("Sin acudiente");
-          if (
-            a.primera_etapa === "Excusa" &&
-            (!Array.isArray(a.excusas) ||
-              !a.excusas.some(
-                (e) => e.etapa?.toLowerCase() === "primera etapa" && e.link,
-              ))
-          ) {
-            motivos.push("Sin doc. excusa etapa1");
-          }
-          if (
-            a.segunda_etapa === "Excusa" &&
-            (!Array.isArray(a.excusas) ||
-              !a.excusas.some(
-                (e) => e.etapa?.toLowerCase() === "segunda etapa" && e.link,
-              ))
-          ) {
-            motivos.push("Sin doc. excusa etapa2");
-          }
-          return (
-            <span className="text-sm">
-              {motivos.join(", ") || "Sin alerta"}
-            </span>
-          );
-        },
+        accessorFn: (row) => computeMotivoAlerta(row),
+        cell: ({ row }) => (
+          <span className="text-sm">{computeMotivoAlerta(row.original)}</span>
+        ),
       },
     ],
     [],
