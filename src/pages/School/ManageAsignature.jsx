@@ -319,6 +319,7 @@ const ManageAsignature = () => {
           onClose={() => {
             setIsEditModalOpen(false);
             setSelectedAsignature(null);
+            fetchAsignatures();
           }}
           title="Editar asignatura"
           size="screen-2xl"

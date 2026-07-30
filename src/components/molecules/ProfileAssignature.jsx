@@ -221,7 +221,6 @@ const ProfileAssignature = ({
       notify.success("Grados agregados correctamente.");
       setNewGradeIds([]);
       setAvailableGrades([]);
-      if (typeof onSave === "function") onSave(payload);
     } catch (err) {
       notify.error(err?.message || "Error al agregar grados.");
     } finally {
