@@ -24,6 +24,7 @@ const EMPTY_CONTEXT = {
   updateTransitionStudentNote: noop,
   updateNote: noop,
   createOrUpdateNote: noop,
+  addAsignatureGrades: noop,
   // generic loading/error flags
   loading: false,
   error: null,

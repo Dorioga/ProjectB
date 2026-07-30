@@ -68,6 +68,18 @@ export function mapTeacherRowsToProcessed(rawData, teacherRow = {}) {
   }
   const director_of_grade = Array.from(directorSet).join(", ");
 
+  // Extraer id_grado_director desde todas las filas
+  const directorGradeIdsSet = new Set();
+  for (const r of rows) {
+    const rawId = r.id_grado_director;
+    if (rawId) {
+      splitCSV(rawId).forEach((id) => {
+        const num = Number(id);
+        if (!isNaN(num)) directorGradeIdsSet.add(num);
+      });
+    }
+  }
+
   // Construir subjects - agrupar por asignatura y coleccionar sus grupos usando Map/Set para evitar búsquedas O(n)
   const subjectsMap = new Map();
   const gradosSet = new Set();
@@ -84,6 +96,7 @@ export function mapTeacherRowsToProcessed(rawData, teacherRow = {}) {
     const grupo = String(r.grupo ?? "").trim();
     const nombre_grado_raw = r.nombre_grado ?? r.id_grado ?? "";
     const nombre_grado = String(nombre_grado_raw ?? "").trim();
+    const idGradoRaw = r.id_grado ?? null;
 
     // Agregar al set global de grados/grupos (deduplicación global)
     if (nombre_grado) {
@@ -138,7 +151,8 @@ export function mapTeacherRowsToProcessed(rawData, teacherRow = {}) {
       }
 
       // Agregar info de assignment (id de gradeAsignatureTeacher por fila, si existe)
-      const gaKey = `${idGradeAsignatureTeacher || ""}::${grupo || ""}::${nombre_grado || ""}`;
+      const idGradoStr = idGradoRaw ? String(Number(idGradoRaw)) : "";
+      const gaKey = `${idGradeAsignatureTeacher || ""}::${grupo || ""}::${nombre_grado || ""}::${idGradoStr}`;
       if (!subjEntry._gradeAssignSet.has(gaKey))
         subjEntry._gradeAssignSet.add(gaKey);
     }
@@ -151,10 +165,10 @@ export function mapTeacherRowsToProcessed(rawData, teacherRow = {}) {
       return { grupo, nombre_grado };
     });
 
-    // Convertir gradeAssignSet -> array de objetos { id_grade_asignature_teacher, grupo, nombre_grado }
+    // Convertir gradeAssignSet -> array de objetos { id_grade_asignature_teacher, grupo, nombre_grado, id_grado }
     const gradeAssignments = Array.from(s._gradeAssignSet || new Set()).map(
       (gstr) => {
-        const [idGrade, grupo, nombre_grado] = gstr.split("::");
+        const [idGrade, grupo, nombre_grado, idGrado] = gstr.split("::");
         return {
           id_grade_asignature_teacher: idGrade
             ? isNaN(Number(idGrade))
@@ -163,6 +177,7 @@ export function mapTeacherRowsToProcessed(rawData, teacherRow = {}) {
             : null,
           grupo: grupo || "",
           nombre_grado: nombre_grado || "",
+          id_grado: idGrado ? Number(idGrado) : null,
         };
       },
     );
@@ -259,6 +274,7 @@ export function mapTeacherRowsToProcessed(rawData, teacherRow = {}) {
       base.director_of_grade ||
       teacherRow?.director_of_grade ||
       "",
+    director_grade_ids: Array.from(directorGradeIdsSet),
     subjects: uniqueSubjects,
     assignments: assignments, // plano (grado/grupo/asignatura por fila)
     estado: rows[0]?.estado ?? teacherRow?.estado ?? "",

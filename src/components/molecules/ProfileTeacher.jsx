@@ -232,8 +232,9 @@ const ProfileTeacher = ({
         const gradeAssignments = subject?.grade_assignments || [];
 
         const processGrade = (g) => {
-          // Buscar el id_grade_asignature_teacher que corresponda a este grupo/grado
+          // Buscar el id_grade_asignature_teacher e id_grado que correspondan a este grupo/grado
           let idGradeAsignature = null;
+          let idGrado = null;
           if (gradeAssignments.length > 0) {
             const match = gradeAssignments.find(
               (ga) =>
@@ -242,10 +243,12 @@ const ProfileTeacher = ({
                 String(ga.nombre_grado || "").trim() === String(g || "").trim(),
             );
             idGradeAsignature = match?.id_grade_asignature_teacher ?? null;
+            idGrado = match?.id_grado ?? null;
           }
 
           rows.push({
             grado: g,
+            id_grado: idGrado,
             grupo: grp.grupo || "",
             asignatura: a.asignatura || "",
             id_asignatura: a.id_asignatura ?? a.id ?? null,
@@ -470,6 +473,7 @@ const ProfileTeacher = ({
       estado: data.estado || "",
       activeRowKeys: originalRef.current?.activeRowKeys || null,
       directorGroups: initialDirectorGroups,
+      directorGradeIds: new Set(data?.director_grade_ids ?? []),
     };
   }, [data]);
 
@@ -782,6 +786,30 @@ const ProfileTeacher = ({
             status: "Activo",
           }));
 
+    // ── Director grade: comparar original vs actual ──
+    const currentDirectorIds = new Set(
+      assignmentRows
+        .filter((row) => localDirectorGroups.has(row.grupo))
+        .map((row) => row.id_grado)
+        .filter((id) => id != null),
+    );
+    const origDirectorIds = originalRef.current?.directorGradeIds ?? new Set();
+
+    const newDirectorIds = [...currentDirectorIds].filter(
+      (id) => !origDirectorIds.has(id),
+    );
+    const removedDirectorIds = [...origDirectorIds].filter(
+      (id) => !currentDirectorIds.has(id),
+    );
+
+    console.log("=== director_grade_ids ORIGINALES ===", [...origDirectorIds]);
+    console.log(
+      "=== director_grade_ids ACTUALES (checkboxes) ===",
+      [...currentDirectorIds],
+    );
+    console.log("=== NUEVOS (checked -> director_of_grade) ===", newDirectorIds);
+    console.log("=== REMOVIDOS (unchecked -> no_director) ===", removedDirectorIds);
+
     const payload = {
       first_name: form.first_name,
       second_name: form.second_name,
@@ -803,7 +831,8 @@ const ProfileTeacher = ({
       })(),
       address: form.direccion,
       representante_curso: !!form.representante_curso,
-      director_of_grade: Array.from(localDirectorGroups).join(","),
+      director_of_grade: newDirectorIds.map((id) => ({ id_grade: id })),
+      no_director: removedDirectorIds.map((id) => ({ id_grade: id })),
       status: estado,
       asignatures,
       grades,
@@ -813,6 +842,7 @@ const ProfileTeacher = ({
       if (typeof onSave === "function") {
         const teacherId = form.id_docente ?? data.id_docente ?? data.id ?? null;
         const personId = form.per_id ?? data.per_id ?? data.id_persona ?? null;
+        console.log("Payload a enviar:", payload);
         await onSave(teacherId, personId, payload);
         notify.success("Docente guardado correctamente.");
         // actualizar snapshot
@@ -821,6 +851,7 @@ const ProfileTeacher = ({
           estado,
           activeRowKeys: new Set(activeRowKeys),
           directorGroups: new Set(localDirectorGroups),
+          directorGradeIds: new Set(currentDirectorIds),
         };
         setIsEditing(false);
       } else {
@@ -830,6 +861,7 @@ const ProfileTeacher = ({
           estado,
           activeRowKeys: new Set(activeRowKeys),
           directorGroups: new Set(localDirectorGroups),
+          directorGradeIds: new Set(currentDirectorIds),
         };
         setIsEditing(false);
       }

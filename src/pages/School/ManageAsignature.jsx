@@ -330,6 +330,8 @@ const ManageAsignature = () => {
                 await handleSaveAsignature(payload);
               }}
               initialEditing={false}
+              sedeId={selectedSede}
+              jornada={selectedJornada}
             />
           )}
         </Modal>

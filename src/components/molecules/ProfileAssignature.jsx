@@ -1,15 +1,33 @@
-﻿import { useState, useEffect, useRef, useCallback } from "react";
+﻿import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import SimpleButton from "../atoms/SimpleButton";
 import tourProfileAssignature from "../../tour/tourProfileAssignature";
 import useSchool from "../../lib/hooks/useSchool";
+import { useNotify } from "../../lib/hooks/useNotify";
 
-const ProfileAssignature = ({ data, onSave, initialEditing = false }) => {
-  const { loadAreas, areas, loadingAreas } = useSchool();
+const ProfileAssignature = ({
+  data,
+  onSave,
+  initialEditing = false,
+  sedeId: propSedeId = "",
+  jornada: propJornada = "",
+}) => {
+  const { loadAreas, areas, loadingAreas, getGradeSede, addAsignatureGrades } =
+    useSchool();
+  const notify = useNotify();
   const safeData = data || {};
   const [isEditing, setIsEditing] = useState(Boolean(initialEditing));
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState({});
   const [isTourMode, setIsTourMode] = useState(false);
+
+  const [showGradeSelector, setShowGradeSelector] = useState(false);
+  const [newSedeId, setNewSedeId] = useState(() => propSedeId);
+  const [newJornada, setNewJornada] = useState(() => propJornada);
+  const [availableGrades, setAvailableGrades] = useState([]);
+  const [loadingGrades, setLoadingGrades] = useState(false);
+  const [newGradeIds, setNewGradeIds] = useState([]);
+  const [expandedGroups, setExpandedGroups] = useState({});
+  const [isAddingGrades, setIsAddingGrades] = useState(false);
 
   const startTour = useCallback(() => {
     setIsTourMode(true);
@@ -95,6 +113,121 @@ const ProfileAssignature = ({ data, onSave, initialEditing = false }) => {
     // limpiar errores cuando cambian los datos
     setErrors({});
   }, [data]);
+
+  // Sincronizar sede/jornada cuando cambien desde el padre
+  useEffect(() => {
+    setNewSedeId(propSedeId);
+    setNewJornada(propJornada);
+    setNewGradeIds([]);
+    setAvailableGrades([]);
+  }, [propSedeId, propJornada]);
+
+  useEffect(() => {
+    if (!newJornada || !newSedeId || !getGradeSede) {
+      setAvailableGrades([]);
+      return;
+    }
+    let canceled = false;
+    const load = async () => {
+      setLoadingGrades(true);
+      try {
+        const res = await getGradeSede({
+          idSede: Number(newSedeId),
+          idWorkDay: Number(newJornada),
+        });
+        if (canceled) return;
+        const grades = Array.isArray(res) ? res : res?.data ?? [];
+        setAvailableGrades(
+          grades
+            .filter((g) => g?.id_grado && g?.estado === "Activo")
+            .map((g) => ({
+              id: g.id_grado,
+              nombre: g.nombre_grado,
+              grupo: g.grupo,
+            })),
+        );
+      } catch {
+        if (!canceled) setAvailableGrades([]);
+      } finally {
+        if (!canceled) setLoadingGrades(false);
+      }
+    };
+    load();
+    return () => {
+      canceled = true;
+    };
+  }, [newJornada, newSedeId, getGradeSede]);
+
+  // IDs de grados ya asignados a la asignatura (para no mostrarlos en el selector)
+  const existingGradeIds = useMemo(
+    () => new Set(selectedGradeIds.map((id) => Number(id))),
+    [selectedGradeIds],
+  );
+
+  const filteredAvailableGrades = useMemo(
+    () => availableGrades.filter((g) => !existingGradeIds.has(Number(g.id))),
+    [availableGrades, existingGradeIds],
+  );
+
+  useEffect(() => {
+    const groupNames = [
+      ...new Set(filteredAvailableGrades.map((g) => g.nombre || "Sin nombre")),
+    ];
+    setExpandedGroups((prev) => {
+      const next = { ...prev };
+      groupNames.forEach((name) => {
+        if (!(name in next)) next[name] = true;
+      });
+      return next;
+    });
+  }, [filteredAvailableGrades]);
+
+  const toggleNewGrade = (id) => {
+    setNewGradeIds((prev) =>
+      prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id],
+    );
+  };
+
+  const isGroupAllSelected = (gradeList) =>
+    gradeList.every((g) => newGradeIds.includes(g.id));
+
+  const toggleSelectAllGroup = (gradeList) => {
+    const ids = gradeList.map((g) => g.id);
+    setNewGradeIds((prev) => {
+      const allSelected = ids.every((id) => prev.includes(id));
+      return allSelected
+        ? prev.filter((id) => !ids.includes(id))
+        : [...new Set([...prev, ...ids])];
+    });
+  };
+
+  const handleAddGrades = async () => {
+    if (newGradeIds.length === 0) {
+      notify.warning("Selecciona al menos un grado.");
+      return;
+    }
+    const asignaturaId = safeData.id_asignatura || safeData.id;
+    if (!asignaturaId) {
+      notify.error("No se encontró el ID de la asignatura.");
+      return;
+    }
+    setIsAddingGrades(true);
+    try {
+      const payload = {
+        id_asignature: Number(asignaturaId),
+        fk_grade: newGradeIds.map((id) => ({ idgrade: Number(id) })),
+      };
+      await addAsignatureGrades(payload);
+      notify.success("Grados agregados correctamente.");
+      setNewGradeIds([]);
+      setAvailableGrades([]);
+      if (typeof onSave === "function") onSave(payload);
+    } catch (err) {
+      notify.error(err?.message || "Error al agregar grados.");
+    } finally {
+      setIsAddingGrades(false);
+    }
+  };
 
   const validateForm = (showErrors = true) => {
     const next = {};
@@ -357,6 +490,128 @@ const ProfileAssignature = ({ data, onSave, initialEditing = false }) => {
                 </label>
               ))}
             </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Nuevo selector de grados ── */}
+      <div className="md:col-span-3 border-t pt-4 mt-4">
+        <SimpleButton
+          type="button"
+          onClick={() => setShowGradeSelector((v) => !v)}
+          icon={showGradeSelector ? "ChevronUp" : "Plus"}
+          msj={showGradeSelector ? "Cerrar" : "Agregar grados"}
+          bg="bg-secondary"
+          text="text-surface"
+          noRounded={false}
+        />
+
+        {showGradeSelector && (
+          <div className="mt-4">
+            <label className="font-semibold">Grados para agregar</label>
+            {loadingGrades ? (
+                <p className="text-sm opacity-70">Cargando grados...</p>
+              ) : filteredAvailableGrades.length === 0 ? (
+                <p className="text-sm opacity-70">
+                  No hay más grados disponibles para agregar.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                  {Object.entries(
+                    filteredAvailableGrades.reduce((acc, g) => {
+                      const key = g.nombre || "Sin nombre";
+                      if (!acc[key]) acc[key] = [];
+                      acc[key].push(g);
+                      return acc;
+                    }, {}),
+                  )
+                    .sort(([a], [b]) => a.localeCompare(b))
+                    .map(([nombre, gradeList]) => {
+                      const expanded =
+                        expandedGroups[nombre] ?? true;
+                      const allSelected =
+                        isGroupAllSelected(gradeList);
+                      const selectedCount = gradeList.filter((g) =>
+                        newGradeIds.includes(g.id),
+                      ).length;
+
+                      return (
+                        <div key={nombre} className="p-2 rounded">
+                          <div className="flex items-center justify-between p-2 bg-primary rounded-lg">
+                            <span className="font-semibold bg-surface px-2 py-1 rounded text-sm">
+                              {nombre} ({gradeList.length} •{" "}
+                              {selectedCount} sel.)
+                            </span>
+                            <div className="flex gap-1">
+                              <SimpleButton
+                                type="button"
+                                onClick={() =>
+                                  toggleSelectAllGroup(gradeList)
+                                }
+                                icon={
+                                  allSelected
+                                    ? "CheckSquare"
+                                    : "Square"
+                                }
+                                bg="bg-primary"
+                                text="text-surface"
+                                noRounded={false}
+                              />
+                              <SimpleButton
+                                type="button"
+                                onClick={() =>
+                                  setExpandedGroups((p) => ({
+                                    ...p,
+                                    [nombre]: !expanded,
+                                  }))
+                                }
+                                icon={expanded ? "EyeOff" : "Eye"}
+                                bg="bg-primary"
+                                text="text-surface"
+                                noRounded={false}
+                              />
+                            </div>
+                          </div>
+                          {expanded && (
+                            <div className="grid grid-cols-2 gap-2 py-2">
+                              {gradeList.map((g) => (
+                                <label
+                                  key={g.id}
+                                  className="flex items-center gap-2 bg-surface rounded-sm p-2 border border-gray-300"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={newGradeIds.includes(g.id)}
+                                    onChange={() =>
+                                      toggleNewGrade(g.id)
+                                    }
+                                  />
+                                  <span className="text-primary font-medium text-sm">
+                                    {g.grupo}
+                                  </span>
+                                </label>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+              <div className="flex justify-end mt-4">
+                <SimpleButton
+                  type="button"
+                  onClick={handleAddGrades}
+                  disabled={isAddingGrades || newGradeIds.length === 0}
+                  msj={
+                    isAddingGrades ? "Registrando..." : "Registrar grados"
+                  }
+                  icon={isAddingGrades ? "Loader" : "Save"}
+                  bg="bg-primary"
+                  text="text-surface"
+                  noRounded={false}
+                />
+              </div>
           </div>
         )}
       </div>

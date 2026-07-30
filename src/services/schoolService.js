@@ -857,3 +857,20 @@ export async function deleteSchool(id) {
   const res = await ApiClient.instance.delete(`/institution/${id}`);
   return res;
 }
+
+/**
+ * Agrega grados a una asignatura existente.
+ *
+ * Endpoint esperado: POST /asignaturesnew/grades
+ * Payload esperado: { id_asignature: number, fk_grade: [{ idgrade: number }] }
+ */
+export async function addAsignatureGrades(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+  const res = await ApiClient.instance.post("/asignaturenew/grades", payload);
+  const data = res;
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+  throw new Error("Respuesta inesperada de /asignaturenew/grades.");
+}

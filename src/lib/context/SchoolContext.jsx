@@ -388,6 +388,21 @@ export function SchoolProvider({ children }) {
     [],
   );
 
+  const addAsignatureGrades = useCallback(async (payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await schoolService.addAsignatureGrades(payload);
+      eventBus.emit("Grados agregados correctamente.", "success");
+      return result;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const getDataSede = useCallback(async (payload) => {
     setLoading(true);
     setError(null);
@@ -659,6 +674,7 @@ export function SchoolProvider({ children }) {
       registerAsignature,
       getSedeAsignature,
       updateAssignature,
+      addAsignatureGrades,
       getDataSede,
       getDataSchool,
       updateSede,
@@ -725,6 +741,7 @@ export function SchoolProvider({ children }) {
       registerAsignature,
       getSedeAsignature,
       updateAssignature,
+      addAsignatureGrades,
       getDataSede,
       getDataSchool,
       updateSede,
