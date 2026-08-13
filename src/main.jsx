@@ -1,4 +1,3 @@
-import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles/globals.css";
 import App from "./pages/App.jsx";
@@ -30,9 +29,8 @@ import { NotificationProvider } from "./lib/context/NotificationContext.jsx";
 import { AuditProvider } from "./lib/context/AuditContext.jsx";
 
 createRoot(document.getElementById("root")).render(
-  <StrictMode>
-    <BrowserRouter>
-      <GoogleReCaptchaProvider reCaptchaKey={import.meta.env.VITE_CAPTCHA_PUBLIC_KEY}>
+  <BrowserRouter>
+    <GoogleReCaptchaProvider reCaptchaKey={import.meta.env.VITE_CAPTCHA_PUBLIC_KEY}>
       <NotificationProvider>
         <AuthProvider>
           <DataProvider>
@@ -49,6 +47,5 @@ createRoot(document.getElementById("root")).render(
         </AuthProvider>
       </NotificationProvider>
       </GoogleReCaptchaProvider>
-    </BrowserRouter>
-  </StrictMode>,
+    </BrowserRouter>,
 );

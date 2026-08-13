@@ -1,13 +1,16 @@
 import { lazy, Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useParams } from "react-router-dom";
 import LandingPage from "../pages/LandingPage";
 import Login from "../pages/Login/Login";
 import ForgotPassword from "../pages/Login/ForgotPassword";
 import RequireAuth from "../components/RequireAuth";
 import DashboardTemplate from "../components/templates/DashboardTemplate";
+import CoursesTemplate from "../components/templates/CoursesTemplate";
 import ReserveSpot from "../components/templates/ReserveSpot";
 
 import Loader from "../components/atoms/Loader";
+import COURSES from "../pages/Courses/courses";
+import ContentUnavailable from "../pages/Courses/shared/ContentUnavailable";
 
 const DashHome = lazy(() => import("../pages/Dashboard/Home"));
 const RegisterUser = lazy(() => import("../pages/Dashboard/RegisterUser"));
@@ -43,6 +46,7 @@ const AssistenceStudent = lazy(
   () => import("../pages/Student/AssistenceStudent"),
 );
 const ManageDBA = lazy(() => import("../pages/Teacher/ManageDBA"));
+const ManageEval = lazy(() => import("../pages/Teacher/ManageEval"));
 const ManageBoletin = lazy(() => import("../pages/School/ManageBoletin"));
 const Slots = lazy(() => import("../pages/Dashboard/Slots"));
 const ControlNotas = lazy(() => import("../pages/Dashboard/ControlNotas"));
@@ -52,12 +56,29 @@ const ControlAccesoSalida = lazy(
 const ProfileNoteSedePage = lazy(
   () => import("../pages/Teacher/ProfileNoteSedePage"),
 );
+const CoursesHub = lazy(() => import("../pages/Courses/CoursesHub"));
 
 const SuspenseFallback = () => (
   <div className="flex items-center justify-center h-full w-full">
     <Loader message="Cargando..." />
   </div>
 );
+
+// Resuelve el curso a partir del parámetro :courseId usando el registro.
+const CourseResolver = () => {
+  const { courseId } = useParams();
+  const CourseComponent = COURSES[courseId];
+
+  if (!CourseComponent) {
+    return <ContentUnavailable />;
+  }
+
+  return (
+    <Suspense fallback={<SuspenseFallback />}>
+      <CourseComponent />
+    </Suspense>
+  );
+};
 
 const GeneralRoutes = () => {
   return (
@@ -254,6 +275,14 @@ const GeneralRoutes = () => {
               }
             />
             <Route
+              path="manageEval"
+              element={
+                <Suspense fallback={<SuspenseFallback />}>
+                  <ManageEval />
+                </Suspense>
+              }
+            />
+            <Route
               path="manageBoletin"
               element={
                 <Suspense fallback={<SuspenseFallback />}>
@@ -293,6 +322,28 @@ const GeneralRoutes = () => {
                 </Suspense>
               }
             />
+            <Route
+              path="courses"
+              element={
+                <Suspense fallback={<SuspenseFallback />}>
+                  <CoursesHub />
+                </Suspense>
+              }
+            />
+          </Route>
+          {/* =================================================
+              ÁREA DE CURSOS — SOLO HEADER, SIN SIDEBAR
+              (modo visor / experiencia inmersiva)
+          ================================================= */}
+          <Route
+            path="courses"
+            element={
+              <RequireAuth>
+                <CoursesTemplate />
+              </RequireAuth>
+            }
+          >
+            <Route path=":courseId" element={<CourseResolver />} />
           </Route>
         </Routes>
       </div>

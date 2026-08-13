@@ -445,6 +445,51 @@ export function TeacherProvider({ children }) {
     }
   }, []);
 
+  // ----------------- Evaluaciones (nuevo) -----------------
+  const getEvaluations = useCallback(async (payload = {}) => {
+    setLoadingTeachers(true);
+    setErrorTeachers(null);
+    try {
+      const res = await teacherService.getEvaluations(payload);
+      return res;
+    } catch (err) {
+      setErrorTeachers(err);
+      throw err;
+    } finally {
+      setLoadingTeachers(false);
+    }
+  }, []);
+
+  const createEvaluation = useCallback(async (payload = {}) => {
+    setLoadingTeachers(true);
+    setErrorTeachers(null);
+    try {
+      const res = await teacherService.createEvaluation(payload);
+      eventBus.emit("¡Evaluación registrada exitosamente!", "success");
+      return res;
+    } catch (err) {
+      setErrorTeachers(err);
+      throw err;
+    } finally {
+      setLoadingTeachers(false);
+    }
+  }, []);
+
+  const updateEvaluation = useCallback(async (evalId, payload = {}) => {
+    setLoadingTeachers(true);
+    setErrorTeachers(null);
+    try {
+      const res = await teacherService.updateEvaluation(evalId, payload);
+      eventBus.emit("¡Evaluación actualizada exitosamente!", "success");
+      return res;
+    } catch (err) {
+      setErrorTeachers(err);
+      throw err;
+    } finally {
+      setLoadingTeachers(false);
+    }
+  }, []);
+
   const value = useMemo(
     () => ({
       teachers,
@@ -489,6 +534,10 @@ export function TeacherProvider({ children }) {
       controlCreateNote,
       controlAsignNote,
       getNotesGradesSede,
+      // Evaluaciones
+      getEvaluations,
+      createEvaluation,
+      updateEvaluation,
     }),
     [
       teachers,
@@ -528,6 +577,9 @@ export function TeacherProvider({ children }) {
       controlCreateNote,
       controlAsignNote,
       getNotesGradesSede,
+      getEvaluations,
+      createEvaluation,
+      updateEvaluation,
     ],
   );
 

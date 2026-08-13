@@ -519,6 +519,74 @@ export async function getNotesGradesSede(payload) {
 }
 
 /**
+ * Obtiene las evaluaciones de la institución.
+ * Endpoint: POST /evaluations
+ * payload: { fk_institucion, fk_sede, fk_grado, fk_asignatura, fk_periodo }
+ * @returns {Promise<Array>} Lista de evaluaciones
+ */
+export async function getEvaluations(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto para getEvaluations.");
+  }
+  try {
+    const res = await ApiClient.instance.post("/evaluations", payload);
+    const data = Array.isArray(res) ? res : (res?.data ?? res);
+    return data;
+  } catch (error) {
+    console.error("teacherService - getEvaluations error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Registra una nueva evaluación con sus preguntas.
+ * Endpoint: POST /evaluations
+ * payload: { titulo, tipo, fk_institucion, fk_sede, fk_grado, fk_asignatura, fk_periodo, preguntas: [...] }
+ * @returns {Promise<Object>} Evaluación creada
+ */
+export async function createEvaluation(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto para createEvaluation.");
+  }
+  try {
+    const res = await ApiClient.instance.post("/evaluations", payload);
+    const data = res;
+    if (data && typeof data === "object" && "data" in data) return data.data;
+    if (data !== undefined && data !== null) return data;
+    throw new Error("Respuesta inesperada de /evaluations.");
+  } catch (error) {
+    console.error("teacherService - createEvaluation error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Actualiza una evaluación existente.
+ * Endpoint: PATCH /evaluations/:evalId
+ * payload: { titulo, tipo, preguntas: [...] }
+ * @returns {Promise<Object>} Evaluación actualizada
+ */
+export async function updateEvaluation(evalId, payload) {
+  if (!evalId) throw new Error("updateEvaluation requiere evalId");
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto para updateEvaluation.");
+  }
+  try {
+    const res = await ApiClient.instance.patch(
+      `/evaluations/${evalId}`,
+      payload,
+    );
+    const data = res;
+    if (data && typeof data === "object" && "data" in data) return data.data;
+    if (data !== undefined && data !== null) return data;
+    throw new Error("Respuesta inesperada de /evaluations/:evalId.");
+  } catch (error) {
+    console.error("teacherService - updateEvaluation error:", error);
+    throw error;
+  }
+}
+
+/**
  * Control de notas asignadas por sede y período
  * Endpoint: POST /note/controle/assignment
  * payload: { id_sede, id_periodo }

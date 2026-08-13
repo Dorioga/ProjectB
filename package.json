@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-three/drei": "^10.7.8",
+    "@react-three/fiber": "^9.7.0",
     "@tailwindcss/vite": "^4.1.16",
     "@tanstack/react-table": "^8.21.3",
     "axios": "^1.13.1",
@@ -28,6 +30,7 @@
     "react-webcam": "^7.2.0",
     "recharts": "^3.3.0",
     "tailwindcss": "^4.1.16",
+    "three": "^0.185.1",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
