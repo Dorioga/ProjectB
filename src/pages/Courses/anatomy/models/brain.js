@@ -9,7 +9,7 @@ export default {
 
   image: brainImage,
 
-  file: "https://nexusplataforma.com/storage/modelos/brain.glb",
+  file: "https://www.nexusplataforma.com/storage/modelos/brain.glb",
 
   scale: 8.2,
 
