@@ -4,6 +4,7 @@ import CourseViewer from "../shared/CourseViewer";
 import chemistryTopics from "./data/chemistryTopics";
 import PeriodicTable from "./components/PeriodicTable";
 import ElementInfoContent from "./components/ElementInfoContent";
+import ElectronDistribution from "./components/ElectronDistribution";
 
 export default function ChemistryPage() {
   const [topic, setTopic] = useState(chemistryTopics[0].id);
@@ -95,6 +96,7 @@ export default function ChemistryPage() {
       {topic === "periodic-table" && (
         <PeriodicTable onElementClick={handleElementClick} />
       )}
+      {topic === "electron-distribution" && <ElectronDistribution />}
     </CourseViewer>
   );
 }
