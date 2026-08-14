@@ -6,6 +6,7 @@ import { lazy } from "react";
 const COURSES = {
   anatomy: lazy(() => import("./anatomy/AnatomyPage")),
   math: lazy(() => import("./math/MathPage")),
+  chemistry: lazy(() => import("./chemistry/ChemistryPage")),
 };
 
 export default COURSES;

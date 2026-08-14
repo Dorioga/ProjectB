@@ -1,8 +1,10 @@
+import MoreInfoButton from "../../shared/MoreInfoButton";
+
 export default function OrganInfoContent({ model }) {
   if (!model) return null;
 
   return (
-    <div className="w-full max-w-full rounded-3xl bg-white shadow-xl overflow-hidden">
+    <div className="w-full max-w-full rounded-3xl bg-white shadow-xl ">
       <div className="p-3">
         <div className="flex items-center justify-between gap-2">
           <div className="flex-1">
@@ -43,12 +45,7 @@ export default function OrganInfoContent({ model }) {
           ))}
         </div>
 
-        <button
-          onClick={() => window.open(model.wikipedia, "_blank")}
-          className="mt-2 w-full py-2 rounded-2xl bg-[#1976d2] text-white font-semibold hover:opacity-90 cursor-pointer"
-        >
-          Más información
-        </button>
+        <MoreInfoButton href={model.wikipedia} className="mt-2" />
       </div>
     </div>
   );

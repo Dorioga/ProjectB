@@ -29,7 +29,7 @@ export default function CoursePanel({
   const setDesktopOpen = onDesktopOpenChange ?? setInternalDesktopOpen;
 
   const header = (
-    <div className="flex items-center gap-1 px-2 py-2 bg-[#1976d2] text-white">
+    <div className="flex items-center gap-1 px-2 py-2 bg-[#1976d2] text-white sticky top-0 z-10">
       <Link
         to={backTo}
         className="p-1.5 rounded-full hover:bg-primary cursor-pointer"
@@ -67,11 +67,13 @@ export default function CoursePanel({
       ========================== */}
       {desktopOpen && (
         <div
-          className="hidden md:flex flex-col absolute z-[1000] top-3 left-3 rounded-2xl bg-white shadow-2xl overflow-hidden max-h-[calc(100vh-24px)]"
+          className="hidden md:flex flex-col absolute z-1000 top-3 left-3 rounded-2xl overflow-y-auto bg-white shadow-2xl  max-h-[calc(100%-30px)]"
           style={{ width }}
         >
           {header}
-          <div className="p-3 overflow-y-auto">{children}</div>
+          <div className="p-3 flex-1 overflow-y-auto max-h-[calc(100%-500px)] ">
+            {children}
+          </div>
         </div>
       )}
 
@@ -81,7 +83,7 @@ export default function CoursePanel({
       {!desktopOpen && (
         <button
           onClick={() => setDesktopOpen(true)}
-          className="hidden md:flex absolute z-[1000] top-3 left-3 w-10 h-10 rounded-2xl bg-white shadow-lg items-center justify-center cursor-pointer"
+          className="hidden md:flex absolute z-1000 top-3 left-3 w-10 h-10 rounded-2xl bg-white shadow-lg items-center justify-center cursor-pointer"
           aria-label="Abrir panel"
         >
           <ChevronRight size={20} className="text-[#334155]" />
@@ -93,7 +95,7 @@ export default function CoursePanel({
       ========================== */}
       <button
         onClick={() => setOpen(true)}
-        className="md:hidden absolute z-[1000] top-3 left-3 w-10 h-10 rounded-2xl bg-white shadow-lg flex items-center justify-center cursor-pointer"
+        className="md:hidden absolute z-1000 top-3 left-3 w-10 h-10 rounded-2xl bg-white shadow-lg flex items-center justify-center cursor-pointer"
         aria-label="Abrir panel"
       >
         <Menu size={20} className="text-[#334155]" />
@@ -104,7 +106,7 @@ export default function CoursePanel({
       ========================== */}
       {open && (
         <div
-          className="md:hidden absolute inset-0 z-[1500] bg-black/40"
+          className="md:hidden absolute inset-0 z-1500 bg-black/40"
           onClick={() => setOpen(false)}
         >
           <div

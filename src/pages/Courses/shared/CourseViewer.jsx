@@ -18,6 +18,7 @@ export default function CourseViewer({
   onOpenChange,
   desktopOpen,
   onDesktopOpenChange,
+  scene = true,
 }) {
   return (
     <div className="h-full w-full relative courses-scene">
@@ -33,15 +34,19 @@ export default function CourseViewer({
         {panel}
       </CoursePanel>
 
-      <CourseScene
-        camera={camera}
-        fov={fov}
-        controls={controls}
-        gizmo={gizmo}
-        ground={ground}
-      >
-        {children}
-      </CourseScene>
+      {scene ? (
+        <CourseScene
+          camera={camera}
+          fov={fov}
+          controls={controls}
+          gizmo={gizmo}
+          ground={ground}
+        >
+          {children}
+        </CourseScene>
+      ) : (
+        <div className="absolute inset-0 overflow-auto">{children}</div>
+      )}
 
       {overlays}
     </div>

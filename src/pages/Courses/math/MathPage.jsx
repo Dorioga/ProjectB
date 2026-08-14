@@ -1,7 +1,5 @@
 import { useState } from "react";
 
-import { ExternalLink } from "lucide-react";
-
 import NumberOperationsScene from "./numberOperations/NumberOperationsScene";
 import DivisionScene from "./division/DivisionScene";
 import MultiplicationScene from "./multiplication/MultiplicationScene";
@@ -11,6 +9,7 @@ import OPERATIONS from "./operations";
 import OPERATION_INFO from "./operationInfo";
 
 import CourseViewer from "../shared/CourseViewer";
+import MoreInfoButton from "../shared/MoreInfoButton";
 
 export default function MathPage() {
   // =====================================
@@ -245,15 +244,7 @@ export default function MathPage() {
               {currentOperationInfo.description}
             </p>
 
-            <a
-              href={currentOperationInfo.wikipedia}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full py-2 rounded-2xl border border-gray-300 font-semibold text-sm text-gray-700 hover:bg-gray-50 cursor-pointer"
-            >
-              Más información
-              <ExternalLink size={16} />
-            </a>
+            <MoreInfoButton href={currentOperationInfo.wikipedia} />
           </div>
         </>
       }

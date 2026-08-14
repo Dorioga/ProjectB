@@ -26,6 +26,7 @@ const subjects = [
       "Explora elementos, moléculas y estructuras químicas.",
     icon: "⚗️",
     type: "interactive",
+    link: "/courses/chemistry",
   },
 
   {

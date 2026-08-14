@@ -2,7 +2,7 @@ import { X } from "lucide-react";
 
 export default function MarkerInfoContent({ marker, onClose }) {
   return (
-    <div className="w-full max-w-full rounded-2xl bg-[#faf7f2] shadow-2xl overflow-hidden relative">
+    <div className="w-full max-w-full relative">
       <div className="p-3 md:p-5">
         {/* Botón cerrar */}
         <button

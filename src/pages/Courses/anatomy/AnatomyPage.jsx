@@ -24,8 +24,6 @@ export default function AnatomyPage() {
 
   const handleMarkerClick = (marker) => {
     setSelectedMarker(marker);
-    setPanelOpen(true);
-    setDesktopOpen(true);
   };
 
   return (
@@ -59,15 +57,41 @@ export default function AnatomyPage() {
 
           <hr className="my-3 border-gray-200" />
 
-          {selectedMarker ? (
-            <MarkerInfoContent
-              marker={selectedMarker}
-              onClose={() => setSelectedMarker(null)}
-            />
-          ) : (
-            <OrganInfoContent model={selectedModel.model} />
-          )}
+          <OrganInfoContent model={selectedModel.model} />
         </>
+      }
+      overlays={
+        selectedMarker && (
+          <>
+            {/* Panel marker — escritorio (derecha) */}
+            <div className="hidden md:flex flex-col absolute z-[1000] top-3 right-3 w-[380px] max-h-[calc(100%-24px)] rounded-2xl bg-[#faf7f2] shadow-2xl overflow-hidden">
+              <div className="overflow-y-auto flex-1 min-h-0">
+                <MarkerInfoContent
+                  marker={selectedMarker}
+                  onClose={() => setSelectedMarker(null)}
+                />
+              </div>
+            </div>
+
+            {/* Panel marker — móvil (overlay centrado) */}
+            <div
+              className="md:hidden absolute inset-0 z-[1500] bg-black/40 flex items-center justify-center p-4"
+              onClick={() => setSelectedMarker(null)}
+            >
+              <div
+                className="w-full max-w-md rounded-2xl bg-[#faf7f2] shadow-2xl overflow-hidden flex flex-col max-h-full"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="overflow-y-auto flex-1 min-h-0">
+                  <MarkerInfoContent
+                    marker={selectedMarker}
+                    onClose={() => setSelectedMarker(null)}
+                  />
+                </div>
+              </div>
+            </div>
+          </>
+        )
       }
     >
       <Scene
