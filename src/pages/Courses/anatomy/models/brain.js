@@ -1,4 +1,3 @@
-import brainModel from "@assets/models/brain.glb?url";
 import brainImage from "@assets/images/brain.png";
 
 export default {
@@ -10,7 +9,7 @@ export default {
 
   image: brainImage,
 
-  file: brainModel,
+  file: "https://nexusplataforma.com/storage/modelos/brain.glb",
 
   scale: 8.2,
 
@@ -21,8 +20,7 @@ export default {
   summary:
     "El cerebro es el órgano principal del sistema nervioso, encargado de controlar y coordinar las funciones del cuerpo. Es el centro de los procesos mentales, como el pensamiento, la memoria y la percepción.",
 
-  wikipedia:
-    "https://es.wikipedia.org/wiki/Cerebro",
+  wikipedia: "https://es.wikipedia.org/wiki/Cerebro",
 
   facts: [
     {
