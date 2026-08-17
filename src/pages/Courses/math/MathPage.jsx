@@ -5,6 +5,9 @@ import DivisionScene from "./division/DivisionScene";
 import MultiplicationScene from "./multiplication/MultiplicationScene";
 import AdditionScene from "./addition/AdditionScene";
 import SubtractionScene from "./subtraction/SubtractionScene";
+import PowerScene from "./power/PowerScene";
+import SquareRootScene from "./squareRoot/SquareRootScene";
+import AlgebraicScene from "./algebraic/algebraicScene";
 import OPERATIONS from "./operations";
 import OPERATION_INFO from "./operationInfo";
 
@@ -46,6 +49,27 @@ export default function MathPage() {
     const newOperation = event.target.value;
 
     setOperation(newOperation);
+
+    // Expresiones algebraicas → 2 valores
+    if (newOperation === "algebraicas") {
+      setNumberOfValues(2);
+      setValues(["3", "2"]);
+      return;
+    }
+
+    // Raíz → solo 1 valor
+    if (newOperation === "raiz") {
+      setNumberOfValues(1);
+      setValues(["16"]);
+      return;
+    }
+
+    // Potencia → siempre 2 valores
+    if (newOperation === "potencia") {
+      setNumberOfValues(2);
+      setValues(["2", "3"]);
+      return;
+    }
 
     // División siempre tiene 2 valores
     if (newOperation === "division") {
@@ -133,6 +157,33 @@ export default function MathPage() {
           />
         );
 
+      case "potencia":
+        return (
+          <PowerScene
+            key={`power-${values.join("-")}`}
+            evaluate={evaluate}
+            values={values}
+          />
+        );
+
+      case "raiz":
+        return (
+          <SquareRootScene
+            key={`squareRoot-${values.join("-")}`}
+            evaluate={evaluate}
+            values={values}
+          />
+        );
+
+      case "algebraicas":
+        return (
+          <AlgebraicScene
+            key={`algebraic-${values.join("-")}`}
+            evaluate={evaluate}
+            values={values}
+          />
+        );
+
       default:
         return (
           <NumberOperationsScene
@@ -171,7 +222,7 @@ export default function MathPage() {
           </label>
 
           {/* Cantidad de valores */}
-          {operation !== "division" && (
+          {operation !== "division" && operation !== "raiz" && (
             <label className="block mb-3">
               <span className="text-xs font-medium text-gray-600">
                 Cantidad de valores
@@ -180,7 +231,8 @@ export default function MathPage() {
               <select
                 value={numberOfValues}
                 onChange={handleNumberOfValuesChange}
-                className="mt-1 w-full rounded-[14px] border border-gray-300 bg-white px-3 py-2 text-sm focus:border-[#1976d2] focus:ring-2 focus:ring-[#1976d2]/30 outline-none cursor-pointer"
+                disabled={operation === "potencia"}
+                className="mt-1 w-full rounded-[14px] border border-gray-300 bg-white px-3 py-2 text-sm focus:border-[#1976d2] focus:ring-2 focus:ring-[#1976d2]/30 outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value={2}>2 valores</option>
                 <option value={3}>3 valores</option>
@@ -194,6 +246,10 @@ export default function MathPage() {
           <p className="text-xs font-medium text-[#475569] mb-1">
             {operation === "division"
               ? "Dividendo y divisor"
+              : operation === "potencia"
+              ? "Base y exponente"
+              : operation === "raiz"
+              ? "Valor a operar"
               : "Valores a operar"}
           </p>
 
@@ -202,6 +258,14 @@ export default function MathPage() {
 
             if (operation === "division") {
               label = index === 0 ? "Dividendo" : "Divisor";
+            }
+
+            if (operation === "potencia") {
+              label = index === 0 ? "Base" : "Exponente";
+            }
+
+            if (operation === "raiz") {
+              label = "Valor A";
             }
 
             return (

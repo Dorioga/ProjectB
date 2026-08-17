@@ -22,6 +22,7 @@
 14. [Roadmap](#14-roadmap)
 15. [Licencia](#15-licencia)
 16. [Vistas y Funcionalidades del Sistema](#16-vistas-y-funcionalidades-del-sistema)
+17. [Módulo de Cursos Educativos](#17-módulo-de-cursos-educativos)
 
 ---
 
@@ -46,6 +47,7 @@ Las instituciones educativas frecuentemente gestionan sus procesos en sistemas f
 - Sistema de notificaciones en tiempo real dentro de la aplicación.
 - Tours interactivos de onboarding por funcionalidad.
 - Personalización visual (colores institucionales) por organización.
+- Módulo de Cursos educativos interactivos (anatomía 3D, matemáticas y química).
 
 ---
 
@@ -154,17 +156,20 @@ graph TD
 | Cliente HTTP            | Axios                       | ^1.13.1            |
 | Tablas avanzadas        | TanStack React Table        | ^8.21.3            |
 | Gráficas y dashboards   | Recharts                    | ^3.3.0             |
-| Generación de PDF       | jsPDF + @react-pdf/renderer | ^3.0.3 / ^4.3.0    |
-| Visualización de PDF    | react-pdf + pdfjs-dist      | ^10.2.0 / ^5.4.394 |
+| 3D / WebGL              | three                       | ^0.185.1           |
+| 3D / React              | @react-three/fiber          | ^9.7.0             |
+| 3D / Helpers            | @react-three/drei           | ^10.7.8            |
+| Generación de PDF       | jsPDF                       | ^3.0.3             |
 | Exportación de pantalla | html2canvas                 | ^1.4.1             |
 | Archivos Excel          | xlsx                        | ^0.18.5            |
+| Compresión ZIP          | jszip                       | ^3.10.1            |
 | Iconografía             | Lucide React                | ^0.548.0           |
 | Tours guiados           | Driver.js                   | ^1.4.0             |
 | Webcam                  | react-webcam                | ^7.2.0             |
 | Firma digital           | react-signature-canvas      | ^1.1.0-alpha.2     |
 | Códigos QR              | qrcode.react                | ^4.2.0             |
 | Escáner QR              | html5-qrcode                | ^2.3.8             |
-| reCAPTCHA               | react-google-recaptcha      | ^3.1.0             |
+| reCAPTCHA               | react-google-recaptcha-v3   | ^1.11.0            |
 
 ### Herramientas de desarrollo
 
@@ -261,7 +266,8 @@ ProjectB/
 │   │   ├── Student/            # Gestión integral de estudiantes (13 vistas)
 │   │   ├── Teacher/            # Gestión integral de docentes (10 vistas)
 │   │   ├── School/             # Gestión institucional (10 vistas)
-│   │   └── GradeRecords/       # Registros académicos (2 vistas)
+│   │   ├── GradeRecords/       # Registros académicos (2 vistas)
+│   │   └── Courses/            # Cursos educativos interactivos (anatomía 3D, matemáticas, química)
 │   ├── routes/
 │   │   └── generalRoutes.jsx   # Definición centralizada de todas las rutas
 │   ├── services/
@@ -301,6 +307,7 @@ ProjectB/
 | `src/services/`             | Capa de abstracción sobre la API REST. Cada archivo encapsula los endpoints de un dominio.                                                          |
 | `src/components/atoms/`     | Componentes primitivos sin lógica de negocio: botones, selectores, modales, loaders, etc.                                                           |
 | `src/components/molecules/` | Componentes que combinan átomos con lógica de presentación: tablas con acciones, formularios de selección, paneles de perfil.                       |
+| `src/pages/Courses/`        | Módulo de cursos educativos interactivos (anatomía 3D, matemáticas, química). Ver [Sección 17](#17-módulo-de-cursos-educativos).                        |
 | `src/tour/`                 | Configuraciones de tours paso a paso usando Driver.js. Un archivo por funcionalidad del sistema.                                                    |
 
 ---
@@ -498,6 +505,8 @@ El proyecto sigue una arquitectura inspirada en Atomic Design:
 | L-04 | No existe gestión de expiración de tokens con renovación automática (refresh token).                | Medio   |
 | L-05 | La carga masiva de estudiantes por Excel no tiene validación previa en el frontend antes de enviar. | Bajo    |
 | L-06 | No hay configuración de pipeline CI/CD formal documentada.                                          | Bajo    |
+| L-07 | `npm run lint` reporta errores preexistentes (~170) en archivos antiguos que no bloquean el build.  | Bajo    |
+| L-08 | El `index.html` usa `<title>ProjectC</title>`, inconsistente con el nombre "Nexus"/"ProjectB".       | Bajo    |
 
 ---
 
@@ -1385,6 +1394,78 @@ erDiagram
 | L-04 | La carga masiva de Excel no tiene validación frontend antes del envío; los errores se retornan desde el servidor.    |
 | L-05 | No hay soporte offline ni PWA. La aplicación requiere conexión constante al backend.                                 |
 | L-06 | Los tours guiados no tienen un estado de "completado" persistido; se reinician si se borra el `localStorage`.        |
+
+---
+
+# 17. Módulo de Cursos Educativos
+
+> Módulo de experiencias educativas interactivas construido con `three` + `@react-three/fiber` + `@react-three/drei`. Independiente del resto de la SPA: no consume la API REST ni el estado global de gestión.
+
+## 17.1 Rutas
+
+| Ruta                 | Vista                        | Acceso        |
+| -------------------- | ---------------------------- | ------------- |
+| `/dashboard/courses` | Hub de asignaturas (`CoursesHub`) | Autenticado |
+| `/courses/:courseId` | Visor inmersivo del curso    | Autenticado   |
+
+El `:courseId` se resuelve contra el registro `src/pages/Courses/courses.js`:
+
+```js
+const COURSES = {
+  anatomy: lazy(() => import("./anatomy/AnatomyPage")),
+  math: lazy(() => import("./math/MathPage")),
+  chemistry: lazy(() => import("./chemistry/ChemistryPage")),
+};
+```
+
+> Añadir un curso nuevo = agregar una entrada en `courses.js` y crear su página usando `<CourseViewer />`.
+
+## 17.2 Estructura
+
+```
+src/pages/Courses/
+├── courses.js            # Registro de cursos (lazy)
+├── CoursesHub.jsx        # Listado de asignaturas (data/subjects.js)
+├── shared/               # CourseViewer, CoursePanel, CourseScene, ContentUnavailable, MoreInfoButton, course.css
+├── anatomy/              # 3D: models/, components/{scenes,markers}/, data/anatomyModels.js
+├── math/                 # 7 operaciones: addition, subtraction, multiplication, division, power, squareRoot, algebraic
+└── chemistry/            # Tabla periódica + distribución electrónica (sin canvas 3D)
+```
+
+## 17.3 Componentes compartidos
+
+| Componente           | Responsabilidad                                                                   |
+| -------------------- | --------------------------------------------------------------------------------- |
+| `CourseViewer`       | Contenedor principal: panel + canvas + overlays. Props: `title`, `camera`, `controls`, `gizmo`, `ground`, `scene`, `panel`, `overlays`. |
+| `CoursePanel`        | Panel lateral (desktop) / drawer (móvil) con cabecera y botón "regresar".         |
+| `CourseScene`        | `<Canvas>` con iluminación, controles de órbita y base opcional.                   |
+| `ContentUnavailable` | Placeholder para cursos/asignaturas aún no implementados.                          |
+| `MoreInfoButton`     | Enlace "Más información" (Wikipedia).                                              |
+
+## 17.4 Asignaturas
+
+### Ciencias Naturales (Anatomía 3D)
+
+Siete modelos en `data/anatomyModels.js`: corazón, corazón (vista interna), cerebro, cerebro (corte coronal), pulmones, célula animal y célula vegetal. Cada modelo declara `{ model, scene }`:
+
+- `model` → definición en `models/*.js` (importa el `.glb` vía `@assets/...?url` y define `scale`, `position`, `rotation`, `summary`, `facts`).
+- `scene` → componente en `components/scenes/*Scene.jsx` que carga el modelo (`Model.jsx`) y pinta los marcadores interactivos (`components/markers/*Markers.jsx`).
+
+Al hacer clic en un marcador se muestra su información en `MarkerInfoContent` (overlay del `CourseViewer`).
+
+### Matemáticas
+
+Siete operaciones registradas en `operations.js` (`addition`, `subtraction`, `multiplication`, `division`, `potencia`, `raiz`, `algebraicas`). `MathPage.jsx` renderiza la escena correspondiente según la operación seleccionada; cada operación tiene su propia carpeta con `Scene`/`Group`/`Token`. La información (título/descripción/wikipedia) vive en `operationInfo.js`.
+
+### Química
+
+Sin canvas 3D (`scene={false}`): tabla periódica y distribución electrónica, renderizadas como contenido normal dentro del panel del `CourseViewer`.
+
+## 17.5 Assets
+
+- Modelos `.glb` → `src/assets/models/`.
+- Imágenes → `src/assets/images/`.
+- Ambos se importan con el alias `@assets` (ver [§12](#12-buenas-prácticas-y-convenciones)).
 
 ---
 
