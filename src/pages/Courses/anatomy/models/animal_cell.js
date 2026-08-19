@@ -1,4 +1,3 @@
-import cellModel from "@assets/models/celula_animal.glb?url";
 import cellImage from "@assets/images/celula_animal.png";
 
 export default {
@@ -10,7 +9,7 @@ export default {
 
   image: cellImage,
 
-  file: cellModel,
+  file: "https://www.nexusplataforma.com/storage/modelos/celula_animal.glb",
 
   scale: 11.2,
 

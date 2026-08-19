@@ -93,18 +93,22 @@ src/pages/Courses/
 │   ├── addition/ subtraction/ multiplication/ division/
 │   ├── power/ squareRoot/ algebraic/
 │   └── operations.js, operationInfo.js
-└── chemistry/            # Tabla periódica + distribución electrónica (scene={false}, sin canvas 3D)
+├── chemistry/            # Tabla periódica + distribución electrónica (scene={false}, sin canvas 3D)
+└── socialSciences/       # Ciencias Sociales: mapa (MapLibre) de países + historia (scene={false})
+    ├── SocialSciencesPage.jsx
+    ├── components/       # MapScene, HistoryScene, HistoryGroup, HistoryToken
+    └── data/             # countries.js, historyData.js
 ```
 
 Patrón de uso (ver `AnatomyPage.jsx` / `MathPage.jsx` como referencia):
 - `<CourseViewer>` es el contenedor principal (panel + canvas + overlays). Props útiles: `title`, `camera`, `controls`, `gizmo`, `ground`, `scene={false}` (para cursos sin 3D como química), `panel`, `overlays`.
 - Cada página maneja su propio estado (`selectedModel`, `selectedMarker`, `panelOpen`, etc.) y renderiza su contenido en `children`.
 
-Anatomía (7 modelos en `data/anatomyModels.js`): corazón, corazón interno, cerebro, cerebro corte coronal, pulmones, célula animal, célula vegetal. Cada modelo tiene `{ model, scene }`; las escenas cargan el `.glb` (`Model.jsx`) y pintan `Marker`s. Los marcadores se agrupan en `components/markers/*Markers.jsx` y muestran info vía `MarkerInfoContent`.
+Anatomía (7 modelos en `data/anatomyModels.js`): corazón, corazón interno, cerebro, cerebro corte coronal, pulmones, célula animal, célula vegetal. Cada modelo tiene `{ model, scene }`; las escenas cargan el `.glb` desde URL remota (`model.file`, vía `useGLTF` en `Model.jsx`) y pintan `Marker`s. Los marcadores se agrupan en `components/markers/*Markers.jsx` y muestran info vía `MarkerInfoContent`.
 
 Matemáticas: 7 operaciones en `operations.js` (`addition`, `subtraction`, `multiplication`, `division`, `potencia`, `raiz`, `algebraicas`). `MathPage.jsx` decide qué escena renderizar según `operation`, y `operationInfo.js` guarda título/descripción/wikipedia de cada una.
 
-Assets: `.glb` → `src/assets/models/`, imágenes → `src/assets/images/`, siempre importados con `@assets`.
+Assets: modelos `.glb` → se sirven desde URL remota (`models/*.js`); imágenes → `src/assets/images/`, importadas con `@assets`.
 
 ## 7. Variables de entorno
 
@@ -114,6 +118,7 @@ Assets: `.glb` → `src/assets/models/`, imágenes → `src/assets/images/`, sie
 | `VITE_API_BACKEND_URL`      | Backend para el proxy `/backend-proxy` (dev)   |
 | `VITE_STORAGE_URL`          | Almacenamiento de archivos (proxy `/storage`)  |
 | `VITE_CAPTCHA_PUBLIC_KEY`   | Clave pública de reCAPTCHA v3                  |
+| `VITE_MAPTILER_KEY`         | Clave de MapTiler (mapas de Ciencias Sociales) |
 
 ## 8. Gotchas
 

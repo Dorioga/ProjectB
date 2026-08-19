@@ -36,6 +36,7 @@ const subjects = [
       "Explora contenidos relacionados con historia y sociedad.",
     icon: "🌎",
     type: "content",
+    link: "/courses/social-sciences",
   },
 ];
 

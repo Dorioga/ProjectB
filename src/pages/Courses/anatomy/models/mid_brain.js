@@ -1,4 +1,3 @@
-import midBrainModel from "@assets/models/mid_brain.glb?url";
 import midBrainImage from "@assets/images/brain.png";
 
 export default {
@@ -10,7 +9,7 @@ export default {
 
   image: midBrainImage,
 
-  file: midBrainModel,
+  file: "https://www.nexusplataforma.com/storage/modelos/mid_brain.glb",
 
   scale: 11.2,
 

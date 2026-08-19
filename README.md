@@ -1448,7 +1448,7 @@ src/pages/Courses/
 
 Siete modelos en `data/anatomyModels.js`: corazón, corazón (vista interna), cerebro, cerebro (corte coronal), pulmones, célula animal y célula vegetal. Cada modelo declara `{ model, scene }`:
 
-- `model` → definición en `models/*.js` (importa el `.glb` vía `@assets/...?url` y define `scale`, `position`, `rotation`, `summary`, `facts`).
+- `model` → definición en `models/*.js` (apunta al `.glb` remoto vía `file` y define `scale`, `position`, `rotation`, `summary`, `facts`).
 - `scene` → componente en `components/scenes/*Scene.jsx` que carga el modelo (`Model.jsx`) y pinta los marcadores interactivos (`components/markers/*Markers.jsx`).
 
 Al hacer clic en un marcador se muestra su información en `MarkerInfoContent` (overlay del `CourseViewer`).
@@ -1463,9 +1463,8 @@ Sin canvas 3D (`scene={false}`): tabla periódica y distribución electrónica, 
 
 ## 17.5 Assets
 
-- Modelos `.glb` → `src/assets/models/`.
-- Imágenes → `src/assets/images/`.
-- Ambos se importan con el alias `@assets` (ver [§12](#12-buenas-prácticas-y-convenciones)).
+- Modelos `.glb` → se cargan desde URLs remotas (`https://www.nexusplataforma.com/storage/modelos/*.glb`), definidas en `models/*.js`.
+- Imágenes → `src/assets/images/`, importadas con el alias `@assets` (ver [§12](#12-buenas-prácticas-y-convenciones)).
 
 ---
 

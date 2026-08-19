@@ -1,9 +1,33 @@
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 
 import MoreInfoButton from "../../shared/MoreInfoButton";
 import { CATEGORY_META } from "../data/periodicTable";
+import { fetchElementImage } from "../utils/elementImage";
 
 export default function ElementInfoContent({ element, onClose }) {
+  const [imageUrl, setImageUrl] = useState(null);
+  const [imageFailed, setImageFailed] = useState(false);
+
+  useEffect(() => {
+    if (!element) return;
+
+    let active = true;
+
+    setImageUrl(null);
+    setImageFailed(false);
+
+    fetchElementImage(element.name).then((url) => {
+      if (active && url) {
+        setImageUrl(url);
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [element]);
+
   if (!element) return null;
 
   const category = CATEGORY_META[element.category] ?? CATEGORY_META.desconocido;
@@ -51,6 +75,17 @@ export default function ElementInfoContent({ element, onClose }) {
             </span>
           </div>
         </div>
+
+        {imageUrl && !imageFailed && (
+          <div className="mt-3 overflow-hidden rounded-xl bg-gray-100">
+            <img
+              src={imageUrl}
+              alt={element.name}
+              className="w-full h-40 object-cover"
+              onError={() => setImageFailed(true)}
+            />
+          </div>
+        )}
 
         <hr className="my-2 border-gray-200" />
 

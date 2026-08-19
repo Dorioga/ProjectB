@@ -1,4 +1,3 @@
-import heartModel from "@assets/models/heart.glb?url";
 import heartImage from "@assets/images/heart.png";
 
 export default {
@@ -10,7 +9,7 @@ export default {
 
   image: heartImage,
 
-  file: heartModel,
+  file: "https://www.nexusplataforma.com/storage/modelos/heart.glb",
 
   scale: 12,
 

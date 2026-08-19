@@ -1,4 +1,3 @@
-import lungsModel from "@assets/models/lungs.glb?url";
 import lungsImage from "@assets/images/pulmon.png";
 
 export default {
@@ -10,7 +9,7 @@ export default {
 
   image: lungsImage,
 
-  file: lungsModel,
+  file: "https://www.nexusplataforma.com/storage/modelos/lungs.glb",
 
   scale: 6.2,
 

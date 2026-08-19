@@ -1,4 +1,3 @@
-import internalHeartModel from "@assets/models/internal_heart.glb?url";
 import internalHeartImage from "@assets/images/internalheart.png";
 
 export default {
@@ -6,7 +5,7 @@ export default {
   name: "Corazón",
   category: "Sistema cardiovascular",
   image: internalHeartImage,
-  file: internalHeartModel,
+  file: "https://www.nexusplataforma.com/storage/modelos/internal_heart.glb",
   scale: 4.2,
   position: [0, 0.2, 0],
   rotation: [0, 0, 0],
