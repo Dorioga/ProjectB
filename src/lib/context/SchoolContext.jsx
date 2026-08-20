@@ -46,6 +46,8 @@ export function SchoolProvider({ children }) {
   const periodsLoadedRef = useRef(false);
   const valuesReservationsLoadedRef = useRef(false);
   const loadingValuesReservationsRef = useRef(false);
+  const loadingJourneysRef = useRef(false);
+  const loadingPeriodsRef = useRef(false);
 
   const loadSedes = useCallback(async (params = {}) => {
     setLoadingSedes(true);
@@ -62,9 +64,10 @@ export function SchoolProvider({ children }) {
 
   const loadJourneys = useCallback(async () => {
     // Evitar múltiples cargas (ya se cargó o está cargando)
-    if (journeysLoadedRef.current || loadingJourneys) return;
+    if (journeysLoadedRef.current || loadingJourneysRef.current) return;
 
     journeysLoadedRef.current = true;
+    loadingJourneysRef.current = true;
     setLoadingJourneys(true);
     setErrorJourneys(null);
     try {
@@ -86,15 +89,17 @@ export function SchoolProvider({ children }) {
       setJourneys([]);
       journeysLoadedRef.current = false; // Permitir reintento en caso de error
     } finally {
+      loadingJourneysRef.current = false;
       setLoadingJourneys(false);
     }
-  }, [loadingJourneys]);
+  }, []);
 
   const loadPeriods = useCallback(async () => {
     // Evitar múltiples cargas (ya se cargó o está cargando)
-    if (periodsLoadedRef.current || loadingPeriods) return;
+    if (periodsLoadedRef.current || loadingPeriodsRef.current) return;
 
     periodsLoadedRef.current = true;
+    loadingPeriodsRef.current = true;
     setLoadingPeriods(true);
     setErrorPeriods(null);
     try {
@@ -110,9 +115,10 @@ export function SchoolProvider({ children }) {
       setPeriods([]);
       periodsLoadedRef.current = false; // Permitir reintento en caso de error
     } finally {
+      loadingPeriodsRef.current = false;
       setLoadingPeriods(false);
     }
-  }, [loadingPeriods]);
+  }, []);
 
   // municipioId opcional para filtrar valores según el municipio seleccionado
   const loadValuesReservations = useCallback(

@@ -15,7 +15,7 @@ export async function upload(payload, name) {
   if (!payload) {
     throw new Error("El payload no puede estar vacío");
   }
-  if (!name) {
+  if (name == null) {
     throw new Error("El nombre es obligatorio");
   }
 

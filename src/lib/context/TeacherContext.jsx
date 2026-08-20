@@ -490,6 +490,78 @@ export function TeacherProvider({ children }) {
     }
   }, []);
 
+  // ----------------- Evaluaciones (elemento) -----------------
+  const getTypeQuestion = useCallback(async () => {
+    setLoadingTeachers(true);
+    setErrorTeachers(null);
+    try {
+      const res = await teacherService.getTypeQuestion();
+      return res;
+    } catch (err) {
+      setErrorTeachers(err);
+      throw err;
+    } finally {
+      setLoadingTeachers(false);
+    }
+  }, []);
+
+  const getTypeElement = useCallback(async () => {
+    setLoadingTeachers(true);
+    setErrorTeachers(null);
+    try {
+      const res = await teacherService.getTypeElement();
+      return res;
+    } catch (err) {
+      setErrorTeachers(err);
+      throw err;
+    } finally {
+      setLoadingTeachers(false);
+    }
+  }, []);
+
+  const createElement = useCallback(async (payload = {}) => {
+    setLoadingTeachers(true);
+    setErrorTeachers(null);
+    try {
+      const res = await teacherService.createElement(payload);
+      eventBus.emit("¡Evaluación registrada exitosamente!", "success");
+      return res;
+    } catch (err) {
+      setErrorTeachers(err);
+      throw err;
+    } finally {
+      setLoadingTeachers(false);
+    }
+  }, []);
+
+  const getElementQuestions = useCallback(async (payload = {}) => {
+    setLoadingTeachers(true);
+    setErrorTeachers(null);
+    try {
+      const res = await teacherService.getElementQuestions(payload);
+      return res;
+    } catch (err) {
+      setErrorTeachers(err);
+      throw err;
+    } finally {
+      setLoadingTeachers(false);
+    }
+  }, []);
+
+  const getElementData = useCallback(async (payload = {}) => {
+    setLoadingTeachers(true);
+    setErrorTeachers(null);
+    try {
+      const res = await teacherService.getElementData(payload);
+      return res;
+    } catch (err) {
+      setErrorTeachers(err);
+      throw err;
+    } finally {
+      setLoadingTeachers(false);
+    }
+  }, []);
+
   const value = useMemo(
     () => ({
       teachers,
@@ -538,6 +610,12 @@ export function TeacherProvider({ children }) {
       getEvaluations,
       createEvaluation,
       updateEvaluation,
+      // Evaluaciones (elemento)
+      getTypeQuestion,
+      getTypeElement,
+      createElement,
+      getElementQuestions,
+      getElementData,
     }),
     [
       teachers,
@@ -580,6 +658,11 @@ export function TeacherProvider({ children }) {
       getEvaluations,
       createEvaluation,
       updateEvaluation,
+      getTypeQuestion,
+      getTypeElement,
+      createElement,
+      getElementQuestions,
+      getElementData,
     ],
   );
 

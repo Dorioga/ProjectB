@@ -587,6 +587,105 @@ export async function updateEvaluation(evalId, payload) {
 }
 
 /**
+ * Obtiene los tipos de respuesta de pregunta.
+ * Endpoint: GET /typequestion
+ * @returns {Promise<Array>} Lista de tipos de pregunta
+ */
+export async function getTypeQuestion() {
+  try {
+    const res = await ApiClient.get("/typequestion");
+    const data = Array.isArray(res) ? res : (res?.data ?? res);
+    return data;
+  } catch (error) {
+    console.error("teacherService - getTypeQuestion error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Obtiene los tipos de evaluación.
+ * Endpoint: GET /typeElement
+ * @returns {Promise<Array>} Lista de tipos de evaluación
+ */
+export async function getTypeElement() {
+  try {
+    const res = await ApiClient.get("/typeElement");
+    const data = Array.isArray(res) ? res : (res?.data ?? res);
+    return data;
+  } catch (error) {
+    console.error("teacherService - getTypeElement error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Crea una evaluación (elemento) con sus preguntas.
+ * Endpoint: POST /element
+ * payload: {
+ *   name_element, fk_teacher, fk_type_element, fk_sede, fk_grade,
+ *   fk_asignature, fk_periodo,
+ *   question: [{ name_question, description_question, fk_type_question, url_file?, answer: [...] }]
+ * }
+ * @returns {Promise<Object>} Elemento creado
+ */
+export async function createElement(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto para createElement.");
+  }
+  try {
+    const res = await ApiClient.instance.post("/element", payload);
+    const data = res;
+    if (data && typeof data === "object" && "data" in data) return data.data;
+    if (data !== undefined && data !== null) return data;
+    throw new Error("Respuesta inesperada de /element.");
+  } catch (error) {
+    console.error("teacherService - createElement error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Obtiene las evaluaciones (elementos) del docente o de la institución con sus preguntas.
+ * Endpoint: POST /element/question
+ * payload docente: { fk_docente, fk_sede, fk_grado, fk_period, fk_asignatura }
+ * payload admin institucional: { institution }
+ * @returns {Promise<Array>} Lista de evaluaciones
+ */
+export async function getElementQuestions(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto para getElementQuestions.");
+  }
+  try {
+    const res = await ApiClient.instance.post("/element/question", payload);
+    const data = Array.isArray(res) ? res : (res?.data ?? res);
+    return data;
+  } catch (error) {
+    console.error("teacherService - getElementQuestions error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Obtiene el detalle de una evaluación (elemento) con sus preguntas y respuestas.
+ * Endpoint: POST /element/data
+ * payload: { id_element }
+ * @returns {Promise<Array>} Lista plana de preguntas/respuestas del elemento
+ */
+export async function getElementData(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto para getElementData.");
+  }
+  try {
+    const res = await ApiClient.instance.post("/element/data", payload);
+    const data = Array.isArray(res) ? res : (res?.data ?? res);
+    return data;
+  } catch (error) {
+    console.error("teacherService - getElementData error:", error);
+    throw error;
+  }
+}
+
+/**
  * Control de notas asignadas por sede y período
  * Endpoint: POST /note/controle/assignment
  * payload: { id_sede, id_periodo }
