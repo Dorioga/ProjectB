@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import MoreInfoButton from "../../shared/MoreInfoButton";
 import { CATEGORY_META } from "../data/periodicTable";
 import { fetchElementImage } from "../utils/elementImage";
+import elementLocations from "../data/elementLocations";
 
 export default function ElementInfoContent({ element, onClose }) {
   const [imageUrl, setImageUrl] = useState(null);
@@ -31,6 +32,8 @@ export default function ElementInfoContent({ element, onClose }) {
   if (!element) return null;
 
   const category = CATEGORY_META[element.category] ?? CATEGORY_META.desconocido;
+
+  const whereFound = elementLocations[element.symbol];
 
   const facts = [
     { label: "Número atómico", value: element.number },
@@ -112,6 +115,20 @@ export default function ElementInfoContent({ element, onClose }) {
             </div>
           ))}
         </div>
+
+        {whereFound && (
+          <>
+            <hr className="my-2 border-gray-200" />
+
+            <p className="text-[11px] font-bold tracking-widest text-gray-500">
+              DÓNDE SE ENCUENTRA
+            </p>
+
+            <p className="mt-1 text-sm text-gray-600 leading-relaxed text-justify">
+              {whereFound}
+            </p>
+          </>
+        )}
 
         <MoreInfoButton
           href={`https://es.wikipedia.org/wiki/${encodeURIComponent(element.name)}`}
