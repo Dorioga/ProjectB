@@ -534,6 +534,21 @@ export function TeacherProvider({ children }) {
     }
   }, []);
 
+  const updateElement = useCallback(async (payload = {}) => {
+    setLoadingTeachers(true);
+    setErrorTeachers(null);
+    try {
+      const res = await teacherService.updateElement(payload);
+      eventBus.emit("¡Evaluación actualizada exitosamente!", "success");
+      return res;
+    } catch (err) {
+      setErrorTeachers(err);
+      throw err;
+    } finally {
+      setLoadingTeachers(false);
+    }
+  }, []);
+
   const getElementQuestions = useCallback(async (payload = {}) => {
     setLoadingTeachers(true);
     setErrorTeachers(null);
@@ -614,6 +629,7 @@ export function TeacherProvider({ children }) {
       getTypeQuestion,
       getTypeElement,
       createElement,
+      updateElement,
       getElementQuestions,
       getElementData,
     }),
@@ -661,6 +677,7 @@ export function TeacherProvider({ children }) {
       getTypeQuestion,
       getTypeElement,
       createElement,
+      updateElement,
       getElementQuestions,
       getElementData,
     ],

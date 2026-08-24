@@ -645,6 +645,42 @@ export async function createElement(payload) {
 }
 
 /**
+ * Actualiza una evaluación (elemento) existente con sus preguntas y respuestas.
+ * Endpoint: PATCH /element/update
+ * payload: {
+ *   id_element,
+ *   element: {},
+ *   questions: {
+ *     create: [],
+ *     update: [{ id_ask, answers: { create: [], update: [{ id_answer, description_answer, incorrect_answer? }], delete: [] } }],
+ *     delete: []
+ *   }
+ * }
+ * @returns {Promise<Object>} Elemento actualizado
+ */
+export async function updateElement(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto para updateElement.");
+  }
+  try {
+    const res = await ApiClient.instance.patch("/element/update", payload);
+    const data = res;
+    const inner = data?.result ?? data;
+    if (inner && typeof inner === "object" && inner.success === false) {
+      throw new Error(
+        inner.error || inner.message || "Error al actualizar el elemento.",
+      );
+    }
+    if (data && typeof data === "object" && "data" in data) return data.data;
+    if (data !== undefined && data !== null) return data;
+    throw new Error("Respuesta inesperada de /element/update.");
+  } catch (error) {
+    console.error("teacherService - updateElement error:", error);
+    throw error;
+  }
+}
+
+/**
  * Obtiene las evaluaciones (elementos) del docente o de la institución con sus preguntas.
  * Endpoint: POST /element/question
  * payload docente: { fk_docente, fk_sede, fk_grado, fk_period, fk_asignatura }

@@ -18,9 +18,11 @@ const buildElementDetail = (rows) => {
   const first = list[0] ?? {};
   const questionsMap = new Map();
   list.forEach((row) => {
-    const key = row.name_ask ?? row.description_ask ?? "";
+    const key = row.id_ask ?? row.name_ask ?? row.description_ask ?? "";
     if (!questionsMap.has(key)) {
       questionsMap.set(key, {
+        id_ask: row.id_ask ?? null,
+        name_ask: row.name_ask ?? null,
         description_question: String(row.description_ask ?? ""),
         fk_type_question: String(row.id_type_ask ?? ""),
         url_file: String(row.url_file ?? ""),
@@ -28,11 +30,13 @@ const buildElementDetail = (rows) => {
       });
     }
     questionsMap.get(key).answer.push({
+      id_answer: row.id_answer ?? null,
       description_answer: String(row.description_answer ?? ""),
       incorrect_answer: String(row.incorrect_answer ?? ""),
     });
   });
   return {
+    id_element: first.id_element ?? first.id_elemente ?? first.id ?? null,
     name_element: first.name_element ?? "",
     fk_type_element: String(first.id_type_element ?? ""),
     question: Array.from(questionsMap.values()),
@@ -43,6 +47,7 @@ const ManageEval = () => {
   const {
     getElementQuestions,
     createElement,
+    updateElement,
     getElementData,
     getTeacherSede,
     getTeacherGrades,
@@ -84,10 +89,7 @@ const ManageEval = () => {
     [rol],
   );
 
-  const isAdminInstitucional = useMemo(
-    () => String(rol) === "3",
-    [rol],
-  );
+  const isAdminInstitucional = useMemo(() => String(rol) === "3", [rol]);
 
   const teacherGradesParams = useMemo(
     () => ({
@@ -245,8 +247,7 @@ const ManageEval = () => {
       {
         accessorKey: "nombre_asignatura",
         header: "Asignatura",
-        accessorFn: (row) =>
-          row.nombre_asignatura ?? row.asignatura ?? "",
+        accessorFn: (row) => row.nombre_asignatura ?? row.asignatura ?? "",
       },
       {
         accessorKey: "nombre_periodo",
@@ -262,7 +263,7 @@ const ManageEval = () => {
         id: "actions",
         header: "Acciones",
         cell: ({ row }) => (
-          <div className="flex justify-center p-1">
+          <div className="flex justify-center ">
             <SimpleButton
               type="button"
               onClick={() => handleViewEvalRef.current?.(row.original)}
@@ -299,36 +300,52 @@ const ManageEval = () => {
     [createElement, notify, fetchEvaluations],
   );
 
-  const handleViewEval = useCallback(
-    async (row) => {
-      const id =
-        row?.id_element ??
-        row?.id_elemente ??
-        row?.id ??
-        row?.id_elemento ??
-        row?.idelement;
-      if (!id) {
-        notifyRef.current.error("No se pudo identificar la evaluación.");
-        return;
-      }
-      setDetailLoading(true);
+  const handleViewEval = useCallback(async (row) => {
+    const id =
+      row?.id_element ??
+      row?.id_elemente ??
+      row?.id ??
+      row?.id_elemento ??
+      row?.idelement;
+    if (!id) {
+      notifyRef.current.error("No se pudo identificar la evaluación.");
+      return;
+    }
+    setDetailLoading(true);
+    try {
+      const res = await getElementDataRef.current({
+        id_element: Number(id),
+      });
+      const data = Array.isArray(res) ? res : (res?.data ?? []);
+      setDetailData(buildElementDetail(data));
+    } catch (err) {
+      console.error("ManageEval - getElementData error:", err);
+      notifyRef.current.error(
+        err?.message || "Error al cargar el detalle de la evaluación.",
+      );
+      setDetailData(null);
+    } finally {
+      setDetailLoading(false);
+    }
+  }, []);
+
+  const handleUpdateEval = useCallback(
+    async (payload) => {
       try {
-        const res = await getElementDataRef.current({
-          id_element: Number(id),
-        });
-        const data = Array.isArray(res) ? res : (res?.data ?? []);
-        setDetailData(buildElementDetail(data));
-      } catch (err) {
-        console.error("ManageEval - getElementData error:", err);
-        notifyRef.current.error(
-          err?.message || "Error al cargar el detalle de la evaluación.",
-        );
+        setLoading(true);
+        await updateElement(payload);
+        notify.success("Evaluación actualizada exitosamente.");
         setDetailData(null);
+        fetchEvaluations();
+      } catch (err) {
+        console.error("ManageEval - updateElement error:", err);
+        notify.error(err?.message || "Error al actualizar la evaluación.");
+        throw err;
       } finally {
-        setDetailLoading(false);
+        setLoading(false);
       }
     },
-    [],
+    [updateElement, notify, fetchEvaluations],
   );
 
   useEffect(() => {
@@ -371,60 +388,60 @@ const ManageEval = () => {
       </div>
 
       {!isAdminInstitucional && (
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-2">
-        <div>
-          <SedeSelect
-            value={sedeSelected}
-            onChange={(e) => {
-              setSedeSelected(e.target.value);
-              setGrade("");
-              setAsignature("");
-            }}
-            data={teacherSedeData}
-            loading={loadingTeacherSedes}
-          />
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-2">
+          <div>
+            <SedeSelect
+              value={sedeSelected}
+              onChange={(e) => {
+                setSedeSelected(e.target.value);
+                setGrade("");
+                setAsignature("");
+              }}
+              data={teacherSedeData}
+              loading={loadingTeacherSedes}
+            />
+          </div>
+          <div>
+            <GradeSelector
+              label="Grado"
+              value={grade}
+              onChange={(e) => {
+                setGrade(e.target.value);
+                setAsignature("");
+              }}
+              placeholder="Selecciona grado"
+              sedeId={sedeSelected}
+              autoLoad={true}
+              customFetchMethod={getTeacherGrades}
+              additionalParams={teacherGradesParams}
+              disabled={!sedeSelected}
+            />
+          </div>
+          <div>
+            <AsignatureSelector
+              label="Asignatura"
+              value={asignature}
+              onChange={(e) => setAsignature(e.target.value)}
+              placeholder="Selecciona asignatura"
+              sedeId={fkSede}
+              autoLoad={true}
+              customFetchMethod={getTeacherSubjects}
+              additionalParams={teacherSubjectsParams}
+              disabled={!grade}
+            />
+          </div>
+          <div>
+            <PeriodSelector
+              label="Periodo"
+              value={period}
+              onChange={(e) => setPeriod(e.target.value)}
+              autoLoad={true}
+            />
+          </div>
         </div>
-        <div>
-          <GradeSelector
-            label="Grado"
-            value={grade}
-            onChange={(e) => {
-              setGrade(e.target.value);
-              setAsignature("");
-            }}
-            placeholder="Selecciona grado"
-            sedeId={sedeSelected}
-            autoLoad={true}
-            customFetchMethod={getTeacherGrades}
-            additionalParams={teacherGradesParams}
-            disabled={!sedeSelected}
-          />
-        </div>
-        <div>
-          <AsignatureSelector
-            label="Asignatura"
-            value={asignature}
-            onChange={(e) => setAsignature(e.target.value)}
-            placeholder="Selecciona asignatura"
-            sedeId={fkSede}
-            autoLoad={true}
-            customFetchMethod={getTeacherSubjects}
-            additionalParams={teacherSubjectsParams}
-            disabled={!grade}
-          />
-        </div>
-        <div>
-          <PeriodSelector
-            label="Periodo"
-            value={period}
-            onChange={(e) => setPeriod(e.target.value)}
-            autoLoad={true}
-          />
-        </div>
-      </div>
       )}
 
-      <div id="tour-me-table" className="relative flex-1 p-4">
+      <div id="tour-me-table" className="relative flex-1 ">
         <DataTable
           data={results || []}
           columns={columns}
@@ -464,6 +481,7 @@ const ManageEval = () => {
           <ProfileEval
             readOnly
             initialValues={detailData}
+            onSave={handleUpdateEval}
             onClose={() => setDetailData(null)}
           />
         ) : null}

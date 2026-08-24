@@ -351,8 +351,8 @@ const DataTable = ({
         )}
       </div>
 
-      <div className="rounded-lg border">
-        <table ref={tableRef} className="w-full">
+      <div className="  p-1">
+        <table ref={tableRef} className="w-full rounded-lg border">
           <thead className="bg-primary text-surface">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>

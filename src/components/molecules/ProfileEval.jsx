@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import SimpleButton from "../atoms/SimpleButton";
 import FileChooser from "../atoms/FileChooser";
 import useTeacher from "../../lib/hooks/useTeacher";
@@ -28,7 +28,11 @@ const toId = (v) => {
   return Number.isFinite(n) ? n : v;
 };
 
-const emptyAnswer = () => ({ description_answer: "", correcta: false });
+const emptyAnswer = () => ({
+  description_answer: "",
+  correcta: false,
+  state: "Activo",
+});
 
 const initAnswersForType = (type) => {
   switch (type) {
@@ -37,8 +41,8 @@ const initAnswersForType = (type) => {
       return [0, 1, 2, 3].map(() => emptyAnswer());
     case "boolean":
       return [
-        { description_answer: "Verdadero", correcta: false },
-        { description_answer: "Falso", correcta: false },
+        { description_answer: "Verdadero", correcta: false, state: "Activo" },
+        { description_answer: "Falso", correcta: false, state: "Activo" },
       ];
     default:
       return [emptyAnswer()];
@@ -51,6 +55,7 @@ const emptyQuestion = () => ({
   url_file: "",
   minCorrectas: 1,
   maxCorrectas: "",
+  state: "Activo",
   answers: initAnswersForType("open"),
 });
 
@@ -60,14 +65,18 @@ const normalizeQuestion = (q = {}) => {
   const rawAnswers = Array.isArray(q.answer) ? q.answer : [];
   const answers =
     rawAnswers.length > 0
-      ? rawAnswers.map((a) => ({
-          description_answer: String(a.description_answer ?? ""),
-          correcta: ["Correcto", "Correcta"].includes(
-            String(a.incorrect_answer ?? ""),
-          ),
-        }))
+      ? rawAnswers.map((a) => {
+          const raw = String(a.incorrect_answer ?? "").trim();
+          return {
+            id_answer: toId(a.id_answer ?? null),
+            description_answer: String(a.description_answer ?? ""),
+            correcta: raw === "0" || ["Correcto", "Correcta"].includes(raw),
+            state: "Activo",
+          };
+        })
       : initAnswersForType(type);
   return {
+    id_ask: toId(q.id_ask ?? null),
     description_question: String(
       q.description_question ?? q.descripcion ?? "",
     ),
@@ -81,6 +90,7 @@ const normalizeQuestion = (q = {}) => {
       q.maxCorrectas != null && q.maxCorrectas !== ""
         ? Number(q.maxCorrectas)
         : "",
+    state: "Activo",
     answers,
   };
 };
@@ -95,9 +105,12 @@ const ProfileEval = ({
   fkAsignature,
   fkPeriodo,
   readOnly = false,
+  idElement: idElementProp = null,
 }) => {
   const { getTypeQuestion, getTypeElement } = useTeacher();
   const notify = useNotify();
+
+  const idElement = toId(idElementProp ?? initialValues?.id_element ?? null);
 
   const [isEditing, setIsEditing] = useState(!readOnly);
 
@@ -109,6 +122,8 @@ const ProfileEval = ({
   const [errors, setErrors] = useState({});
 
   const disabled = isSaving || (readOnly && !isEditing);
+
+  const isUpdate = idElement != null && idElement !== "";
 
   const [form, setForm] = useState(() => ({
     name_element: String(
@@ -126,6 +141,16 @@ const ProfileEval = ({
         ? initialValues.preguntas.map(normalizeQuestion)
         : [],
   }));
+
+  const initialQuestionsRef = useRef([]);
+  useEffect(() => {
+    const raw = Array.isArray(initialValues?.question)
+      ? initialValues.question
+      : Array.isArray(initialValues?.preguntas)
+        ? initialValues.preguntas
+        : [];
+    initialQuestionsRef.current = raw.map(normalizeQuestion);
+  }, [initialValues]);
 
   useEffect(() => {
     let mounted = true;
@@ -223,6 +248,10 @@ const ProfileEval = ({
       fk_type_question: fk,
       answers: initAnswersForType(type),
     });
+  };
+
+  const handleQuestionState = (index) => (e) => {
+    updateQuestion(index, { state: e.target.value });
   };
 
   const extractUploadUrl = (res) => {
@@ -391,6 +420,10 @@ const ProfileEval = ({
     });
   };
 
+  const handleAnswerState = (qIndex, aIndex) => (e) => {
+    updateAnswer(qIndex, aIndex, { state: e.target.value });
+  };
+
   const validateForm = () => {
     const next = {};
     if (!form.name_element || !String(form.name_element).trim())
@@ -401,26 +434,28 @@ const ProfileEval = ({
       next.questions = "Debes agregar al menos una pregunta.";
 
     form.questions.forEach((q, index) => {
+      if (q.state === "Inactivo") return;
       const type = detectType(q.fk_type_question);
+      const activeAnswers = q.answers.filter((a) => a.state !== "Inactivo");
       const qErrors = [];
       if (!q.fk_type_question) qErrors.push("Selecciona el tipo de respuesta.");
       if (!q.description_question || !String(q.description_question).trim())
         qErrors.push("La descripción de la pregunta es obligatoria.");
 
       if (type === "single") {
-        const hasEmpty = q.answers.some(
+        const hasEmpty = activeAnswers.some(
           (a) => !String(a.description_answer).trim(),
         );
         if (hasEmpty) qErrors.push("Completa las 4 opciones de respuesta.");
-        const correctas = q.answers.filter((a) => a.correcta).length;
+        const correctas = activeAnswers.filter((a) => a.correcta).length;
         if (correctas !== 1)
           qErrors.push("Marca exactamente una opción como correcta.");
       } else if (type === "multiple") {
-        const hasEmpty = q.answers.some(
+        const hasEmpty = activeAnswers.some(
           (a) => !String(a.description_answer).trim(),
         );
         if (hasEmpty) qErrors.push("Completa todas las opciones de respuesta.");
-        const correctas = q.answers.filter((a) => a.correcta).length;
+        const correctas = activeAnswers.filter((a) => a.correcta).length;
         const min = q.minCorrectas != null ? Number(q.minCorrectas) : 1;
         const max =
           q.maxCorrectas != null && q.maxCorrectas !== ""
@@ -431,7 +466,7 @@ const ProfileEval = ({
         if (max != null && correctas > max)
           qErrors.push(`Marca como máximo ${max} opción(es) como correcta(s).`);
       } else if (type === "boolean") {
-        const correctas = q.answers.filter((a) => a.correcta).length;
+        const correctas = activeAnswers.filter((a) => a.correcta).length;
         if (correctas !== 1)
           qErrors.push("Marca exactamente una opción como correcta.");
       } else if (type === "file") {
@@ -476,11 +511,228 @@ const ProfileEval = ({
     }),
   });
 
+  const buildUpdatePayload = () => {
+    if (idElement == null || idElement === "") return null;
+
+    const toIncorrect = (correcta) => (correcta ? "0" : "1");
+
+    const initialQuestions = initialQuestionsRef.current || [];
+
+    const findOriginal = (q) =>
+      initialQuestions.find(
+        (oq) => oq.id_ask != null && oq.id_ask === q.id_ask,
+      );
+
+    const answerChanged = (a, origA) => {
+      if (!origA) return true;
+      if (
+        String(a.description_answer || "").trim() !==
+        String(origA.description_answer || "").trim()
+      )
+        return true;
+      if (Boolean(a.correcta) !== Boolean(origA.correcta)) return true;
+      return false;
+    };
+
+    const questionChanged = (q, orig) => {
+      if (!orig) return true;
+      if (
+        String(q.description_question || "").trim() !==
+        String(orig.description_question || "").trim()
+      )
+        return true;
+      if (
+        String(q.url_file || "").trim() !==
+        String(orig.url_file || "").trim()
+      )
+        return true;
+
+      const type = detectType(q.fk_type_question);
+      if (type === "file" || type === "open") return false;
+
+      const origAnswers = Array.isArray(orig.answers) ? orig.answers : [];
+      const origMap = new Map(
+        origAnswers
+          .filter((a) => a.id_answer != null && a.id_answer !== "")
+          .map((a) => [a.id_answer, a]),
+      );
+      const currentIds = new Set(
+        q.answers
+          .filter((a) => a.id_answer != null && a.id_answer !== "")
+          .map((a) => a.id_answer),
+      );
+
+      for (const a of q.answers) {
+        if (a.state === "Inactivo") return true;
+        if (a.id_answer == null || a.id_answer === "") return true;
+        if (answerChanged(a, origMap.get(a.id_answer))) return true;
+      }
+      return origAnswers.some(
+        (oa) =>
+          oa.id_answer != null &&
+          oa.id_answer !== "" &&
+          !currentIds.has(oa.id_answer),
+      );
+    };
+
+    const questionsDelete = form.questions
+      .filter(
+        (q) =>
+          q.id_ask != null && q.id_ask !== "" && q.state === "Inactivo",
+      )
+      .map((q) => toId(q.id_ask));
+
+    const questionsCreate = form.questions
+      .filter(
+        (q) =>
+          (q.id_ask == null || q.id_ask === "") && q.state === "Activo",
+      )
+      .map((q) => {
+        const type = detectType(q.fk_type_question);
+        const question = {
+          name_ask: `Pregunta ${form.questions.indexOf(q) + 1}`,
+          description_ask: String(q.description_question || "").trim(),
+          fk_type_ask: toId(q.fk_type_question),
+          url_file:
+            q.url_file && String(q.url_file).trim()
+              ? String(q.url_file).trim()
+              : null,
+        };
+        if (type === "file" || type === "open") {
+          question.answers = [{ description_answer: "", incorrect_answer: "" }];
+        } else {
+          question.answers = q.answers
+            .filter((a) => a.state === "Activo")
+            .map((a) => ({
+              description_answer: String(a.description_answer || "").trim(),
+              incorrect_answer: toIncorrect(a.correcta),
+            }));
+        }
+        return question;
+      });
+
+    const questionsUpdate = form.questions
+      .filter(
+        (q) =>
+          q.id_ask != null && q.id_ask !== "" && q.state === "Activo",
+      )
+      .filter((q) => questionChanged(q, findOriginal(q)))
+      .map((q) => {
+        const orig = findOriginal(q);
+        const type = detectType(q.fk_type_question);
+
+        const descriptionChanged =
+          !orig ||
+          String(q.description_question || "").trim() !==
+            String(orig.description_question || "").trim();
+        const urlChanged =
+          !orig ||
+          String(q.url_file || "").trim() !==
+            String(orig.url_file || "").trim();
+
+        const question = { id_ask: toId(q.id_ask) };
+        if (descriptionChanged) {
+          question.description_ask = String(
+            q.description_question || "",
+          ).trim();
+        }
+        if (urlChanged && q.url_file && String(q.url_file).trim()) {
+          question.url_file = String(q.url_file).trim();
+        }
+
+        if (type === "file" || type === "open") {
+          question.answers = { create: [], update: [], delete: [] };
+        } else {
+          const origAnswers = Array.isArray(orig?.answers)
+            ? orig.answers
+            : [];
+          const origMap = new Map(
+            origAnswers
+              .filter((a) => a.id_answer != null && a.id_answer !== "")
+              .map((a) => [a.id_answer, a]),
+          );
+          const currentIds = new Set(
+            q.answers
+              .filter((a) => a.id_answer != null && a.id_answer !== "")
+              .map((a) => a.id_answer),
+          );
+
+          question.answers = {
+            create: q.answers
+              .filter(
+                (a) =>
+                  (a.id_answer == null || a.id_answer === "") &&
+                  a.state === "Activo",
+              )
+              .map((a) => ({
+                description_answer: String(a.description_answer || "").trim(),
+                incorrect_answer: toIncorrect(a.correcta),
+              })),
+            update: q.answers
+              .filter(
+                (a) =>
+                  a.id_answer != null &&
+                  a.id_answer !== "" &&
+                  a.state === "Activo" &&
+                  answerChanged(a, origMap.get(a.id_answer)),
+              )
+              .map((a) => ({
+                id_answer: toId(a.id_answer),
+                description_answer: String(a.description_answer || "").trim(),
+                incorrect_answer: toIncorrect(a.correcta),
+              })),
+            delete: [
+              ...q.answers
+                .filter(
+                  (a) =>
+                    a.id_answer != null &&
+                    a.id_answer !== "" &&
+                    a.state === "Inactivo",
+                )
+                .map((a) => toId(a.id_answer)),
+              ...origAnswers
+                .filter(
+                  (oa) =>
+                    oa.id_answer != null &&
+                    oa.id_answer !== "" &&
+                    !currentIds.has(oa.id_answer),
+                )
+                .map((oa) => toId(oa.id_answer)),
+            ],
+          };
+        }
+        return question;
+      });
+
+    if (
+      questionsCreate.length === 0 &&
+      questionsUpdate.length === 0 &&
+      questionsDelete.length === 0
+    ) {
+      return null;
+    }
+
+    return {
+      id_element: idElement,
+      element: {},
+      questions: {
+        create: questionsCreate,
+        update: questionsUpdate,
+        delete: questionsDelete,
+      },
+    };
+  };
+
   const handleSubmit = async () => {
     if (!validateForm()) return;
     setIsSaving(true);
     try {
-      const payload = buildPayload();
+      const payload = isUpdate ? buildUpdatePayload() : buildPayload();
+      if (payload == null) {
+        notify.info("No se detectaron cambios.");
+        setErrors({});
+        return;
+      }
       if (typeof onSave === "function") {
         await onSave(payload);
       }
@@ -580,6 +832,18 @@ const ProfileEval = ({
         >
           {q.answers.map((a, aIndex) => (
             <div key={aIndex} className="flex items-center gap-2">
+              {isUpdate && !(readOnly && !isEditing) && (
+                <select
+                  name={`state-answer-${index}-${aIndex}`}
+                  value={a.state}
+                  onChange={handleAnswerState(index, aIndex)}
+                  disabled={disabled}
+                  className="p-2 border rounded bg-surface text-sm"
+                >
+                  <option value="Activo">Activo</option>
+                  <option value="Inactivo">Inactivo</option>
+                </select>
+              )}
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
@@ -600,6 +864,7 @@ const ProfileEval = ({
               />
               {type === "multiple" &&
                 q.answers.length > 2 &&
+                !isUpdate &&
                 !(readOnly && !isEditing) && (
                   <SimpleButton
                     type="button"
@@ -709,44 +974,64 @@ const ProfileEval = ({
               key={index}
               className="w-full p-4 border rounded bg-surface flex flex-col gap-3 mt-2"
             >
-              <div className="grid grid-cols-12 items-center justify-between">
-                <span className="font-semibold col-span-11">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-semibold">
                   Pregunta {index + 1}
                 </span>
-                {!(readOnly && !isEditing) && (
-                  <SimpleButton
-                    type="button"
-                    onClick={() => removeQuestion(index)}
-                    icon="Trash2"
-                    bg="bg-error"
-                    text="text-surface"
-                    noRounded={false}
-                    msjtooltip="Eliminar pregunta"
-                  />
+                {isUpdate && !(readOnly && !isEditing) ? (
+                  <select
+                    name={`state-question-${index}`}
+                    value={q.state}
+                    onChange={handleQuestionState(index)}
+                    disabled={disabled}
+                    className="p-2 border rounded bg-surface text-sm"
+                  >
+                    <option value="Activo">Activo</option>
+                    <option value="Inactivo">Inactivo</option>
+                  </select>
+                ) : (
+                  !(readOnly && !isEditing) && (
+                    <SimpleButton
+                      type="button"
+                      onClick={() => removeQuestion(index)}
+                      icon="Trash2"
+                      bg="bg-error"
+                      text="text-surface"
+                      noRounded={false}
+                      msjtooltip="Eliminar pregunta"
+                    />
+                  )
                 )}
               </div>
 
-              <div>
-                <label className="">
-                  Tipo de respuesta <span className="text-error">*</span>
-                </label>
-                <select
-                  name="fk_type_question"
-                  value={q.fk_type_question}
-                  onChange={handleTypeQuestion(index)}
-                  disabled={disabled || loadingTypes}
-                  className="w-full p-2 border rounded bg-surface"
-                >
-                  <option value="">
-                    {loadingTypes ? "Cargando tipos..." : "Selecciona el tipo"}
-                  </option>
-                  {typeQuestionOptions.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {isUpdate &&
+                q.id_ask != null &&
+                q.id_ask !== "" &&
+                isEditing ? null : (
+                  <div>
+                    <label className="">
+                      Tipo de respuesta <span className="text-error">*</span>
+                    </label>
+                    <select
+                      name="fk_type_question"
+                      value={q.fk_type_question}
+                      onChange={handleTypeQuestion(index)}
+                      disabled={disabled || loadingTypes}
+                      className="w-full p-2 border rounded bg-surface"
+                    >
+                      <option value="">
+                        {loadingTypes
+                          ? "Cargando tipos..."
+                          : "Selecciona el tipo"}
+                      </option>
+                      {typeQuestionOptions.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
               <div>
                 <label className="">
@@ -800,7 +1085,13 @@ const ProfileEval = ({
               <SimpleButton
                 type="button"
                 onClick={handleSubmit}
-                msj={isSaving ? "Registrando..." : "Registrar"}
+                msj={
+                  isSaving
+                    ? "Guardando..."
+                    : idElement != null && idElement !== ""
+                      ? "Guardar"
+                      : "Registrar"
+                }
                 icon="Save"
                 bg="bg-secondary"
                 text="text-surface"
