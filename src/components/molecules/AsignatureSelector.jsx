@@ -18,6 +18,7 @@ const AsignatureSelector = ({
   customFetchMethod = null,
   additionalParams = {},
   onJourneyDetected = null,
+  staticOptions = null,
 }) => {
   const { getSedeAsignature, loading: schoolLoading } = useSchool();
   const { token } = useAuth();
@@ -34,6 +35,8 @@ const AsignatureSelector = ({
   useEffect(() => {
     let mounted = true;
     const controller = new AbortController();
+
+    if (staticOptions !== null) return;
 
     if (!token) {
       setAsignaturas([]);
@@ -123,7 +126,8 @@ const AsignatureSelector = ({
   ]);
 
   const items = useMemo(() => {
-    return (Array.isArray(asignaturas) ? asignaturas : [])
+    const source = staticOptions !== null ? staticOptions : asignaturas;
+    return (Array.isArray(source) ? source : [])
       .filter(Boolean)
       .filter((x) => !x?.estado || x?.estado === "Activo") // Solo asignaturas activas o sin estado
       .map((x) => ({
@@ -136,33 +140,41 @@ const AsignatureSelector = ({
         if (!acc.some((a) => a.id === x.id)) acc.push(x);
         return acc;
       }, []);
-  }, [asignaturas]);
+  }, [asignaturas, staticOptions]);
 
   const isLoading = loading || schoolLoading;
 
   // Determinar si el selector debe estar deshabilitado
-  const isDisabled = customFetchMethod
-    ? disabled || isLoading
-    : disabled || isLoading || !sedeId || !workdayId;
+  const isDisabled =
+    staticOptions !== null
+      ? disabled
+      : customFetchMethod
+        ? disabled || isLoading
+        : disabled || isLoading || !sedeId || !workdayId;
 
   // Determinar el mensaje del placeholder
-  const placeholderMessage = customFetchMethod
-    ? isLoading
-      ? "Cargando asignaturas..."
-      : error
-        ? "Error al cargar asignaturas"
-        : items.length === 0
-          ? "No hay asignaturas disponibles"
-          : placeholder
-    : !sedeId || !workdayId
-      ? "Selecciona primero una sede y jornada"
-      : isLoading
-        ? "Cargando asignaturas..."
-        : error
-          ? "Error al cargar asignaturas"
-          : items.length === 0
-            ? "No hay asignaturas disponibles"
-            : placeholder;
+  const placeholderMessage =
+    staticOptions !== null
+      ? items.length === 0
+        ? "No hay asignaturas disponibles"
+        : placeholder
+      : customFetchMethod
+        ? isLoading
+          ? "Cargando asignaturas..."
+          : error
+            ? "Error al cargar asignaturas"
+            : items.length === 0
+              ? "No hay asignaturas disponibles"
+              : placeholder
+        : !sedeId || !workdayId
+          ? "Selecciona primero una sede y jornada"
+          : isLoading
+            ? "Cargando asignaturas..."
+            : error
+              ? "Error al cargar asignaturas"
+              : items.length === 0
+                ? "No hay asignaturas disponibles"
+                : placeholder;
 
   // Manejar el cambio de asignatura
   const handleChange = (e) => {

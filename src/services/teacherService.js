@@ -1,5 +1,8 @@
 ﻿import { ApiClient } from "./ApiClient";
 
+// TODO: confirmar endpoint para guardar respuestas del examen del estudiante
+const SAVE_STUDENT_ELEMENT_ENDPOINT = "/element/student/answer";
+
 /**
  * Obtiene la lista de docentes
  * Endpoint esperado: GET /teachers
@@ -757,6 +760,29 @@ export async function getElementStudentData(payload) {
     return data;
   } catch (error) {
     console.error("teacherService - getElementStudentData error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Guarda las respuestas del examen enviadas por el estudiante.
+ * Endpoint: POST SAVE_STUDENT_ELEMENT_ENDPOINT (ver constante arriba)
+ * payload: { id_element, fk_estudiante, answers: [...] }
+ * @returns {Promise<Object>} Respuesta del servidor
+ */
+export async function saveElementStudentAnswer(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto para saveElementStudentAnswer.");
+  }
+  try {
+    const res = await ApiClient.instance.post(
+      SAVE_STUDENT_ELEMENT_ENDPOINT,
+      payload,
+    );
+    const data = Array.isArray(res) ? res : (res?.data ?? res);
+    return data;
+  } catch (error) {
+    console.error("teacherService - saveElementStudentAnswer error:", error);
     throw error;
   }
 }

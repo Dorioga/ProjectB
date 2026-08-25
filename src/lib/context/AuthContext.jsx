@@ -89,6 +89,7 @@ export function AuthProvider({ children }) {
   const [firmaDocente, setFirmaDocente] = useState(() =>
     loadFromStorage("firmaDocente"),
   );
+  const [idGrado, setIdGrado] = useState(() => loadFromStorage("idGrado"));
 
   // número de identificación: se persiste en localStorage solo si rol=2,
   // o si rol=7 y gradoAcargo tiene valor
@@ -138,6 +139,7 @@ export function AuthProvider({ children }) {
     setDirector(null);
     setGradoAcargo(null);
     setFirmaDocente(null);
+    setIdGrado(null);
     setNumeroIdentificacion(null);
     setToken(null);
     sessionStorage.clear();
@@ -198,6 +200,7 @@ export function AuthProvider({ children }) {
     saveToStorage("director", director);
     saveToStorage("gradoAcargo", gradoAcargo);
     saveToStorage("firmaDocente", firmaDocente);
+    saveToStorage("idGrado", idGrado);
     // numero_identificacion se persiste solo si rol=2, o rol=7 con gradoAcargo
     const shouldPersistNumeroId =
       String(rol) === "2" || (String(rol) === "7" && !!gradoAcargo);
@@ -234,6 +237,7 @@ export function AuthProvider({ children }) {
     director,
     gradoAcargo,
     firmaDocente,
+    idGrado,
     numero_identificacion,
     token,
   ]);
@@ -324,6 +328,7 @@ export function AuthProvider({ children }) {
     setDirector(data?.director ?? null);
     setGradoAcargo(data?.grado_acargo ?? null);
     setFirmaDocente(data?.firma_docente ?? null);
+    setIdGrado(data?.id_grado ?? null);
     setNumeroIdentificacion(data?.numero_identificacion ?? null);
     if (data?.color_principal || data?.color_secundario) {
       applyCustomColors(data?.color_principal, data?.color_secundario);
@@ -549,6 +554,7 @@ export function AuthProvider({ children }) {
       director,
       gradoAcargo,
       firmaDocente,
+      idGrado,
       numero_identificacion,
       setNumeroIdentificacion,
       loading,
@@ -590,6 +596,7 @@ export function AuthProvider({ children }) {
       director,
       gradoAcargo,
       firmaDocente,
+      idGrado,
       numero_identificacion,
       loading,
       error,

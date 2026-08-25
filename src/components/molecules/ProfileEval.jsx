@@ -279,8 +279,12 @@ const ProfileEval = ({
     if (!file) return;
     setUploading((prev) => ({ ...prev, [index]: true }));
     try {
+      const dot = file.name.lastIndexOf(".");
+      const ext = dot >= 0 ? file.name.slice(dot) : "";
+      const newName = `${fkTeacher}_${Date.now()}${ext}`;
+      const renamed = new File([file], newName, { type: file.type });
       const form = new FormData();
-      form.append("file", file);
+      form.append("file", renamed);
       const res = await upload(form, "upload/elementos");
       const url = extractUploadUrl(res);
       updateQuestion(index, { url_file: url || String(file.name) });

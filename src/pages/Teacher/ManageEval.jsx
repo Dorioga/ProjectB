@@ -10,7 +10,6 @@ import AsignatureSelector from "../../components/molecules/AsignatureSelector";
 import GradeSelector from "../../components/atoms/GradeSelector";
 import PeriodSelector from "../../components/atoms/PeriodSelector";
 import useTeacher from "../../lib/hooks/useTeacher";
-import useSchool from "../../lib/hooks/useSchool";
 import { useNotify } from "../../lib/hooks/useNotify";
 import useAuth from "../../lib/hooks/useAuth";
 import tourManageEval from "../../tour/tourManageEval";
@@ -57,8 +56,15 @@ const ManageEval = () => {
     getTeacherGrades,
     getTeacherSubjects,
   } = useTeacher();
-  const { getGradeSede, getGradeAsignature } = useSchool();
-  const { idSede, nameSede, idDocente, token, rol, idInstitution } = useAuth();
+  const {
+    idSede,
+    nameSede,
+    idDocente,
+    token,
+    rol,
+    idInstitution,
+    idGrado,
+  } = useAuth();
   const notify = useNotify();
   const navigate = useNavigate();
 
@@ -190,7 +196,7 @@ const ManageEval = () => {
     idDocente && fkSede && grade && period && asignature,
   );
 
-  const studentFiltersReady = Boolean(fkSede && grade && period && asignature);
+  const studentFiltersReady = Boolean(fkSede && idGrado && period);
 
   const adminRowValue = (row, field) => {
     if (field === "tipo")
@@ -258,9 +264,8 @@ const ManageEval = () => {
       } else if (isStudentOrGuardian) {
         res = await getElementStudentRef.current({
           fk_sede: Number(fkSede),
-          fk_grado: Number(grade),
+          fk_grado: Number(idGrado),
           fk_period: Number(period),
-          fk_asignatura: Number(asignature),
         });
       } else {
         res = await getElementQuestionsRef.current({
@@ -331,24 +336,32 @@ const ManageEval = () => {
     const accionesColumn = {
       id: "actions",
       header: "Acciones",
-      cell: ({ row }) => (
-        <div className="flex justify-center ">
-          <SimpleButton
-            type="button"
-            onClick={() =>
-              isStudentOrGuardian && !isGuardian
-                ? handleTakeEvalRef.current?.(row.original)
-                : handleViewEvalRef.current?.(row.original)
-            }
-            msj="Ver"
-            icon="Eye"
-            bg="bg-secondary"
-            text="text-surface"
-            noRounded={true}
-            className="w-auto px-3 py-1.5"
-          />
-        </div>
-      ),
+      cell: ({ row }) => {
+        const hasNote =
+          isStudentOrGuardian &&
+          !isGuardian &&
+          row.note_answer_student != null &&
+          row.note_answer_student !== "";
+        if (hasNote) return null;
+        return (
+          <div className="flex justify-center ">
+            <SimpleButton
+              type="button"
+              onClick={() =>
+                isStudentOrGuardian && !isGuardian
+                  ? handleTakeEvalRef.current?.(row.original)
+                  : handleViewEvalRef.current?.(row.original)
+              }
+              msj={isStudentOrGuardian && !isGuardian ? "Realizar examen" : "Ver"}
+              icon="Eye"
+              bg="bg-secondary"
+              text="text-surface"
+              noRounded={true}
+              className="w-auto px-3 py-1.5"
+            />
+          </div>
+        );
+      },
     };
 
     if (isStudentOrGuardian) {
@@ -572,49 +585,14 @@ const ManageEval = () => {
       </div>
 
       {isStudentOrGuardian ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-2">
-          <div>
-            <SedeSelect
-              label="Sede"
-              value={String(idSede ?? "")}
-              onChange={() => {}}
-              data={idSede ? [{ id: idSede, name: nameSede }] : []}
-              disabled
-            />
-          </div>
-          <div>
-            <GradeSelector
-              label="Grado"
-              value={grade}
-              onChange={(e) => {
-                setGrade(e.target.value);
-                setAsignature("");
-              }}
-              placeholder="Selecciona grado"
-              sedeId={fkSede}
-              autoLoad={true}
-              customFetchMethod={getGradeSede}
-              additionalParams={{ idSede: Number(fkSede) }}
-              disabled={!fkSede}
-            />
-          </div>
-          <div>
-            <AsignatureSelector
-              label="Asignatura"
-              value={asignature}
-              onChange={(e) => setAsignature(e.target.value)}
-              placeholder="Selecciona asignatura"
-              autoLoad={true}
-              customFetchMethod={getGradeAsignature}
-              additionalParams={{ id_grado: Number(grade) }}
-              disabled={!grade}
-            />
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 mt-2 max-w-lg">
           <div>
             <PeriodSelector
               label="Periodo"
               value={period}
-              onChange={(e) => setPeriod(e.target.value)}
+              onChange={(e) => {
+                setPeriod(e.target.value);
+              }}
               autoLoad={true}
             />
           </div>
