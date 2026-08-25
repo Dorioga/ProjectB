@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import Modal from "../../components/atoms/Modal";
 import DataTable from "../../components/atoms/DataTable";
 import SimpleButton from "../../components/atoms/SimpleButton";
@@ -9,6 +10,7 @@ import AsignatureSelector from "../../components/molecules/AsignatureSelector";
 import GradeSelector from "../../components/atoms/GradeSelector";
 import PeriodSelector from "../../components/atoms/PeriodSelector";
 import useTeacher from "../../lib/hooks/useTeacher";
+import useSchool from "../../lib/hooks/useSchool";
 import { useNotify } from "../../lib/hooks/useNotify";
 import useAuth from "../../lib/hooks/useAuth";
 import tourManageEval from "../../tour/tourManageEval";
@@ -46,6 +48,8 @@ const buildElementDetail = (rows) => {
 const ManageEval = () => {
   const {
     getElementQuestions,
+    getElementStudent,
+    getElementInstitution,
     createElement,
     updateElement,
     getElementData,
@@ -53,18 +57,29 @@ const ManageEval = () => {
     getTeacherGrades,
     getTeacherSubjects,
   } = useTeacher();
+  const { getGradeSede, getGradeAsignature } = useSchool();
   const { idSede, nameSede, idDocente, token, rol, idInstitution } = useAuth();
   const notify = useNotify();
+  const navigate = useNavigate();
 
   const getElementQuestionsRef = useRef(getElementQuestions);
   useEffect(() => {
     getElementQuestionsRef.current = getElementQuestions;
   }, [getElementQuestions]);
+  const getElementStudentRef = useRef(getElementStudent);
+  useEffect(() => {
+    getElementStudentRef.current = getElementStudent;
+  }, [getElementStudent]);
+  const getElementInstitutionRef = useRef(getElementInstitution);
+  useEffect(() => {
+    getElementInstitutionRef.current = getElementInstitution;
+  }, [getElementInstitution]);
   const getElementDataRef = useRef(getElementData);
   useEffect(() => {
     getElementDataRef.current = getElementData;
   }, [getElementData]);
   const handleViewEvalRef = useRef(null);
+  const handleTakeEvalRef = useRef(null);
   const notifyRef = useRef(notify);
   useEffect(() => {
     notifyRef.current = notify;
@@ -81,6 +96,14 @@ const ManageEval = () => {
   const [asignature, setAsignature] = useState("");
   const [period, setPeriod] = useState("");
 
+  const [adminFilters, setAdminFilters] = useState({
+    tipo: "",
+    docente: "",
+    grupo: "",
+    asignatura: "",
+    periodo: "",
+  });
+
   const [teacherSedes, setTeacherSedes] = useState([]);
   const [loadingTeacherSedes, setLoadingTeacherSedes] = useState(false);
 
@@ -90,6 +113,13 @@ const ManageEval = () => {
   );
 
   const isAdminInstitucional = useMemo(() => String(rol) === "3", [rol]);
+
+  const isStudentOrGuardian = useMemo(
+    () => ["5", "6"].includes(String(rol)),
+    [rol],
+  );
+
+  const isGuardian = useMemo(() => String(rol) === "5", [rol]);
 
   const teacherGradesParams = useMemo(
     () => ({
@@ -160,23 +190,94 @@ const ManageEval = () => {
     idDocente && fkSede && grade && period && asignature,
   );
 
+  const studentFiltersReady = Boolean(fkSede && grade && period && asignature);
+
+  const adminRowValue = (row, field) => {
+    if (field === "tipo")
+      return (
+        row.name_type_element ??
+        row.tipo ??
+        row.tipo_evaluacion ??
+        row.nombre_tipo_element ??
+        row.fk_type_element ??
+        ""
+      );
+    if (field === "docente")
+      return row.docente ?? row.nombre_docente ?? row.nombre ?? "";
+    if (field === "grupo") return row.grupo ?? row.grado_grupo ?? "";
+    if (field === "asignatura")
+      return row.nombre_asignatura ?? row.asignatura ?? "";
+    if (field === "periodo") return row.nombre_periodo ?? row.periodo ?? "";
+    return "";
+  };
+
+  const adminFilterOptions = useMemo(() => {
+    const fields = ["tipo", "docente", "grupo", "asignatura", "periodo"];
+    const opts = {};
+    for (const field of fields) {
+      const values = (Array.isArray(results) ? results : [])
+        .map((r) => String(adminRowValue(r, field)).trim())
+        .filter(Boolean);
+      opts[field] = Array.from(new Set(values)).sort((a, b) =>
+        a.localeCompare(b, "es", { sensitivity: "base" }),
+      );
+    }
+    return opts;
+  }, [results]);
+
+  const filteredResults = useMemo(() => {
+    const list = Array.isArray(results) ? results : [];
+    const active = Object.keys(adminFilters).some(
+      (k) => String(adminFilters[k] ?? "").trim() !== "",
+    );
+    if (!active) return list;
+    return list.filter((row) =>
+      Object.keys(adminFilters).every((field) => {
+        const value = String(adminFilters[field] ?? "").trim();
+        if (!value) return true;
+        return String(adminRowValue(row, field)).trim() === value;
+      }),
+    );
+  }, [results, adminFilters]);
+
+  const handleAdminFilter = (field) => (e) => {
+    setAdminFilters((prev) => ({ ...prev, [field]: e.target.value }));
+  };
+
+  const resetAdminFilters = () =>
+    setAdminFilters({ tipo: "", docente: "", grupo: "", asignatura: "", periodo: "" });
+
   const fetchEvaluations = useCallback(async () => {
     setLoading(true);
     try {
-      const payload = isAdminInstitucional
-        ? { institution: Number(idInstitution) }
-        : {
-            fk_docente: Number(idDocente),
-            fk_sede: Number(fkSede),
-            fk_grado: Number(grade),
-            fk_period: Number(period),
-            fk_asignatura: Number(asignature),
-          };
-      const res = await getElementQuestionsRef.current(payload);
+      let res;
+      if (isAdminInstitucional) {
+        res = await getElementInstitutionRef.current({
+          institution: Number(idInstitution),
+        });
+      } else if (isStudentOrGuardian) {
+        res = await getElementStudentRef.current({
+          fk_sede: Number(fkSede),
+          fk_grado: Number(grade),
+          fk_period: Number(period),
+          fk_asignatura: Number(asignature),
+        });
+      } else {
+        res = await getElementQuestionsRef.current({
+          fk_docente: Number(idDocente),
+          fk_sede: Number(fkSede),
+          fk_grado: Number(grade),
+          fk_period: Number(period),
+          fk_asignatura: Number(asignature),
+        });
+      }
       const data = Array.isArray(res) ? res : (res?.data ?? []);
       setResults(data);
+      if (isAdminInstitucional) {
+        resetAdminFilters();
+      }
     } catch (err) {
-      console.error("ManageEval - getElementQuestions error:", err);
+      console.error("ManageEval - cargar evaluaciones error:", err);
       notifyRef.current.error(
         err?.message || "Error al cargar las evaluaciones.",
       );
@@ -186,6 +287,7 @@ const ManageEval = () => {
     }
   }, [
     isAdminInstitucional,
+    isStudentOrGuardian,
     idInstitution,
     idDocente,
     fkSede,
@@ -203,24 +305,106 @@ const ManageEval = () => {
       }
       return;
     }
+    if (isStudentOrGuardian) {
+      if (studentFiltersReady) {
+        fetchEvaluations();
+      } else {
+        setResults([]);
+      }
+      return;
+    }
     if (!filtersReady) {
       setResults([]);
       return;
     }
     fetchEvaluations();
-  }, [isAdminInstitucional, idInstitution, filtersReady, fetchEvaluations]);
+  }, [
+    isAdminInstitucional,
+    isStudentOrGuardian,
+    idInstitution,
+    studentFiltersReady,
+    filtersReady,
+    fetchEvaluations,
+  ]);
 
-  const columns = useMemo(
-    () => [
+  const columns = useMemo(() => {
+    const accionesColumn = {
+      id: "actions",
+      header: "Acciones",
+      cell: ({ row }) => (
+        <div className="flex justify-center ">
+          <SimpleButton
+            type="button"
+            onClick={() =>
+              isStudentOrGuardian && !isGuardian
+                ? handleTakeEvalRef.current?.(row.original)
+                : handleViewEvalRef.current?.(row.original)
+            }
+            msj="Ver"
+            icon="Eye"
+            bg="bg-secondary"
+            text="text-surface"
+            noRounded={true}
+            className="w-auto px-3 py-1.5"
+          />
+        </div>
+      ),
+    };
+
+    if (isStudentOrGuardian) {
+      return [
+        {
+          accessorKey: "name_element",
+          header: "Nombre",
+          accessorFn: (row) =>
+            row.name_element ?? row.nombre_element ?? row.titulo ?? row.title ?? "",
+        },
+        {
+          accessorKey: "name_type_element",
+          header: "Tipo",
+          accessorFn: (row) =>
+            row.name_type_element ??
+            row.tipo ??
+            row.tipo_evaluacion ??
+            row.nombre_tipo_element ??
+            row.fk_type_element ??
+            "",
+        },
+        {
+          accessorKey: "group",
+          header: "Grupo",
+          accessorFn: (row) => row.group ?? row.grupo ?? row.grado_grupo ?? "",
+        },
+        {
+          accessorKey: "name_subject",
+          header: "Asignatura",
+          accessorFn: (row) =>
+            row.name_subject ?? row.nombre_asignatura ?? row.asignatura ?? "",
+        },
+        {
+          accessorKey: "name_period",
+          header: "Periodo",
+          accessorFn: (row) =>
+            row.name_period ?? row.nombre_periodo ?? row.periodo ?? "",
+        },
+        {
+          accessorKey: "note_answer_student",
+          header: "Calificación",
+          accessorFn: (row) =>
+            row.note_answer_student != null && row.note_answer_student !== ""
+              ? row.note_answer_student
+              : "Sin calificar",
+        },
+        ...(!isGuardian ? [accionesColumn] : []),
+      ];
+    }
+
+    return [
       {
         accessorKey: "name_element",
         header: "Nombre",
         accessorFn: (row) =>
-          row.name_element ??
-          row.nombre_element ??
-          row.titulo ??
-          row.title ??
-          "",
+          row.name_element ?? row.nombre_element ?? row.titulo ?? row.title ?? "",
       },
       {
         accessorKey: "name_type_element",
@@ -259,27 +443,9 @@ const ManageEval = () => {
         header: "Sede",
         accessorFn: (row) => row.nombre_sede ?? row.sede ?? "",
       },
-      {
-        id: "actions",
-        header: "Acciones",
-        cell: ({ row }) => (
-          <div className="flex justify-center ">
-            <SimpleButton
-              type="button"
-              onClick={() => handleViewEvalRef.current?.(row.original)}
-              msj="Ver"
-              icon="Eye"
-              bg="bg-secondary"
-              text="text-surface"
-              noRounded={true}
-              className="w-auto px-3 py-1.5"
-            />
-          </div>
-        ),
-      },
-    ],
-    [],
-  );
+      ...(!isAdminInstitucional ? [accionesColumn] : []),
+    ];
+  }, [isStudentOrGuardian, isGuardian, isAdminInstitucional]);
 
   const handleRegister = useCallback(
     async (payload) => {
@@ -348,6 +514,24 @@ const ManageEval = () => {
     [updateElement, notify, fetchEvaluations],
   );
 
+  const handleTakeEval = useCallback((row) => {
+    const id =
+      row?.id_element ??
+      row?.id_elemente ??
+      row?.id ??
+      row?.id_elemento ??
+      row?.idelement;
+    if (!id) {
+      notifyRef.current.error("No se pudo identificar la evaluación.");
+      return;
+    }
+    navigate(`/dashboard/studentEval/${Number(id)}`);
+  }, [navigate]);
+
+  useEffect(() => {
+    handleTakeEvalRef.current = handleTakeEval;
+  }, [handleTakeEval]);
+
   useEffect(() => {
     handleViewEvalRef.current = handleViewEval;
   }, [handleViewEval]);
@@ -365,7 +549,7 @@ const ManageEval = () => {
           id="tour-me-add-btn"
           className="grid grid-cols-2 col-span-2 xl:col-span-2 gap-2"
         >
-          {!isAdminInstitucional && (
+          {!isAdminInstitucional && !isStudentOrGuardian && (
             <SimpleButton
               onClick={() => setIsRegisterOpen(true)}
               msj="Registrar evaluación"
@@ -387,7 +571,55 @@ const ManageEval = () => {
         </div>
       </div>
 
-      {!isAdminInstitucional && (
+      {isStudentOrGuardian ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-2">
+          <div>
+            <SedeSelect
+              label="Sede"
+              value={String(idSede ?? "")}
+              onChange={() => {}}
+              data={idSede ? [{ id: idSede, name: nameSede }] : []}
+              disabled
+            />
+          </div>
+          <div>
+            <GradeSelector
+              label="Grado"
+              value={grade}
+              onChange={(e) => {
+                setGrade(e.target.value);
+                setAsignature("");
+              }}
+              placeholder="Selecciona grado"
+              sedeId={fkSede}
+              autoLoad={true}
+              customFetchMethod={getGradeSede}
+              additionalParams={{ idSede: Number(fkSede) }}
+              disabled={!fkSede}
+            />
+          </div>
+          <div>
+            <AsignatureSelector
+              label="Asignatura"
+              value={asignature}
+              onChange={(e) => setAsignature(e.target.value)}
+              placeholder="Selecciona asignatura"
+              autoLoad={true}
+              customFetchMethod={getGradeAsignature}
+              additionalParams={{ id_grado: Number(grade) }}
+              disabled={!grade}
+            />
+          </div>
+          <div>
+            <PeriodSelector
+              label="Periodo"
+              value={period}
+              onChange={(e) => setPeriod(e.target.value)}
+              autoLoad={true}
+            />
+          </div>
+        </div>
+      ) : !isAdminInstitucional ? (
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-2">
           <div>
             <SedeSelect
@@ -439,11 +671,96 @@ const ManageEval = () => {
             />
           </div>
         </div>
+      ) : null}
+
+      {isAdminInstitucional && (
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mt-2">
+          <div>
+            <label className="">Tipo</label>
+            <select
+              name="filter-tipo"
+              value={adminFilters.tipo}
+              onChange={handleAdminFilter("tipo")}
+              className="w-full p-2 border rounded bg-surface"
+            >
+              <option value="">Todos</option>
+              {adminFilterOptions.tipo.map((v) => (
+                <option key={v} value={v}>
+                  {v}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="">Docente</label>
+            <select
+              name="filter-docente"
+              value={adminFilters.docente}
+              onChange={handleAdminFilter("docente")}
+              className="w-full p-2 border rounded bg-surface"
+            >
+              <option value="">Todos</option>
+              {adminFilterOptions.docente.map((v) => (
+                <option key={v} value={v}>
+                  {v}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="">Grupo</label>
+            <select
+              name="filter-grupo"
+              value={adminFilters.grupo}
+              onChange={handleAdminFilter("grupo")}
+              className="w-full p-2 border rounded bg-surface"
+            >
+              <option value="">Todos</option>
+              {adminFilterOptions.grupo.map((v) => (
+                <option key={v} value={v}>
+                  {v}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="">Asignatura</label>
+            <select
+              name="filter-asignatura"
+              value={adminFilters.asignatura}
+              onChange={handleAdminFilter("asignatura")}
+              className="w-full p-2 border rounded bg-surface"
+            >
+              <option value="">Todos</option>
+              {adminFilterOptions.asignatura.map((v) => (
+                <option key={v} value={v}>
+                  {v}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="">Periodo</label>
+            <select
+              name="filter-periodo"
+              value={adminFilters.periodo}
+              onChange={handleAdminFilter("periodo")}
+              className="w-full p-2 border rounded bg-surface"
+            >
+              <option value="">Todos</option>
+              {adminFilterOptions.periodo.map((v) => (
+                <option key={v} value={v}>
+                  {v}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       )}
 
       <div id="tour-me-table" className="relative flex-1 ">
         <DataTable
-          data={results || []}
+          data={isAdminInstitucional ? filteredResults : (results || [])}
           columns={columns}
           fileName="Export_Evaluaciones"
           initialSorting={[{ id: "name_element", desc: false }]}

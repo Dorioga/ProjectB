@@ -702,6 +702,66 @@ export async function getElementQuestions(payload) {
 }
 
 /**
+ * Obtiene las evaluaciones (elementos) de la institución (admin institucional).
+ * Endpoint: POST /element/institution
+ * payload: { institution }
+ * @returns {Promise<Array>} Lista de evaluaciones
+ */
+export async function getElementInstitution(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto para getElementInstitution.");
+  }
+  try {
+    const res = await ApiClient.instance.post("/element/institution", payload);
+    const data = Array.isArray(res) ? res : (res?.data ?? res);
+    return data;
+  } catch (error) {
+    console.error("teacherService - getElementInstitution error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Obtiene las evaluaciones (elementos) visibles para estudiantes/acudientes.
+ * Endpoint: POST /element/student
+ * payload: { fk_sede, fk_grado, fk_period, fk_asignatura }
+ * @returns {Promise<Array>} Lista de evaluaciones
+ */
+export async function getElementStudent(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto para getElementStudent.");
+  }
+  try {
+    const res = await ApiClient.instance.post("/element/student", payload);
+    const data = Array.isArray(res) ? res : (res?.data ?? res);
+    return data;
+  } catch (error) {
+    console.error("teacherService - getElementStudent error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Obtiene las preguntas y respuestas de un examen para el estudiante.
+ * Endpoint: POST /element/student/data
+ * payload: { id_element }
+ * @returns {Promise<Array>} Lista plana de preguntas/respuestas del examen
+ */
+export async function getElementStudentData(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto para getElementStudentData.");
+  }
+  try {
+    const res = await ApiClient.instance.post("/element/student/data", payload);
+    const data = Array.isArray(res) ? res : (res?.data ?? res);
+    return data;
+  } catch (error) {
+    console.error("teacherService - getElementStudentData error:", error);
+    throw error;
+  }
+}
+
+/**
  * Obtiene el detalle de una evaluación (elemento) con sus preguntas y respuestas.
  * Endpoint: POST /element/data
  * payload: { id_element }

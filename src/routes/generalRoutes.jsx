@@ -47,6 +47,7 @@ const AssistenceStudent = lazy(
 );
 const ManageDBA = lazy(() => import("../pages/Teacher/ManageDBA"));
 const ManageEval = lazy(() => import("../pages/Teacher/ManageEval"));
+const StudentEval = lazy(() => import("../pages/Student/StudentEval"));
 const ManageBoletin = lazy(() => import("../pages/School/ManageBoletin"));
 const Slots = lazy(() => import("../pages/Dashboard/Slots"));
 const ControlNotas = lazy(() => import("../pages/Dashboard/ControlNotas"));
@@ -279,6 +280,14 @@ const GeneralRoutes = () => {
               element={
                 <Suspense fallback={<SuspenseFallback />}>
                   <ManageEval />
+                </Suspense>
+              }
+            />
+            <Route
+              path="studentEval/:idElement"
+              element={
+                <Suspense fallback={<SuspenseFallback />}>
+                  <StudentEval />
                 </Suspense>
               }
             />

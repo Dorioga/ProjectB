@@ -577,6 +577,48 @@ export function TeacherProvider({ children }) {
     }
   }, []);
 
+  const getElementStudent = useCallback(async (payload = {}) => {
+    setLoadingTeachers(true);
+    setErrorTeachers(null);
+    try {
+      const res = await teacherService.getElementStudent(payload);
+      return res;
+    } catch (err) {
+      setErrorTeachers(err);
+      throw err;
+    } finally {
+      setLoadingTeachers(false);
+    }
+  }, []);
+
+  const getElementInstitution = useCallback(async (payload = {}) => {
+    setLoadingTeachers(true);
+    setErrorTeachers(null);
+    try {
+      const res = await teacherService.getElementInstitution(payload);
+      return res;
+    } catch (err) {
+      setErrorTeachers(err);
+      throw err;
+    } finally {
+      setLoadingTeachers(false);
+    }
+  }, []);
+
+  const getElementStudentData = useCallback(async (payload = {}) => {
+    setLoadingTeachers(true);
+    setErrorTeachers(null);
+    try {
+      const res = await teacherService.getElementStudentData(payload);
+      return res;
+    } catch (err) {
+      setErrorTeachers(err);
+      throw err;
+    } finally {
+      setLoadingTeachers(false);
+    }
+  }, []);
+
   const value = useMemo(
     () => ({
       teachers,
@@ -632,6 +674,9 @@ export function TeacherProvider({ children }) {
       updateElement,
       getElementQuestions,
       getElementData,
+      getElementStudent,
+      getElementInstitution,
+      getElementStudentData,
     }),
     [
       teachers,
@@ -680,6 +725,9 @@ export function TeacherProvider({ children }) {
       updateElement,
       getElementQuestions,
       getElementData,
+      getElementStudent,
+      getElementInstitution,
+      getElementStudentData,
     ],
   );
 
