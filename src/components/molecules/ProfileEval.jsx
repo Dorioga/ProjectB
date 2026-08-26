@@ -1,7 +1,12 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import SimpleButton from "../atoms/SimpleButton";
 import FileChooser from "../atoms/FileChooser";
+import SedeSelect from "../atoms/SedeSelect";
+import GradeSelector from "../atoms/GradeSelector";
+import AsignatureSelector from "./AsignatureSelector";
+import PeriodSelector from "../atoms/PeriodSelector";
 import useTeacher from "../../lib/hooks/useTeacher";
+import useAuth from "../../lib/hooks/useAuth";
 import { useNotify } from "../../lib/hooks/useNotify";
 import { upload } from "../../services/uploadService";
 
@@ -100,14 +105,18 @@ const ProfileEval = ({
   onSave,
   onClose,
   fkTeacher,
-  fkSede,
-  fkGrade,
-  fkAsignature,
-  fkPeriodo,
   readOnly = false,
+  allowEdit = true,
   idElement: idElementProp = null,
 }) => {
-  const { getTypeQuestion, getTypeElement } = useTeacher();
+  const {
+    getTypeQuestion,
+    getTypeElement,
+    getTeacherSede,
+    getTeacherGrades,
+    getTeacherSubjects,
+  } = useTeacher();
+  const { token, idSede, nameSede } = useAuth();
   const notify = useNotify();
 
   const idElement = toId(idElementProp ?? initialValues?.id_element ?? null);
@@ -120,6 +129,13 @@ const ProfileEval = ({
   const [isSaving, setIsSaving] = useState(false);
   const [uploading, setUploading] = useState({});
   const [errors, setErrors] = useState({});
+
+  const [sedeSelected, setSedeSelected] = useState("");
+  const [grade, setGrade] = useState("");
+  const [asignature, setAsignature] = useState("");
+  const [period, setPeriod] = useState("");
+  const [teacherSedes, setTeacherSedes] = useState([]);
+  const [loadingTeacherSedes, setLoadingTeacherSedes] = useState(false);
 
   const disabled = isSaving || (readOnly && !isEditing);
 
@@ -175,6 +191,62 @@ const ProfileEval = ({
       mounted = false;
     };
   }, [getTypeElement, getTypeQuestion]);
+
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      if (!fkTeacher || !getTeacherSede || !token) {
+        if (mounted) setTeacherSedes([]);
+        return;
+      }
+      if (mounted) setLoadingTeacherSedes(true);
+      try {
+        const res = await getTeacherSede({ idTeacher: Number(fkTeacher) });
+        const list = Array.isArray(res) ? res : (res?.data ?? []);
+        const mapped = (Array.isArray(list) ? list : [])
+          .filter(Boolean)
+          .map((s) => ({
+            id: String(s?.id ?? s?.id_sede ?? "").trim(),
+            name: String(s?.name ?? s?.nombre ?? s?.nombre_sede ?? "").trim(),
+          }));
+        if (mounted) setTeacherSedes(mapped || []);
+      } catch (err) {
+        console.error("ProfileEval - Error cargando sedes de docente:", err);
+        if (mounted) setTeacherSedes([]);
+      } finally {
+        if (mounted) setLoadingTeacherSedes(false);
+      }
+    };
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, [fkTeacher, getTeacherSede, token]);
+
+  const teacherSedeData = useMemo(() => {
+    if (teacherSedes.length) return teacherSedes;
+    if (idSede && nameSede) return [{ id: idSede, name: nameSede }];
+    return null;
+  }, [teacherSedes, idSede, nameSede]);
+
+  const teacherGradesParams = useMemo(
+    () => ({
+      ...(fkTeacher && { idTeacher: Number(fkTeacher) }),
+      ...(sedeSelected ? { idSede: Number(sedeSelected) } : {}),
+    }),
+    [fkTeacher, sedeSelected],
+  );
+
+  const teacherSubjectsParams = useMemo(
+    () =>
+      grade && fkTeacher
+        ? {
+            idGrade: Number(grade),
+            idTeacher: Number(fkTeacher),
+          }
+        : {},
+    [grade, fkTeacher],
+  );
 
   const typeElementOptions = (Array.isArray(typeElements) ? typeElements : [])
     .filter(Boolean)
@@ -430,6 +502,12 @@ const ProfileEval = ({
 
   const validateForm = () => {
     const next = {};
+    if (!readOnly) {
+      if (!sedeSelected) next.sede = "Selecciona la sede.";
+      if (!grade) next.grade = "Selecciona el grado.";
+      if (!asignature) next.asignature = "Selecciona la asignatura.";
+      if (!period) next.period = "Selecciona el periodo.";
+    }
     if (!form.name_element || !String(form.name_element).trim())
       next.name_element = "El nombre de la evaluación es obligatorio.";
     if (!form.fk_type_element)
@@ -489,10 +567,10 @@ const ProfileEval = ({
     name_element: String(form.name_element || "").trim(),
     fk_teacher: toId(fkTeacher),
     fk_type_element: toId(form.fk_type_element),
-    fk_sede: toId(fkSede),
-    fk_grade: toId(fkGrade),
-    fk_asignature: toId(fkAsignature),
-    fk_periodo: toId(fkPeriodo),
+    fk_sede: toId(sedeSelected),
+    fk_grade: toId(grade),
+    fk_asignature: toId(asignature),
+    fk_period: toId(period),
     question: form.questions.map((q, index) => {
       const type = detectType(q.fk_type_question);
       const question = {
@@ -902,6 +980,74 @@ const ProfileEval = ({
 
   return (
     <div className="w-full flex flex-col gap-4">
+      {!readOnly && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
+            <SedeSelect
+              value={sedeSelected}
+              onChange={(e) => {
+                setSedeSelected(e.target.value);
+                setGrade("");
+                setAsignature("");
+              }}
+              data={teacherSedeData}
+              loading={loadingTeacherSedes}
+            />
+            {errors.sede && (
+              <div className="text-sm text-red-600 mt-1">{errors.sede}</div>
+            )}
+          </div>
+          <div>
+            <GradeSelector
+              label="Grado"
+              value={grade}
+              onChange={(e) => {
+                setGrade(e.target.value);
+                setAsignature("");
+              }}
+              placeholder="Selecciona grado"
+              sedeId={sedeSelected}
+              autoLoad={true}
+              customFetchMethod={getTeacherGrades}
+              additionalParams={teacherGradesParams}
+              disabled={!sedeSelected}
+            />
+            {errors.grade && (
+              <div className="text-sm text-red-600 mt-1">{errors.grade}</div>
+            )}
+          </div>
+          <div>
+            <AsignatureSelector
+              label="Asignatura"
+              value={asignature}
+              onChange={(e) => setAsignature(e.target.value)}
+              placeholder="Selecciona asignatura"
+              sedeId={sedeSelected}
+              autoLoad={true}
+              customFetchMethod={getTeacherSubjects}
+              additionalParams={teacherSubjectsParams}
+              disabled={!grade}
+            />
+            {errors.asignature && (
+              <div className="text-sm text-red-600 mt-1">
+                {errors.asignature}
+              </div>
+            )}
+          </div>
+          <div>
+            <PeriodSelector
+              label="Periodo"
+              value={period}
+              onChange={(e) => setPeriod(e.target.value)}
+              autoLoad={true}
+            />
+            {errors.period && (
+              <div className="text-sm text-red-600 mt-1">{errors.period}</div>
+            )}
+          </div>
+        </div>
+      )}
+
       <div id="tour-pe-titulo">
         <label className="">
           Nombre de la evaluación <span className="text-error">*</span>
@@ -1071,7 +1217,7 @@ const ProfileEval = ({
 
       {typeof onClose === "function" && (
         <div className="flex justify-center items-center gap-2">
-          {readOnly && !isEditing && (
+          {readOnly && !isEditing && allowEdit && (
             <div className="w-40">
               <SimpleButton
                 type="button"

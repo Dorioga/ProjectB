@@ -456,9 +456,9 @@ const ManageEval = () => {
         header: "Sede",
         accessorFn: (row) => row.nombre_sede ?? row.sede ?? "",
       },
-      ...(!isAdminInstitucional ? [accionesColumn] : []),
+      accionesColumn,
     ];
-  }, [isStudentOrGuardian, isGuardian, isAdminInstitucional]);
+  }, [isStudentOrGuardian, isGuardian]);
 
   const handleRegister = useCallback(
     async (payload) => {
@@ -757,10 +757,6 @@ const ManageEval = () => {
           onSave={handleRegister}
           onClose={() => setIsRegisterOpen(false)}
           fkTeacher={idDocente}
-          fkSede={fkSede}
-          fkGrade={grade}
-          fkAsignature={asignature}
-          fkPeriodo={period}
         />
       </Modal>
 
@@ -778,6 +774,7 @@ const ManageEval = () => {
             initialValues={detailData}
             onSave={handleUpdateEval}
             onClose={() => setDetailData(null)}
+            allowEdit={!isAdminInstitucional}
           />
         ) : null}
       </Modal>

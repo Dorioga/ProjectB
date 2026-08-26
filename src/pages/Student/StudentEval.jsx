@@ -65,7 +65,7 @@ const extractUploadUrl = (res) => {
 const StudentEval = () => {
   const { idElement } = useParams();
   const navigate = useNavigate();
-  const { getElementStudentData, saveElementStudentAnswer } = useTeacher();
+  const { getElementStudentData, saveStudentAnswer } = useTeacher();
   const { idEstudiante } = useAuth();
   const notify = useNotify();
 
@@ -276,26 +276,60 @@ const StudentEval = () => {
     setSubmitting(true);
     try {
       const payload = {
-        id_element: Number(idElement),
-        fk_estudiante: Number(idEstudiante),
-        answers: Object.values(answers)
-          .map((a) => {
-            if (a.type === "single") return { id_ask: a.id_ask, id_answer: a.id_answer };
-            if (a.type === "multiple")
-              return { id_ask: a.id_ask, id_answers: a.id_answers };
-            if (a.type === "open")
-              return {
-                id_ask: a.id_ask,
-                description_answer: a.description_answer || "",
-              };
-            if (a.type === "file")
-              return { id_ask: a.id_ask, url_file: a.url_file || "" };
-            return null;
-          })
-          .filter(Boolean),
+        fk_student: Number(idEstudiante),
+        fk_element: Number(idElement),
+        cantidad_preguntas: groupedQuestions.length,
+        answer: [],
       };
-      await saveElementStudentAnswer(payload);
-      notify.success("Examen enviado exitosamente.");
+      groupedQuestions.forEach((q) => {
+        const a = answers[q.id_ask];
+        const type = q.id_type_ask;
+        if (type === "1" || type === "4") {
+          if (a?.id_answer != null) {
+            payload.answer.push({
+              fk_answer: Number(a.id_answer),
+              link_answer: null,
+              description_answer: null,
+            });
+          }
+        } else if (type === "5") {
+          (a?.id_answers || []).forEach((id) =>
+            payload.answer.push({
+              fk_answer: Number(id),
+              link_answer: null,
+              description_answer: null,
+            }),
+          );
+        } else if (type === "2") {
+          payload.answer.push({
+            fk_answer:
+              q.answers?.[0]?.id_answer != null
+                ? Number(q.answers[0].id_answer)
+                : null,
+            link_answer: null,
+            description_answer: a?.description_answer || "",
+          });
+        } else if (type === "3") {
+          payload.answer.push({
+            fk_answer:
+              q.answers?.[0]?.id_answer != null
+                ? Number(q.answers[0].id_answer)
+                : null,
+            link_answer: a?.url_file || null,
+            description_answer: null,
+          });
+        }
+      });
+      const res = await saveStudentAnswer(payload);
+      const pendientes =
+        res?.pendientes_revision ?? res?.data?.pendientes_revision ?? 0;
+      if (Number(pendientes) > 0) {
+        notify.warning(
+          `Examen enviado. ${pendientes} respuesta(s) quedaron pendientes de revisión por el docente.`,
+        );
+      } else {
+        notify.success("Examen enviado exitosamente.");
+      }
       navigate("/dashboard/manageEval");
     } catch (err) {
       console.error("StudentEval - save error:", err);

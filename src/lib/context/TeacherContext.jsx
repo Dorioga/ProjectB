@@ -633,6 +633,20 @@ export function TeacherProvider({ children }) {
     }
   }, []);
 
+  const saveStudentAnswer = useCallback(async (payload = {}) => {
+    setLoadingTeachers(true);
+    setErrorTeachers(null);
+    try {
+      const res = await teacherService.saveStudentAnswer(payload);
+      return res;
+    } catch (err) {
+      setErrorTeachers(err);
+      throw err;
+    } finally {
+      setLoadingTeachers(false);
+    }
+  }, []);
+
   const value = useMemo(
     () => ({
       teachers,
@@ -692,6 +706,7 @@ export function TeacherProvider({ children }) {
       getElementInstitution,
       getElementStudentData,
       saveElementStudentAnswer,
+      saveStudentAnswer,
     }),
     [
       teachers,
@@ -744,6 +759,7 @@ export function TeacherProvider({ children }) {
       getElementInstitution,
       getElementStudentData,
       saveElementStudentAnswer,
+      saveStudentAnswer,
     ],
   );
 

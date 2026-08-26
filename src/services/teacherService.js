@@ -626,7 +626,7 @@ export async function getTypeElement() {
  * Endpoint: POST /element
  * payload: {
  *   name_element, fk_teacher, fk_type_element, fk_sede, fk_grade,
- *   fk_asignature, fk_periodo,
+ *   fk_asignature, fk_period,
  *   question: [{ name_question, description_question, fk_type_question, url_file?, answer: [...] }]
  * }
  * @returns {Promise<Object>} Elemento creado
@@ -760,6 +760,29 @@ export async function getElementStudentData(payload) {
     return data;
   } catch (error) {
     console.error("teacherService - getElementStudentData error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Guarda las respuestas del examen enviadas por el estudiante.
+ * Endpoint: POST /answer/student
+ * payload: {
+ *   fk_student, fk_element, cantidad_preguntas,
+ *   answer: [{ fk_answer, link_answer, description_answer }]
+ * }
+ * @returns {Promise<Object>} { cantidad_preguntas, pendientes_revision }
+ */
+export async function saveStudentAnswer(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto para saveStudentAnswer.");
+  }
+  try {
+    const res = await ApiClient.instance.post("/answer/student", payload);
+    const data = res?.data ?? res;
+    return data;
+  } catch (error) {
+    console.error("teacherService - saveStudentAnswer error:", error);
     throw error;
   }
 }
