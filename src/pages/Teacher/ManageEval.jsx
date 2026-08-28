@@ -168,7 +168,11 @@ const ManageEval = () => {
 
   const [studentResult, setStudentResult] = useState(null);
   const [studentResultLoading, setStudentResultLoading] = useState(false);
+  const [grading, setGrading] = useState({});
   const handleViewStudentResultRef = useRef(null);
+
+  const handleGradeChange = (key) => (e) =>
+    setGrading((prev) => ({ ...prev, [key]: e.target.value }));
 
   const isDocente = useMemo(
     () => String(rol).toLowerCase() === "docente" || String(rol) === "7",
@@ -1206,6 +1210,21 @@ const ManageEval = () => {
                       </span>
                     )}
                   </div>
+
+                  {String(q.pendiente ?? "").toLowerCase() === "pendiente" && (
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm">Calificación</label>
+                      <select
+                        value={grading[q.id_ask] ?? ""}
+                        onChange={handleGradeChange(q.id_ask)}
+                        className="p-2 border rounded bg-surface"
+                      >
+                        <option value="">Selecciona</option>
+                        <option value="Correcto">Correcto</option>
+                        <option value="Incorrecto">Incorrecto</option>
+                      </select>
+                    </div>
+                  )}
                 </div>
               ))
             )}
