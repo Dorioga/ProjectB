@@ -808,6 +808,29 @@ export async function getElementStudentResult(payload) {
 }
 
 /**
+ * Guarda la calificación (correcto/incorrecto) de una respuesta pendiente de un examen.
+ * Endpoint: PATCH /element/result/teacher
+ * payload: { cantidad_preguntas, respuesta, type_ask, fk_student, fk_answer }
+ * @returns {Promise<Object>} Respuesta del servidor con la nota recalculada
+ */
+export async function saveElementResultTeacher(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto para saveElementResultTeacher.");
+  }
+  try {
+    const res = await ApiClient.instance.patch(
+      "/element/result/teacher",
+      payload,
+    );
+    const data = res?.data ?? res;
+    return data;
+  } catch (error) {
+    console.error("teacherService - saveElementResultTeacher error:", error);
+    throw error;
+  }
+}
+
+/**
  * Obtiene las notas de los exámenes respondidos por estudiantes (para calificar).
  * Endpoint: POST /element/note
  * payload: { fk_teacher, fk_sede }

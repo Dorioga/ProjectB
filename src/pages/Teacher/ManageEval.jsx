@@ -77,6 +77,8 @@ const buildStudentResult = (rows) => {
     name_element: first.name_element ?? "",
     name_type_element: first.name_type_element ?? "",
     note_answer_student: first.note_answer_student ?? null,
+    fk_student: first.fk_student ?? null,
+    cantidad_preguntas: first.cantidad_preguntas ?? null,
     questions: Array.from(map.values()),
   };
 };
@@ -88,6 +90,7 @@ const ManageEval = () => {
     getElementInstitution,
     getElementNotes,
     getElementStudentResult,
+    saveElementResultTeacher,
     createElement,
     updateElement,
     getElementData,
@@ -132,6 +135,10 @@ const ManageEval = () => {
   useEffect(() => {
     getElementStudentResultRef.current = getElementStudentResult;
   }, [getElementStudentResult]);
+  const saveElementResultTeacherRef = useRef(saveElementResultTeacher);
+  useEffect(() => {
+    saveElementResultTeacherRef.current = saveElementResultTeacher;
+  }, [saveElementResultTeacher]);
   const handleViewEvalRef = useRef(null);
   const handleTakeEvalRef = useRef(null);
   const notifyRef = useRef(notify);
@@ -169,10 +176,60 @@ const ManageEval = () => {
   const [studentResult, setStudentResult] = useState(null);
   const [studentResultLoading, setStudentResultLoading] = useState(false);
   const [grading, setGrading] = useState({});
+  const [savingAnswer, setSavingAnswer] = useState(new Set());
   const handleViewStudentResultRef = useRef(null);
 
   const handleGradeChange = (key) => (e) =>
     setGrading((prev) => ({ ...prev, [key]: e.target.value }));
+
+  const handleSaveAnswer = useCallback(async (q) => {
+    const value = grading[q.id_ask];
+    if (!value) return;
+    const key = String(q.id_ask);
+    setSavingAnswer((prev) => new Set(prev).add(key));
+    try {
+      const res = await saveElementResultTeacherRef.current({
+        cantidad_preguntas: Number(
+          studentResult.cantidad_preguntas ?? studentResult.questions.length,
+        ),
+        respuesta: value.toLowerCase(),
+        type_ask: Number(q.fk_type_ask),
+        fk_student: Number(studentResult.fk_student),
+        fk_answer: Number(q.answers[0]?.id_answer),
+      });
+      const notaNueva = res?.data?.nota_nueva ?? res?.nota_nueva;
+      setStudentResult((prev) =>
+        prev
+          ? {
+              ...prev,
+              ...(notaNueva != null ? { note_answer_student: notaNueva } : {}),
+              questions: prev.questions.map((qq) =>
+                String(qq.id_ask) === key
+                  ? { ...qq, pendiente: "completo" }
+                  : qq,
+              ),
+            }
+          : prev,
+      );
+      setGrading((prev) => {
+        const next = { ...prev };
+        delete next[q.id_ask];
+        return next;
+      });
+      notifyRef.current.success("Respuesta guardada y nota actualizada.");
+    } catch (err) {
+      console.error("ManageEval - saveElementResultTeacher error:", err);
+      notifyRef.current.error(
+        err?.message || "Error al guardar la respuesta.",
+      );
+    } finally {
+      setSavingAnswer((prev) => {
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
+    }
+  }, [grading, studentResult]);
 
   const isDocente = useMemo(
     () => String(rol).toLowerCase() === "docente" || String(rol) === "7",
@@ -665,7 +722,10 @@ const ManageEval = () => {
         fk_student: Number(fkStudent),
       });
       const data = Array.isArray(res) ? res : (res?.data ?? []);
-      setStudentResult(buildStudentResult(data));
+      setStudentResult({
+        ...buildStudentResult(data),
+        fk_student: Number(fkStudent),
+      });
     } catch (err) {
       console.error("ManageEval - getElementStudentResult error:", err);
       notifyRef.current.error(
@@ -1223,6 +1283,21 @@ const ManageEval = () => {
                         <option value="Correcto">Correcto</option>
                         <option value="Incorrecto">Incorrecto</option>
                       </select>
+                      <div className="w-40">
+                        <SimpleButton
+                          type="button"
+                          onClick={() => handleSaveAnswer(q)}
+                          msj={
+                            savingAnswer.has(String(q.id_ask))
+                              ? "Guardando..."
+                              : "Guardar respuesta"
+                          }
+                          bg="bg-secondary"
+                          text="text-surface"
+                          disabled={!grading[q.id_ask] || savingAnswer.has(String(q.id_ask))}
+                          noRounded={false}
+                        />
+                      </div>
                     </div>
                   )}
                 </div>
