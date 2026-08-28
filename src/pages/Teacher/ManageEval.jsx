@@ -722,9 +722,11 @@ const ManageEval = () => {
         fk_student: Number(fkStudent),
       });
       const data = Array.isArray(res) ? res : (res?.data ?? []);
+      const nota = row?.note_answer_student ?? null;
       setStudentResult({
         ...buildStudentResult(data),
         fk_student: Number(fkStudent),
+        ...(nota != null ? { note_answer_student: nota } : {}),
       });
     } catch (err) {
       console.error("ManageEval - getElementStudentResult error:", err);
@@ -781,14 +783,11 @@ const ManageEval = () => {
         header: "Estado",
         cell: ({ row }) => {
           const p = String(row.original.pendiente ?? "").toLowerCase();
-          let label = "No aplica";
-          let cls = "bg-gray-100 text-gray-600";
+          let label = "Revisado";
+          let cls = "bg-green-100 text-green-700";
           if (p === "pendiente") {
             label = "Por revisar";
             cls = "bg-yellow-100 text-yellow-700";
-          } else if (p === "completo") {
-            label = "Revisado";
-            cls = "bg-green-100 text-green-700";
           }
           return (
             <span className={`px-2 py-1 block text-xs font-semibold ${cls}`}>
@@ -1265,8 +1264,8 @@ const ManageEval = () => {
                         Revisado
                       </span>
                     ) : (
-                      <span className="px-2 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-600">
-                        No aplica
+                      <span className="px-2 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-700">
+                        Revisado
                       </span>
                     )}
                   </div>
