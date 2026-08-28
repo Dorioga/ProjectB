@@ -788,6 +788,26 @@ export async function saveStudentAnswer(payload) {
 }
 
 /**
+ * Obtiene el resultado detallado de un examen respondido por un estudiante (para calificar).
+ * Endpoint: POST /element/student/result
+ * payload: { id_element, fk_student }
+ * @returns {Promise<Array>} Lista plana de preguntas/respuestas con la respuesta del estudiante
+ */
+export async function getElementStudentResult(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto para getElementStudentResult.");
+  }
+  try {
+    const res = await ApiClient.instance.post("/element/student/result", payload);
+    const data = Array.isArray(res) ? res : (res?.data ?? res);
+    return data;
+  } catch (error) {
+    console.error("teacherService - getElementStudentResult error:", error);
+    throw error;
+  }
+}
+
+/**
  * Obtiene las notas de los exámenes respondidos por estudiantes (para calificar).
  * Endpoint: POST /element/note
  * payload: { fk_teacher, fk_sede }

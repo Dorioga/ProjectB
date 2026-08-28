@@ -44,12 +44,50 @@ const buildElementDetail = (rows) => {
   };
 };
 
+const buildStudentResult = (rows) => {
+  const list = Array.isArray(rows) ? rows : [];
+  const first = list[0] ?? {};
+  const map = new Map();
+  list.forEach((row) => {
+    const key = row.id_ask ?? row.name_ask ?? row.description_ask ?? "";
+    if (!map.has(key)) {
+      map.set(key, {
+        id_ask: row.id_ask ?? null,
+        name_ask: row.name_ask ?? "",
+        description_ask: String(row.description_ask ?? ""),
+        url_file: String(row.url_file ?? ""),
+        fk_type_ask: String(row.fk_type_ask ?? ""),
+        name_type_ask: String(row.name_type_ask ?? ""),
+        pendiente: row.pendiente ?? null,
+        answers: [],
+      });
+    }
+    map.get(key).answers.push({
+      id_answer: row.id_answer ?? null,
+      description_answer: String(row.description_answer ?? ""),
+      incorrect_answer: String(row.incorrect_answer ?? ""),
+      id_answer_student: row.id_answer_student ?? null,
+      link_answer: row.link_answer ?? null,
+      student_description_answer: row.student_description_answer ?? null,
+      student_answer: Boolean(row.student_answer),
+    });
+  });
+  return {
+    id_element: first.id_element ?? first.id_elemente ?? null,
+    name_element: first.name_element ?? "",
+    name_type_element: first.name_type_element ?? "",
+    note_answer_student: first.note_answer_student ?? null,
+    questions: Array.from(map.values()),
+  };
+};
+
 const ManageEval = () => {
   const {
     getElementQuestions,
     getElementStudent,
     getElementInstitution,
     getElementNotes,
+    getElementStudentResult,
     createElement,
     updateElement,
     getElementData,
@@ -90,6 +128,10 @@ const ManageEval = () => {
   useEffect(() => {
     getElementNotesRef.current = getElementNotes;
   }, [getElementNotes]);
+  const getElementStudentResultRef = useRef(getElementStudentResult);
+  useEffect(() => {
+    getElementStudentResultRef.current = getElementStudentResult;
+  }, [getElementStudentResult]);
   const handleViewEvalRef = useRef(null);
   const handleTakeEvalRef = useRef(null);
   const notifyRef = useRef(notify);
@@ -123,6 +165,10 @@ const ManageEval = () => {
   const [noteSede, setNoteSede] = useState("");
   const [noteResults, setNoteResults] = useState([]);
   const [noteLoading, setNoteLoading] = useState(false);
+
+  const [studentResult, setStudentResult] = useState(null);
+  const [studentResultLoading, setStudentResultLoading] = useState(false);
+  const handleViewStudentResultRef = useRef(null);
 
   const isDocente = useMemo(
     () => String(rol).toLowerCase() === "docente" || String(rol) === "7",
@@ -600,6 +646,37 @@ const ManageEval = () => {
     }
   }, [noteSede, idDocente, fetchElementNotes]);
 
+  const handleViewStudentResult = useCallback(async (row) => {
+    const idElement = row?.id_elemente ?? row?.id_element ?? row?.id ?? null;
+    const fkStudent = row?.id_estudiante ?? row?.fk_student ?? row?.fk_student ?? null;
+    if (!idElement || !fkStudent) {
+      notifyRef.current.error("No se pudo identificar el examen o el estudiante.");
+      return;
+    }
+    setStudentResultLoading(true);
+    setStudentResult(null);
+    try {
+      const res = await getElementStudentResultRef.current({
+        id_element: Number(idElement),
+        fk_student: Number(fkStudent),
+      });
+      const data = Array.isArray(res) ? res : (res?.data ?? []);
+      setStudentResult(buildStudentResult(data));
+    } catch (err) {
+      console.error("ManageEval - getElementStudentResult error:", err);
+      notifyRef.current.error(
+        err?.message || "Error al cargar el resultado del examen.",
+      );
+      setStudentResult(null);
+    } finally {
+      setStudentResultLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    handleViewStudentResultRef.current = handleViewStudentResult;
+  }, [handleViewStudentResult]);
+
   const noteColumns = useMemo(
     () => [
       {
@@ -655,6 +732,24 @@ const ManageEval = () => {
             </span>
           );
         },
+      },
+      {
+        id: "actions",
+        header: "Acciones",
+        cell: ({ row }) => (
+          <div className="flex justify-center ">
+            <SimpleButton
+              type="button"
+              onClick={() => handleViewStudentResultRef.current?.(row.original)}
+              msj="Ver"
+              icon="Eye"
+              bg="bg-secondary"
+              text="text-surface"
+              noRounded={true}
+              className="w-auto px-3 py-1.5"
+            />
+          </div>
+        ),
       },
     ],
     [],
@@ -986,6 +1081,135 @@ const ManageEval = () => {
             onClose={() => setDetailData(null)}
             allowEdit={!isAdminInstitucional}
           />
+        ) : null}
+      </Modal>
+
+      <Modal
+        isOpen={!!studentResult}
+        onClose={() => setStudentResult(null)}
+        title="Resultado del examen"
+        size="7xl"
+      >
+        {studentResultLoading ? (
+          <Loader message="Cargando resultado..." />
+        ) : studentResult ? (
+          <div className="flex flex-col gap-4">
+            <div className="w-full bg-primary text-surface p-3 rounded-lg">
+              <h2 className="text-2xl font-bold">{studentResult.name_element}</h2>
+              {studentResult.name_type_element && (
+                <div className="text-sm opacity-90">
+                  {studentResult.name_type_element}
+                </div>
+              )}
+              <div className="text-sm">
+                Nota:{" "}
+                {studentResult.note_answer_student != null &&
+                studentResult.note_answer_student !== ""
+                  ? studentResult.note_answer_student
+                  : "Sin calificar"}
+              </div>
+            </div>
+
+            {studentResult.questions.length === 0 ? (
+              <div className="w-full p-4 border rounded bg-surface text-sm text-gray-500">
+                Sin preguntas.
+              </div>
+            ) : (
+              studentResult.questions.map((q) => (
+                <div
+                  key={q.id_ask ?? q.name_ask}
+                  className="w-full p-4 border rounded bg-surface flex flex-col gap-3"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold">
+                      {q.name_ask || "Pregunta"}
+                    </span>
+                    {q.name_type_ask && (
+                      <span className="text-xs px-2 py-1 rounded bg-secondary text-surface">
+                        {q.name_type_ask}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-sm">{q.description_ask}</div>
+
+                  {q.fk_type_ask === "2" ? (
+                    <div className="text-sm border rounded bg-surface p-2">
+                      Respuesta del estudiante:{" "}
+                      <span className="font-medium">
+                        {q.answers[0]?.student_description_answer ??
+                          "Sin respuesta abierta"}
+                      </span>
+                    </div>
+                  ) : q.fk_type_ask === "3" ? (
+                    <div className="text-sm border rounded bg-surface p-2 break-all">
+                      Archivo del estudiante:{" "}
+                      {q.answers[0]?.link_answer ? (
+                        <a
+                          href={q.answers[0].link_answer}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-primary underline"
+                        >
+                          {q.answers[0].link_answer}
+                        </a>
+                      ) : (
+                        "Sin link"
+                      )}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2">
+                      {q.answers.map((a) => {
+                        const isCorrect =
+                          String(a.incorrect_answer).toLowerCase() ===
+                          "correcto";
+                        return (
+                          <div
+                            key={a.id_answer ?? a.description_answer}
+                            className={`flex items-center gap-2 rounded p-2 ${
+                              a.student_answer
+                                ? "bg-green-100"
+                                : "bg-gray-50"
+                            }`}
+                          >
+                            <span className="text-sm flex-1">
+                              {a.description_answer}
+                            </span>
+                            {isCorrect && (
+                              <span className="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-700 font-semibold">
+                                Correcta
+                              </span>
+                            )}
+                            {a.student_answer && (
+                              <span className="text-xs px-2 py-0.5 rounded bg-green-200 text-green-800 font-semibold">
+                                Elegida
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <div className="text-sm">
+                    Estado:{" "}
+                    {String(q.pendiente ?? "").toLowerCase() === "pendiente" ? (
+                      <span className="px-2 py-0.5 rounded text-xs font-semibold bg-yellow-100 text-yellow-700">
+                        Por revisar
+                      </span>
+                    ) : String(q.pendiente ?? "").toLowerCase() === "completo" ? (
+                      <span className="px-2 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-700">
+                        Revisado
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-600">
+                        No aplica
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         ) : null}
       </Modal>
     </div>
