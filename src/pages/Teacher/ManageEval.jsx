@@ -13,6 +13,7 @@ import useTeacher from "../../lib/hooks/useTeacher";
 import { useNotify } from "../../lib/hooks/useNotify";
 import useAuth from "../../lib/hooks/useAuth";
 import tourManageEval from "../../tour/tourManageEval";
+import { getStudentGuardian } from "../../services/studentService";
 
 const buildElementDetail = (rows) => {
   const list = Array.isArray(rows) ? rows : [];
@@ -107,6 +108,7 @@ const ManageEval = () => {
     idInstitution,
     idGrado,
     idEstudiante,
+    idPersona,
   } = useAuth();
   const notify = useNotify();
   const navigate = useNavigate();
@@ -173,6 +175,10 @@ const ManageEval = () => {
   const [noteResults, setNoteResults] = useState([]);
   const [noteLoading, setNoteLoading] = useState(false);
 
+  const [guardianStudents, setGuardianStudents] = useState([]);
+  const [selectedStudent, setSelectedStudent] = useState("");
+  const [loadingGuardianStudents, setLoadingGuardianStudents] = useState(false);
+
   const [studentResult, setStudentResult] = useState(null);
   const [studentResultLoading, setStudentResultLoading] = useState(false);
   const [grading, setGrading] = useState({});
@@ -182,54 +188,59 @@ const ManageEval = () => {
   const handleGradeChange = (key) => (e) =>
     setGrading((prev) => ({ ...prev, [key]: e.target.value }));
 
-  const handleSaveAnswer = useCallback(async (q) => {
-    const value = grading[q.id_ask];
-    if (!value) return;
-    const key = String(q.id_ask);
-    setSavingAnswer((prev) => new Set(prev).add(key));
-    try {
-      const res = await saveElementResultTeacherRef.current({
-        cantidad_preguntas: Number(
-          studentResult.cantidad_preguntas ?? studentResult.questions.length,
-        ),
-        respuesta: value.toLowerCase(),
-        type_ask: Number(q.fk_type_ask),
-        fk_student: Number(studentResult.fk_student),
-        fk_answer: Number(q.answers[0]?.id_answer),
-      });
-      const notaNueva = res?.data?.nota_nueva ?? res?.nota_nueva;
-      setStudentResult((prev) =>
-        prev
-          ? {
-              ...prev,
-              ...(notaNueva != null ? { note_answer_student: notaNueva } : {}),
-              questions: prev.questions.map((qq) =>
-                String(qq.id_ask) === key
-                  ? { ...qq, pendiente: "completo" }
-                  : qq,
-              ),
-            }
-          : prev,
-      );
-      setGrading((prev) => {
-        const next = { ...prev };
-        delete next[q.id_ask];
-        return next;
-      });
-      notifyRef.current.success("Respuesta guardada y nota actualizada.");
-    } catch (err) {
-      console.error("ManageEval - saveElementResultTeacher error:", err);
-      notifyRef.current.error(
-        err?.message || "Error al guardar la respuesta.",
-      );
-    } finally {
-      setSavingAnswer((prev) => {
-        const next = new Set(prev);
-        next.delete(key);
-        return next;
-      });
-    }
-  }, [grading, studentResult]);
+  const handleSaveAnswer = useCallback(
+    async (q) => {
+      const value = grading[q.id_ask];
+      if (!value) return;
+      const key = String(q.id_ask);
+      setSavingAnswer((prev) => new Set(prev).add(key));
+      try {
+        const res = await saveElementResultTeacherRef.current({
+          cantidad_preguntas: Number(
+            studentResult.cantidad_preguntas ?? studentResult.questions.length,
+          ),
+          respuesta: value.toLowerCase(),
+          type_ask: Number(q.fk_type_ask),
+          fk_student: Number(studentResult.fk_student),
+          fk_answer: Number(q.answers[0]?.id_answer),
+        });
+        const notaNueva = res?.data?.nota_nueva ?? res?.nota_nueva;
+        setStudentResult((prev) =>
+          prev
+            ? {
+                ...prev,
+                ...(notaNueva != null
+                  ? { note_answer_student: notaNueva }
+                  : {}),
+                questions: prev.questions.map((qq) =>
+                  String(qq.id_ask) === key
+                    ? { ...qq, pendiente: "completo" }
+                    : qq,
+                ),
+              }
+            : prev,
+        );
+        setGrading((prev) => {
+          const next = { ...prev };
+          delete next[q.id_ask];
+          return next;
+        });
+        notifyRef.current.success("Respuesta guardada y nota actualizada.");
+      } catch (err) {
+        console.error("ManageEval - saveElementResultTeacher error:", err);
+        notifyRef.current.error(
+          err?.message || "Error al guardar la respuesta.",
+        );
+      } finally {
+        setSavingAnswer((prev) => {
+          const next = new Set(prev);
+          next.delete(key);
+          return next;
+        });
+      }
+    },
+    [grading, studentResult],
+  );
 
   const isDocente = useMemo(
     () => String(rol).toLowerCase() === "docente" || String(rol) === "7",
@@ -308,13 +319,41 @@ const ManageEval = () => {
     };
   }, [isDocente, idDocente, getTeacherSede, token]);
 
+  useEffect(() => {
+    if (!isGuardian || !idPersona) {
+      setGuardianStudents([]);
+      return;
+    }
+    let mounted = true;
+    setLoadingGuardianStudents(true);
+    getStudentGuardian({ idPersonaGuardian: Number(idPersona) })
+      .then((res) => {
+        if (mounted) {
+          const list = Array.isArray(res) ? res : (res?.data ?? []);
+          setGuardianStudents(Array.isArray(list) ? list : []);
+        }
+      })
+      .catch((err) => {
+        console.error("ManageEval - getStudentGuardian error:", err);
+        if (mounted) setGuardianStudents([]);
+      })
+      .finally(() => {
+        if (mounted) setLoadingGuardianStudents(false);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [isGuardian, idPersona]);
+
   const fkSede = sedeSelected || idSede;
 
   const filtersReady = Boolean(
     idDocente && fkSede && grade && period && asignature,
   );
 
-  const studentFiltersReady = Boolean(fkSede && idGrado && period);
+  const studentFiltersReady = isGuardian
+    ? Boolean(fkSede && period && selectedStudent)
+    : Boolean(fkSede && idGrado && period);
 
   const adminRowValue = (row, field) => {
     if (field === "tipo")
@@ -369,7 +408,13 @@ const ManageEval = () => {
   };
 
   const resetAdminFilters = () =>
-    setAdminFilters({ tipo: "", docente: "", grupo: "", asignatura: "", periodo: "" });
+    setAdminFilters({
+      tipo: "",
+      docente: "",
+      grupo: "",
+      asignatura: "",
+      periodo: "",
+    });
 
   const fetchEvaluations = useCallback(async () => {
     setLoading(true);
@@ -380,11 +425,16 @@ const ManageEval = () => {
           institution: Number(idInstitution),
         });
       } else if (isStudentOrGuardian) {
+        const selectedStudentData = guardianStudents.find(
+          (s) => String(s.id_estudiante) === String(selectedStudent),
+        );
         res = await getElementStudentRef.current({
           fk_sede: Number(fkSede),
-          fk_grado: Number(idGrado),
+          fk_grado: Number(
+            isGuardian ? (selectedStudentData?.fk_grade ?? idGrado) : idGrado,
+          ),
           fk_period: Number(period),
-          fk_student: Number(idEstudiante),
+          fk_student: Number(isGuardian ? selectedStudent : idEstudiante),
         });
       } else {
         res = await getElementQuestionsRef.current({
@@ -418,6 +468,10 @@ const ManageEval = () => {
     grade,
     period,
     asignature,
+    isGuardian,
+    selectedStudent,
+    guardianStudents,
+    idEstudiante,
   ]);
 
   useEffect(() => {
@@ -452,8 +506,7 @@ const ManageEval = () => {
   ]);
 
   const isRealizado = (row) =>
-    row.realizado === true ||
-    String(row.realizado).toLowerCase() === "true";
+    row.realizado === true || String(row.realizado).toLowerCase() === "true";
 
   const columns = useMemo(() => {
     const accionesColumn = {
@@ -472,7 +525,9 @@ const ManageEval = () => {
                   ? handleTakeEvalRef.current?.(row.original)
                   : handleViewEvalRef.current?.(row.original)
               }
-              msj={isStudentOrGuardian && !isGuardian ? "Realizar examen" : "Ver"}
+              msj={
+                isStudentOrGuardian && !isGuardian ? "Realizar examen" : "Ver"
+              }
               icon="Eye"
               bg="bg-secondary"
               text="text-surface"
@@ -490,7 +545,11 @@ const ManageEval = () => {
           accessorKey: "name_element",
           header: "Nombre",
           accessorFn: (row) =>
-            row.name_element ?? row.nombre_element ?? row.titulo ?? row.title ?? "",
+            row.name_element ??
+            row.nombre_element ??
+            row.titulo ??
+            row.title ??
+            "",
         },
         {
           accessorKey: "name_type_element",
@@ -557,7 +616,11 @@ const ManageEval = () => {
         accessorKey: "name_element",
         header: "Nombre",
         accessorFn: (row) =>
-          row.name_element ?? row.nombre_element ?? row.titulo ?? row.title ?? "",
+          row.name_element ??
+          row.nombre_element ??
+          row.titulo ??
+          row.title ??
+          "",
       },
       {
         accessorKey: "name_type_element",
@@ -667,19 +730,22 @@ const ManageEval = () => {
     [updateElement, notify, fetchEvaluations],
   );
 
-  const handleTakeEval = useCallback((row) => {
-    const id =
-      row?.id_element ??
-      row?.id_elemente ??
-      row?.id ??
-      row?.id_elemento ??
-      row?.idelement;
-    if (!id) {
-      notifyRef.current.error("No se pudo identificar la evaluación.");
-      return;
-    }
-    navigate(`/dashboard/studentEval/${Number(id)}`);
-  }, [navigate]);
+  const handleTakeEval = useCallback(
+    (row) => {
+      const id =
+        row?.id_element ??
+        row?.id_elemente ??
+        row?.id ??
+        row?.id_elemento ??
+        row?.idelement;
+      if (!id) {
+        notifyRef.current.error("No se pudo identificar la evaluación.");
+        return;
+      }
+      navigate(`/dashboard/studentEval/${Number(id)}`);
+    },
+    [navigate],
+  );
 
   const fetchElementNotes = useCallback(async () => {
     if (!noteSede || !idDocente) return;
@@ -709,9 +775,12 @@ const ManageEval = () => {
 
   const handleViewStudentResult = useCallback(async (row) => {
     const idElement = row?.id_elemente ?? row?.id_element ?? row?.id ?? null;
-    const fkStudent = row?.id_estudiante ?? row?.fk_student ?? row?.fk_student ?? null;
+    const fkStudent =
+      row?.id_estudiante ?? row?.fk_student ?? row?.fk_student ?? null;
     if (!idElement || !fkStudent) {
-      notifyRef.current.error("No se pudo identificar el examen o el estudiante.");
+      notifyRef.current.error(
+        "No se pudo identificar el examen o el estudiante.",
+      );
       return;
     }
     setStudentResultLoading(true);
@@ -985,6 +1054,30 @@ const ManageEval = () => {
       ) : isStudentOrGuardian ? (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 mt-2 max-w-lg">
+            {isGuardian && (
+              <div>
+                <label className="">Estudiante</label>
+                {loadingGuardianStudents ? (
+                  <p className="text-sm text-muted py-1">
+                    Cargando estudiantes...
+                  </p>
+                ) : (
+                  <select
+                    value={selectedStudent}
+                    onChange={(e) => setSelectedStudent(e.target.value)}
+                    className="w-full p-2 border rounded bg-surface"
+                    aria-label="Estudiante del acudiente"
+                  >
+                    <option value="">Selecciona un estudiante</option>
+                    {guardianStudents.map((s) => (
+                      <option key={s.id_estudiante} value={s.id_estudiante}>
+                        {s.concat_ws}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            )}
             <div>
               <PeriodSelector
                 label="Periodo"
@@ -1020,98 +1113,98 @@ const ManageEval = () => {
       ) : isAdminInstitucional ? (
         <>
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mt-2">
-          <div>
-            <label className="">Tipo</label>
-            <select
-              name="filter-tipo"
-              value={adminFilters.tipo}
-              onChange={handleAdminFilter("tipo")}
-              className="w-full p-2 border rounded bg-surface"
-            >
-              <option value="">Todos</option>
-              {adminFilterOptions.tipo.map((v) => (
-                <option key={v} value={v}>
-                  {v}
-                </option>
-              ))}
-            </select>
+            <div>
+              <label className="">Tipo</label>
+              <select
+                name="filter-tipo"
+                value={adminFilters.tipo}
+                onChange={handleAdminFilter("tipo")}
+                className="w-full p-2 border rounded bg-surface"
+              >
+                <option value="">Todos</option>
+                {adminFilterOptions.tipo.map((v) => (
+                  <option key={v} value={v}>
+                    {v}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="">Docente</label>
+              <select
+                name="filter-docente"
+                value={adminFilters.docente}
+                onChange={handleAdminFilter("docente")}
+                className="w-full p-2 border rounded bg-surface"
+              >
+                <option value="">Todos</option>
+                {adminFilterOptions.docente.map((v) => (
+                  <option key={v} value={v}>
+                    {v}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="">Grupo</label>
+              <select
+                name="filter-grupo"
+                value={adminFilters.grupo}
+                onChange={handleAdminFilter("grupo")}
+                className="w-full p-2 border rounded bg-surface"
+              >
+                <option value="">Todos</option>
+                {adminFilterOptions.grupo.map((v) => (
+                  <option key={v} value={v}>
+                    {v}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="">Asignatura</label>
+              <select
+                name="filter-asignatura"
+                value={adminFilters.asignatura}
+                onChange={handleAdminFilter("asignatura")}
+                className="w-full p-2 border rounded bg-surface"
+              >
+                <option value="">Todos</option>
+                {adminFilterOptions.asignatura.map((v) => (
+                  <option key={v} value={v}>
+                    {v}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="">Periodo</label>
+              <select
+                name="filter-periodo"
+                value={adminFilters.periodo}
+                onChange={handleAdminFilter("periodo")}
+                className="w-full p-2 border rounded bg-surface"
+              >
+                <option value="">Todos</option>
+                {adminFilterOptions.periodo.map((v) => (
+                  <option key={v} value={v}>
+                    {v}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-          <div>
-            <label className="">Docente</label>
-            <select
-              name="filter-docente"
-              value={adminFilters.docente}
-              onChange={handleAdminFilter("docente")}
-              className="w-full p-2 border rounded bg-surface"
-            >
-              <option value="">Todos</option>
-              {adminFilterOptions.docente.map((v) => (
-                <option key={v} value={v}>
-                  {v}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="">Grupo</label>
-            <select
-              name="filter-grupo"
-              value={adminFilters.grupo}
-              onChange={handleAdminFilter("grupo")}
-              className="w-full p-2 border rounded bg-surface"
-            >
-              <option value="">Todos</option>
-              {adminFilterOptions.grupo.map((v) => (
-                <option key={v} value={v}>
-                  {v}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="">Asignatura</label>
-            <select
-              name="filter-asignatura"
-              value={adminFilters.asignatura}
-              onChange={handleAdminFilter("asignatura")}
-              className="w-full p-2 border rounded bg-surface"
-            >
-              <option value="">Todos</option>
-              {adminFilterOptions.asignatura.map((v) => (
-                <option key={v} value={v}>
-                  {v}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="">Periodo</label>
-            <select
-              name="filter-periodo"
-              value={adminFilters.periodo}
-              onChange={handleAdminFilter("periodo")}
-              className="w-full p-2 border rounded bg-surface"
-            >
-              <option value="">Todos</option>
-              {adminFilterOptions.periodo.map((v) => (
-                <option key={v} value={v}>
-                  {v}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
 
-        <div id="tour-me-table" className="relative flex-1 ">
-          <DataTable
-            data={filteredResults}
-            columns={columns}
-            fileName="Export_Evaluaciones"
-            initialSorting={[{ id: "name_element", desc: false }]}
-            loading={loading}
-            loaderMessage="Cargando evaluaciones..."
-          />
-        </div>
+          <div id="tour-me-table" className="relative flex-1 ">
+            <DataTable
+              data={filteredResults}
+              columns={columns}
+              fileName="Export_Evaluaciones"
+              initialSorting={[{ id: "name_element", desc: false }]}
+              loading={loading}
+              loaderMessage="Cargando evaluaciones..."
+            />
+          </div>
         </>
       ) : null}
 
@@ -1158,7 +1251,9 @@ const ManageEval = () => {
         ) : studentResult ? (
           <div className="flex flex-col gap-4">
             <div className="w-full bg-primary text-surface p-3 rounded-lg">
-              <h2 className="text-2xl font-bold">{studentResult.name_element}</h2>
+              <h2 className="text-2xl font-bold">
+                {studentResult.name_element}
+              </h2>
               {studentResult.name_type_element && (
                 <div className="text-sm opacity-90">
                   {studentResult.name_type_element}
@@ -1229,9 +1324,7 @@ const ManageEval = () => {
                           <div
                             key={a.id_answer ?? a.description_answer}
                             className={`flex items-center gap-2 rounded p-2 ${
-                              a.student_answer
-                                ? "bg-green-100"
-                                : "bg-gray-50"
+                              a.student_answer ? "bg-green-100" : "bg-gray-50"
                             }`}
                           >
                             <span className="text-sm flex-1">
@@ -1259,7 +1352,8 @@ const ManageEval = () => {
                       <span className="px-2 py-0.5 rounded text-xs font-semibold bg-yellow-100 text-yellow-700">
                         Por revisar
                       </span>
-                    ) : String(q.pendiente ?? "").toLowerCase() === "completo" ? (
+                    ) : String(q.pendiente ?? "").toLowerCase() ===
+                      "completo" ? (
                       <span className="px-2 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-700">
                         Revisado
                       </span>
@@ -1293,7 +1387,10 @@ const ManageEval = () => {
                           }
                           bg="bg-secondary"
                           text="text-surface"
-                          disabled={!grading[q.id_ask] || savingAnswer.has(String(q.id_ask))}
+                          disabled={
+                            !grading[q.id_ask] ||
+                            savingAnswer.has(String(q.id_ask))
+                          }
                           noRounded={false}
                         />
                       </div>
