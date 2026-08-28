@@ -49,6 +49,7 @@ const ManageEval = () => {
     getElementQuestions,
     getElementStudent,
     getElementInstitution,
+    getElementNotes,
     createElement,
     updateElement,
     getElementData,
@@ -64,6 +65,7 @@ const ManageEval = () => {
     rol,
     idInstitution,
     idGrado,
+    idEstudiante,
   } = useAuth();
   const notify = useNotify();
   const navigate = useNavigate();
@@ -84,6 +86,10 @@ const ManageEval = () => {
   useEffect(() => {
     getElementDataRef.current = getElementData;
   }, [getElementData]);
+  const getElementNotesRef = useRef(getElementNotes);
+  useEffect(() => {
+    getElementNotesRef.current = getElementNotes;
+  }, [getElementNotes]);
   const handleViewEvalRef = useRef(null);
   const handleTakeEvalRef = useRef(null);
   const notifyRef = useRef(notify);
@@ -112,6 +118,11 @@ const ManageEval = () => {
 
   const [teacherSedes, setTeacherSedes] = useState([]);
   const [loadingTeacherSedes, setLoadingTeacherSedes] = useState(false);
+
+  const [activeTab, setActiveTab] = useState("exams");
+  const [noteSede, setNoteSede] = useState("");
+  const [noteResults, setNoteResults] = useState([]);
+  const [noteLoading, setNoteLoading] = useState(false);
 
   const isDocente = useMemo(
     () => String(rol).toLowerCase() === "docente" || String(rol) === "7",
@@ -266,6 +277,7 @@ const ManageEval = () => {
           fk_sede: Number(fkSede),
           fk_grado: Number(idGrado),
           fk_period: Number(period),
+          fk_student: Number(idEstudiante),
         });
       } else {
         res = await getElementQuestionsRef.current({
@@ -332,17 +344,18 @@ const ManageEval = () => {
     fetchEvaluations,
   ]);
 
+  const isRealizado = (row) =>
+    row.realizado === true ||
+    String(row.realizado).toLowerCase() === "true";
+
   const columns = useMemo(() => {
     const accionesColumn = {
       id: "actions",
       header: "Acciones",
       cell: ({ row }) => {
-        const hasNote =
-          isStudentOrGuardian &&
-          !isGuardian &&
-          row.note_answer_student != null &&
-          row.note_answer_student !== "";
-        if (hasNote) return null;
+        const alreadyDone =
+          isStudentOrGuardian && !isGuardian && isRealizado(row.original);
+        if (alreadyDone) return null;
         return (
           <div className="flex justify-center ">
             <SimpleButton
@@ -407,6 +420,26 @@ const ManageEval = () => {
             row.note_answer_student != null && row.note_answer_student !== ""
               ? row.note_answer_student
               : "Sin calificar",
+        },
+        {
+          accessorKey: "realizado",
+          header: "Estado",
+          accessorFn: (row) => (isRealizado(row) ? "Realizado" : "Pendiente"),
+          cell: (info) => {
+            const label = info.getValue();
+            const done = label === "Realizado";
+            return (
+              <span
+                className={`px-2 py-1 block text-xs font-semibold ${
+                  done
+                    ? "bg-green-100 text-green-700"
+                    : "bg-yellow-100 text-yellow-700"
+                }`}
+              >
+                {label}
+              </span>
+            );
+          },
         },
         ...(!isGuardian ? [accionesColumn] : []),
       ];
@@ -541,6 +574,92 @@ const ManageEval = () => {
     navigate(`/dashboard/studentEval/${Number(id)}`);
   }, [navigate]);
 
+  const fetchElementNotes = useCallback(async () => {
+    if (!noteSede || !idDocente) return;
+    setNoteLoading(true);
+    try {
+      const res = await getElementNotesRef.current({
+        fk_teacher: Number(idDocente),
+        fk_sede: Number(noteSede),
+      });
+      setNoteResults(Array.isArray(res) ? res : (res?.data ?? []));
+    } catch (err) {
+      console.error("ManageEval - getElementNotes error:", err);
+      notifyRef.current.error(
+        err?.message || "Error al cargar las notas de exámenes.",
+      );
+      setNoteResults([]);
+    } finally {
+      setNoteLoading(false);
+    }
+  }, [noteSede, idDocente]);
+
+  useEffect(() => {
+    if (noteSede && idDocente) {
+      fetchElementNotes();
+    }
+  }, [noteSede, idDocente, fetchElementNotes]);
+
+  const noteColumns = useMemo(
+    () => [
+      {
+        accessorKey: "nombre_estudiante",
+        header: "Estudiante",
+        accessorFn: (row) => row.nombre_estudiante ?? "",
+      },
+      {
+        accessorKey: "name_element",
+        header: "Examen",
+        accessorFn: (row) => row.name_element ?? "",
+      },
+      {
+        accessorKey: "grado",
+        header: "Grado",
+        accessorFn: (row) => row.grado ?? "",
+      },
+      {
+        accessorKey: "nombre_asignatura",
+        header: "Asignatura",
+        accessorFn: (row) => row.nombre_asignatura ?? "",
+      },
+      {
+        accessorKey: "nombre_periodo",
+        header: "Periodo",
+        accessorFn: (row) => row.nombre_periodo ?? "",
+      },
+      {
+        accessorKey: "note_answer_student",
+        header: "Nota",
+        accessorFn: (row) =>
+          row.note_answer_student != null && row.note_answer_student !== ""
+            ? row.note_answer_student
+            : "—",
+      },
+      {
+        accessorKey: "pendiente",
+        header: "Estado",
+        cell: ({ row }) => {
+          const p = String(row.original.pendiente ?? "").toLowerCase();
+          let label = "No aplica";
+          let cls = "bg-gray-100 text-gray-600";
+          if (p === "pendiente") {
+            label = "Por revisar";
+            cls = "bg-yellow-100 text-yellow-700";
+          } else if (p === "completo") {
+            label = "Revisado";
+            cls = "bg-green-100 text-green-700";
+          }
+          return (
+            <span className={`px-2 py-1 block text-xs font-semibold ${cls}`}>
+              {label}
+            </span>
+          );
+        },
+      },
+    ],
+    [],
+  );
+
   useEffect(() => {
     handleTakeEvalRef.current = handleTakeEval;
   }, [handleTakeEval]);
@@ -584,75 +703,165 @@ const ManageEval = () => {
         </div>
       </div>
 
-      {isStudentOrGuardian ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 mt-2 max-w-lg">
-          <div>
-            <PeriodSelector
-              label="Periodo"
-              value={period}
-              onChange={(e) => {
-                setPeriod(e.target.value);
-              }}
-              autoLoad={true}
-            />
+      {isDocente ? (
+        <>
+          <div className="flex gap-0 border-b border-gray-300">
+            <button
+              type="button"
+              onClick={() => setActiveTab("exams")}
+              className={`px-5 py-2 text-sm font-semibold transition-colors rounded-tl rounded-tr cursor-pointer ${
+                activeTab === "exams"
+                  ? "bg-primary text-white border-2 border-primary"
+                  : "bg-secondary text-primary hover:bg-gray-100"
+              }`}
+            >
+              Exámenes
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("notes")}
+              className={`px-5 py-2 text-sm font-semibold transition-colors rounded-tl rounded-tr cursor-pointer ${
+                activeTab === "notes"
+                  ? "bg-primary text-white border-2 border-primary"
+                  : "bg-secondary text-primary hover:bg-gray-100"
+              }`}
+            >
+              Calificar
+            </button>
           </div>
-        </div>
-      ) : !isAdminInstitucional ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-2">
-          <div>
-            <SedeSelect
-              value={sedeSelected}
-              onChange={(e) => {
-                setSedeSelected(e.target.value);
-                setGrade("");
-                setAsignature("");
-              }}
-              data={teacherSedeData}
-              loading={loadingTeacherSedes}
-            />
-          </div>
-          <div>
-            <GradeSelector
-              label="Grado"
-              value={grade}
-              onChange={(e) => {
-                setGrade(e.target.value);
-                setAsignature("");
-              }}
-              placeholder="Selecciona grado"
-              sedeId={sedeSelected}
-              autoLoad={true}
-              customFetchMethod={getTeacherGrades}
-              additionalParams={teacherGradesParams}
-              disabled={!sedeSelected}
-            />
-          </div>
-          <div>
-            <AsignatureSelector
-              label="Asignatura"
-              value={asignature}
-              onChange={(e) => setAsignature(e.target.value)}
-              placeholder="Selecciona asignatura"
-              sedeId={fkSede}
-              autoLoad={true}
-              customFetchMethod={getTeacherSubjects}
-              additionalParams={teacherSubjectsParams}
-              disabled={!grade}
-            />
-          </div>
-          <div>
-            <PeriodSelector
-              label="Periodo"
-              value={period}
-              onChange={(e) => setPeriod(e.target.value)}
-              autoLoad={true}
-            />
-          </div>
-        </div>
-      ) : null}
 
-      {isAdminInstitucional && (
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mt-2">
+          {activeTab === "exams" && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-2">
+                <div>
+                  <SedeSelect
+                    value={sedeSelected}
+                    onChange={(e) => {
+                      setSedeSelected(e.target.value);
+                      setGrade("");
+                      setAsignature("");
+                    }}
+                    data={teacherSedeData}
+                    loading={loadingTeacherSedes}
+                  />
+                </div>
+                <div>
+                  <GradeSelector
+                    label="Grado"
+                    value={grade}
+                    onChange={(e) => {
+                      setGrade(e.target.value);
+                      setAsignature("");
+                    }}
+                    placeholder="Selecciona grado"
+                    sedeId={sedeSelected}
+                    autoLoad={true}
+                    customFetchMethod={getTeacherGrades}
+                    additionalParams={teacherGradesParams}
+                    disabled={!sedeSelected}
+                  />
+                </div>
+                <div>
+                  <AsignatureSelector
+                    label="Asignatura"
+                    value={asignature}
+                    onChange={(e) => setAsignature(e.target.value)}
+                    placeholder="Selecciona asignatura"
+                    sedeId={fkSede}
+                    autoLoad={true}
+                    customFetchMethod={getTeacherSubjects}
+                    additionalParams={teacherSubjectsParams}
+                    disabled={!grade}
+                  />
+                </div>
+                <div>
+                  <PeriodSelector
+                    label="Periodo"
+                    value={period}
+                    onChange={(e) => setPeriod(e.target.value)}
+                    autoLoad={true}
+                  />
+                </div>
+              </div>
+
+              <div id="tour-me-table" className="relative flex-1 ">
+                <DataTable
+                  data={results || []}
+                  columns={columns}
+                  fileName="Export_Evaluaciones"
+                  initialSorting={[{ id: "name_element", desc: false }]}
+                  loading={loading}
+                  loaderMessage="Cargando evaluaciones..."
+                />
+              </div>
+            </>
+          )}
+
+          {activeTab === "notes" && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
+                <div>
+                  <SedeSelect
+                    label="Sede"
+                    value={noteSede}
+                    onChange={(e) => setNoteSede(e.target.value)}
+                    data={teacherSedeData}
+                    loading={loadingTeacherSedes}
+                  />
+                </div>
+              </div>
+
+              <div id="tour-me-table" className="relative flex-1 ">
+                <DataTable
+                  data={noteResults || []}
+                  columns={noteColumns}
+                  fileName="Notas_Examenes"
+                  groupBy="grado"
+                  loading={noteLoading}
+                  loaderMessage="Cargando notas de exámenes..."
+                />
+              </div>
+            </>
+          )}
+        </>
+      ) : isStudentOrGuardian ? (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 mt-2 max-w-lg">
+            <div>
+              <PeriodSelector
+                label="Periodo"
+                value={period}
+                onChange={(e) => {
+                  setPeriod(e.target.value);
+                }}
+                autoLoad={true}
+              />
+            </div>
+          </div>
+
+          <div id="tour-me-table" className="relative flex-1 ">
+            <DataTable
+              data={results || []}
+              columns={columns}
+              fileName="Export_Evaluaciones"
+              initialSorting={[{ id: "name_element", desc: false }]}
+              loading={loading}
+              loaderMessage="Cargando evaluaciones..."
+              groupBy="realizado"
+              groupOrder={["Pendiente", "Realizado"]}
+              groupHeaderClassName={(key) =>
+                key === "Pendiente"
+                  ? "bg-yellow-100 border-b cursor-pointer select-none hover:bg-yellow-200 transition-colors"
+                  : key === "Realizado"
+                    ? "bg-green-100 border-b cursor-pointer select-none hover:bg-green-200 transition-colors"
+                    : "bg-blue-50 border-b cursor-pointer select-none hover:bg-blue-100 transition-colors"
+              }
+            />
+          </div>
+        </>
+      ) : isAdminInstitucional ? (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mt-2">
           <div>
             <label className="">Tipo</label>
             <select
@@ -734,18 +943,19 @@ const ManageEval = () => {
             </select>
           </div>
         </div>
-      )}
 
-      <div id="tour-me-table" className="relative flex-1 ">
-        <DataTable
-          data={isAdminInstitucional ? filteredResults : (results || [])}
-          columns={columns}
-          fileName="Export_Evaluaciones"
-          initialSorting={[{ id: "name_element", desc: false }]}
-          loading={loading}
-          loaderMessage="Cargando evaluaciones..."
-        />
-      </div>
+        <div id="tour-me-table" className="relative flex-1 ">
+          <DataTable
+            data={filteredResults}
+            columns={columns}
+            fileName="Export_Evaluaciones"
+            initialSorting={[{ id: "name_element", desc: false }]}
+            loading={loading}
+            loaderMessage="Cargando evaluaciones..."
+          />
+        </div>
+        </>
+      ) : null}
 
       <Modal
         isOpen={isRegisterOpen}

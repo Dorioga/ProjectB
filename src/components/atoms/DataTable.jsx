@@ -35,6 +35,10 @@ const DataTable = ({
   groupBy = null,
   // optional: function (rows) => ReactNode — extra summary shown in the accordion header
   groupSummary = null,
+  // optional: string | function (groupKey) => string — clase del encabezado de grupo
+  groupHeaderClassName = null,
+  // optional: string[] — orden de los grupos (claves no listadas van al final)
+  groupOrder = null,
   // optional: si true, exporta a Excel sin fila de encabezados
   exportWithoutHeaders = false,
   // optional: string[] — filas de encabezado institucional que se insertan antes de los datos en el Excel
@@ -145,10 +149,22 @@ const DataTable = ({
       if (!fullGroupMap.has(key)) fullGroupMap.set(key, []);
       fullGroupMap.get(key).push(row);
     });
+
+    let orderedGroupKeys = Array.from(fullGroupMap.keys());
+    if (Array.isArray(groupOrder) && groupOrder.length > 0) {
+      const rank = new Map(groupOrder.map((k, i) => [String(k), i]));
+      orderedGroupKeys.sort((a, b) => {
+        const ra = rank.has(a) ? rank.get(a) : groupOrder.length;
+        const rb = rank.has(b) ? rank.get(b) : groupOrder.length;
+        return ra - rb;
+      });
+    }
+
     const pages = [];
     let currentPage = [];
     let currentCount = 0;
-    for (const [key, rows] of fullGroupMap.entries()) {
+    for (const key of orderedGroupKeys) {
+      const rows = fullGroupMap.get(key) ?? [];
       const isGroupOpen = openGroups.has(key);
       if (isGroupOpen) {
         // Si el grupo está abierto, procesamos sus filas de datos individuales
@@ -422,7 +438,12 @@ const DataTable = ({
                         ? [
                             <tr
                               key={`group-${groupKey}`}
-                              className="bg-blue-50 border-b cursor-pointer select-none hover:bg-blue-100 transition-colors"
+                              className={
+                                typeof groupHeaderClassName === "function"
+                                  ? groupHeaderClassName(groupKey)
+                                  : (groupHeaderClassName ||
+                                    "bg-blue-50 border-b cursor-pointer select-none hover:bg-blue-100 transition-colors")
+                              }
                               onClick={() =>
                                 setOpenGroups((prev) => {
                                   const next = new Set(prev);

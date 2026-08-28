@@ -788,6 +788,26 @@ export async function saveStudentAnswer(payload) {
 }
 
 /**
+ * Obtiene las notas de los exámenes respondidos por estudiantes (para calificar).
+ * Endpoint: POST /element/note
+ * payload: { fk_teacher, fk_sede }
+ * @returns {Promise<Array>} Lista de notas por estudiante/examen
+ */
+export async function getElementNotes(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto para getElementNotes.");
+  }
+  try {
+    const res = await ApiClient.instance.post("/element/note", payload);
+    const data = Array.isArray(res) ? res : (res?.data ?? res);
+    return data;
+  } catch (error) {
+    console.error("teacherService - getElementNotes error:", error);
+    throw error;
+  }
+}
+
+/**
  * Guarda las respuestas del examen enviadas por el estudiante.
  * Endpoint: POST SAVE_STUDENT_ELEMENT_ENDPOINT (ver constante arriba)
  * payload: { id_element, fk_estudiante, answers: [...] }
