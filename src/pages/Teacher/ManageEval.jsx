@@ -591,17 +591,16 @@ const ManageEval = () => {
           accessorKey: "realizado",
           header: "Estado",
           accessorFn: (row) => (isRealizado(row) ? "Realizado" : "Pendiente"),
+          meta: {
+            cellClassName: (row) =>
+              isRealizado(row)
+                ? "bg-green-100 text-green-700"
+                : "bg-yellow-100 text-yellow-700",
+          },
           cell: (info) => {
             const label = info.getValue();
-            const done = label === "Realizado";
             return (
-              <span
-                className={`px-2 py-1 block text-xs font-semibold ${
-                  done
-                    ? "bg-green-100 text-green-700"
-                    : "bg-yellow-100 text-yellow-700"
-                }`}
-              >
+              <span className="px-2 py-1 block text-xs font-semibold">
                 {label}
               </span>
             );
@@ -850,16 +849,19 @@ const ManageEval = () => {
       {
         accessorKey: "pendiente",
         header: "Estado",
+        meta: {
+          cellClassName: (row) => {
+            const p = String(row.pendiente ?? "").toLowerCase();
+            return p === "pendiente"
+              ? "bg-yellow-100 text-yellow-700"
+              : "bg-green-100 text-green-700";
+          },
+        },
         cell: ({ row }) => {
           const p = String(row.original.pendiente ?? "").toLowerCase();
-          let label = "Revisado";
-          let cls = "bg-green-100 text-green-700";
-          if (p === "pendiente") {
-            label = "Por revisar";
-            cls = "bg-yellow-100 text-yellow-700";
-          }
+          const label = p === "pendiente" ? "Por revisar" : "Revisado";
           return (
-            <span className={`px-2 py-1 block text-xs font-semibold ${cls}`}>
+            <span className="px-2 py-1 block text-xs font-semibold">
               {label}
             </span>
           );

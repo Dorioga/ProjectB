@@ -500,36 +500,43 @@ const DataTable = ({
                                   : (rowClassName ?? "")
                               }`}
                             >
-                              {row.getVisibleCells().map((cell) => (
-                                <td
-                                  key={cell.id}
-                                  className={`p-0 h-full text-center ${
-                                    cell.column.columnDef.meta?.hideOnSM
-                                      ? "hidden sm:table-cell"
-                                      : ""
-                                  }${
-                                    cell.column.columnDef.meta?.hideOnMD
-                                      ? "hidden md:table-cell"
-                                      : ""
-                                  } 
+                              {row.getVisibleCells().map((cell) => {
+                                const cellMeta = cell.column.columnDef.meta;
+                                const cellClassName =
+                                  typeof cellMeta?.cellClassName === "function"
+                                    ? cellMeta.cellClassName(cell.row.original)
+                                    : (cellMeta?.cellClassName ?? "");
+                                return (
+                                  <td
+                                    key={cell.id}
+                                    className={`p-0 h-full text-center ${cellClassName} ${
+                                      cell.column.columnDef.meta?.hideOnSM
+                                        ? "hidden sm:table-cell"
+                                        : ""
+                                    }${
+                                      cell.column.columnDef.meta?.hideOnMD
+                                        ? "hidden md:table-cell"
+                                        : ""
+                                    } 
                                   ${
-                                    cell.column.columnDef.meta?.hideOnLG
-                                      ? "hidden lg:table-cell"
-                                      : ""
-                                  }${
-                                    cell.column.columnDef.meta?.hideOnXL
-                                      ? "hidden xl:table-cell"
-                                      : ""
-                                  }`}
-                                >
-                                  <div className=" p-0 block">
-                                    {flexRender(
-                                      cell.column.columnDef.cell,
-                                      cell.getContext(),
-                                    )}
-                                  </div>
-                                </td>
-                              ))}
+                                      cell.column.columnDef.meta?.hideOnLG
+                                        ? "hidden lg:table-cell"
+                                        : ""
+                                    }${
+                                      cell.column.columnDef.meta?.hideOnXL
+                                        ? "hidden xl:table-cell"
+                                        : ""
+                                    }`}
+                                  >
+                                    <div className=" p-0 block">
+                                      {flexRender(
+                                        cell.column.columnDef.cell,
+                                        cell.getContext(),
+                                      )}
+                                    </div>
+                                  </td>
+                                );
+                              })}
                             </tr>
                           ))
                         : []),
@@ -556,36 +563,43 @@ const DataTable = ({
                       : (rowClassName ?? "")
                   }`}
                 >
-                  {row.getVisibleCells().map((cell) => (
-                    <td
-                      key={cell.id}
-                      className={`p-0 h-full text-center ${
-                        cell.column.columnDef.meta?.hideOnSM
-                          ? "hidden sm:table-cell"
-                          : ""
-                      }${
-                        cell.column.columnDef.meta?.hideOnMD
-                          ? "hidden md:table-cell"
-                          : ""
-                      } 
+                  {row.getVisibleCells().map((cell) => {
+                    const cellMeta = cell.column.columnDef.meta;
+                    const cellClassName =
+                      typeof cellMeta?.cellClassName === "function"
+                        ? cellMeta.cellClassName(cell.row.original)
+                        : (cellMeta?.cellClassName ?? "");
+                    return (
+                      <td
+                        key={cell.id}
+                        className={`p-0 h-full text-center ${cellClassName} ${
+                          cell.column.columnDef.meta?.hideOnSM
+                            ? "hidden sm:table-cell"
+                            : ""
+                        }${
+                          cell.column.columnDef.meta?.hideOnMD
+                            ? "hidden md:table-cell"
+                            : ""
+                        } 
                       ${
-                        cell.column.columnDef.meta?.hideOnLG
-                          ? "hidden lg:table-cell"
-                          : ""
-                      }${
-                        cell.column.columnDef.meta?.hideOnXL
-                          ? "hidden xl:table-cell"
-                          : ""
-                      }`}
-                    >
-                      <div className=" p-0 block">
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
-                        )}
-                      </div>
-                    </td>
-                  ))}
+                          cell.column.columnDef.meta?.hideOnLG
+                            ? "hidden lg:table-cell"
+                            : ""
+                        }${
+                          cell.column.columnDef.meta?.hideOnXL
+                            ? "hidden xl:table-cell"
+                            : ""
+                        }`}
+                      >
+                        <div className=" p-0 block">
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </div>
+                      </td>
+                    );
+                  })}
                 </tr>
               ))
             )}
