@@ -1,7 +1,10 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import SimpleButton from "../atoms/SimpleButton";
 import SedeSelect from "../atoms/SedeSelect";
 import JourneySelect from "../atoms/JourneySelect";
+import Modal from "../atoms/Modal";
+import DataTable from "../atoms/DataTable";
+import ProfileTeacherEnfasis from "./ProfileTeacherEnfasis";
 import useAuth from "../../lib/hooks/useAuth";
 import useData from "../../lib/hooks/useData";
 import { useNotify } from "../../lib/hooks/useNotify";
@@ -9,10 +12,11 @@ import {
   getModes,
   getAreasByMode,
   createEnfasisAsignatura,
+  getInstitutionTeacherAsignatures,
 } from "../../services/enfasisService";
 
 const ProfileEnfasis = ({ onSave, onClose }) => {
-  const { idSede: authIdSede } = useAuth();
+  const { idSede: authIdSede, idInstitution } = useAuth();
   const { institutionSedes } = useData();
   const notify = useNotify();
 
@@ -35,6 +39,148 @@ const ProfileEnfasis = ({ onSave, onClose }) => {
 
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
+
+  const [teacherModalOpen, setTeacherModalOpen] = useState(false);
+  const [teacherModalData, setTeacherModalData] = useState(null);
+
+  const [teacherAssignments, setTeacherAssignments] = useState([]);
+  const [teacherAssignmentsLoading, setTeacherAssignmentsLoading] =
+    useState(false);
+  const [teacherAssignFilters, setTeacherAssignFilters] = useState({
+    sede: "",
+    modalidad: "",
+    area: "",
+  });
+
+  const fetchTeacherAssignments = useCallback(async () => {
+    if (!idInstitution) {
+      setTeacherAssignments([]);
+      return;
+    }
+    setTeacherAssignmentsLoading(true);
+    try {
+      const res = await getInstitutionTeacherAsignatures({
+        institution: Number(idInstitution),
+      });
+      setTeacherAssignments(Array.isArray(res) ? res : []);
+    } catch (err) {
+      console.error(
+        "ProfileEnfasis - getInstitutionTeacherAsignatures error:",
+        err,
+      );
+      notify.error(
+        err?.message || "Error al cargar las asignaciones de docentes.",
+      );
+      setTeacherAssignments([]);
+    } finally {
+      setTeacherAssignmentsLoading(false);
+    }
+  }, [idInstitution, notify]);
+
+  useEffect(() => {
+    fetchTeacherAssignments();
+  }, [fetchTeacherAssignments]);
+
+  const teacherAssignRowValue = (row, field) => {
+    if (field === "sede") return row.nombre_sede ?? "";
+    if (field === "modalidad") return row.name_modalidad ?? "";
+    if (field === "area") return row.name_area_enfasis ?? "";
+    return "";
+  };
+
+  const teacherAssignFilterOptions = useMemo(() => {
+    const fields = ["sede", "modalidad", "area"];
+    const opts = {};
+    for (const field of fields) {
+      const values = (
+        Array.isArray(teacherAssignments) ? teacherAssignments : []
+      )
+        .map((r) => String(teacherAssignRowValue(r, field)).trim())
+        .filter(Boolean);
+      opts[field] = Array.from(new Set(values)).sort((a, b) =>
+        a.localeCompare(b, "es", { sensitivity: "base" }),
+      );
+    }
+    return opts;
+  }, [teacherAssignments]);
+
+  const filteredTeacherAssignments = useMemo(() => {
+    const list = Array.isArray(teacherAssignments) ? teacherAssignments : [];
+    const active = Object.keys(teacherAssignFilters).some(
+      (k) => String(teacherAssignFilters[k] ?? "").trim() !== "",
+    );
+    if (!active) return list;
+    return list.filter((row) =>
+      Object.keys(teacherAssignFilters).every((field) => {
+        const value = String(teacherAssignFilters[field] ?? "").trim();
+        if (!value) return true;
+        return String(teacherAssignRowValue(row, field)).trim() === value;
+      }),
+    );
+  }, [teacherAssignments, teacherAssignFilters]);
+
+  const handleTeacherAssignFilter = (field) => (e) => {
+    setTeacherAssignFilters((prev) => ({ ...prev, [field]: e.target.value }));
+  };
+
+  const resetTeacherAssignFilters = () =>
+    setTeacherAssignFilters({ sede: "", modalidad: "", area: "" });
+
+  const teacherAssignColumns = useMemo(
+    () => [
+      {
+        accessorKey: "docente",
+        header: "Docente",
+        accessorFn: (row) => row.docente ?? "",
+      },
+      {
+        accessorKey: "nombre_sede",
+        header: "Sede",
+        accessorFn: (row) => row.nombre_sede ?? "",
+      },
+      {
+        accessorKey: "name_area_enfasis",
+        header: "Área",
+        accessorFn: (row) => row.name_area_enfasis ?? "",
+      },
+      {
+        accessorKey: "name_modalidad",
+        header: "Modalidad",
+        accessorFn: (row) => row.name_modalidad ?? "",
+      },
+      {
+        accessorKey: "name_asignatura_enfasis",
+        header: "Asignatura",
+        accessorFn: (row) => row.name_asignatura_enfasis ?? "",
+      },
+      {
+        accessorKey: "nombre_jornada",
+        header: "Jornada",
+        accessorFn: (row) => row.nombre_jornada ?? "",
+      },
+      {
+        id: "actions",
+        header: "Acciones",
+        cell: ({ row }) => (
+          <div className="w-full h-full flex items-center justify-center">
+            <SimpleButton
+              className="h-full"
+              onClick={() => {
+                setTeacherModalData(row.original);
+                setTeacherModalOpen(true);
+              }}
+              icon="Pencil"
+              bg="bg-secondary"
+              text="text-surface"
+              noRounded={true}
+              msjtooltip="Editar"
+            />
+          </div>
+        ),
+      },
+    ],
+    [],
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -299,9 +445,100 @@ const ProfileEnfasis = ({ onSave, onClose }) => {
           </div>
         </>
       ) : (
-        <div className="w-full p-4 border rounded bg-surface text-sm text-gray-500">
-          Funcionalidad de asignación de docente a énfasis pendiente.
-        </div>
+        <>
+          <div className="flex justify-end">
+            <div className="w-56">
+              <SimpleButton
+                type="button"
+                onClick={() => {
+                  setTeacherModalData(null);
+                  setTeacherModalOpen(true);
+                }}
+                msj="Agregar docente enfasis"
+                icon="Plus"
+                bg="bg-secondary"
+                text="text-surface"
+                noRounded={false}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="">Sede</label>
+              <select
+                name="filter-sede"
+                value={teacherAssignFilters.sede}
+                onChange={handleTeacherAssignFilter("sede")}
+                className="w-full p-2 border rounded bg-surface"
+              >
+                <option value="">Todas</option>
+                {teacherAssignFilterOptions.sede.map((v) => (
+                  <option key={v} value={v}>
+                    {v}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="">Modalidad</label>
+              <select
+                name="filter-modalidad"
+                value={teacherAssignFilters.modalidad}
+                onChange={handleTeacherAssignFilter("modalidad")}
+                className="w-full p-2 border rounded bg-surface"
+              >
+                <option value="">Todas</option>
+                {teacherAssignFilterOptions.modalidad.map((v) => (
+                  <option key={v} value={v}>
+                    {v}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="">Área énfasis</label>
+              <select
+                name="filter-area"
+                value={teacherAssignFilters.area}
+                onChange={handleTeacherAssignFilter("area")}
+                className="w-full p-2 border rounded bg-surface"
+              >
+                <option value="">Todas</option>
+                {teacherAssignFilterOptions.area.map((v) => (
+                  <option key={v} value={v}>
+                    {v}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="relative flex-1 min-h-[200px]">
+            <DataTable
+              data={filteredTeacherAssignments}
+              columns={teacherAssignColumns}
+              fileName="Export_Docentes_Enfasis"
+              initialSorting={[{ id: "docente", desc: false }]}
+              loading={teacherAssignmentsLoading}
+              loaderMessage="Cargando asignaciones de docentes..."
+            />
+          </div>
+
+          <Modal
+            isOpen={teacherModalOpen}
+            onClose={() => setTeacherModalOpen(false)}
+            title="Asignar docente a énfasis"
+            size="5xl"
+          >
+            <ProfileTeacherEnfasis
+              isOpen={teacherModalOpen}
+              onClose={() => setTeacherModalOpen(false)}
+              onSaved={fetchTeacherAssignments}
+              initialData={teacherModalData}
+            />
+          </Modal>
+        </>
       )}
     </div>
   );
