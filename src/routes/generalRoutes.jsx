@@ -25,6 +25,7 @@ const ProfileSchoolPage = lazy(
   () => import("../pages/School/ProfileSchoolPage"),
 );
 const ManageSedes = lazy(() => import("../pages/School/ManageSedes"));
+const ManageEnfasis = lazy(() => import("../pages/School/ManageEnfasis"));
 const ManageAsignature = lazy(() => import("../pages/School/ManageAsignature"));
 const ManageGrade = lazy(() => import("../pages/School/ManageGrade"));
 const ProfileTeacherPage = lazy(
@@ -208,6 +209,14 @@ const GeneralRoutes = () => {
               element={
                 <Suspense fallback={<SuspenseFallback />}>
                   <ManageAsignature />
+                </Suspense>
+              }
+            />
+            <Route
+              path="manageEnfasis"
+              element={
+                <Suspense fallback={<SuspenseFallback />}>
+                  <ManageEnfasis />
                 </Suspense>
               }
             />
