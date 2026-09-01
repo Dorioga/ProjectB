@@ -10,11 +10,16 @@ import useTeacher from "../../lib/hooks/useTeacher";
 import useData from "../../lib/hooks/useData";
 import useAuth from "../../lib/hooks/useAuth";
 import tourRegisterRecords from "../../tour/tourRegisterRecords";
+import {
+  getInstitutionEmphasisArea,
+  createEnfasisNote,
+} from "../../services/enfasisService";
 
 // Función auxiliar para redondeo consistente
 const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
 
-const RegisterRecords = ({ onClose }) => {
+const RegisterRecords = ({ onClose, modo = "normal" }) => {
+  const isEnfasis = modo === "enfasis";
   const {
     createNote,
     createTransitionNote,
@@ -48,6 +53,30 @@ const RegisterRecords = ({ onClose }) => {
   const [propositos, setPropositos] = useState([]);
   const [loadingPropositos, setLoadingPropositos] = useState(false);
 
+  const [enfasisAsignatures, setEnfasisAsignatures] = useState([]);
+  const [loadingEnfasisAsignatures, setLoadingEnfasisAsignatures] =
+    useState(false);
+
+  useEffect(() => {
+    if (!isEnfasis || !idInstitution) return;
+    let mounted = true;
+    setLoadingEnfasisAsignatures(true);
+    getInstitutionEmphasisArea({ institution: Number(idInstitution) })
+      .then((res) => {
+        if (mounted)
+          setEnfasisAsignatures(Array.isArray(res) ? res : []);
+      })
+      .catch(() => {
+        if (mounted) setEnfasisAsignatures([]);
+      })
+      .finally(() => {
+        if (mounted) setLoadingEnfasisAsignatures(false);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [isEnfasis, idInstitution]);
+
   // ── Modal de notas existentes ──
   const [existingNotesModal, setExistingNotesModal] = useState(false);
   const [validatingNotes, setValidatingNotes] = useState(false);
@@ -75,6 +104,7 @@ const RegisterRecords = ({ onClose }) => {
 
   // ── Validar notas existentes cuando los 4 campos están completos ──
   useEffect(() => {
+    if (isEnfasis) return;
     // Si algún selector se vacía, ocultar el formulario hasta nueva validación
     if (
       !gradeSelected ||
@@ -128,6 +158,7 @@ const RegisterRecords = ({ onClose }) => {
     asignatureSelected,
     idDocente,
     validatorNotes,
+    isEnfasis,
   ]);
 
   // SedEs del docente (obtenidas vía getTeacherSede)
@@ -182,6 +213,7 @@ const RegisterRecords = ({ onClose }) => {
   // Si existe idDocente, cargar sedes desde el servicio y mapear a {id, name}
   // Mejoras: esperar a que haya token y evitar llamadas duplicadas (deduplicación por idDocente)
   useEffect(() => {
+    if (isEnfasis) return;
     let mounted = true;
 
     // Usar cache temporal a nivel global para evitar duplicados entre mounts en StrictMode
@@ -256,7 +288,7 @@ const RegisterRecords = ({ onClose }) => {
     return () => {
       mounted = false;
     };
-  }, [idDocente, getTeacherSede, token]);
+  }, [idDocente, getTeacherSede, token, isEnfasis]);
 
   // Handlers de cascada: limpian los selectores hijos al cambiar el padre.
   // Se ejecutan inline (no en useEffect) para evitar un render intermedio
@@ -358,23 +390,32 @@ const RegisterRecords = ({ onClose }) => {
     });
   }, [porcentualTotal, distributePercentages]);
 
-  const canSetNumberRecords =
-    Boolean(sedeSelected) &&
-    Boolean(asignatureSelected) &&
-    Boolean(periodSelected);
+  const canSetNumberRecords = isEnfasis
+    ? Boolean(asignatureSelected && periodSelected)
+    : Boolean(sedeSelected) &&
+      Boolean(asignatureSelected) &&
+      Boolean(periodSelected);
 
-  const canSubmit =
-    Boolean(sedeSelected) &&
-    Boolean(asignatureSelected) &&
-    Boolean(periodSelected) &&
-    Boolean(gradeSelected) &&
-    Boolean(workdaySelected) &&
-    auxRecords.length > 0 &&
-    auxRecords.every(
-      (r) =>
-        String(r.name ?? "").trim() !== "" &&
-        (isTransicion || Number(r.porcentual) > 0),
-    );
+  const canSubmit = isEnfasis
+    ? Boolean(asignatureSelected) &&
+      Boolean(periodSelected) &&
+      auxRecords.length > 0 &&
+      auxRecords.every(
+        (r) =>
+          String(r.name ?? "").trim() !== "" &&
+          Number(r.porcentual) > 0,
+      )
+    : Boolean(sedeSelected) &&
+      Boolean(asignatureSelected) &&
+      Boolean(periodSelected) &&
+      Boolean(gradeSelected) &&
+      Boolean(workdaySelected) &&
+      auxRecords.length > 0 &&
+      auxRecords.every(
+        (r) =>
+          String(r.name ?? "").trim() !== "" &&
+          (isTransicion || Number(r.porcentual) > 0),
+      );
 
   const handleRecordChange = (index, field, value) => {
     setAuxRecords((prev) => {
@@ -461,6 +502,29 @@ const RegisterRecords = ({ onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (isEnfasis) {
+      const payload = {
+        teacher: Number(idDocente),
+        asignatura: Number(asignatureSelected),
+        periodo: Number(periodSelected),
+        notas: auxRecords.map((rec) => ({
+          name_nota: rec.name || "",
+          porcentaje: Number(rec.porcentual) || 0,
+          logro: rec.goal || "",
+        })),
+      };
+      try {
+        await createEnfasisNote(payload);
+        setAsignatureSelected("");
+        setPeriodSelected("");
+        setNumberRecords(0);
+        setAuxRecords([]);
+      } catch (error) {
+        console.error("Error al registrar notas de énfasis:", error);
+      }
+      return;
+    }
+
     if (isTransicion) {
       const transitionNotes = auxRecords.map((rec) => ({
         id_proposito: Number(propositoSelected),
@@ -527,6 +591,10 @@ const RegisterRecords = ({ onClose }) => {
     }
   };
 
+  const showNotesSection = isEnfasis
+    ? Boolean(asignatureSelected && periodSelected)
+    : notesValidated && !existingNotesModal;
+
   return (
     <div className="p-2 h-full gap-4 flex flex-col">
       {/* ── Modal: Notas existentes ── */}
@@ -563,7 +631,13 @@ const RegisterRecords = ({ onClose }) => {
         </p>
       )}
       <div className="w-full grid grid-cols-5 justify-between items-center  text-surface rounded-lg">
-        <h2 className="col-span-4 text-2xl font-bold"></h2>
+        <h2 className="col-span-4 text-2xl font-bold">
+          {isEnfasis && (
+            <span className="inline-block text-sm font-semibold bg-accent text-white px-3 py-1 rounded-full">
+              Modo Énfasis
+            </span>
+          )}
+        </h2>
         <SimpleButton
           type="button"
           onClick={tourRegisterRecords}
@@ -576,11 +650,54 @@ const RegisterRecords = ({ onClose }) => {
         />
       </div>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div
-          id="tour-filters"
-          className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4"
-        >
-          <SedeSelect
+        {isEnfasis ? (
+          <div
+            id="tour-filters"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4"
+          >
+            <div id="tour-asignature">
+              <label className="text-lg font-semibold">
+                Asignatura Énfasis
+              </label>
+              <select
+                name="asignatura"
+                value={asignatureSelected}
+                onChange={(e) => setAsignatureSelected(e.target.value)}
+                className="w-full p-2 border rounded bg-surface"
+              >
+                <option value="">
+                  {loadingEnfasisAsignatures
+                    ? "Cargando asignaturas..."
+                    : "Selecciona asignatura"}
+                </option>
+                {!loadingEnfasisAsignatures &&
+                  enfasisAsignatures.map((a) => (
+                    <option
+                      key={a.id_asignatura_enfasis}
+                      value={a.id_asignatura_enfasis}
+                    >
+                      {a.name_asignatura_enfasis}
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            <PeriodSelector
+              name="period"
+              label="Período"
+              labelClassName="text-lg font-semibold"
+              value={periodSelected}
+              onChange={(e) => setPeriodSelected(e.target.value)}
+              className="w-full p-2 border rounded bg-surface"
+              autoLoad={true}
+            />
+          </div>
+        ) : (
+          <div
+            id="tour-filters"
+            className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4"
+          >
+            <SedeSelect
             value={sedeSelected}
             onChange={handleSedeChange}
             className="w-full p-2 border rounded bg-surface"
@@ -699,56 +816,59 @@ const RegisterRecords = ({ onClose }) => {
             autoLoad={true}
           />
         </div>
+        )}
         {/* ── Grado Transición ─────────────────────────────────────────── */}
-        {notesValidated && !existingNotesModal && (
+        {showNotesSection && (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              <div className="flex flex-row items-center gap-2">
-                <input
-                  id="gradeTransicion"
-                  type="checkbox"
-                  checked={isTransicion}
-                  onChange={(e) => {
-                    setIsTransicion(e.target.checked);
-                    if (!e.target.checked) {
-                      setPropositoSelected("");
-                      setPropositos([]);
-                    }
-                  }}
-                />
-                <label
-                  htmlFor="gradeTransicion"
-                  className="text-lg font-semibold"
-                >
-                  Valoración Cualitativa
-                </label>{" "}
-              </div>
-
-              {isTransicion && (
-                <div className="flex flex-col col-span-2">
-                  <label className="text-lg font-semibold">
-                    Propósito de la nota
-                  </label>
-                  <select
-                    value={propositoSelected}
-                    onChange={(e) => setPropositoSelected(e.target.value)}
-                    className="p-2 border rounded bg-surface text-sm"
-                    disabled={loadingPropositos}
+            {!isEnfasis && (
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div className="flex flex-row items-center gap-2">
+                  <input
+                    id="gradeTransicion"
+                    type="checkbox"
+                    checked={isTransicion}
+                    onChange={(e) => {
+                      setIsTransicion(e.target.checked);
+                      if (!e.target.checked) {
+                        setPropositoSelected("");
+                        setPropositos([]);
+                      }
+                    }}
+                  />
+                  <label
+                    htmlFor="gradeTransicion"
+                    className="text-lg font-semibold"
                   >
-                    <option value="">
-                      {loadingPropositos
-                        ? "Cargando..."
-                        : "Seleccionar propósito"}
-                    </option>
-                    {propositos.map((p) => (
-                      <option key={p.id_proposito} value={p.id_proposito}>
-                        {p.nombre_proposito}
-                      </option>
-                    ))}
-                  </select>
+                    Valoración Cualitativa
+                  </label>{" "}
                 </div>
-              )}
-            </div>
+
+                {isTransicion && (
+                  <div className="flex flex-col col-span-2">
+                    <label className="text-lg font-semibold">
+                      Propósito de la nota
+                    </label>
+                    <select
+                      value={propositoSelected}
+                      onChange={(e) => setPropositoSelected(e.target.value)}
+                      className="p-2 border rounded bg-surface text-sm"
+                      disabled={loadingPropositos}
+                    >
+                      <option value="">
+                        {loadingPropositos
+                          ? "Cargando..."
+                          : "Seleccionar propósito"}
+                      </option>
+                      {propositos.map((p) => (
+                        <option key={p.id_proposito} value={p.id_proposito}>
+                          {p.nombre_proposito}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div id="tour-num-records" className="w-full md:w-2/3 lg:w-2/5">
               <label className="text-lg font-semibold">
@@ -764,12 +884,13 @@ const RegisterRecords = ({ onClose }) => {
               />
               {!canSetNumberRecords ? (
                 <div className="text-xs opacity-70 mt-1">
-                  Selecciona sede, asignatura y periodo para habilitar este
-                  campo.
+                  {isEnfasis
+                    ? "Selecciona asignatura y periodo para habilitar este campo."
+                    : "Selecciona sede, asignatura y periodo para habilitar este campo."}
                 </div>
               ) : null}
             </div>
-            {!isTransicion && (
+            {!isEnfasis && !isTransicion && (
               <div id="tour-final-test" className="flex items-center gap-2">
                 <input
                   id="useFinalTest"

@@ -12,6 +12,7 @@ import {
   getTeachersBySedeEmphasis,
   getSedeEmphasisAsignatures,
   saveTeacherEnfasis,
+  updateTeacherAsignature,
 } from "../../services/enfasisService";
 
 const ProfileTeacherEnfasis = ({ isOpen, onClose, onSaved, initialData }) => {
@@ -21,6 +22,7 @@ const ProfileTeacherEnfasis = ({ isOpen, onClose, onSaved, initialData }) => {
   const notify = useNotify();
 
   const prefillRef = useRef(null);
+  const prefillCompletedRef = useRef(false);
 
   const [modes, setModes] = useState([]);
   const [loadingModes, setLoadingModes] = useState(false);
@@ -41,6 +43,7 @@ const ProfileTeacherEnfasis = ({ isOpen, onClose, onSaved, initialData }) => {
     useState(false);
   const [selectedAsignatura, setSelectedAsignatura] = useState("");
 
+  const [estado, setEstado] = useState("Activo");
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
 
@@ -67,6 +70,7 @@ const ProfileTeacherEnfasis = ({ isOpen, onClose, onSaved, initialData }) => {
   useEffect(() => {
     if (!isOpen) return;
     prefillRef.current = initialData || null;
+    prefillCompletedRef.current = false;
     setTeachers([]);
     setSelectedTeacher("");
     setTeacherMode("");
@@ -75,6 +79,7 @@ const ProfileTeacherEnfasis = ({ isOpen, onClose, onSaved, initialData }) => {
     setTeacherJornada("");
     setTeacherAsignaturas([]);
     setSelectedAsignatura("");
+    setEstado(initialData?.state_teacher_asignatura_enfasis ?? "Activo");
     setErrors({});
     setTeacherSede(
       initialData ? "" : authIdSede ? String(authIdSede) : "",
@@ -180,7 +185,7 @@ const ProfileTeacherEnfasis = ({ isOpen, onClose, onSaved, initialData }) => {
 
   useEffect(() => {
     const prefill = prefillRef.current;
-    if (!isOpen || !prefill) return;
+    if (!isOpen || !prefill || prefillCompletedRef.current) return;
     if (!teacherSede && Array.isArray(institutionSedes) && institutionSedes.length) {
       const sede = institutionSedes.find(
         (s) =>
@@ -212,7 +217,7 @@ const ProfileTeacherEnfasis = ({ isOpen, onClose, onSaved, initialData }) => {
 
   useEffect(() => {
     const prefill = prefillRef.current;
-    if (!isOpen || !prefill) return;
+    if (!isOpen || !prefill || prefillCompletedRef.current) return;
     if (teacherSede && !selectedTeacher && teachers.length) {
       const teacher = teachers.find(
         (t) =>
@@ -227,7 +232,7 @@ const ProfileTeacherEnfasis = ({ isOpen, onClose, onSaved, initialData }) => {
 
   useEffect(() => {
     const prefill = prefillRef.current;
-    if (!isOpen || !prefill) return;
+    if (!isOpen || !prefill || prefillCompletedRef.current) return;
     if (teacherMode && !teacherArea && teacherAreas.length) {
       const area = teacherAreas.find(
         (a) =>
@@ -240,7 +245,7 @@ const ProfileTeacherEnfasis = ({ isOpen, onClose, onSaved, initialData }) => {
 
   useEffect(() => {
     const prefill = prefillRef.current;
-    if (!isOpen || !prefill) return;
+    if (!isOpen || !prefill || prefillCompletedRef.current) return;
     if (
       teacherSede &&
       teacherArea &&
@@ -262,6 +267,27 @@ const ProfileTeacherEnfasis = ({ isOpen, onClose, onSaved, initialData }) => {
     teacherAsignaturas,
   ]);
 
+  useEffect(() => {
+    if (prefillCompletedRef.current) return;
+    if (
+      teacherSede &&
+      selectedTeacher &&
+      teacherMode &&
+      teacherArea &&
+      teacherJornada &&
+      selectedAsignatura
+    ) {
+      prefillCompletedRef.current = true;
+    }
+  }, [
+    teacherSede,
+    selectedTeacher,
+    teacherMode,
+    teacherArea,
+    teacherJornada,
+    selectedAsignatura,
+  ]);
+
   const canLoadAsignaturas = Boolean(
     teacherSede && teacherArea && teacherJornada,
   );
@@ -281,29 +307,38 @@ const ProfileTeacherEnfasis = ({ isOpen, onClose, onSaved, initialData }) => {
 
   const handleSave = useCallback(async () => {
     if (!validateForm(true)) return;
-    if (isEdit) {
-      notify.warning(
-        "La actualización de la asignación está pendiente de endpoint.",
-      );
-      return;
-    }
     setSaving(true);
     try {
-      await saveTeacherEnfasis({
-        fk_asignatura_enfasis: Number(selectedAsignatura),
-        fk_teacher: Number(selectedTeacher),
-      });
-      notify.success("Docente asignado al énfasis exitosamente.");
+      if (isEdit) {
+        await updateTeacherAsignature({
+          asignatura: Number(selectedAsignatura),
+          state: estado,
+          teacher: Number(selectedTeacher),
+          id: Number(initialData?.id_teacher_asignatura_enfasis),
+        });
+        notify.success("Asignación actualizada exitosamente.");
+      } else {
+        await saveTeacherEnfasis({
+          fk_asignatura_enfasis: Number(selectedAsignatura),
+          fk_teacher: Number(selectedTeacher),
+        });
+        notify.success("Docente asignado al énfasis exitosamente.");
+      }
       if (typeof onSaved === "function") onSaved();
       if (typeof onClose === "function") onClose();
     } catch (err) {
-      console.error("ProfileTeacherEnfasis - saveTeacherEnfasis error:", err);
-      notify.error(err?.message || "Error al asignar el docente al énfasis.");
+      console.error("ProfileTeacherEnfasis - guardar error:", err);
+      notify.error(
+        err?.message ||
+          (isEdit
+            ? "Error al actualizar la asignación."
+            : "Error al asignar el docente al énfasis."),
+      );
     } finally {
       setSaving(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isEdit, selectedAsignatura, selectedTeacher, onSaved, onClose]);
+  }, [isEdit, selectedAsignatura, selectedTeacher, estado, initialData, onSaved, onClose]);
 
   return (
     <div className="w-full flex flex-col gap-4">
@@ -407,6 +442,19 @@ const ProfileTeacherEnfasis = ({ isOpen, onClose, onSaved, initialData }) => {
           {errors.jornada && (
             <div className="text-sm text-red-600 mt-1">{errors.jornada}</div>
           )}
+        </div>
+
+        <div>
+          <label className="font-semibold">Estado</label>
+          <select
+            name="estado"
+            value={estado}
+            onChange={(e) => setEstado(e.target.value)}
+            className="w-full p-2 border rounded bg-surface"
+          >
+            <option value="Activo">Activo</option>
+            <option value="Inactivo">Inactivo</option>
+          </select>
         </div>
 
         <div>

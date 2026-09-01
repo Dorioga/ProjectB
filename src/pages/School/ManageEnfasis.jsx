@@ -2,19 +2,36 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import Modal from "../../components/atoms/Modal";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import DataTable from "../../components/atoms/DataTable";
+import Loader from "../../components/atoms/Loader";
 import ProfileEnfasis from "../../components/molecules/ProfileEnfasis";
+import ProfileEnfasisEdit from "../../components/molecules/ProfileEnfasisEdit";
+import RegisterRecords from "../GradeRecords/RegisterRecords";
 import useAuth from "../../lib/hooks/useAuth";
 import { useNotify } from "../../lib/hooks/useNotify";
-import { getInstitutionEmphasisArea } from "../../services/enfasisService";
+import {
+  getInstitutionEmphasisArea,
+  getAsignatureEnfasis,
+} from "../../services/enfasisService";
 
 const ManageEnfasis = () => {
-  const { idInstitution } = useAuth();
+  const { idInstitution, rol, idDocente } = useAuth();
   const notify = useNotify();
 
+  const isDocente = useMemo(
+    () => String(rol).toLowerCase() === "docente" || String(rol) === "7",
+    [rol],
+  );
+
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({ sede: "", modalidad: "", area: "" });
+
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editingData, setEditingData] = useState(null);
+  const [editModalidadId, setEditModalidadId] = useState("");
 
   const fetchData = useCallback(async () => {
     if (!idInstitution) {
@@ -29,7 +46,9 @@ const ManageEnfasis = () => {
       setResults(Array.isArray(res) ? res : []);
     } catch (err) {
       console.error("ManageEnfasis - getInstitutionEmphasisArea error:", err);
-      notify.error(err?.message || "Error al cargar las asignaturas de énfasis.");
+      notify.error(
+        err?.message || "Error al cargar las asignaturas de énfasis.",
+      );
       setResults([]);
     } finally {
       setLoading(false);
@@ -80,8 +99,41 @@ const ManageEnfasis = () => {
     setFilters((prev) => ({ ...prev, [field]: e.target.value }));
   };
 
-  const resetFilters = () =>
-    setFilters({ sede: "", modalidad: "", area: "" });
+  const resetFilters = () => setFilters({ sede: "", modalidad: "", area: "" });
+
+  const handleEdit = useCallback(
+    async (row) => {
+      const id = row?.id_asignatura_enfasis ?? row?.id ?? null;
+      if (!id) {
+        notify.error("No se pudo identificar la asignatura.");
+        return;
+      }
+      setEditLoading(true);
+      setEditingData(null);
+      try {
+        const data = await getAsignatureEnfasis(id);
+        if (!data) {
+          notify.error("No se encontraron datos de la asignatura.");
+          return;
+        }
+        setEditingData(data);
+        setEditModalidadId(row?.id_modalidad ?? "");
+        setIsEditOpen(true);
+      } catch (err) {
+        console.error("ManageEnfasis - getAsignatureEnfasis error:", err);
+        notify.error(err?.message || "Error al cargar la asignatura.");
+      } finally {
+        setEditLoading(false);
+      }
+    },
+    [notify],
+  );
+
+  const closeEdit = useCallback(() => {
+    setIsEditOpen(false);
+    setEditingData(null);
+    setEditModalidadId("");
+  }, []);
 
   const columns = useMemo(
     () => [
@@ -137,8 +189,25 @@ const ManageEnfasis = () => {
           );
         },
       },
+      {
+        id: "actions",
+        header: "Acciones",
+        cell: ({ row }) => (
+          <div className="w-full h-full flex items-center justify-center">
+            <SimpleButton
+              className="h-full"
+              onClick={() => handleEdit(row.original)}
+              icon="Pencil"
+              bg="bg-secondary"
+              text="text-surface"
+              noRounded={true}
+              msjtooltip="Editar"
+            />
+          </div>
+        ),
+      },
     ],
-    [],
+    [handleEdit],
   );
 
   return (
@@ -154,18 +223,47 @@ const ManageEnfasis = () => {
           id="tour-me-add-btn"
           className="grid grid-cols-2 col-span-2 xl:col-span-2 gap-2"
         >
-          <SimpleButton
-            onClick={() => setIsRegisterOpen(true)}
-            msj="Registrar Enfasis"
-            icon="Plus"
-            bg="bg-secondary"
-            text="text-surface"
-            noRounded={false}
-          />
+          {isDocente ? (
+            <>
+              <SimpleButton
+                onClick={() => setIsNotesOpen(true)}
+                msj="Registrar notas"
+                icon="Save"
+                bg="bg-secondary"
+                text="text-surface"
+                noRounded={false}
+              />
+              <SimpleButton
+                onClick={() =>
+                  notify.info("Funcionalidad 'Asignar notas' pendiente.")
+                }
+                msj="Asignar notas"
+                icon="ClipboardList"
+                bg="bg-secondary"
+                text="text-surface"
+                noRounded={false}
+              />
+            </>
+          ) : (
+            <SimpleButton
+              onClick={() => setIsRegisterOpen(true)}
+              msj="Registrar Enfasis"
+              icon="Plus"
+              bg="bg-secondary"
+              text="text-surface"
+              noRounded={false}
+            />
+          )}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+      {isDocente ? (
+        <div className="flex-1 flex items-center justify-center text-gray-500">
+          Selecciona una opción para gestionar notas de énfasis.
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
         <div>
           <label className="">Sede</label>
           <select
@@ -226,6 +324,8 @@ const ManageEnfasis = () => {
           loaderMessage="Cargando asignaturas de énfasis..."
         />
       </div>
+        </>
+      )}
 
       <Modal
         isOpen={isRegisterOpen}
@@ -241,6 +341,40 @@ const ManageEnfasis = () => {
           }}
           onClose={() => setIsRegisterOpen(false)}
         />
+      </Modal>
+
+      <Modal
+        isOpen={isNotesOpen}
+        onClose={() => setIsNotesOpen(false)}
+        title="Registrar notas de énfasis"
+        size="7xl"
+      >
+        <RegisterRecords
+          modo="enfasis"
+          onClose={() => setIsNotesOpen(false)}
+        />
+      </Modal>
+
+      <Modal
+        isOpen={isEditOpen}
+        onClose={closeEdit}
+        title="Editar asignatura de énfasis"
+        size="5xl"
+      >
+        {editLoading ? (
+          <Loader message="Cargando asignatura..." />
+        ) : editingData ? (
+          <ProfileEnfasisEdit
+            initialData={editingData}
+            modalidadId={editModalidadId}
+            onSave={() => {
+              closeEdit();
+              fetchData();
+              resetFilters();
+            }}
+            onClose={closeEdit}
+          />
+        ) : null}
       </Modal>
     </div>
   );

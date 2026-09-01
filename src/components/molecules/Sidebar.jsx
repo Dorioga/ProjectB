@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import useAuth from "../../lib/hooks/useAuth";
 import { Link } from "react-router-dom";
 import { User, LogOut } from "lucide-react";
@@ -60,6 +60,30 @@ const Sidebar = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, [closeSidebar]);
 
+  // Menú siempre ordenado alfabéticamente por etiqueta (option), incluyendo
+  // los ítems especiales de modal (Boletín, Fecha Corte).
+  const menuItems = useMemo(() => {
+    const items = (Array.isArray(menu) ? menu : []).map((item) => ({
+      type: "link",
+      option: String(item.option ?? ""),
+      link: item.link,
+      icon: item.icon,
+    }));
+    if (String(rol) === "6" || String(rol) === "5") {
+      items.push({ type: "boletin", option: "Boletín", icon: "BookOpen" });
+    }
+    if (String(rol) === "3") {
+      items.push({
+        type: "fechaCorte",
+        option: "Fecha Corte",
+        icon: "CalendarCheck",
+      });
+    }
+    return items.sort((a, b) =>
+      a.option.localeCompare(b.option, "es", { sensitivity: "base" }),
+    );
+  }, [menu, rol]);
+
   return (
     <>
       <div
@@ -90,68 +114,48 @@ const Sidebar = () => {
           )}
         </div>
         <div className="row-span-8 md:row-span-7 2xl:row-span-8 flex flex-col justify-start overflow-y-auto pt-0 sm:pt-3">
-          <ul className="">
-            {menu &&
-              Array.isArray(menu) &&
-              menu.map((item, id) => {
-                const IconComponent =
-                  LucideIcons[item.icon] || LucideIcons.User;
-                return (
-                  <li
-                    key={id}
-                    className="rounded-lg hover:bg-secondary cursor-pointer w-full px-2"
-                  >
+<ul className="">
+            {menuItems.map((item, id) => {
+              const IconComponent =
+                LucideIcons[item.icon] || LucideIcons.User;
+              const isModal = item.type !== "link";
+              const inner = (
+                <>
+                  <IconComponent className="text-surface hover:text-primary text-2xl" />
+                  {showContent && (
+                    <span className="px-2 text-md text-surface">
+                      {item.option}
+                    </span>
+                  )}
+                </>
+              );
+              return (
+                <li
+                  key={id}
+                  onClick={
+                    isModal
+                      ? item.type === "boletin"
+                        ? () => setBoletinModalOpen(true)
+                        : () => setFechaCorteModalOpen(true)
+                      : undefined
+                  }
+                  className="rounded-lg hover:bg-secondary cursor-pointer w-full px-2"
+                >
+                  {item.type === "link" ? (
                     <Link
                       to={item.link}
                       className="flex w-full flex-row px-4 py-1 items-center "
                     >
-                      <IconComponent className="text-surface hover:text-primary text-2xl" />
-                      {showContent && (
-                        <span className="px-2 text-md text-surface">
-                          {item.option}
-                        </span>
-                      )}
+                      {inner}
                     </Link>
-                  </li>
-                );
-              })}
-            {/* <li
-              onClick={handleExportPdf}
-              className="rounded-lg  hover:bg-secondary cursor-pointer w-full px-2"
-            >
-              <div className="flex w-full flex-row px-4 py-1 items-center gap-2">
-                <LucideIcons.FileText className="w-5 h-5 text-surface hover:text-primary text-2xl" />
-                {showContent && (
-                  <span className="px-2 text-md text-surface">Boleta PDF</span>
-                )}
-              </div>
-            </li> */}
-            {(String(rol) === "6" || String(rol) === "5") && (
-              <li
-                onClick={() => setBoletinModalOpen(true)}
-                className="rounded-lg hover:bg-secondary cursor-pointer w-full px-2"
-              >
-                <div className="flex w-full flex-row px-4 py-1 items-center gap-2">
-                  <LucideIcons.BookOpen className=" text-surface hover:text-primary text-2xl" />
-                  {showContent && (
-                    <span className="px-2 text-md text-surface">Boletín</span>
+                  ) : (
+                    <div className="flex w-full flex-row px-4 py-1 items-center gap-2">
+                      {inner}
+                    </div>
                   )}
-                </div>
-              </li>
-            )}
-            {String(rol) === "3" && (
-              <li
-                onClick={() => setFechaCorteModalOpen(true)}
-                className="rounded-lg hover:bg-secondary cursor-pointer w-full px-2"
-              >
-                <div className="flex w-full flex-row px-4 py-1 items-center gap-2">
-                  <LucideIcons.CalendarCheck className="text-surface hover:text-primary text-2xl" />
-                  {showContent && (
-                    <span className=" text-md text-surface">Fecha Corte</span>
-                  )}
-                </div>
-              </li>
-            )}
+                </li>
+              );
+            })}
           </ul>
         </div>
         <div className="flex flex-col items-center row-span-1 justify-center  ">
