@@ -130,6 +130,45 @@ export async function createEnfasisNote(payload) {
   }
 }
 
+export async function getTeacherNotesEnfasis(payload) {
+  const { fk_teacher, fk_asignatura_enfasis, fk_period } = payload || {};
+  if (!fk_teacher || !fk_asignatura_enfasis || !fk_period) {
+    throw new Error(
+      "fk_teacher, fk_asignatura_enfasis y fk_period son requeridos.",
+    );
+  }
+  try {
+    const res = await ApiClient.post("/notes/teacher", {
+      fk_teacher: Number(fk_teacher),
+      fk_asignatura_enfasis: Number(fk_asignatura_enfasis),
+      fk_period: Number(fk_period),
+    });
+    const data = Array.isArray(res) ? res : (res?.data ?? []);
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error("Error en getTeacherNotesEnfasis:", error);
+    throw error;
+  }
+}
+
+export async function updateNotaEnfasis(payload) {
+  if (!payload?.id) throw new Error("id es requerido.");
+  try {
+    return await ApiClient.patch("/notes/update", {
+      name: String(payload.name ?? ""),
+      state: String(payload.state ?? ""),
+      porcentaje: payload.porcentaje != null ? Number(payload.porcentaje) : null,
+      logro: String(payload.logro ?? ""),
+      asignatura: Number(payload.asignatura),
+      periodo: Number(payload.periodo),
+      id: Number(payload.id),
+    });
+  } catch (error) {
+    console.error("Error en updateNotaEnfasis:", error);
+    throw error;
+  }
+}
+
 export async function getAsignatureEnfasis(id) {
   if (!id) throw new Error("id es requerido.");
   try {
@@ -138,6 +177,18 @@ export async function getAsignatureEnfasis(id) {
     return Array.isArray(data) ? data[0] : null;
   } catch (error) {
     console.error("Error en getAsignatureEnfasis:", error);
+    throw error;
+  }
+}
+
+export async function getTeacherAsignatures(id) {
+  if (!id) throw new Error("id es requerido.");
+  try {
+    const res = await ApiClient.get(`/teacher/asignature/${Number(id)}`);
+    const data = Array.isArray(res) ? res : (res?.data ?? []);
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error("Error en getTeacherAsignatures:", error);
     throw error;
   }
 }
