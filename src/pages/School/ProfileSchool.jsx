@@ -1053,7 +1053,7 @@ const ProfileSchool = ({
       >
         <div
           id="tour-psc-header"
-          className=" flex md:col-span-2  items-center mb-2 w-full"
+          className=" flex md:col-span-2  items-center mb-2 w-full bg-primary text-surface p-3 rounded-lg"
         >
           <div className="grid grid-cols-5 items-center  w-full">
             <h2 className="text-xl font-semibold flex items-center col-span-3">
@@ -1333,16 +1333,18 @@ const ProfileSchool = ({
 
         <div id="tour-psc-theme-btn">
           <label>Tema</label>
-          <SimpleButton
-            type="button"
-            onClick={handleOpenThemeModal}
-            className="mt-2"
-            msj={"Modificar tema"}
-            icon={"Pencil"}
-            text={"text-surface"}
-            bg={"bg-secondary"}
-            disabled={!isEditing}
-          />
+          <div>
+            <SimpleButton
+              type="button"
+              onClick={handleOpenThemeModal}
+              className="mt-2"
+              msj={"Modificar tema"}
+              icon={"Pencil"}
+              text={"text-surface"}
+              bg={"bg-secondary"}
+              disabled={!isEditing}
+            />
+          </div>
         </div>
 
         <div>
