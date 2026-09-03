@@ -193,6 +193,34 @@ export async function getTeacherAsignatures(id) {
   }
 }
 
+export async function getStudentsByGrade(id) {
+  if (!id) throw new Error("id es requerido.");
+  try {
+    const res = await ApiClient.get(`/student/grade/${Number(id)}`);
+    const data = Array.isArray(res) ? res : (res?.data ?? []);
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error("Error en getStudentsByGrade:", error);
+    throw error;
+  }
+}
+
+export async function registerStudentsEnfasis(payload) {
+  if (
+    !payload?.asignature ||
+    !Array.isArray(payload?.students) ||
+    payload.students.length === 0
+  ) {
+    throw new Error("asignature y students son requeridos.");
+  }
+  try {
+    return await ApiClient.post("/student/enfasis", payload);
+  } catch (error) {
+    console.error("Error en registerStudentsEnfasis:", error);
+    throw error;
+  }
+}
+
 export async function updateEnfasisAsignatura(payload) {
   if (!payload?.id) throw new Error("id es requerido.");
   try {

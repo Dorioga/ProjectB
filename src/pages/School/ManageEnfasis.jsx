@@ -7,6 +7,7 @@ import PeriodSelector from "../../components/atoms/PeriodSelector";
 import ProfileEnfasis from "../../components/molecules/ProfileEnfasis";
 import ProfileEnfasisEdit from "../../components/molecules/ProfileEnfasisEdit";
 import ProfileNotaEnfasisEdit from "../../components/molecules/ProfileNotaEnfasisEdit";
+import ProfileStudentEnfasis from "../../components/molecules/ProfileStudentEnfasis";
 import RegisterRecords from "../GradeRecords/RegisterRecords";
 import useAuth from "../../lib/hooks/useAuth";
 import { useNotify } from "../../lib/hooks/useNotify";
@@ -27,6 +28,7 @@ const ManageEnfasis = () => {
   );
 
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [isStudentEnfasisOpen, setIsStudentEnfasisOpen] = useState(false);
   const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -378,14 +380,24 @@ const ManageEnfasis = () => {
               />
             </>
           ) : (
-            <SimpleButton
-              onClick={() => setIsRegisterOpen(true)}
-              msj="Registrar Enfasis"
-              icon="Plus"
-              bg="bg-secondary"
-              text="text-surface"
-              noRounded={false}
-            />
+            <>
+              <SimpleButton
+                onClick={() => setIsRegisterOpen(true)}
+                msj="Registrar Enfasis"
+                icon="Plus"
+                bg="bg-secondary"
+                text="text-surface"
+                noRounded={false}
+              />
+              <SimpleButton
+                onClick={() => setIsStudentEnfasisOpen(true)}
+                msj="Registrar estudiantes"
+                icon="UserPlus"
+                bg="bg-secondary"
+                text="text-surface"
+                noRounded={false}
+              />
+            </>
           )}
         </div>
       </div>
@@ -525,6 +537,18 @@ const ManageEnfasis = () => {
             resetFilters();
           }}
           onClose={() => setIsRegisterOpen(false)}
+        />
+      </Modal>
+
+      <Modal
+        isOpen={isStudentEnfasisOpen}
+        onClose={() => setIsStudentEnfasisOpen(false)}
+        title="Registrar estudiantes a énfasis"
+        size="7xl"
+      >
+        <ProfileStudentEnfasis
+          onSave={() => setIsStudentEnfasisOpen(false)}
+          onClose={() => setIsStudentEnfasisOpen(false)}
         />
       </Modal>
 
