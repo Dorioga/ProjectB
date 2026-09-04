@@ -1432,6 +1432,7 @@ const RegisterStudentRecords = () => {
         const mapped = (Array.isArray(list) ? list : []).map((l) => ({
           id: l.id_logro ?? l.id,
           descripcion: l.descripcion ?? l.description ?? l.nombre ?? "",
+          gestion: l.gestion ?? null,
         }));
         setLogrosOptionsByStudent((prev) => ({
           ...prev,
@@ -1488,6 +1489,7 @@ const RegisterStudentRecords = () => {
         const mapped = (Array.isArray(list) ? list : []).map((l) => ({
           id: l.id_logro ?? l.id,
           descripcion: l.descripcion ?? l.description ?? l.nombre ?? "",
+          gestion: l.gestion ?? null,
         }));
 
         setLogrosOptionsByStudent((prev) => ({
@@ -1931,116 +1933,135 @@ const RegisterStudentRecords = () => {
   handleEditRef.current = handleEdit;
 
   // Cell renderer estable para columna Logros (evita que se pierda foco al recrear columnas)
-  const renderLogrosCell = useCallback(({ row }) => {
-    const student = row.original;
-    const studentKey = getStudentKey(student);
+  const renderLogrosCell = useCallback(
+    ({ row }) => {
+      const student = row.original;
+      const studentKey = getStudentKey(student);
 
-    const comment = commentsByIdRef.current?.[studentKey] ?? "";
-    const tipoValue = tipoByStudentRef.current?.[studentKey] ?? "";
-    const logroOptions = logrosOptionsByStudentRef.current?.[studentKey] ?? [];
-    const selectedLogro = selectedLogroByStudentRef.current?.[studentKey] ?? "";
-    const loadingLogros = Boolean(
-      loadingLogrosByStudentRef.current?.[studentKey],
-    );
-    const observacionEnfasis =
-      observacionEnfasisByIdRef.current?.[studentKey] ?? "";
-    const editing = rowEditByIdRef.current?.[studentKey] !== false;
-    const studentValuesForCheck =
-      recordValuesByStudentRef.current?.[studentKey] ?? {};
-    const finalInfoForRow = computeFinalRecordRef.current(
-      studentValuesForCheck,
-    );
-    const selectsEnabled = Boolean(editing && finalInfoForRow?.isComplete);
+      const comment = commentsByIdRef.current?.[studentKey] ?? "";
+      const tipoValue = tipoByStudentRef.current?.[studentKey] ?? "";
+      const logroOptions =
+        logrosOptionsByStudentRef.current?.[studentKey] ?? [];
+      const selectedLogro =
+        selectedLogroByStudentRef.current?.[studentKey] ?? "";
+      const loadingLogros = Boolean(
+        loadingLogrosByStudentRef.current?.[studentKey],
+      );
+      const observacionEnfasis =
+        observacionEnfasisByIdRef.current?.[studentKey] ?? "";
+      const editing = rowEditByIdRef.current?.[studentKey] !== false;
+      const studentValuesForCheck =
+        recordValuesByStudentRef.current?.[studentKey] ?? {};
+      const finalInfoForRow = computeFinalRecordRef.current(
+        studentValuesForCheck,
+      );
+      const selectsEnabled = Boolean(editing && finalInfoForRow?.isComplete);
 
-    if (!editing) {
-      const logroText = (
-        Array.isArray(logroOptions)
-          ? logroOptions.find((l) => String(l.id) === String(selectedLogro))
-          : null
-      )?.descripcion;
-      const display =
-        logroText || comment || (selectedLogro ? String(selectedLogro) : "-");
+      if (!editing) {
+        const logroText = (
+          Array.isArray(logroOptions)
+            ? logroOptions.find((l) => String(l.id) === String(selectedLogro))
+            : null
+        )?.descripcion;
+        const display =
+          logroText || comment || (selectedLogro ? String(selectedLogro) : "-");
+
+        return (
+          <div className="p-2 text-sm text-gray-700 wrap-break-words">
+            <div>{display}</div>
+            {observacionEnfasis ? (
+              <div className="mt-1 text-xs text-gray-500">
+                <span className="font-medium">Obs. énfasis:</span>{" "}
+                {observacionEnfasis}
+              </div>
+            ) : null}
+          </div>
+        );
+      }
+
+      if (!selectsEnabled) {
+        return (
+          <div className="p-2 text-sm text-gray-600">
+            Completa todas las notas para habilitar Tipo/Logro
+          </div>
+        );
+      }
 
       return (
-        <div className="p-2 text-sm text-gray-700 wrap-break-words">
-          <div>{display}</div>
-          {observacionEnfasis ? (
-            <div className="mt-1 text-xs text-gray-500">
-              <span className="font-medium">Obs. énfasis:</span>{" "}
-              {observacionEnfasis}
-            </div>
-          ) : null}
-        </div>
-      );
-    }
-
-    if (!selectsEnabled) {
-      return (
-        <div className="p-2 text-sm text-gray-600">
-          Completa todas las notas para habilitar Tipo/Logro
-        </div>
-      );
-    }
-
-    return (
-      <div className="p-2 flex flex-col gap-2">
-        <CustomSelect
-          value={tipoValue}
-          options={tipoLogroOptionsRef.current}
-          onChange={(val) =>
-            handleTipoSelectForStudentRef.current(studentKey, val)
-          }
-          disabled={
-            loadingDataRef.current || loadingTipoLogroOptionsRef.current
-          }
-          loading={loadingTipoLogroOptionsRef.current}
-          placeholder="-- Tipo de logro --"
-          placeholderLoading="Cargando..."
-          emptyMessage="Sin tipos disponibles"
-        />
-
-        <select
-          value={selectedLogro}
-          onChange={(e) =>
-            handleLogroSelectForStudent(studentKey, e.target.value)
-          }
-          className="w-full min-w-[200px] p-2 border rounded bg-surface text-sm tour-select-logro"
-          disabled={
-            loadingDataRef.current ||
-            loadingLogros ||
-            !(Array.isArray(logroOptions) && logroOptions.length > 0)
-          }
-        >
-          <option value="">
-            {loadingLogros ? "Cargando logros..." : "-- Selecciona logro --"}
-          </option>
-          {Array.isArray(logroOptions) &&
-            logroOptions.map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.descripcion}
-              </option>
-            ))}
-        </select>
-
-        <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-600">
-            Observación énfasis
-          </label>
-          <textarea
-            value={observacionEnfasis}
-            onChange={(e) =>
-              handleObservacionEnfasisChange(studentKey, e.target.value)
+        <div className="p-2 flex flex-col gap-2">
+          <CustomSelect
+            value={tipoValue}
+            options={tipoLogroOptionsRef.current}
+            onChange={(val) =>
+              handleTipoSelectForStudentRef.current(studentKey, val)
             }
-            className="w-full min-w-[200px] p-2 border rounded bg-surface text-sm resize-none"
-            placeholder="Ingresa una observación..."
-            rows={2}
-            disabled={loadingDataRef.current}
+            disabled={
+              loadingDataRef.current || loadingTipoLogroOptionsRef.current
+            }
+            loading={loadingTipoLogroOptionsRef.current}
+            placeholder="-- Tipo de logro --"
+            placeholderLoading="Cargando..."
+            emptyMessage="Sin tipos disponibles"
           />
+
+          <select
+            value={selectedLogro}
+            onChange={(e) =>
+              handleLogroSelectForStudent(studentKey, e.target.value)
+            }
+            className="w-full min-w-[200px] p-2 border rounded bg-surface text-sm tour-select-logro"
+            disabled={
+              loadingDataRef.current ||
+              loadingLogros ||
+              !(Array.isArray(logroOptions) && logroOptions.length > 0)
+            }
+          >
+            <option value="">
+              {loadingLogros ? "Cargando logros..." : "-- Selecciona logro --"}
+            </option>
+            {(() => {
+              const groups = {};
+              (Array.isArray(logroOptions) ? logroOptions : []).forEach((l) => {
+                const label =
+                  String(l.gestion ?? "").toLowerCase() === "general"
+                    ? "General"
+                    : "Por grado";
+                if (!groups[label]) groups[label] = [];
+                groups[label].push(l);
+              });
+              return Object.keys(groups).map((label) => (
+                <optgroup key={label} label={label}>
+                  {groups[label].map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.descripcion}
+                    </option>
+                  ))}
+                </optgroup>
+              ));
+            })()}
+          </select>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-gray-600">
+              Observación énfasis
+            </label>
+            <textarea
+              value={observacionEnfasis}
+              onChange={(e) =>
+                handleObservacionEnfasisChange(studentKey, e.target.value)
+              }
+              className="w-full min-w-[200px] p-2 border rounded bg-surface text-sm resize-none"
+              placeholder="Ingresa una observación..."
+              rows={2}
+              disabled={loadingDataRef.current}
+            />
+          </div>
         </div>
-      </div>
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+      );
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    },
+    [tipoByStudent, selectedLogroByStudent],
+  );
 
   // Definir las columnas para DataTable
   const tableColumns = useMemo(() => {
@@ -2371,6 +2392,11 @@ const RegisterStudentRecords = () => {
     handleObservacionEnfasisChange,
     sanitizeGradeInput,
     periodSelected,
+    tipoByStudent,
+    selectedLogroByStudent,
+    logrosOptionsByStudent,
+    loadingLogrosByStudent,
+    commentsById,
     // Grado Transición
     isTransicion,
     purposeOptions,
@@ -2408,7 +2434,9 @@ const RegisterStudentRecords = () => {
     transicionItemsByStudent,
     transicionSavingById,
     tipoLogroOptions,
+    tipoByStudent,
     selectedLogroByStudent,
+    commentsById,
     observacionEnfasisById,
     logrosOptionsByStudent,
     loadingLogrosByStudent,

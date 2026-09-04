@@ -10,6 +10,7 @@ import useTeacher from "../../lib/hooks/useTeacher";
 import useAuth from "../../lib/hooks/useAuth";
 import useData from "../../lib/hooks/useData";
 import useSchool from "../../lib/hooks/useSchool";
+import { getSubjectsBySede } from "../../services/teacherService";
 
 const ProfileLogro = ({
   onSubmit,
@@ -21,6 +22,7 @@ const ProfileLogro = ({
   initialGrade,
   initialAsignature,
   initialTipoLogro,
+  modo = "normal",
 }) => {
   const { idInstitution, idSede, nameSede, idDocente, token, rol } = useAuth();
   const { institutionSedes, loadInstitutionSedes } = useData();
@@ -48,6 +50,11 @@ const ProfileLogro = ({
 
   const [tipos, setTipos] = useState([]);
   const [loadingTipos, setLoadingTipos] = useState(false);
+
+  const isGeneral = modo === "general";
+  const [subjectsOptions, setSubjectsOptions] = useState([]);
+  const [loadingSubjects, setLoadingSubjects] = useState(false);
+  const [generalDesc, setGeneralDesc] = useState("");
 
   const idCounter = useRef(0);
   const [periodRows, setPeriodRows] = useState({});
@@ -353,6 +360,28 @@ const ProfileLogro = ({
     };
   }, [getLogroType]);
 
+  useEffect(() => {
+    if (!isGeneral || !sedeSelected) {
+      setSubjectsOptions([]);
+      return;
+    }
+    let mounted = true;
+    setLoadingSubjects(true);
+    getSubjectsBySede(sedeSelected)
+      .then((res) => {
+        if (mounted) setSubjectsOptions(Array.isArray(res) ? res : []);
+      })
+      .catch(() => {
+        if (mounted) setSubjectsOptions([]);
+      })
+      .finally(() => {
+        if (mounted) setLoadingSubjects(false);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [isGeneral, sedeSelected]);
+
   // Si vienen valores iniciales (editar), poblar los campos del formulario
   useEffect(() => {
     if (!initialValues) return;
@@ -455,6 +484,7 @@ const ProfileLogro = ({
         : idInstitution
           ? Number(idInstitution)
           : null,
+      ...(isGeneral ? { gestion: "general" } : {}),
     };
 
     if (onSubmit) return await onSubmit(payload);
@@ -548,8 +578,35 @@ const ProfileLogro = ({
           />
         </div>
 
+        {isGeneral && (
+          <div id="tour-pl-general-asignature">
+            <label className="">Asignatura</label>
+            <select
+              value={asignature}
+              onChange={(e) => setAsignature(e.target.value)}
+              disabled={!sedeSelected || loadingSubjects}
+              className="w-full p-2 border rounded bg-surface"
+            >
+              <option value="">
+                {loadingSubjects
+                  ? "Cargando asignaturas..."
+                  : "Selecciona asignatura"}
+              </option>
+              {!loadingSubjects &&
+                subjectsOptions.map((s) => (
+                  <option
+                    key={s.id_asignatura ?? s.id}
+                    value={s.id_asignatura ?? s.id}
+                  >
+                    {s.nombre_asignatura ?? s.nombre ?? s.name ?? s.id}
+                  </option>
+                ))}
+            </select>
+          </div>
+        )}
+
         {/* Orden condicional según rol */}
-        {isDocente ? (
+        {!isGeneral && (isDocente ? (
           <>
             {/* DOCENTE: Sede → Grado → Asignatura → Jornada */}
             <div id="tour-pl-grade">
@@ -655,7 +712,7 @@ const ProfileLogro = ({
               />
             </div>
           </>
-        )}
+        ))}
 
         <div id="tour-pl-type">
           <label className="">Tipo de logro</label>
@@ -680,7 +737,7 @@ const ProfileLogro = ({
           </select>
         </div>
 
-        {initialValues && (
+        {!isGeneral && initialValues && (
           <div id="tour-pl-estado">
             <label className="">Estado del logro</label>
             <select
@@ -694,7 +751,7 @@ const ProfileLogro = ({
           </div>
         )}
       </div>
-      {!initialValues && (
+      {!initialValues && !isGeneral && (
         <div className="grid grid-cols-5 gap-4">
           <p className="col-span-4"></p>
           <SimpleButton
@@ -707,7 +764,19 @@ const ProfileLogro = ({
           />
         </div>
       )}
-      {initialValues ? (
+      {isGeneral ? (
+        <div id="tour-pl-description">
+          <label className="block text-sm font-medium mb-1">
+            Descripción <span className="text-red-600">*</span>
+          </label>
+          <input
+            className="w-full p-2 border rounded bg-surface"
+            value={generalDesc}
+            onChange={(e) => setGeneralDesc(e.target.value)}
+            placeholder="Descripción del logro general"
+          />
+        </div>
+      ) : initialValues ? (
         <div id="tour-pl-description">
           <label className="block text-sm font-medium mb-1">
             Descripción <span className="text-red-600">*</span>
@@ -777,6 +846,29 @@ const ProfileLogro = ({
           bg="bg-gray-200"
           text="text-gray-700"
         />
+
+        {isGeneral && (
+          <SimpleButton
+            msj="Registrar logro"
+            bg="bg-secondary"
+            text="text-surface"
+            icon="Save"
+            onClick={async () => {
+              const text = (generalDesc || "").trim();
+              if (!text) {
+                notify.error("La descripción es obligatoria.");
+                return;
+              }
+              try {
+                await handleSearch(text, "");
+                setGeneralDesc("");
+              } catch (err) {
+                // error ya manejado por handleSearch/onSubmit
+                console.warn("ProfileLogro - registrar logro general error:", err);
+              }
+            }}
+          />
+        )}
 
         {initialValues && (
           <SimpleButton

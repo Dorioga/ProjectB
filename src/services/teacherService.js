@@ -239,6 +239,22 @@ export async function getLogroType() {
 }
 
 /**
+ * Obtiene las asignaturas de una sede
+ * Endpoint esperado: GET /subjects/:id
+ */
+export async function getSubjectsBySede(id) {
+  if (!id) throw new Error("id es requerido.");
+  try {
+    const res = await ApiClient.get(`/subjects/${Number(id)}`);
+    const data = Array.isArray(res) ? res : (res?.data ?? []);
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error("teacherService - getSubjectsBySede error:", error);
+    throw error;
+  }
+}
+
+/**
  * Consulta logros por institución / asignatura / grado / periodo / tipo
  * Endpoint esperado: POST /logro_institution
  */

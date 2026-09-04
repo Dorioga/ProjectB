@@ -42,6 +42,7 @@ const ManageLogro = () => {
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isGeneralModalOpen, setIsGeneralModalOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedLogro, setSelectedLogro] = useState(null);
   const [results, setResults] = useState([]);
@@ -72,6 +73,8 @@ const ManageLogro = () => {
     [rol],
   );
 
+  const isAdminInstitucional = useMemo(() => String(rol) === "3", [rol]);
+
   const teacherGradesParams = useMemo(
     () => ({
       ...(idDocente && { idTeacher: Number(idDocente) }),
@@ -88,9 +91,7 @@ const ManageLogro = () => {
         ? {
             idGrade: Number(grade),
             idTeacher: Number(idDocente),
-            ...(workdaySelected
-              ? { idWorkday: Number(workdaySelected) }
-              : {}),
+            ...(workdaySelected ? { idWorkday: Number(workdaySelected) } : {}),
           }
         : {},
     [grade, idDocente, workdaySelected],
@@ -342,7 +343,9 @@ const ManageLogro = () => {
         </div>
         <div
           id="tour-ml-add-btn"
-          className=" grid grid-cols-2 col-span-2 xl:col-span-2 gap-2"
+          className={`grid col-span-2 xl:col-span-2 gap-2 ${
+            isAdminInstitucional ? "grid-cols-3" : "grid-cols-2"
+          }`}
         >
           <SimpleButton
             onClick={() => setIsModalOpen(true)}
@@ -351,6 +354,15 @@ const ManageLogro = () => {
             bg="bg-secondary"
             text="text-surface"
           />
+          {isAdminInstitucional && (
+            <SimpleButton
+              onClick={() => setIsGeneralModalOpen(true)}
+              msj="Registrar logros generales"
+              icon="Globe"
+              bg="bg-secondary"
+              text="text-surface"
+            />
+          )}
           <SimpleButton
             type="button"
             onClick={tourManageLogro}
@@ -545,6 +557,19 @@ const ManageLogro = () => {
       >
         <ProfileLogro
           onClose={() => setIsModalOpen(false)}
+          onSubmit={handleSearch}
+        />
+      </Modal>
+
+      <Modal
+        isOpen={isGeneralModalOpen}
+        onClose={() => setIsGeneralModalOpen(false)}
+        title="Registrar logros generales"
+        size="5xl"
+      >
+        <ProfileLogro
+          modo="general"
+          onClose={() => setIsGeneralModalOpen(false)}
           onSubmit={handleSearch}
         />
       </Modal>
