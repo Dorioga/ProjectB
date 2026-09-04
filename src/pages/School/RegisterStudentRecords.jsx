@@ -491,10 +491,6 @@ const normalize = (value) =>
 
 const RegisterStudentRecords = () => {
   const {
-    records,
-    loadingRecords,
-    errorRecords,
-    reloadRecords,
     getStudentGrades,
     createTransitionNote,
     saveTransitionStudentNote,
@@ -892,31 +888,6 @@ const RegisterStudentRecords = () => {
       }
     }
   }, [rowEditById, recordValuesByStudent, loadTipoLogroOptions]);
-
-  const reloadOnceRef = useRef(false);
-
-  useEffect(() => {
-    if (reloadOnceRef.current) return;
-    reloadOnceRef.current = true;
-
-    try {
-      const res = reloadRecords();
-      if (res && typeof res.then === "function") {
-        res
-          .then(() => notify.success("Estructura de notas recargada"))
-          .catch((err) => {
-            console.error("reloadRecords error:", err);
-            notify.error("No fue posible recargar la estructura de notas");
-          });
-      } else {
-        notify.success("Estructura de notas recargada");
-      }
-    } catch (err) {
-      console.error("reloadRecords threw:", err);
-      notify.error("No fue posible recargar la estructura de notas");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reloadRecords]);
 
   useEffect(() => {
     console.debug(
@@ -2627,7 +2598,7 @@ const RegisterStudentRecords = () => {
         </div>
       ) : null}
 
-      {loadingRecords || loadingData ? (
+      {loadingData ? (
         <div className="p-4">
           <Loader message="Cargando estructura de notas y estudiantes..." />
         </div>

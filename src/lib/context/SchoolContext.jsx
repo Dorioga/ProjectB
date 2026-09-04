@@ -25,9 +25,6 @@ export function SchoolProvider({ children }) {
   const [journeys, setJourneys] = useState([]);
   const [loadingJourneys, setLoadingJourneys] = useState(false);
   const [errorJourneys, setErrorJourneys] = useState(null);
-  const [records, setRecords] = useState([]);
-  const [loadingRecords, setLoadingRecords] = useState(false);
-  const [errorRecords, setErrorRecords] = useState(null);
   const [periods, setPeriods] = useState([]);
   const [loadingPeriods, setLoadingPeriods] = useState(false);
   const [errorPeriods, setErrorPeriods] = useState(null);
@@ -156,19 +153,6 @@ export function SchoolProvider({ children }) {
 
   const registerSlotsInternal = useCallback(async (payload) => {
     return authService.registerSlotsInternal(payload);
-  }, []);
-
-  const loadRecords = useCallback(async (params = {}) => {
-    setLoadingRecords(true);
-    setErrorRecords(null);
-    try {
-      const res = await schoolService.loadRecords(params);
-      setRecords(Array.isArray(res) ? res : (res?.data ?? []));
-    } catch (err) {
-      setErrorRecords(err);
-    } finally {
-      setLoadingRecords(false);
-    }
   }, []);
 
   const addSchool = useCallback(async (payload) => {
@@ -655,9 +639,6 @@ export function SchoolProvider({ children }) {
       journeys,
       loadingJourneys,
       errorJourneys,
-      records,
-      loadingRecords,
-      errorRecords,
       periods,
       loadingPeriods,
       errorPeriods,
@@ -666,7 +647,6 @@ export function SchoolProvider({ children }) {
       errorAreas,
       reloadSedes: loadSedes,
       reloadJourneys: loadJourneys,
-      reloadRecords: loadRecords,
       loadPeriods,
       loadAreas,
       addSchool,
@@ -726,15 +706,11 @@ export function SchoolProvider({ children }) {
       journeys,
       loadingJourneys,
       errorJourneys,
-      records,
-      loadingRecords,
-      errorRecords,
       periods,
       loadingPeriods,
       errorPeriods,
       loadSedes,
       loadJourneys,
-      loadRecords,
       loadPeriods,
       addSchool,
       updateSchool,

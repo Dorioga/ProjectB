@@ -812,29 +812,6 @@ export async function getSedes(params = {}) {
 }
 
 /**
- * Obtiene los registros académicos.
- *
- * Endpoint esperado: POST /records
- * @param {Object} params - Filtros opcionales
- * @returns {Promise<Array>} Array de registros
- */
-export async function loadRecords(params = {}) {
-  try {
-    const res = await ApiClient.instance.post("/records", params);
-    const data = res;
-    if (Array.isArray(data)) return data;
-    if (data && typeof data === "object" && Array.isArray(data.data))
-      return data.data;
-    if (data && typeof data === "object" && "data" in data) return data.data;
-    if (data !== undefined && data !== null) return data;
-    return [];
-  } catch (error) {
-    console.error("Error en loadRecords:", error);
-    throw error;
-  }
-}
-
-/**
  * Actualiza una institución (alias de updateInstitution para compatibilidad).
  *
  * @param {string|number} id

@@ -122,7 +122,17 @@ const ProfileStudentEnfasis = ({ onSave, onClose }) => {
         id: "select",
         header: "Seleccionar",
         cell: ({ row }) => {
+          const enfasis = String(row.original.enfasis ?? "").toLowerCase();
           const id = studentId(row.original);
+          if (enfasis === "asignado") {
+            return (
+              <div className="flex items-center justify-center">
+                <span className="px-2 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-700">
+                  Asignado
+                </span>
+              </div>
+            );
+          }
           if (id == null) return null;
           return (
             <div className="flex items-center justify-center">
