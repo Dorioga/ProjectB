@@ -151,6 +151,41 @@ export async function getTeacherNotesEnfasis(payload) {
   }
 }
 
+export async function getStudentEnfasis(id) {
+  if (!id) throw new Error("id es requerido.");
+  try {
+    const res = await ApiClient.get(`/student/emphasis/${Number(id)}`);
+    const data = Array.isArray(res) ? res : (res?.data ?? []);
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error("Error en getStudentEnfasis:", error);
+    throw error;
+  }
+}
+
+export async function getRecordStudent(payload) {
+  const { fk_docente, fk_asignatura_enfasis, fk_period, fk_estudiante } =
+    payload || {};
+  if (!fk_docente || !fk_asignatura_enfasis || !fk_period || !fk_estudiante) {
+    throw new Error(
+      "fk_docente, fk_asignatura_enfasis, fk_period y fk_estudiante son requeridos.",
+    );
+  }
+  try {
+    const res = await ApiClient.post("/student/notes/emphasis", {
+      fk_docente: Number(fk_docente),
+      fk_asignatura_enfasis: Number(fk_asignatura_enfasis),
+      fk_period: Number(fk_period),
+      fk_estudiante: Number(fk_estudiante),
+    });
+    const data = Array.isArray(res) ? res : (res?.data ?? []);
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error("Error en getRecordStudent:", error);
+    throw error;
+  }
+}
+
 export async function updateNotaEnfasis(payload) {
   if (!payload?.id) throw new Error("id es requerido.");
   try {

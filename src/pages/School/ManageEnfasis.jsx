@@ -9,6 +9,7 @@ import ProfileEnfasisEdit from "../../components/molecules/ProfileEnfasisEdit";
 import ProfileNotaEnfasisEdit from "../../components/molecules/ProfileNotaEnfasisEdit";
 import ProfileStudentEnfasis from "../../components/molecules/ProfileStudentEnfasis";
 import RegisterRecords from "../GradeRecords/RegisterRecords";
+import RegisterStudentEnfasisRecords from "./RegisterStudentEnfasisRecords";
 import useAuth from "../../lib/hooks/useAuth";
 import { useNotify } from "../../lib/hooks/useNotify";
 import {
@@ -30,6 +31,7 @@ const ManageEnfasis = () => {
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [isStudentEnfasisOpen, setIsStudentEnfasisOpen] = useState(false);
   const [isNotesOpen, setIsNotesOpen] = useState(false);
+  const [isAssignNotesOpen, setIsAssignNotesOpen] = useState(false);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({ sede: "", modalidad: "", area: "" });
@@ -369,9 +371,7 @@ const ManageEnfasis = () => {
                 noRounded={false}
               />
               <SimpleButton
-                onClick={() =>
-                  notify.info("Funcionalidad 'Asignar notas' pendiente.")
-                }
+                onClick={() => setIsAssignNotesOpen(true)}
                 msj="Asignar notas"
                 icon="ClipboardList"
                 bg="bg-secondary"
@@ -559,6 +559,17 @@ const ManageEnfasis = () => {
         size="7xl"
       >
         <RegisterRecords modo="enfasis" onClose={() => setIsNotesOpen(false)} />
+      </Modal>
+
+      <Modal
+        isOpen={isAssignNotesOpen}
+        onClose={() => setIsAssignNotesOpen(false)}
+        title="Asignar notas de énfasis"
+        size="7xl"
+      >
+        <RegisterStudentEnfasisRecords
+          onClose={() => setIsAssignNotesOpen(false)}
+        />
       </Modal>
 
       <Modal
