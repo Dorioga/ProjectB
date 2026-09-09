@@ -186,6 +186,22 @@ export async function getRecordStudent(payload) {
   }
 }
 
+export async function saveAssignmentNoteEmphasis(payload) {
+  if (
+    !payload?.note_student_emphasis ||
+    !Array.isArray(payload.note_student_emphasis) ||
+    payload.note_student_emphasis.length === 0
+  ) {
+    throw new Error("note_student_emphasis es requerido.");
+  }
+  try {
+    return await ApiClient.post("/assignment/note/emphasis", payload);
+  } catch (error) {
+    console.error("Error en saveAssignmentNoteEmphasis:", error);
+    throw error;
+  }
+}
+
 export async function updateNotaEnfasis(payload) {
   if (!payload?.id) throw new Error("id es requerido.");
   try {

@@ -11,7 +11,7 @@ import useData from "../../lib/hooks/useData";
 import useAuth from "../../lib/hooks/useAuth";
 import tourRegisterRecords from "../../tour/tourRegisterRecords";
 import {
-  getInstitutionEmphasisArea,
+  getTeacherAsignatures,
   createEnfasisNote,
 } from "../../services/enfasisService";
 
@@ -58,10 +58,10 @@ const RegisterRecords = ({ onClose, modo = "normal" }) => {
     useState(false);
 
   useEffect(() => {
-    if (!isEnfasis || !idInstitution) return;
+    if (!isEnfasis || !idDocente) return;
     let mounted = true;
     setLoadingEnfasisAsignatures(true);
-    getInstitutionEmphasisArea({ institution: Number(idInstitution) })
+    getTeacherAsignatures(idDocente)
       .then((res) => {
         if (mounted)
           setEnfasisAsignatures(Array.isArray(res) ? res : []);
@@ -75,7 +75,7 @@ const RegisterRecords = ({ onClose, modo = "normal" }) => {
     return () => {
       mounted = false;
     };
-  }, [isEnfasis, idInstitution]);
+  }, [isEnfasis, idDocente]);
 
   // ── Modal de notas existentes ──
   const [existingNotesModal, setExistingNotesModal] = useState(false);

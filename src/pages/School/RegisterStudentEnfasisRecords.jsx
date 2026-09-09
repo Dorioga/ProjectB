@@ -9,6 +9,7 @@ import {
   getTeacherAsignatures,
   getStudentEnfasis,
   getRecordStudent,
+  saveAssignmentNoteEmphasis,
 } from "../../services/enfasisService";
 
 const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
@@ -30,11 +31,15 @@ const RegisterStudentEnfasisRecords = ({ onClose }) => {
   const [valuesByStudent, setValuesByStudent] = useState({});
   const [observacionesByStudent, setObservacionesByStudent] = useState({});
   const [loadingData, setLoadingData] = useState(false);
+  const [savingByStudent, setSavingByStudent] = useState({});
 
   const valuesByStudentRef = useRef(valuesByStudent);
   const observacionesByStudentRef = useRef(observacionesByStudent);
+  const savingByStudentRef = useRef(savingByStudent);
+  const handleSaveStudentRef = useRef(null);
   valuesByStudentRef.current = valuesByStudent;
   observacionesByStudentRef.current = observacionesByStudent;
+  savingByStudentRef.current = savingByStudent;
 
   useEffect(() => {
     if (!idDocente) return;
@@ -158,6 +163,18 @@ const RegisterStudentEnfasisRecords = ({ onClose }) => {
     setObservacionesByStudent((prev) => ({ ...prev, [studentKey]: value }));
   };
 
+  // Recompute cada vez que cambian valores/observaciones para que el DataTable
+  // (React.memo) se re-renderice y las celdas reflejen la edición.
+  const tableData = useMemo(
+    () =>
+      (Array.isArray(students) ? students : []).map((s) => ({
+        ...s,
+        __edit: valuesByStudent[getStudentKey(s)],
+        __obs: observacionesByStudent[getStudentKey(s)],
+      })),
+    [students, valuesByStudent, observacionesByStudent],
+  );
+
   const computeFinal = (studentKey) => {
     const values = valuesByStudentRef.current?.[studentKey] ?? {};
     const weighted = (Array.isArray(recordsList) ? recordsList : []).reduce(
@@ -170,6 +187,49 @@ const RegisterStudentEnfasisRecords = ({ onClose }) => {
     );
     return round2(weighted);
   };
+
+  const handleSaveStudent = async (student) => {
+    const studentKey = getStudentKey(student);
+    setSavingByStudent((prev) => ({ ...prev, [studentKey]: true }));
+    try {
+      const values = valuesByStudentRef.current?.[studentKey] ?? {};
+      const observacion =
+        observacionesByStudentRef.current?.[studentKey] ?? "";
+      const finalNote = computeFinal(studentKey);
+      const noteStudentEmphasis = (
+        Array.isArray(recordsList) ? recordsList : []
+      )
+        .filter((r) => r.id_nota != null)
+        .map((r) => {
+          const valueRaw = values[noteKey(r)] ?? "";
+          const value = valueRaw !== "" ? Number(valueRaw) : null;
+          const p = Number(r.porcentaje) || 0;
+          return {
+            fk_student: Number(studentKey),
+            nota_asignatura_enfasis: Number(r.id_nota),
+            valor_nota: value,
+            logro_nota_enfasis: "",
+            note_percentage: value != null ? round2(value * (p / 100)) : null,
+            final_note: finalNote,
+            recovery_note: null,
+            observacion_enfasis: observacion,
+          };
+        });
+      await saveAssignmentNoteEmphasis({
+        note_student_emphasis: noteStudentEmphasis,
+      });
+      notify.success("Notas del estudiante guardadas exitosamente.");
+    } catch (err) {
+      console.error(
+        "RegisterStudentEnfasisRecords - saveAssignmentNoteEmphasis error:",
+        err,
+      );
+      notify.error(err?.message || "Error al guardar las notas.");
+    } finally {
+      setSavingByStudent((prev) => ({ ...prev, [studentKey]: false }));
+    }
+  };
+  handleSaveStudentRef.current = handleSaveStudent;
 
   const tableColumns = useMemo(() => {
     const columns = [
@@ -250,6 +310,29 @@ const RegisterStudentEnfasisRecords = ({ onClose }) => {
       },
     });
 
+    columns.push({
+      id: "acciones",
+      header: "Acciones",
+      cell: ({ row }) => {
+        const sKey = getStudentKey(row.original);
+        const saving = Boolean(savingByStudentRef.current?.[sKey]);
+        return (
+          <div className="p-2 flex items-center justify-center">
+            <div className="w-32">
+              <SimpleButton
+                onClick={() => handleSaveStudentRef.current?.(row.original)}
+                msj={saving ? "Guardando..." : "Guardar"}
+                icon={saving ? "Loader" : "Save"}
+                bg="bg-secondary"
+                text="text-surface"
+                disabled={saving}
+              />
+            </div>
+          </div>
+        );
+      },
+    });
+
     return columns;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recordsList]);
@@ -299,7 +382,7 @@ const RegisterStudentEnfasisRecords = ({ onClose }) => {
       ) : (
         <div className="relative flex-1 min-h-[300px]">
           <DataTable
-            data={students}
+            data={tableData}
             columns={tableColumns}
             fileName="Export_Notas_Enfasis"
             loaderMessage="Cargando estudiantes..."
