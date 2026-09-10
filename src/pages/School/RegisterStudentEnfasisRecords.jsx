@@ -10,6 +10,7 @@ import {
   getStudentEnfasis,
   getRecordStudent,
   saveAssignmentNoteEmphasis,
+  updateNoteStudentEmphasis,
 } from "../../services/enfasisService";
 
 const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
@@ -34,12 +35,14 @@ const RegisterStudentEnfasisRecords = ({ onClose }) => {
   const [savingByStudent, setSavingByStudent] = useState({});
   const [rowEditById, setRowEditById] = useState({});
   const [rowInitialValuesById, setRowInitialValuesById] = useState({});
+  const [notaMetaByStudent, setNotaMetaByStudent] = useState({});
 
   const valuesByStudentRef = useRef(valuesByStudent);
   const observacionesByStudentRef = useRef(observacionesByStudent);
   const savingByStudentRef = useRef(savingByStudent);
   const rowEditByIdRef = useRef(rowEditById);
   const rowInitialValuesByIdRef = useRef(rowInitialValuesById);
+  const notaMetaByStudentRef = useRef(notaMetaByStudent);
   const handleSaveStudentRef = useRef(null);
   const handleToggleEditRef = useRef(null);
   valuesByStudentRef.current = valuesByStudent;
@@ -47,6 +50,7 @@ const RegisterStudentEnfasisRecords = ({ onClose }) => {
   savingByStudentRef.current = savingByStudent;
   rowEditByIdRef.current = rowEditById;
   rowInitialValuesByIdRef.current = rowInitialValuesById;
+  notaMetaByStudentRef.current = notaMetaByStudent;
 
   useEffect(() => {
     if (!idDocente) return;
@@ -80,6 +84,7 @@ const RegisterStudentEnfasisRecords = ({ onClose }) => {
       setObservacionesByStudent({});
       setRowEditById({});
       setRowInitialValuesById({});
+      setNotaMetaByStudent({});
       return;
     }
     setLoadingData(true);
@@ -103,6 +108,7 @@ const RegisterStudentEnfasisRecords = ({ onClose }) => {
       const notesMap = new Map();
       const newValues = {};
       const newObservaciones = {};
+      const newMeta = {};
       settled.forEach((res) => {
         if (res.status !== "fulfilled") return;
         const data = Array.isArray(res.value)
@@ -134,12 +140,22 @@ const RegisterStudentEnfasisRecords = ({ onClose }) => {
           if (obs != null && newObservaciones[studentKey] === undefined) {
             newObservaciones[studentKey] = String(obs);
           }
+          const metaId = n?.id_student_nota_asignatura_enfasis ?? null;
+          if (metaId != null) {
+            newMeta[studentKey] = newMeta[studentKey] || {};
+            newMeta[studentKey][key] = {
+              id: metaId,
+              nota_periodo_porcentual:
+                n?.nota_periodo_porcentual ?? null,
+            };
+          }
         });
       });
 
       setRecordsList(Array.from(notesMap.values()));
       setValuesByStudent(newValues);
       setObservacionesByStudent(newObservaciones);
+      setNotaMetaByStudent(newMeta);
 
       const editMap = {};
       const initial = {};
@@ -167,6 +183,7 @@ const RegisterStudentEnfasisRecords = ({ onClose }) => {
       setObservacionesByStudent({});
       setRowEditById({});
       setRowInitialValuesById({});
+      setNotaMetaByStudent({});
     } finally {
       setLoadingData(false);
     }
@@ -221,15 +238,27 @@ const RegisterStudentEnfasisRecords = ({ onClose }) => {
       const observacion =
         observacionesByStudentRef.current?.[studentKey] ?? "";
       const finalNote = computeFinal(studentKey);
-      const noteStudentEmphasis = (
-        Array.isArray(recordsList) ? recordsList : []
-      )
-        .filter((r) => r.id_nota != null)
-        .map((r) => {
-          const valueRaw = values[noteKey(r)] ?? "";
-          const value = valueRaw !== "" ? Number(valueRaw) : null;
-          const p = Number(r.porcentaje) || 0;
-          return {
+      const meta = notaMetaByStudentRef.current?.[studentKey] ?? {};
+      const insertArray = [];
+      const updateArray = [];
+      (Array.isArray(recordsList) ? recordsList : []).forEach((r) => {
+        if (r.id_nota == null) return;
+        const valueRaw = values[noteKey(r)] ?? "";
+        const value = valueRaw !== "" ? Number(valueRaw) : null;
+        const p = Number(r.porcentaje) || 0;
+        const recordMeta = meta[noteKey(r)];
+        if (recordMeta?.id != null) {
+          updateArray.push({
+            id_estudiante_nota_enfasis: Number(recordMeta.id),
+            value_note: value,
+            nota_periodo_porcentual:
+              recordMeta.nota_periodo_porcentual ?? null,
+            nota_final: finalNote,
+            recovery_note: null,
+            observacion_enfasis: observacion,
+          });
+        } else {
+          insertArray.push({
             fk_student: Number(studentKey),
             nota_asignatura_enfasis: Number(r.id_nota),
             valor_nota: value,
@@ -238,11 +267,23 @@ const RegisterStudentEnfasisRecords = ({ onClose }) => {
             final_note: finalNote,
             recovery_note: null,
             observacion_enfasis: observacion,
-          };
-        });
-      await saveAssignmentNoteEmphasis({
-        note_student_emphasis: noteStudentEmphasis,
+          });
+        }
       });
+      if (insertArray.length === 0 && updateArray.length === 0) {
+        notify.info("No hay notas para guardar en esta fila.");
+        return;
+      }
+      if (insertArray.length > 0) {
+        await saveAssignmentNoteEmphasis({
+          note_student_emphasis: insertArray,
+        });
+      }
+      if (updateArray.length > 0) {
+        await updateNoteStudentEmphasis({
+          note_student_emphasis: updateArray,
+        });
+      }
       notify.success("Notas del estudiante guardadas exitosamente.");
       await loadData();
       setRowInitialValuesById((prev) => ({

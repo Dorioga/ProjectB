@@ -202,6 +202,22 @@ export async function saveAssignmentNoteEmphasis(payload) {
   }
 }
 
+export async function updateNoteStudentEmphasis(payload) {
+  if (
+    !payload?.note_student_emphasis ||
+    !Array.isArray(payload.note_student_emphasis) ||
+    payload.note_student_emphasis.length === 0
+  ) {
+    throw new Error("note_student_emphasis es requerido.");
+  }
+  try {
+    return await ApiClient.patch("/notes/student/emphasis/update", payload);
+  } catch (error) {
+    console.error("Error en updateNoteStudentEmphasis:", error);
+    throw error;
+  }
+}
+
 export async function updateNotaEnfasis(payload) {
   if (!payload?.id) throw new Error("id es requerido.");
   try {
