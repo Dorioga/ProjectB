@@ -32,14 +32,21 @@ const RegisterStudentEnfasisRecords = ({ onClose }) => {
   const [observacionesByStudent, setObservacionesByStudent] = useState({});
   const [loadingData, setLoadingData] = useState(false);
   const [savingByStudent, setSavingByStudent] = useState({});
+  const [rowEditById, setRowEditById] = useState({});
+  const [rowInitialValuesById, setRowInitialValuesById] = useState({});
 
   const valuesByStudentRef = useRef(valuesByStudent);
   const observacionesByStudentRef = useRef(observacionesByStudent);
   const savingByStudentRef = useRef(savingByStudent);
+  const rowEditByIdRef = useRef(rowEditById);
+  const rowInitialValuesByIdRef = useRef(rowInitialValuesById);
   const handleSaveStudentRef = useRef(null);
+  const handleToggleEditRef = useRef(null);
   valuesByStudentRef.current = valuesByStudent;
   observacionesByStudentRef.current = observacionesByStudent;
   savingByStudentRef.current = savingByStudent;
+  rowEditByIdRef.current = rowEditById;
+  rowInitialValuesByIdRef.current = rowInitialValuesById;
 
   useEffect(() => {
     if (!idDocente) return;
@@ -71,6 +78,8 @@ const RegisterStudentEnfasisRecords = ({ onClose }) => {
       setRecordsList([]);
       setValuesByStudent({});
       setObservacionesByStudent({});
+      setRowEditById({});
+      setRowInitialValuesById({});
       return;
     }
     setLoadingData(true);
@@ -131,6 +140,19 @@ const RegisterStudentEnfasisRecords = ({ onClose }) => {
       setRecordsList(Array.from(notesMap.values()));
       setValuesByStudent(newValues);
       setObservacionesByStudent(newObservaciones);
+
+      const editMap = {};
+      const initial = {};
+      (Array.isArray(studentsArray) ? studentsArray : []).forEach((s) => {
+        const sKey = getStudentKey(s);
+        const hasValues = Boolean(
+          newValues?.[sKey] && Object.keys(newValues[sKey]).length > 0,
+        );
+        editMap[sKey] = !hasValues;
+        initial[sKey] = newValues?.[sKey] ?? {};
+      });
+      setRowEditById(editMap);
+      setRowInitialValuesById(initial);
     } catch (err) {
       console.error(
         "RegisterStudentEnfasisRecords - loadData error:",
@@ -143,6 +165,8 @@ const RegisterStudentEnfasisRecords = ({ onClose }) => {
       setRecordsList([]);
       setValuesByStudent({});
       setObservacionesByStudent({});
+      setRowEditById({});
+      setRowInitialValuesById({});
     } finally {
       setLoadingData(false);
     }
@@ -171,8 +195,9 @@ const RegisterStudentEnfasisRecords = ({ onClose }) => {
         ...s,
         __edit: valuesByStudent[getStudentKey(s)],
         __obs: observacionesByStudent[getStudentKey(s)],
+        __rowEdit: rowEditById[getStudentKey(s)],
       })),
-    [students, valuesByStudent, observacionesByStudent],
+    [students, valuesByStudent, observacionesByStudent, rowEditById],
   );
 
   const computeFinal = (studentKey) => {
@@ -219,6 +244,12 @@ const RegisterStudentEnfasisRecords = ({ onClose }) => {
         note_student_emphasis: noteStudentEmphasis,
       });
       notify.success("Notas del estudiante guardadas exitosamente.");
+      await loadData();
+      setRowInitialValuesById((prev) => ({
+        ...prev,
+        [studentKey]: { ...values },
+      }));
+      setRowEditById((prev) => ({ ...prev, [studentKey]: false }));
     } catch (err) {
       console.error(
         "RegisterStudentEnfasisRecords - saveAssignmentNoteEmphasis error:",
@@ -230,6 +261,21 @@ const RegisterStudentEnfasisRecords = ({ onClose }) => {
     }
   };
   handleSaveStudentRef.current = handleSaveStudent;
+
+  const handleToggleEdit = (student) => {
+    const studentKey = getStudentKey(student);
+    const isEditing = Boolean(rowEditByIdRef.current?.[studentKey]);
+    if (isEditing) {
+      setValuesByStudent((prev) => ({
+        ...prev,
+        [studentKey]: rowInitialValuesByIdRef.current?.[studentKey] ?? {},
+      }));
+      setRowEditById((prev) => ({ ...prev, [studentKey]: false }));
+    } else {
+      setRowEditById((prev) => ({ ...prev, [studentKey]: true }));
+    }
+  };
+  handleToggleEditRef.current = handleToggleEdit;
 
   const tableColumns = useMemo(() => {
     const columns = [
@@ -258,6 +304,7 @@ const RegisterStudentEnfasisRecords = ({ onClose }) => {
         cell: ({ row }) => {
           const sKey = getStudentKey(row.original);
           const value = valuesByStudentRef.current?.[sKey]?.[key] ?? "";
+          const editing = rowEditByIdRef.current?.[sKey] !== false;
           return (
             <div className="p-2">
               <input
@@ -269,6 +316,7 @@ const RegisterStudentEnfasisRecords = ({ onClose }) => {
                 onChange={(e) =>
                   handleValueChange(sKey, key, e.target.value)
                 }
+                disabled={!editing}
                 className="w-full p-1.5 border rounded bg-surface text-sm"
               />
             </div>
@@ -295,6 +343,7 @@ const RegisterStudentEnfasisRecords = ({ onClose }) => {
       header: "Observación",
       cell: ({ row }) => {
         const sKey = getStudentKey(row.original);
+        const editing = rowEditByIdRef.current?.[sKey] !== false;
         return (
           <div className="p-2">
             <input
@@ -303,6 +352,7 @@ const RegisterStudentEnfasisRecords = ({ onClose }) => {
               onChange={(e) =>
                 handleObservacionChange(sKey, e.target.value)
               }
+              disabled={!editing}
               className="w-full p-1.5 border rounded bg-surface text-sm"
             />
           </div>
@@ -315,15 +365,28 @@ const RegisterStudentEnfasisRecords = ({ onClose }) => {
       header: "Acciones",
       cell: ({ row }) => {
         const sKey = getStudentKey(row.original);
+        const editing = rowEditByIdRef.current?.[sKey] !== false;
         const saving = Boolean(savingByStudentRef.current?.[sKey]);
         return (
-          <div className="p-2 flex items-center justify-center">
+          <div className="p-2 flex gap-2 items-center justify-center">
+            {editing ? (
+              <div className="w-32">
+                <SimpleButton
+                  onClick={() => handleSaveStudentRef.current?.(row.original)}
+                  msj={saving ? "Guardando..." : "Guardar"}
+                  icon={saving ? "Loader" : "Save"}
+                  bg="bg-secondary"
+                  text="text-surface"
+                  disabled={saving}
+                />
+              </div>
+            ) : null}
             <div className="w-32">
               <SimpleButton
-                onClick={() => handleSaveStudentRef.current?.(row.original)}
-                msj={saving ? "Guardando..." : "Guardar"}
-                icon={saving ? "Loader" : "Save"}
-                bg="bg-secondary"
+                onClick={() => handleToggleEditRef.current?.(row.original)}
+                msj={editing ? "Cancelar" : "Editar"}
+                icon={editing ? "X" : "Pencil"}
+                bg={editing ? "bg-error" : "bg-secondary"}
                 text="text-surface"
                 disabled={saving}
               />
