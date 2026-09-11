@@ -10,6 +10,7 @@ import ProfileNotaEnfasisEdit from "../../components/molecules/ProfileNotaEnfasi
 import ProfileStudentEnfasis from "../../components/molecules/ProfileStudentEnfasis";
 import RegisterRecords from "../GradeRecords/RegisterRecords";
 import RegisterStudentEnfasisRecords from "./RegisterStudentEnfasisRecords";
+import RegisterAsignatureEmphasis from "./RegisterAsignatureEmphasis";
 import useAuth from "../../lib/hooks/useAuth";
 import { useNotify } from "../../lib/hooks/useNotify";
 import {
@@ -32,6 +33,7 @@ const ManageEnfasis = () => {
   const [isStudentEnfasisOpen, setIsStudentEnfasisOpen] = useState(false);
   const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [isAssignNotesOpen, setIsAssignNotesOpen] = useState(false);
+  const [isAssistanceOpen, setIsAssistanceOpen] = useState(false);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({ sede: "", modalidad: "", area: "" });
@@ -358,7 +360,7 @@ const ManageEnfasis = () => {
         </div>
         <div
           id="tour-me-add-btn"
-          className="grid grid-cols-2 col-span-2 xl:col-span-2 gap-2"
+          className="grid grid-cols-3 col-span-2 xl:col-span-2 gap-2"
         >
           {isDocente ? (
             <>
@@ -374,6 +376,14 @@ const ManageEnfasis = () => {
                 onClick={() => setIsAssignNotesOpen(true)}
                 msj="Asignar notas"
                 icon="ClipboardList"
+                bg="bg-secondary"
+                text="text-surface"
+                noRounded={false}
+              />
+              <SimpleButton
+                onClick={() => setIsAssistanceOpen(true)}
+                msj="Registrar asistencia"
+                icon="CalendarCheck"
                 bg="bg-secondary"
                 text="text-surface"
                 noRounded={false}
@@ -569,6 +579,17 @@ const ManageEnfasis = () => {
       >
         <RegisterStudentEnfasisRecords
           onClose={() => setIsAssignNotesOpen(false)}
+        />
+      </Modal>
+
+      <Modal
+        isOpen={isAssistanceOpen}
+        onClose={() => setIsAssistanceOpen(false)}
+        title="Registrar asistencia de énfasis"
+        size="7xl"
+      >
+        <RegisterAsignatureEmphasis
+          onClose={() => setIsAssistanceOpen(false)}
         />
       </Modal>
 

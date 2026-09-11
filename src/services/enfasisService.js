@@ -288,6 +288,18 @@ export async function registerStudentsEnfasis(payload) {
   }
 }
 
+export async function registerAssistanceStudentEmphasis(rows) {
+  if (!Array.isArray(rows) || rows.length === 0) {
+    throw new Error("rows es requerido.");
+  }
+  try {
+    return await ApiClient.post("/assistance/student/emphasis", rows);
+  } catch (error) {
+    console.error("Error en registerAssistanceStudentEmphasis:", error);
+    throw error;
+  }
+}
+
 export async function updateEnfasisAsignatura(payload) {
   if (!payload?.id) throw new Error("id es requerido.");
   try {
