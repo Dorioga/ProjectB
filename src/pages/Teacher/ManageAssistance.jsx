@@ -2,6 +2,8 @@
 import DataTable from "../../components/atoms/DataTable";
 import Modal from "../../components/atoms/Modal";
 import RegisterAssistance from "./RegisterAssistance";
+import AssistanceEnfasisResults from "./AssistanceEnfasisResults";
+import RegisterAsignatureEmphasis from "../School/RegisterAsignatureEmphasis";
 import SedeSelect from "../../components/atoms/SedeSelect";
 import GradeSelector from "../../components/atoms/GradeSelector";
 import PeriodSelector from "../../components/atoms/PeriodSelector";
@@ -103,6 +105,8 @@ const ManageAssistance = () => {
   const [hasSearched, setHasSearched] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const [isEnfasisRegisterOpen, setIsEnfasisRegisterOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("asistencia");
 
   // Filas de encabezado institucional para la exportación Excel
   const exportHeaderRows = useMemo(() => {
@@ -413,14 +417,26 @@ const ManageAssistance = () => {
           id="tour-masst-add-btn"
           className=" grid grid-cols-2 col-span-2 xl:col-span-2 gap-2"
         >
-          <SimpleButton
-            type="button"
-            onClick={() => setIsRegisterOpen(true)}
-            msj="Registrar asistencia"
-            icon="Plus"
-            bg="bg-secondary"
-            text="text-surface"
-          />
+          {activeTab === "asistencia" && (
+            <SimpleButton
+              type="button"
+              onClick={() => setIsRegisterOpen(true)}
+              msj="Registrar asistencia"
+              icon="Plus"
+              bg="bg-secondary"
+              text="text-surface"
+            />
+          )}
+          {activeTab === "enfasis" && isPureDocente && (
+            <SimpleButton
+              type="button"
+              onClick={() => setIsEnfasisRegisterOpen(true)}
+              msj="Registrar asistencia énfasis"
+              icon="CalendarCheck"
+              bg="bg-secondary"
+              text="text-surface"
+            />
+          )}
           <SimpleButton
             type="button"
             onClick={tourManageAssistance}
@@ -434,158 +450,205 @@ const ManageAssistance = () => {
         </div>
       </div>
 
-      {/* Panel de filtros */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-2">
-        {/* Fecha inicio */}
-        <div id="tour-masst-date-start">
-          <label className="block text-sm font-medium mb-1">Fecha inicio</label>
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="w-full p-2 border rounded bg-surface"
-          />
-        </div>
-
-        {/* Fecha fin */}
-        <div id="tour-masst-date-end">
-          <label className="block text-sm font-medium mb-1">Fecha fin</label>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="w-full p-2 border rounded bg-surface"
-          />
-        </div>
-
-        {/* Sede — docente ve sus sedes asignadas; admin ve las de la institución */}
-        <div id="tour-masst-sede">
-          <SedeSelect
-            value={sedeId}
-            onChange={handleSedeChange}
-            data={isDocente ? teacherSedeData : null}
-            loading={isDocente ? loadingTeacherSedes : false}
-          />
-        </div>
-
-        {/* Grado — docente usa customFetchMethod con sus grados asignados */}
-        <div id="tour-masst-grade">
-          <GradeSelector
-            label="Grado"
-            value={gradeId}
-            onChange={(e) => setGradeId(e.target.value)}
-            placeholder={
-              sedeId ? "Selecciona un grado" : "Selecciona sede primero"
-            }
-            sedeId={sedeId}
-            autoLoad={true}
-            disabled={!sedeId}
-            {...(isPureDocente && {
-              customFetchMethod: getTeacherGrades,
-              additionalParams: teacherGradesParams,
-            })}
-            {...(isRol3 && {
-              customFetchMethod: getGradeOnlySede,
-              additionalParams: gradeSede3Params,
-            })}
-          />
-        </div>
-
-        {/* Período */}
-        <div id="tour-masst-period">
-          <PeriodSelector
-            label="Período"
-            value={periodId}
-            onChange={(e) => setPeriodId(e.target.value)}
-            autoLoad={true}
-          />
-        </div>
-
-        {/* Botones solo para admin — docente hace auto-fetch */}
-        {!isDocente && (
-          <div
-            id="tour-masst-search-btn"
-            className="flex gap-2 items-end md:col-span-5"
-          >
-            <SimpleButton
-              msj="Buscar"
-              icon="Search"
-              bg="bg-primary"
-              text="text-surface"
-              noRounded={false}
-              disabled={!isFormReady || isLoading}
-              onClick={handleSearch}
-            />
-            <SimpleButton
-              msj=""
-              icon="X"
-              bg="bg-gray-200"
-              text="text-gray-700"
-              noRounded={false}
-              onClick={handleClear}
-              msjtooltip="Limpiar filtros"
-            />
-          </div>
-        )}
+      {/* Tabs */}
+      <div className="flex gap-0 border-b border-gray-300">
+        <button
+          type="button"
+          onClick={() => setActiveTab("asistencia")}
+          className={`px-5 py-2 text-sm font-semibold transition-colors rounded-tl rounded-tr cursor-pointer ${
+            activeTab === "asistencia"
+              ? "bg-primary text-white border-2 border-primary"
+              : "bg-secondary text-primary hover:bg-gray-100"
+          }`}
+        >
+          Asistencia
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("enfasis")}
+          className={`px-5 py-2 text-sm font-semibold transition-colors rounded-tl rounded-tr cursor-pointer ${
+            activeTab === "enfasis"
+              ? "bg-primary text-white border-2 border-primary"
+              : "bg-secondary text-primary hover:bg-gray-100"
+          }`}
+        >
+          Asistencia Énfasis
+        </button>
       </div>
 
-      {/* Tabla de resultados */}
-      <div id="tour-masst-table" className="flex-1 mt-4">
-        {isLoading ? (
-          <Loader message="Cargando asistencias..." size={96} />
-        ) : !hasSearched ? (
-          <div className="flex items-center justify-center h-40 text-gray-500 text-sm">
-            {isDocente ? (
-              "Selecciona sede, grado y período para ver las asistencias."
-            ) : (
-              <>
-                Selecciona los filtros y presiona{" "}
-                <strong className="ml-1">Buscar</strong>.
-              </>
-            )}
-          </div>
-        ) : (
-          <>
-            <div className="flex justify-end mb-2">
-              <SimpleButton
-                type="button"
-                msj={isExportingPDF ? "Generando PDF..." : "Exportar PDF"}
-                icon="FileText"
-                bg="bg-red-600"
-                text="text-white"
-                noRounded={false}
-                disabled={isExportingPDF}
-                onClick={handleExportPDF}
-                msjtooltip="Genera tabla Estudiante × Fecha segmentada por asignatura"
+      {activeTab === "asistencia" ? (
+        <>
+          {/* Panel de filtros */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-2">
+            {/* Fecha inicio */}
+            <div id="tour-masst-date-start">
+              <label className="block text-sm font-medium mb-1">
+                Fecha inicio
+              </label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full p-2 border rounded bg-surface"
               />
             </div>
-            <DataTable
-              key="assistance-table"
-              data={tableData}
-              columns={columns}
-              fileName="Export_Asistencias"
-              initialSorting={[{ id: "nombre_estudiante", desc: false }]}
-              showDownloadButtons={tableData.length > 0}
-              pageSize={20}
-              exportWithoutHeaders={true}
-              exportHeaderRows={exportHeaderRows}
-            />
-          </>
-        )}
 
-        {hasSearched && !isLoading && tableData.length === 0 && (
-          <div className="mt-4 text-center text-gray-500 text-sm">
-            No se encontraron registros para los filtros seleccionados.
+            {/* Fecha fin */}
+            <div id="tour-masst-date-end">
+              <label className="block text-sm font-medium mb-1">
+                Fecha fin
+              </label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full p-2 border rounded bg-surface"
+              />
+            </div>
+
+            {/* Sede — docente ve sus sedes asignadas; admin ve las de la institución */}
+            <div id="tour-masst-sede">
+              <SedeSelect
+                value={sedeId}
+                onChange={handleSedeChange}
+                data={isDocente ? teacherSedeData : null}
+                loading={isDocente ? loadingTeacherSedes : false}
+              />
+            </div>
+
+            {/* Grado — docente usa customFetchMethod con sus grados asignados */}
+            <div id="tour-masst-grade">
+              <GradeSelector
+                label="Grado"
+                value={gradeId}
+                onChange={(e) => setGradeId(e.target.value)}
+                placeholder={
+                  sedeId ? "Selecciona un grado" : "Selecciona sede primero"
+                }
+                sedeId={sedeId}
+                autoLoad={true}
+                disabled={!sedeId}
+                {...(isPureDocente && {
+                  customFetchMethod: getTeacherGrades,
+                  additionalParams: teacherGradesParams,
+                })}
+                {...(isRol3 && {
+                  customFetchMethod: getGradeOnlySede,
+                  additionalParams: gradeSede3Params,
+                })}
+              />
+            </div>
+
+            {/* Período */}
+            <div id="tour-masst-period">
+              <PeriodSelector
+                label="Período"
+                value={periodId}
+                onChange={(e) => setPeriodId(e.target.value)}
+                autoLoad={true}
+              />
+            </div>
+
+            {/* Botones solo para admin — docente hace auto-fetch */}
+            {!isDocente && (
+              <div
+                id="tour-masst-search-btn"
+                className="flex gap-2 items-end md:col-span-5"
+              >
+                <SimpleButton
+                  msj="Buscar"
+                  icon="Search"
+                  bg="bg-primary"
+                  text="text-surface"
+                  noRounded={false}
+                  disabled={!isFormReady || isLoading}
+                  onClick={handleSearch}
+                />
+                <SimpleButton
+                  msj=""
+                  icon="X"
+                  bg="bg-gray-200"
+                  text="text-gray-700"
+                  noRounded={false}
+                  onClick={handleClear}
+                  msjtooltip="Limpiar filtros"
+                />
+              </div>
+            )}
           </div>
-        )}
-      </div>
+
+          {/* Tabla de resultados */}
+          <div id="tour-masst-table" className="flex-1 mt-4">
+            {isLoading ? (
+              <Loader message="Cargando asistencias..." size={96} />
+            ) : !hasSearched ? (
+              <div className="flex items-center justify-center h-40 text-gray-500 text-sm">
+                {isDocente ? (
+                  "Selecciona sede, grado y período para ver las asistencias."
+                ) : (
+                  <>
+                    Selecciona los filtros y presiona{" "}
+                    <strong className="ml-1">Buscar</strong>.
+                  </>
+                )}
+              </div>
+            ) : (
+              <>
+                <div className="flex justify-end mb-2">
+                  <SimpleButton
+                    type="button"
+                    msj={isExportingPDF ? "Generando PDF..." : "Exportar PDF"}
+                    icon="FileText"
+                    bg="bg-red-600"
+                    text="text-white"
+                    noRounded={false}
+                    disabled={isExportingPDF}
+                    onClick={handleExportPDF}
+                    msjtooltip="Genera tabla Estudiante × Fecha segmentada por asignatura"
+                  />
+                </div>
+                <DataTable
+                  key="assistance-table"
+                  data={tableData}
+                  columns={columns}
+                  fileName="Export_Asistencias"
+                  initialSorting={[{ id: "nombre_estudiante", desc: false }]}
+                  showDownloadButtons={tableData.length > 0}
+                  pageSize={20}
+                  exportWithoutHeaders={true}
+                  exportHeaderRows={exportHeaderRows}
+                />
+              </>
+            )}
+
+            {hasSearched && !isLoading && tableData.length === 0 && (
+              <div className="mt-4 text-center text-gray-500 text-sm">
+                No se encontraron registros para los filtros seleccionados.
+              </div>
+            )}
+          </div>
+          <Modal
+            isOpen={isRegisterOpen}
+            onClose={() => setIsRegisterOpen(false)}
+            title="Registrar asistencia"
+            size="7xl"
+          >
+            <RegisterAssistance onClose={() => setIsRegisterOpen(false)} />
+          </Modal>
+        </>
+      ) : (
+        <AssistanceEnfasisResults />
+      )}
+
       <Modal
-        isOpen={isRegisterOpen}
-        onClose={() => setIsRegisterOpen(false)}
-        title="Registrar asistencia"
+        isOpen={isEnfasisRegisterOpen}
+        onClose={() => setIsEnfasisRegisterOpen(false)}
+        title="Registrar asistencia de énfasis"
         size="7xl"
       >
-        <RegisterAssistance onClose={() => setIsRegisterOpen(false)} />
+        <RegisterAsignatureEmphasis
+          onClose={() => setIsEnfasisRegisterOpen(false)}
+        />
       </Modal>
     </div>
   );

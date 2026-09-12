@@ -300,6 +300,30 @@ export async function registerAssistanceStudentEmphasis(rows) {
   }
 }
 
+export async function getAssistanceStudentEmphasisResults(payload) {
+  const { startDate, endDate, idSede, idPeriod, idAsignatureEnfasis } =
+    payload || {};
+  if (!startDate || !endDate || !idSede || !idPeriod || !idAsignatureEnfasis) {
+    throw new Error(
+      "startDate, endDate, idSede, idPeriod e idAsignatureEnfasis son requeridos.",
+    );
+  }
+  try {
+    const res = await ApiClient.post("/assistance/student/emphasis/results", {
+      startDate: String(startDate),
+      endDate: String(endDate),
+      idSede: Number(idSede),
+      idPeriod: Number(idPeriod),
+      idAsignatureEnfasis: Number(idAsignatureEnfasis),
+    });
+    const data = Array.isArray(res) ? res : (res?.data ?? []);
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error("Error en getAssistanceStudentEmphasisResults:", error);
+    throw error;
+  }
+}
+
 export async function updateEnfasisAsignatura(payload) {
   if (!payload?.id) throw new Error("id es requerido.");
   try {

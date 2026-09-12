@@ -495,3 +495,18 @@ export async function getStudentAssistence(payload) {
   if (data !== undefined && data !== null) return data;
   throw new Error("Respuesta inesperada de /students/assistence.");
 }
+
+export async function getStudentAssistenceEmphasis(payload) {
+  if (!payload?.studentId || !payload?.sedeId) {
+    throw new Error("studentId y sedeId son requeridos.");
+  }
+  const res = await ApiClient.instance.post(
+    "/students/assistence/emphasis",
+    payload,
+  );
+  const data = res;
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (Array.isArray(data)) return data;
+  if (data !== undefined && data !== null) return data;
+  throw new Error("Respuesta inesperada de /students/assistence/emphasis.");
+}
