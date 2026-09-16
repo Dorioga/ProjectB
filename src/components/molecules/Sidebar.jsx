@@ -108,16 +108,14 @@ const Sidebar = () => {
           {showContent && (
             <div className="flex flex-col items-center justify-center text-center gap-2 px-2 transition-all duration-300 ease-in-out">
               <PreviewIMG path={imgSchool || "/2.png"} size={"logo"} />
-
               <div className="text-surface text-sm px-2">{nameSede}</div>
             </div>
           )}
         </div>
         <div className="row-span-8 md:row-span-7 2xl:row-span-8 flex flex-col justify-start overflow-y-auto pt-0 sm:pt-3">
-<ul className="">
+          <ul className="">
             {menuItems.map((item, id) => {
-              const IconComponent =
-                LucideIcons[item.icon] || LucideIcons.User;
+              const IconComponent = LucideIcons[item.icon] || LucideIcons.User;
               const isModal = item.type !== "link";
               const inner = (
                 <>
@@ -149,7 +147,7 @@ const Sidebar = () => {
                       {inner}
                     </Link>
                   ) : (
-                    <div className="flex w-full flex-row px-4 py-1 items-center gap-2">
+                    <div className="flex w-full flex-row px-4 py-1 items-center ">
                       {inner}
                     </div>
                   )}
