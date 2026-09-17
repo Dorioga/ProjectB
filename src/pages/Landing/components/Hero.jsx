@@ -26,21 +26,21 @@ const features = [
 
 function Hero() {
   return (
-    <section id="inicio" className="bg-white py-16 lg:py-24">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="grid lg:grid-cols-2 gap-12 items-start">
-          <div className="space-y-7">
+    <section id="inicio" className="bg-white py-12 sm:py-16 lg:py-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-start">
+          <div className="space-y-6">
             <span className="badge-secondary inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full">
               <Icon.Calendar />
               Demo gratuito sin compromiso
             </span>
 
-            <h1 className="text-4xl lg:text-5xl font-extrabold leading-tight text-primary">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight text-primary">
               Conoce cómo Nexus puede transformar{" "}
               <span className="text-secondary">tu colegio</span>
             </h1>
 
-            <p className="text-muted text-lg leading-relaxed max-w-lg">
+            <p className="text-muted text-base sm:text-lg leading-relaxed max-w-lg">
               Agenda una demo personalizada y descubre cómo simplificamos la
               gestión académica y administrativa de tu institución.
             </p>

@@ -17,36 +17,41 @@ const resumen = [
 
 function ComoFunciona() {
   return (
-    <section id="flujo-de-trabajo" className="bg-bg py-24">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-16">
+    <section id="flujo-de-trabajo" className="bg-bg py-12 sm:py-16 lg:py-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="text-center mb-8 sm:mb-12">
           <span className="text-secondary font-bold text-xs tracking-widest uppercase mb-3 block">
             Flujo de trabajo
           </span>
-          <h2 className="text-4xl font-extrabold text-primary">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-primary">
             Así funciona Nexus durante todo el año escolar.
           </h2>
         </div>
 
-        <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-16">
+        <div className="relative mb-8 sm:mb-12">
+          <div className="landing-gradient-line sm:hidden absolute top-7 bottom-7 left-7 w-0.5 -translate-x-1/2 z-0" />
           <div className="landing-gradient-line hidden sm:block absolute top-10 left-[8.33%] right-[8.33%] h-0.5 z-0" />
 
-          {timelineSteps.map(({ icon, label, step }) => (
-            <div
-              key={step}
-              className="relative z-10 flex flex-col items-center flex-1"
-            >
-              <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center text-secondary shadow-lg mb-3">
-                {icon}
+          <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-6 sm:gap-4">
+            {timelineSteps.map(({ icon, label, step }) => (
+              <div
+                key={step}
+                className="relative z-10 flex items-center sm:flex-col gap-4 sm:gap-0 flex-1 w-full sm:w-auto"
+              >
+                <div className="shrink-0 w-14 h-14 bg-primary rounded-2xl flex items-center justify-center text-secondary shadow-lg sm:mb-3">
+                  {icon}
+                </div>
+                <div className="text-left sm:text-center">
+                  <div className="text-secondary font-bold text-xs mb-1">
+                    {step}
+                  </div>
+                  <p className="text-primary font-semibold text-sm leading-tight">
+                    {label}
+                  </p>
+                </div>
               </div>
-              <div className="text-secondary font-bold text-xs mb-1">
-                {step}
-              </div>
-              <p className="text-primary font-semibold text-sm text-center leading-tight">
-                {label}
-              </p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
         <div className="bg-white rounded-[24px] shadow-xl border border-slate-100 overflow-hidden">

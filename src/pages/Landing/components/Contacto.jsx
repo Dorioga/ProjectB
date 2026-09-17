@@ -3,9 +3,9 @@ import { OrangeButton } from "./ui";
 
 function Contacto() {
   return (
-    <section id="contactanos" className="bg-white py-24">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-14">
+    <section id="contactanos" className="bg-white py-12 sm:py-16 lg:py-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="text-center mb-8 sm:mb-10">
           <span className="text-secondary font-bold text-xs tracking-widest uppercase block">
             Contacto
           </span>
@@ -24,7 +24,7 @@ function Contacto() {
                 <input
                   type="text"
                   placeholder="Tu nombre"
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm bg-white outline-none focus:border-[var(--color-secondary)] transition-all"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-base sm:text-sm bg-white outline-none focus:border-[var(--color-secondary)] transition-all"
                 />
               </div>
               <div>
@@ -34,7 +34,7 @@ function Contacto() {
                 <input
                   type="text"
                   placeholder="Nombre del colegio"
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm bg-white outline-none focus:border-[var(--color-secondary)] transition-all"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-base sm:text-sm bg-white outline-none focus:border-[var(--color-secondary)] transition-all"
                 />
               </div>
             </div>
@@ -45,7 +45,7 @@ function Contacto() {
               <input
                 type="email"
                 placeholder="correo@colegio.edu.co"
-                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm bg-white outline-none focus:border-[var(--color-secondary)] transition-all"
+                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-base sm:text-sm bg-white outline-none focus:border-[var(--color-secondary)] transition-all"
               />
             </div>
             <div className="mb-6">
@@ -55,7 +55,7 @@ function Contacto() {
               <textarea
                 rows={4}
                 placeholder="¿En qué podemos ayudarte?"
-                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm bg-white outline-none focus:border-[var(--color-secondary)] transition-all resize-none"
+                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-base sm:text-sm bg-white outline-none focus:border-[var(--color-secondary)] transition-all resize-none"
               />
             </div>
             <OrangeButton className="w-full">Enviar mensaje →</OrangeButton>

@@ -2,6 +2,10 @@ html:has(.nexus-landing) {
   scroll-behavior: smooth;
 }
 
+.nexus-landing {
+  overflow-x: clip;
+}
+
 .nexus-landing section[id] {
   scroll-margin-top: 5rem;
 }

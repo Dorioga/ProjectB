@@ -25,7 +25,7 @@ function Header() {
 
   return (
     <header className="sticky top-0 z-50 bg-white backdrop-blur-md border-b border-slate-100 shadow-sm">
-      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
         <a href="#inicio" className="flex items-center gap-2 shrink-0">
           <img
             src={logoColor}
@@ -34,7 +34,7 @@ function Header() {
           />
         </a>
 
-        <nav className="hidden xl:flex items-center gap-1">
+        <nav aria-label="Menú principal" className="hidden xl:flex items-center gap-1">
           {navLinks.map(({ label, href }) => (
             <a
               key={label}
@@ -58,7 +58,9 @@ function Header() {
         <button
           type="button"
           aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
-          className="xl:hidden text-slate-700 cursor-pointer"
+          aria-expanded={menuOpen}
+          aria-controls="menu-movil"
+          className="xl:hidden -mr-2 w-11 h-11 flex items-center justify-center text-slate-700 cursor-pointer"
           onClick={() => setMenuOpen(!menuOpen)}
         >
           {menuOpen ? <Icon.X /> : <Icon.Menu />}
@@ -66,7 +68,10 @@ function Header() {
       </div>
 
       {menuOpen && (
-        <div className="xl:hidden bg-white border-t border-slate-100 px-6 py-4 flex flex-col gap-2">
+        <div
+          id="menu-movil"
+          className="xl:hidden bg-white border-t border-slate-100 px-4 py-4 flex flex-col gap-1 max-h-[calc(100vh-4rem)] overflow-y-auto shadow-lg"
+        >
           {navLinks.map(({ label, href }) => (
             <a
               key={label}

@@ -18,8 +18,8 @@ const cols = [
 
 function Footer() {
   return (
-    <footer className="bg-primary pt-16 pb-8">
-      <div className="max-w-7xl mx-auto px-6">
+    <footer className="bg-primary pt-12 sm:pt-16 pb-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
           <div>
             <div className="flex items-center gap-2 mb-4">
@@ -43,7 +43,7 @@ function Footer() {
                     type="button"
                     aria-label="Red social"
                     key={i}
-                    className="w-9 h-9 bg-slate-800 hover:bg-secondary text-slate-400 hover:text-white rounded-lg flex items-center justify-center transition-colors cursor-pointer"
+                    className="w-11 h-11 bg-slate-800 hover:bg-secondary text-slate-400 hover:text-white rounded-lg flex items-center justify-center transition-colors cursor-pointer"
                   >
                     {icon}
                   </button>

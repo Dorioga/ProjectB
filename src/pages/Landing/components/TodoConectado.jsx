@@ -9,43 +9,39 @@ const metricas = [
 
 function TodoConectado() {
   return (
-    <section id="plataforma" className="bg-bg py-24">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
+    <section id="plataforma" className="bg-bg py-12 sm:py-16 lg:py-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           <div>
             <span className="text-secondary font-bold text-xs tracking-widest uppercase mb-3 block">
               Plataforma unificada
             </span>
-            <h2 className="text-4xl font-extrabold text-primary leading-tight mb-5">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-primary leading-tight mb-5">
               Todo conectado en una sola plataforma
             </h2>
-            <p className="text-muted text-lg leading-relaxed mb-10">
+            <p className="text-muted text-base sm:text-lg leading-relaxed mb-8">
               Desde el ingreso del estudiante hasta la entrega del boletín,
               Nexus conecta todos los procesos académicos y administrativos en
               un único sistema.
             </p>
 
-            <div className="relative flex flex-wrap gap-y-6 gap-x-0">
-              {steps.map((step, i) => (
-                <div
-                  key={step.label}
-                  className="relative flex flex-col items-center"
-                  style={{ width: `${100 / steps.length}%` }}
-                >
-                  <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-secondary shadow-lg z-10 relative">
-                    {step.icon}
+            <div className="relative">
+              <div className="landing-gradient-line hidden sm:block absolute top-6 left-[8.33%] right-[8.33%] h-0.5 z-0" />
+              <div className="grid grid-cols-3 gap-y-6 sm:flex sm:items-start sm:justify-between sm:gap-0">
+                {steps.map((step) => (
+                  <div
+                    key={step.label}
+                    className="relative z-10 flex flex-col items-center sm:flex-1"
+                  >
+                    <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-secondary shadow-lg mb-3">
+                      {step.icon}
+                    </div>
+                    <span className="text-slate-600 text-xs font-medium text-center leading-tight">
+                      {step.label}
+                    </span>
                   </div>
-                  {i < steps.length - 1 && (
-                    <div
-                      className="landing-gradient-line absolute top-6 left-1/2 w-full h-0.5 z-0"
-                      style={{ left: "50%" }}
-                    />
-                  )}
-                  <span className="text-slate-600 text-xs font-medium mt-3 text-center leading-tight">
-                    {step.label}
-                  </span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
 

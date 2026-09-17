@@ -6,13 +6,13 @@ function FAQ() {
   const [open, setOpen] = useState(null);
 
   return (
-    <section id="preguntas-frecuentes" className="bg-bg py-24">
-      <div className="max-w-3xl mx-auto px-6">
-        <div className="text-center mb-14">
+    <section id="preguntas-frecuentes" className="bg-bg py-12 sm:py-16 lg:py-20">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6">
+        <div className="text-center mb-8 sm:mb-10">
           <span className="text-secondary font-bold text-xs tracking-widest uppercase mb-3 block">
             FAQ
           </span>
-          <h2 className="text-4xl font-extrabold text-primary">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-primary">
             Preguntas frecuentes.
           </h2>
         </div>
@@ -39,7 +39,7 @@ function FAQ() {
               </button>
               <div
                 className={`overflow-hidden transition-all duration-300 ${
-                  open === i ? "max-h-48 opacity-100" : "max-h-0 opacity-0"
+                  open === i ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
                 }`}
               >
                 <p className="px-6 pb-5 text-muted text-sm leading-relaxed">

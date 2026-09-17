@@ -14,7 +14,7 @@ const INTERESTS = [
 ];
 
 const inputClass =
-  "w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-[var(--color-secondary)] focus:border-transparent placeholder-slate-300";
+  "w-full border border-slate-200 rounded-xl px-3 py-2.5 sm:py-2 text-base sm:text-sm bg-white outline-none focus:ring-2 focus:ring-[var(--color-secondary)] focus:border-transparent placeholder-slate-300";
 
 const labelClass = "block text-xs font-semibold text-slate-700 mb-1";
 
@@ -51,7 +51,7 @@ function DemoForm() {
 
   if (submitted) {
     return (
-      <div className="bg-white border border-slate-100 rounded-[24px] shadow-xl p-8">
+      <div className="bg-white border border-slate-100 rounded-[24px] shadow-xl p-6 sm:p-8">
         <div className="text-center py-10 space-y-4">
           <div className="w-16 h-16 rounded-full bg-green-100 text-green-600 flex items-center justify-center mx-auto">
             <Icon.Check />
@@ -76,7 +76,7 @@ function DemoForm() {
   }
 
   return (
-    <div className="bg-white border border-slate-100 rounded-[24px] shadow-xl p-8">
+    <div className="bg-white border border-slate-100 rounded-[24px] shadow-xl p-6 sm:p-8">
       <div className="flex items-start gap-3 mb-6">
         <span className="w-10 h-10 icon-chip rounded-xl flex items-center justify-center text-secondary shrink-0">
           <Icon.Calendar />
@@ -107,7 +107,7 @@ function DemoForm() {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <DepartmentSelector
             name="department_id"
             label="Departamento"
@@ -128,7 +128,7 @@ function DemoForm() {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className={labelClass}>
               Teléfono <span className="text-red-500">*</span>

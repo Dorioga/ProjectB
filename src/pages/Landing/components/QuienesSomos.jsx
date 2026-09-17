@@ -4,9 +4,9 @@ import { DarkCard } from "./ui";
 
 function QuienesSomos() {
   return (
-    <section id="quienes-somos" className="bg-white py-24">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
+    <section id="quienes-somos" className="bg-white py-12 sm:py-16 lg:py-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           <div className="relative">
             <div className="bg-slate-100 rounded-[24px] overflow-hidden aspect-[4/3]">
               <img
@@ -15,7 +15,7 @@ function QuienesSomos() {
                 className="w-full h-full object-cover"
               />
             </div>
-            <div className="absolute -bottom-5 -right-5 bg-secondary text-white rounded-2xl px-5 py-4 shadow-xl">
+            <div className="absolute -bottom-4 right-4 sm:right-auto sm:-right-5 bg-secondary text-white rounded-2xl px-5 py-4 shadow-xl">
               <p className="text-2xl font-extrabold">100%</p>
               <p className="text-xs font-medium opacity-90">
                 Hecho en Colombia
@@ -27,10 +27,10 @@ function QuienesSomos() {
             <span className="text-secondary font-bold text-xs tracking-widest uppercase mb-3 block">
               Nuestra empresa
             </span>
-            <h2 className="text-4xl font-extrabold text-primary leading-tight mb-5">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-primary leading-tight mb-5">
               ¿Quiénes somos?
             </h2>
-            <p className="text-muted text-lg leading-relaxed mb-8">
+            <p className="text-muted text-base sm:text-lg leading-relaxed mb-8">
               Somos una plataforma de gestión educativa desarrollada en
               Colombia que integra en un solo lugar los procesos académicos,
               administrativos y de seguimiento institucional. Nuestro propósito

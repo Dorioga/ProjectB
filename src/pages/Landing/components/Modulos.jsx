@@ -4,16 +4,16 @@ import { DarkCard } from "./ui";
 
 function Modulos() {
   return (
-    <section id="funcionalidades" className="bg-white py-24">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-14">
+    <section id="funcionalidades" className="bg-white py-12 sm:py-16 lg:py-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="text-center mb-8 sm:mb-10">
           <span className="text-secondary font-bold text-xs tracking-widest uppercase mb-3 block">
             Funcionalidades
           </span>
-          <h2 className="text-4xl font-extrabold text-primary mb-4">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-primary mb-4">
             Todo lo que tu institución necesita.
           </h2>
-          <p className="text-muted text-lg max-w-xl mx-auto">
+          <p className="text-muted text-base sm:text-lg max-w-xl mx-auto">
             Nexus reúne los procesos educativos y administrativos en una sola
             plataforma.
           </p>
