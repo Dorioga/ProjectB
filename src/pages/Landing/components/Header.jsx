@@ -30,11 +30,14 @@ function Header() {
           <img
             src={logoColor}
             alt="Nexus"
-            className="h-10 w-auto object-contain"
+            className="h-20 w-auto object-contain"
           />
         </a>
 
-        <nav aria-label="Menú principal" className="hidden xl:flex items-center gap-1">
+        <nav
+          aria-label="Menú principal"
+          className="hidden xl:flex items-center gap-1"
+        >
           {navLinks.map(({ label, href }) => (
             <a
               key={label}

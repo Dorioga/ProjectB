@@ -27,7 +27,7 @@ function Footer() {
                 <img
                   src={logoColor}
                   alt="Nexus"
-                  className="h-8 w-auto object-contain"
+                  className="h-10 w-auto object-contain"
                 />
               </span>
               <span className="text-white font-bold text-xl">Nexus</span>
