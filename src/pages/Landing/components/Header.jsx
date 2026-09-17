@@ -46,8 +46,11 @@ function Header() {
           ))}
         </nav>
 
-        <div className="hidden xl:block">
-          <OrangeButton onClick={() => navigate("/login")}>
+        <div className="hidden xl:block shrink-0">
+          <OrangeButton
+            className="w-max whitespace-nowrap"
+            onClick={() => navigate("/login")}
+          >
             Iniciar sesión
           </OrangeButton>
         </div>
