@@ -15,7 +15,10 @@ import useData from "../../lib/hooks/useData";
 import useSchool from "../../lib/hooks/useSchool";
 import { useNotify } from "../../lib/hooks/useNotify";
 import tourManageAssistance from "../../tour/tourManageAssistance";
-import { exportAttendancePDF } from "../../utils/exportPdf";
+import {
+  exportAttendancePDF,
+  exportAttendanceByDayPDF,
+} from "../../utils/exportPdf";
 
 /**
  * Formatea una fecha ISO a dd/mm/yyyy
@@ -105,6 +108,7 @@ const ManageAssistance = () => {
   const [hasSearched, setHasSearched] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const [isExportingByDayPDF, setIsExportingByDayPDF] = useState(false);
   const [isEnfasisRegisterOpen, setIsEnfasisRegisterOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("asistencia");
 
@@ -328,6 +332,43 @@ const ManageAssistance = () => {
       notify.error("Error al generar el PDF de asistencias.");
     } finally {
       setIsExportingPDF(false);
+    }
+  }, [tableData, nameSchool, nameSede, startDate, endDate, notify]);
+
+  // Exportar PDF por día (estudiante × fecha, con asignaturas registradas y estado día)
+  const handleExportByDayPDF = useCallback(async () => {
+    if (!tableData.length) {
+      notify.warning("Sin datos, no se puede generar el PDF.");
+      return;
+    }
+    setIsExportingByDayPDF(true);
+    try {
+      const firstRow = tableData[0] || {};
+      const gradeLabel = [firstRow.nombre_grado, firstRow.grupo]
+        .filter(Boolean)
+        .join(" ");
+      const journeyLabel = firstRow.nombre_jornada || "";
+      const sedeLabel = firstRow.nombre_sede || nameSede || "";
+      const logoUrl = imgSchool
+        ? imgSchool.startsWith("http")
+          ? imgSchool
+          : `https://www.nexusplataforma.com${imgSchool}`
+        : "";
+      await exportAttendanceByDayPDF(tableData, {
+        nameSchool: nameSchool || "Institución",
+        nameSede: sedeLabel,
+        gradeLabel,
+        journeyLabel,
+        startDate,
+        endDate,
+        imgSchool: logoUrl,
+        fileName: `Asistencias_PorDia_${gradeLabel || "grado"}_${startDate}_${endDate}.pdf`,
+      });
+    } catch (err) {
+      console.error("ManageAssistance - exportByDayPDF error:", err);
+      notify.error("Error al generar el PDF de asistencias por día.");
+    } finally {
+      setIsExportingByDayPDF(false);
     }
   }, [tableData, nameSchool, nameSede, startDate, endDate, notify]);
 
@@ -594,10 +635,14 @@ const ManageAssistance = () => {
               </div>
             ) : (
               <>
-                <div className="flex justify-end mb-2">
+                <div className="grid grid-cols-2 justify-end gap-2 mb-2">
                   <SimpleButton
                     type="button"
-                    msj={isExportingPDF ? "Generando PDF..." : "Exportar PDF"}
+                    msj={
+                      isExportingPDF
+                        ? "Generando PDF..."
+                        : "Exportar PDF detallado de asignaturas"
+                    }
                     icon="FileText"
                     bg="bg-red-600"
                     text="text-white"
@@ -605,6 +650,21 @@ const ManageAssistance = () => {
                     disabled={isExportingPDF}
                     onClick={handleExportPDF}
                     msjtooltip="Genera tabla Estudiante × Fecha segmentada por asignatura"
+                  />
+                  <SimpleButton
+                    type="button"
+                    msj={
+                      isExportingByDayPDF
+                        ? "Generando PDF..."
+                        : "Exportar PDF por día"
+                    }
+                    icon="CalendarCheck"
+                    bg="bg-blue-600"
+                    text="text-white"
+                    noRounded={false}
+                    disabled={isExportingByDayPDF}
+                    onClick={handleExportByDayPDF}
+                    msjtooltip="Genera matriz estudiantes × fecha con asignaturas registradas y estado del día"
                   />
                 </div>
                 <DataTable

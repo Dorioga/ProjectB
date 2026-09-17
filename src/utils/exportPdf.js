@@ -524,15 +524,14 @@ export async function exportAttendancePDF(rows = [], opts = {}) {
         for (let di = 0; di < chunk.length; di++) {
           const cx = MARGIN + STUDENT_COL_W + di * dW;
           const key = `${students[si]}|${chunk[di]}`;
-          if (presMap.has(key)) {
-            const present = presMap.get(key);
-            pdf.setFontSize(6);
-            pdf.setFont("helvetica", "bold");
-            pdf.setTextColor(0, 0, 0);
-            pdf.text(present ? "Si" : "No", cx + dW / 2, y + ROW_H / 2 + 1.5, {
-              align: "center",
-            });
-          }
+          // Si no existe dato para la fecha se escribe "No"
+          const present = presMap.get(key);
+          pdf.setFontSize(6);
+          pdf.setFont("helvetica", "bold");
+          pdf.setTextColor(0, 0, 0);
+          pdf.text(present ? "Si" : "No", cx + dW / 2, y + ROW_H / 2 + 1.5, {
+            align: "center",
+          });
           // Separador vertical derecho de cada celda de fecha
           pdf.setDrawColor(0, 0, 0);
           pdf.setLineWidth(0.1);
@@ -577,6 +576,468 @@ export async function exportAttendancePDF(rows = [], opts = {}) {
     y = drawAsignaturaTable(asigName, asigRows, y);
     first = false;
   }
+
+  pdf.save(fileName);
+}
+
+/**
+ * Genera un PDF de asistencias "por día" (A4 landscape). Matriz
+ * Estudiante × Fecha donde cada fecha crea 2 columnas: asignaturas
+ * registradas y estado del día, usando los campos asignaturas_registradas
+ * y estado_dia del servicio /assistance/values.
+ *
+ * @param {Array} rows  - Registros [{ nombre_estudiante, fecha_assistance,
+ *                          asignaturas_registradas, estado_dia }]
+ * @param {Object} opts - Mismas opciones que exportAttendancePDF.
+ */
+export async function exportAttendanceByDayPDF(rows = [], opts = {}) {
+  if (!rows.length) return;
+
+  const {
+    nameSchool = "Institución",
+    nameSede = "",
+    gradeLabel = "",
+    journeyLabel = "",
+    startDate = "",
+    endDate = "",
+    imgSchool = "",
+    fileName = "Asistencias_PorDia.pdf",
+  } = opts;
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  const fmtShort = (iso) => {
+    if (!iso) return "";
+    try {
+      const d = new Date(iso);
+      return `${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+    } catch {
+      return iso;
+    }
+  };
+
+  const fmtLong = (iso) => {
+    if (!iso) return "";
+    try {
+      const d = new Date(iso);
+      return `${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}/${d.getUTCFullYear()}`;
+    } catch {
+      return iso;
+    }
+  };
+
+  // ── Cargar logo institucional ─────────────────────────────────────────────
+  const loadLogo = (src) =>
+    new Promise((resolve) => {
+      if (!src) {
+        resolve(null);
+        return;
+      }
+      const fullSrc = src.startsWith("http")
+        ? src
+        : `https://www.nexusplataforma.com${src}`;
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.src = fullSrc;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const maxW = 300;
+        let w = img.width;
+        let h = img.height;
+        if (w > maxW) {
+          h = Math.round((h * maxW) / w);
+          w = maxW;
+        }
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        try {
+          resolve({ dataUrl: canvas.toDataURL("image/jpeg", 0.75), w, h });
+        } catch {
+          resolve(null);
+        }
+      };
+      img.onerror = () => resolve(null);
+    });
+
+  const logoData = await loadLogo(imgSchool);
+
+  // ── Datos: fechas, estudiantes y mapa estudiante|fecha ────────────────────
+  const dates = Array.from(
+    new Set(rows.map((r) => r.fecha_assistance).filter(Boolean)),
+  ).sort((a, b) => new Date(a) - new Date(b));
+
+  const students = Array.from(
+    new Set(rows.map((r) => r.nombre_estudiante).filter(Boolean)),
+  ).sort();
+
+  const dayMap = new Map();
+  for (const row of rows) {
+    if (!row.fecha_assistance || !row.nombre_estudiante) continue;
+    dayMap.set(`${row.nombre_estudiante}|${row.fecha_assistance}`, {
+      registradas: row.asignaturas_registradas ?? "",
+      estado: row.estado_dia ?? "",
+    });
+  }
+
+  // Total de fallos por estudiante (columna final)
+  const totalMap = new Map();
+  for (const row of rows) {
+    if (!row.nombre_estudiante) continue;
+    if (!totalMap.has(row.nombre_estudiante) && row.total_fallos != null) {
+      totalMap.set(row.nombre_estudiante, row.total_fallos);
+    }
+  }
+
+  // ── Dimensiones A4 landscape ──────────────────────────────────────────────
+  const PAGE_W = 297;
+  const PAGE_H = 210;
+  const MARGIN = 10;
+  const CONTENT_W = PAGE_W - MARGIN * 2; // 190 mm
+
+  const STUDENT_COL_W = 50;
+  const TOTAL_COL_W = 24; // columna TOTAL FALLOS (al final de las fechas)
+  const DATE_AREA_W = CONTENT_W - STUDENT_COL_W - TOTAL_COL_W; // 116 mm
+
+  // Cada fecha ocupa un par de columnas (asignaturas registradas + estado día)
+  const MIN_PAIR_W = 12;
+  const MAX_PAIR_W = 20;
+
+  const ROW_H = 7;
+  const DATE_HDR_H = 8; // fila de fechas (una celda combinada por fecha)
+  const SUB_HDR_H = 7; // fila de subcolumnas (ASIG. / ESTADO)
+  const TITLE_HDR_H = 8; // título del bloque
+
+  // Zona del encabezado — altura fija de 33 mm (patrón PdfObservador)
+  const HDR_H = 33;
+  const CONTENT_TOP = MARGIN + HDR_H; // 43 mm desde arriba
+  const CONTENT_BOT = PAGE_H - MARGIN; // 200 mm
+
+  const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+
+  // ── Encabezado de página (altura fija HDR_H) ──────────────────────────────
+  const drawPageHeader = () => {
+    const y0 = MARGIN;
+    const cx = PAGE_W / 2;
+
+    if (logoData) {
+      const logoH = 18;
+      const logoW = (logoData.w / logoData.h) * logoH;
+      pdf.addImage(logoData.dataUrl, "JPEG", MARGIN, y0 + 2, logoW, logoH);
+    }
+
+    pdf.setFontSize(11);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(0, 0, 0);
+    pdf.text(nameSchool.toUpperCase(), cx, y0 + 7, { align: "center" });
+
+    pdf.setFontSize(10);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(0, 0, 0);
+    pdf.text("REGISTRO DE ASISTENCIA POR DÍA", cx, y0 + 14, {
+      align: "center",
+    });
+
+    pdf.setDrawColor(0, 0, 0);
+    pdf.setLineWidth(0.4);
+    pdf.line(MARGIN, y0 + 17, PAGE_W - MARGIN, y0 + 17);
+
+    const infoY = y0 + 22;
+    const col1X = MARGIN;
+    const col2X = PAGE_W / 2 + 4;
+
+    pdf.setFontSize(8);
+    pdf.setTextColor(0, 0, 0);
+
+    const drawInfoPair = (label, value, x, y) => {
+      pdf.setFont("helvetica", "bold");
+      pdf.text(`${label}:`, x, y);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(value, x + pdf.getTextWidth(`${label}:`) + 2, y);
+    };
+
+    if (nameSede) drawInfoPair("Sede", nameSede, col1X, infoY);
+    if (gradeLabel) drawInfoPair("Grado", gradeLabel, col2X, infoY);
+
+    const row2Y = infoY + 5;
+    if (journeyLabel) drawInfoPair("Jornada", journeyLabel, col1X, row2Y);
+    if (startDate || endDate) {
+      drawInfoPair(
+        "Período",
+        `${fmtLong(startDate)} — ${fmtLong(endDate)}`,
+        col2X,
+        row2Y,
+      );
+    }
+
+    const fechaGen = new Date().toLocaleDateString("es-CO", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+    pdf.setFontSize(7);
+    pdf.setFont("helvetica", "italic");
+    pdf.setTextColor(0, 0, 0);
+    pdf.text(`Generado: ${fechaGen}`, PAGE_W - MARGIN, row2Y, {
+      align: "right",
+    });
+
+    pdf.setDrawColor(0, 0, 0);
+    pdf.setLineWidth(0.6);
+    pdf.line(MARGIN, y0 + HDR_H - 1, PAGE_W - MARGIN, y0 + HDR_H - 1);
+
+    return CONTENT_TOP;
+  };
+
+  // ── Cabecera de columnas (fechas + subcolumnas) ───────────────────────────
+  const drawColHeaders = (chunk, tableW, y) => {
+    const subW =
+      (tableW - STUDENT_COL_W - TOTAL_COL_W) / (chunk.length * 2);
+    const xTotal = MARGIN + STUDENT_COL_W + chunk.length * subW * 2;
+
+    // Fondo blanco de todo el bloque de cabecera
+    pdf.setFillColor(255, 255, 255);
+    pdf.rect(MARGIN, y, tableW, DATE_HDR_H + SUB_HDR_H, "F");
+
+    // Columna Estudiante
+    pdf.setFontSize(7);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(0, 0, 0);
+    pdf.text(
+      "ESTUDIANTE",
+      MARGIN + STUDENT_COL_W / 2,
+      y + (DATE_HDR_H + SUB_HDR_H) / 2 + 1.5,
+      { align: "center" },
+    );
+
+    // Primera fila: una celda por fecha (combinada sobre el par de columnas)
+    for (let di = 0; di < chunk.length; di++) {
+      const x0 = MARGIN + STUDENT_COL_W + di * subW * 2;
+      pdf.setFontSize(6);
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(fmtShort(chunk[di]), x0 + subW, y + DATE_HDR_H - 2, {
+        align: "center",
+      });
+
+      // Separador vertical entre fechas (no divide el par)
+      if (di < chunk.length - 1) {
+        pdf.setDrawColor(0, 0, 0);
+        pdf.setLineWidth(0.2);
+        pdf.line(x0 + subW * 2, y, x0 + subW * 2, y + DATE_HDR_H + SUB_HDR_H);
+      }
+    }
+
+    // Línea horizontal que separa la fila de fechas de la de etiquetas
+    // (empieza después de la columna Estudiante y termina antes de TOTAL FALLOS)
+    pdf.setDrawColor(0, 0, 0);
+    pdf.setLineWidth(0.1);
+    pdf.line(
+      MARGIN + STUDENT_COL_W,
+      y + DATE_HDR_H,
+      xTotal,
+      y + DATE_HDR_H,
+    );
+
+    // Segunda fila: etiquetas ASIG. / ESTADO
+    pdf.setFontSize(4.5);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(0, 0, 0);
+    for (let di = 0; di < chunk.length; di++) {
+      const x0 = MARGIN + STUDENT_COL_W + di * subW * 2;
+      pdf.text("ASIG.", x0 + subW / 2, y + DATE_HDR_H + 2, {
+        align: "center",
+      });
+      pdf.text("CARGADA", x0 + subW / 2, y + DATE_HDR_H + SUB_HDR_H - 1.5, {
+        align: "center",
+      });
+      pdf.text("ESTADO", x0 + subW * 1.5, y + DATE_HDR_H + 2, {
+        align: "center",
+      });
+      pdf.text("ASIS.", x0 + subW * 1.5, y + DATE_HDR_H + SUB_HDR_H - 1.5, {
+        align: "center",
+      });
+      // Separador vertical interno del par (solo en la fila de etiquetas)
+      pdf.setDrawColor(0, 0, 0);
+      pdf.setLineWidth(0.1);
+      pdf.line(
+        x0 + subW,
+        y + DATE_HDR_H,
+        x0 + subW,
+        y + DATE_HDR_H + SUB_HDR_H,
+      );
+    }
+
+    // Separador entre columna Estudiante y fechas
+    pdf.setDrawColor(0, 0, 0);
+    pdf.setLineWidth(0.4);
+    pdf.line(
+      MARGIN + STUDENT_COL_W,
+      y,
+      MARGIN + STUDENT_COL_W,
+      y + DATE_HDR_H + SUB_HDR_H,
+    );
+
+    // Columna TOTAL FALLOS (al final de todas las fechas)
+    pdf.setDrawColor(0, 0, 0);
+    pdf.setLineWidth(0.4);
+    pdf.line(xTotal, y, xTotal, y + DATE_HDR_H + SUB_HDR_H);
+
+    pdf.setFontSize(5);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(0, 0, 0);
+    pdf.text(
+      "TOTAL FALLAS",
+      xTotal + TOTAL_COL_W / 2,
+      y + (DATE_HDR_H + SUB_HDR_H) / 2 + 1.5,
+      { align: "center" },
+    );
+
+    // Borde externo del bloque de cabecera
+    pdf.setDrawColor(0, 0, 0);
+    pdf.setLineWidth(0.4);
+    pdf.rect(MARGIN, y, tableW, DATE_HDR_H + SUB_HDR_H, "S");
+
+    return y + DATE_HDR_H + SUB_HDR_H;
+  };
+
+  // ── Tabla por día ─────────────────────────────────────────────────────────
+  const maxFit = Math.floor(DATE_AREA_W / MIN_PAIR_W);
+  const pairW = Math.min(
+    MAX_PAIR_W,
+    Math.max(MIN_PAIR_W, DATE_AREA_W / Math.min(dates.length || 1, maxFit)),
+  );
+  const datesPerChunk = Math.floor(DATE_AREA_W / pairW);
+  const chunks = [];
+  for (let i = 0; i < Math.max(dates.length, 1); i += datesPerChunk) {
+    chunks.push(dates.slice(i, i + datesPerChunk));
+  }
+
+  const drawDayTable = (startY) => {
+    let y = startY;
+
+    for (const chunk of chunks) {
+      const tableW = STUDENT_COL_W + chunk.length * pairW + TOTAL_COL_W;
+      const chunkRange =
+        chunks.length > 1 && chunk.length > 0
+          ? ` (${fmtShort(chunk[0])} — ${fmtShort(chunk[chunk.length - 1])})`
+          : "";
+
+      // Nueva página si no hay espacio mínimo
+      if (y + TITLE_HDR_H + DATE_HDR_H + SUB_HDR_H + ROW_H * 2 > CONTENT_BOT) {
+        pdf.addPage();
+        y = drawPageHeader();
+      }
+
+      // Título del bloque
+      pdf.setFillColor(255, 255, 255);
+      pdf.setDrawColor(0, 0, 0);
+      pdf.setLineWidth(0.4);
+      pdf.rect(MARGIN, y, tableW, TITLE_HDR_H, "FD");
+      pdf.setFontSize(8.5);
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(`ASISTENCIA POR DÍA${chunkRange}`, MARGIN + 3, y + TITLE_HDR_H - 2);
+      y += TITLE_HDR_H;
+
+      y = drawColHeaders(chunk, tableW, y);
+
+      // Filas de estudiantes
+      for (let si = 0; si < students.length; si++) {
+        if (y + ROW_H > CONTENT_BOT) {
+          pdf.addPage();
+          y = drawPageHeader();
+          pdf.setFillColor(255, 255, 255);
+          pdf.setDrawColor(0, 0, 0);
+          pdf.setLineWidth(0.4);
+          pdf.rect(MARGIN, y, tableW, TITLE_HDR_H, "FD");
+          pdf.setFontSize(8.5);
+          pdf.setFont("helvetica", "bold");
+          pdf.setTextColor(0, 0, 0);
+          pdf.text(
+            `ASISTENCIA POR DÍA${chunkRange} (cont.)`,
+            MARGIN + 3,
+            y + TITLE_HDR_H - 2,
+          );
+          y += TITLE_HDR_H;
+          y = drawColHeaders(chunk, tableW, y);
+        }
+
+        pdf.setFillColor(255, 255, 255);
+        pdf.rect(MARGIN, y, tableW, ROW_H, "F");
+
+        pdf.setFontSize(7);
+        pdf.setFont("helvetica", "normal");
+        pdf.setTextColor(0, 0, 0);
+        const nameLine =
+          pdf.splitTextToSize(students[si], STUDENT_COL_W - 4)[0] || "";
+        pdf.text(nameLine, MARGIN + 2, y + ROW_H - 2);
+
+        const subW =
+          (tableW - STUDENT_COL_W - TOTAL_COL_W) / (chunk.length * 2);
+        for (let di = 0; di < chunk.length; di++) {
+          const x0 = MARGIN + STUDENT_COL_W + di * subW * 2;
+          const data = dayMap.get(`${students[si]}|${chunk[di]}`);
+          const reg = data?.registradas ?? "";
+          const est = data?.estado ?? "";
+
+          pdf.setFontSize(5.5);
+          pdf.setFont("helvetica", "normal");
+          pdf.setTextColor(0, 0, 0);
+          pdf.text(reg, x0 + subW / 2, y + ROW_H / 2 + 1.5, {
+            align: "center",
+          });
+          pdf.text(est, x0 + subW * 1.5, y + ROW_H / 2 + 1.5, {
+            align: "center",
+          });
+
+          // Separadores verticales de las subcolumnas
+          pdf.setDrawColor(0, 0, 0);
+          pdf.setLineWidth(0.1);
+          pdf.line(x0 + subW, y, x0 + subW, y + ROW_H);
+          pdf.line(x0 + subW * 2, y, x0 + subW * 2, y + ROW_H);
+        }
+
+        // Celda TOTAL FALLOS (al final de todas las fechas)
+        const xTotal = MARGIN + STUDENT_COL_W + chunk.length * subW * 2;
+        pdf.setFontSize(6);
+        pdf.setFont("helvetica", "bold");
+        pdf.setTextColor(0, 0, 0);
+        pdf.text(
+          totalMap.get(students[si]) ?? "",
+          xTotal + TOTAL_COL_W / 2,
+          y + ROW_H / 2 + 1.5,
+          { align: "center" },
+        );
+        pdf.setDrawColor(0, 0, 0);
+        pdf.setLineWidth(0.1);
+        pdf.line(xTotal, y, xTotal, y + ROW_H);
+
+        // Borde completo de la fila
+        pdf.setDrawColor(0, 0, 0);
+        pdf.setLineWidth(0.3);
+        pdf.rect(MARGIN, y, tableW, ROW_H, "S");
+        // Separador columna Estudiante
+        pdf.setLineWidth(0.4);
+        pdf.line(MARGIN + STUDENT_COL_W, y, MARGIN + STUDENT_COL_W, y + ROW_H);
+
+        y += ROW_H;
+      }
+
+      // Línea de cierre de la tabla
+      pdf.setDrawColor(0, 0, 0);
+      pdf.setLineWidth(0.3);
+      pdf.line(MARGIN, y, MARGIN + tableW, y);
+
+      y += 8;
+    }
+
+    return y;
+  };
+
+  drawDayTable(drawPageHeader());
 
   pdf.save(fileName);
 }
