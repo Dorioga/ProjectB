@@ -12,11 +12,7 @@ const cols = [
   },
   {
     title: "Legal",
-    links: [
-      "Política de privacidad",
-      "Habeas Data",
-      "Términos y condiciones",
-    ],
+    links: ["Política de privacidad", "Términos y condiciones"],
   },
 ];
 
@@ -47,7 +43,7 @@ function Footer() {
                     type="button"
                     aria-label="Red social"
                     key={i}
-                    className="w-9 h-9 bg-slate-800 hover:bg-secondary text-slate-400 hover:text-white rounded-lg flex items-center justify-center transition-colors"
+                    className="w-9 h-9 bg-slate-800 hover:bg-secondary text-slate-400 hover:text-white rounded-lg flex items-center justify-center transition-colors cursor-pointer"
                   >
                     {icon}
                   </button>

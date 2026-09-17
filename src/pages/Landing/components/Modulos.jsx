@@ -4,7 +4,7 @@ import { DarkCard } from "./ui";
 
 function Modulos() {
   return (
-    <section className="bg-white py-24">
+    <section id="funcionalidades" className="bg-white py-24">
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-14">
           <span className="text-secondary font-bold text-xs tracking-widest uppercase mb-3 block">
@@ -30,7 +30,7 @@ function Modulos() {
         <div className="text-center">
           <button
             type="button"
-            className="inline-flex items-center gap-2 border-2 border-primary text-primary hover:bg-primary hover:text-white font-semibold px-6 py-3 rounded-xl transition-all duration-200"
+            className="inline-flex items-center gap-2 border-2 border-primary text-primary hover:bg-primary hover:text-white font-semibold px-6 py-3 rounded-xl transition-all duration-200 cursor-pointer"
           >
             Conocer todos los módulos <Icon.ArrowRight />
           </button>

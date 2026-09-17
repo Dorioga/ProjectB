@@ -25,7 +25,7 @@ function FAQ() {
             >
               <button
                 type="button"
-                className="w-full flex items-center justify-between px-6 py-5 text-left"
+                className="w-full flex items-center justify-between px-6 py-5 text-left cursor-pointer"
                 onClick={() => setOpen(open === i ? null : i)}
               >
                 <span className="font-semibold text-primary pr-4">{q}</span>

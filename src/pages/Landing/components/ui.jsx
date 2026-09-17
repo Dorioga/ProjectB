@@ -22,7 +22,7 @@ export function OrangeButton({
     <button
       type={type}
       onClick={onClick}
-      className={`bg-secondary hover:brightness-110 text-white font-semibold px-6 py-3 rounded-xl transition-all duration-200 hover:shadow-lg active:scale-[0.98] ${className}`}
+      className={`bg-secondary hover:brightness-110 text-white font-semibold px-6 py-3 rounded-xl transition-all duration-200 hover:shadow-lg active:scale-[0.98] cursor-pointer ${className}`}
     >
       {children}
     </button>

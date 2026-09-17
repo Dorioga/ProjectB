@@ -20,8 +20,8 @@ export default function LandingPage() {
       <Header />
       <main>
         <Hero />
-        <TodoConectado />
         <QuienesSomos />
+        <TodoConectado />
         <Perfiles />
         <Modulos />
         <ComoFunciona />

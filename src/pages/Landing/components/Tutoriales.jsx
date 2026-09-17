@@ -41,7 +41,7 @@ function Tutoriales() {
         <div className="text-center">
           <button
             type="button"
-            className="inline-flex items-center gap-2 border-2 border-primary text-primary hover:bg-primary hover:text-white font-semibold px-6 py-3 rounded-xl transition-all duration-200"
+            className="inline-flex items-center gap-2 border-2 border-primary text-primary hover:bg-primary hover:text-white font-semibold px-6 py-3 rounded-xl transition-all duration-200 cursor-pointer"
           >
             Ver todos los tutoriales <Icon.ArrowRight />
           </button>

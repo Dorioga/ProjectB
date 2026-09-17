@@ -22,11 +22,9 @@ function DemoForm() {
   const [formData, setFormData] = useState({
     municipality: "",
     name: "",
-    address: "",
     email: "",
     phone: "",
     principalName: "",
-    coordinadorName: "",
     department_id: "",
     interes: "",
     mensaje: "",
@@ -109,20 +107,6 @@ function DemoForm() {
           />
         </div>
 
-        <div>
-          <label className={labelClass}>
-            Dirección <span className="text-red-500">*</span>
-          </label>
-          <input
-            required
-            name="address"
-            value={formData.address}
-            onChange={handleChange}
-            placeholder="Ej: Calle 10 # 20-30"
-            className={inputClass}
-          />
-        </div>
-
         <div className="grid grid-cols-2 gap-3">
           <DepartmentSelector
             name="department_id"
@@ -175,33 +159,18 @@ function DemoForm() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className={labelClass}>
-              Nombre del director <span className="text-red-500">*</span>
-            </label>
-            <input
-              required
-              name="principalName"
-              value={formData.principalName}
-              onChange={handleChange}
-              placeholder="Ej: Juan Pérez"
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label className={labelClass}>
-              Nombre del coordinador <span className="text-red-500">*</span>
-            </label>
-            <input
-              required
-              name="coordinadorName"
-              value={formData.coordinadorName}
-              onChange={handleChange}
-              placeholder="Ej: María López"
-              className={inputClass}
-            />
-          </div>
+        <div>
+          <label className={labelClass}>
+            Nombre de contacto <span className="text-red-500">*</span>
+          </label>
+          <input
+            required
+            name="principalName"
+            value={formData.principalName}
+            onChange={handleChange}
+            placeholder="Ej: Juan Pérez"
+            className={inputClass}
+          />
         </div>
 
         <div>

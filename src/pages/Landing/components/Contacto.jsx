@@ -6,12 +6,9 @@ function Contacto() {
     <section id="contactanos" className="bg-white py-24">
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-14">
-          <span className="text-secondary font-bold text-xs tracking-widest uppercase mb-3 block">
+          <span className="text-secondary font-bold text-xs tracking-widest uppercase block">
             Contacto
           </span>
-          <h2 className="text-4xl font-extrabold text-primary">
-            Contáctanos.
-          </h2>
         </div>
 
         <div className="grid lg:grid-cols-5 gap-10">
@@ -88,12 +85,12 @@ function Contacto() {
               <p className="text-orange-100 text-sm mb-4">
                 Sin costos, sin compromisos. Solo resultados.
               </p>
-              <button
-                type="button"
-                className="bg-white text-secondary font-bold px-5 py-2.5 rounded-xl hover:bg-orange-50 transition-colors text-sm"
+              <a
+                href="#inicio"
+                className="inline-block bg-white text-secondary font-bold px-5 py-2.5 rounded-xl hover:bg-orange-50 transition-colors text-sm cursor-pointer"
               >
                 Agendar ahora →
-              </button>
+              </a>
             </div>
           </div>
         </div>

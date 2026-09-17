@@ -17,7 +17,7 @@ const resumen = [
 
 function ComoFunciona() {
   return (
-    <section className="bg-bg py-24">
+    <section id="flujo-de-trabajo" className="bg-bg py-24">
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-16">
           <span className="text-secondary font-bold text-xs tracking-widest uppercase mb-3 block">

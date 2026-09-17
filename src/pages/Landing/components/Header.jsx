@@ -7,11 +7,15 @@ import { OrangeButton } from "./ui";
 const navLinks = [
   { label: "Inicio", href: "#inicio" },
   { label: "Quiénes somos", href: "#quienes-somos" },
-  { label: "Perfiles", href: "#perfiles" },
+  { label: "Plataforma", href: "#plataforma" },
+  { label: "Roles", href: "#perfiles" },
+  { label: "Funcionalidades", href: "#funcionalidades" },
+  { label: "Flujo de trabajo", href: "#flujo-de-trabajo" },
   { label: "Galería", href: "#galeria" },
   { label: "Tutoriales", href: "#tutoriales" },
   { label: "Recursos", href: "#recursos" },
   { label: "Preguntas frecuentes", href: "#preguntas-frecuentes" },
+  { label: "Seguridad", href: "#seguridad" },
   { label: "Contáctanos", href: "#contactanos" },
 ];
 
@@ -30,19 +34,19 @@ function Header() {
           />
         </a>
 
-        <nav className="hidden lg:flex items-center gap-1">
+        <nav className="hidden xl:flex items-center gap-1">
           {navLinks.map(({ label, href }) => (
             <a
               key={label}
               href={href}
-              className="text-slate-600 hover:text-[var(--color-primary)] px-3 py-2 rounded-lg hover:bg-slate-50 text-sm font-medium transition-colors whitespace-nowrap"
+              className="text-slate-600 hover:text-[var(--color-primary)] px-2.5 py-2 rounded-lg hover:bg-slate-50 text-[13px] font-medium transition-colors whitespace-nowrap"
             >
               {label}
             </a>
           ))}
         </nav>
 
-        <div className="hidden lg:block">
+        <div className="hidden xl:block">
           <OrangeButton onClick={() => navigate("/login")}>
             Iniciar sesión
           </OrangeButton>
@@ -51,7 +55,7 @@ function Header() {
         <button
           type="button"
           aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
-          className="lg:hidden text-slate-700"
+          className="xl:hidden text-slate-700 cursor-pointer"
           onClick={() => setMenuOpen(!menuOpen)}
         >
           {menuOpen ? <Icon.X /> : <Icon.Menu />}
@@ -59,7 +63,7 @@ function Header() {
       </div>
 
       {menuOpen && (
-        <div className="lg:hidden bg-white border-t border-slate-100 px-6 py-4 flex flex-col gap-2">
+        <div className="xl:hidden bg-white border-t border-slate-100 px-6 py-4 flex flex-col gap-2">
           {navLinks.map(({ label, href }) => (
             <a
               key={label}
