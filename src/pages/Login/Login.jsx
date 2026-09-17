@@ -100,10 +100,12 @@ const Login = () => {
             className="mx-auto w-3/5 h-auto row-span-3"
           />
           <div className="text-center row-span-2">
-            <p className="text-xl px-4">
-              <span className="block text-xl font-semibold text-primary">
-                te conecta con el aprendizaje y facilita la gestión educativa en
-                un solo lugar
+            <p className="flex flex-col  px-4">
+              <span className="block text-2xl md:text-4xl font-bold text-primary">
+                Todo conectado
+              </span>
+              <span className="block text-2xl md:text-4xl font-bold text-secondary">
+                en una sola plataforma
               </span>
             </p>
           </div>
