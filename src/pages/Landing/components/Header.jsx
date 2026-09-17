@@ -12,7 +12,6 @@ const navLinks = [
   { label: "Funcionalidades", href: "#funcionalidades" },
   { label: "Flujo de trabajo", href: "#flujo-de-trabajo" },
   { label: "Galería", href: "#galeria" },
-  { label: "Tutoriales", href: "#tutoriales" },
   { label: "Recursos", href: "#recursos" },
   { label: "Preguntas frecuentes", href: "#preguntas-frecuentes" },
   { label: "Seguridad", href: "#seguridad" },

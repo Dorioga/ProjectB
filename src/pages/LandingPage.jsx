@@ -7,7 +7,6 @@ import Perfiles from "./Landing/components/Perfiles";
 import Modulos from "./Landing/components/Modulos";
 import ComoFunciona from "./Landing/components/ComoFunciona";
 import Galeria from "./Landing/components/Galeria";
-import Tutoriales from "./Landing/components/Tutoriales";
 import Recursos from "./Landing/components/Recursos";
 import FAQ from "./Landing/components/FAQ";
 import Seguridad from "./Landing/components/Seguridad";
@@ -26,7 +25,6 @@ export default function LandingPage() {
         <Modulos />
         <ComoFunciona />
         <Galeria />
-        <Tutoriales />
         <Recursos />
         <FAQ />
         <Seguridad />

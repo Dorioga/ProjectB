@@ -218,9 +218,14 @@ function DemoForm() {
             className="mt-0.5 accent-[var(--color-secondary)]"
           />
           <span className="text-xs text-slate-500">
-            Acepto la{" "}
-            <a href="#" className="text-secondary underline">
-              Política de privacidad
+            Acepto los{" "}
+            <a
+              href="https://nexusplataforma.com/storage/otros/POL%C3%8DTICA%20DE%20TRATAMIENTO%20DE%20DATOS%20PERSONALES.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-secondary underline"
+            >
+              Términos y condiciones
             </a>{" "}
             y el tratamiento de mis datos personales.
           </span>

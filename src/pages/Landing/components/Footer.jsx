@@ -4,15 +4,26 @@ import { Icon } from "./Icons";
 const cols = [
   {
     title: "Nexus",
-    links: ["Quiénes somos", "Recursos", "Tutoriales"],
+    links: [
+      { label: "Quiénes somos", href: "#quienes-somos" },
+      { label: "Recursos", href: "#recursos" },
+    ],
   },
   {
     title: "Soporte",
-    links: ["Centro de ayuda", "Contacto"],
+    links: [
+      { label: "Centro de ayuda", href: "#preguntas-frecuentes" },
+      { label: "Contacto", href: "#contactanos" },
+    ],
   },
   {
     title: "Legal",
-    links: ["Política de privacidad", "Términos y condiciones"],
+    links: [
+      {
+        label: "Términos y condiciones",
+        href: "https://nexusplataforma.com/storage/otros/POL%C3%8DTICA%20DE%20TRATAMIENTO%20DE%20DATOS%20PERSONALES.pdf",
+      },
+    ],
   },
 ];
 
@@ -56,13 +67,19 @@ function Footer() {
             <div key={title}>
               <p className="text-white font-bold text-sm mb-4">{title}</p>
               <ul className="space-y-2.5">
-                {links.map((link) => (
-                  <li key={link}>
+                {links.map(({ label, href }) => (
+                  <li key={label}>
                     <a
-                      href="#"
+                      href={href}
+                      target={href.startsWith("http") ? "_blank" : undefined}
+                      rel={
+                        href.startsWith("http")
+                          ? "noopener noreferrer"
+                          : undefined
+                      }
                       className="text-slate-400 hover:text-[var(--color-secondary)] text-sm transition-colors"
                     >
-                      {link}
+                      {label}
                     </a>
                   </li>
                 ))}
