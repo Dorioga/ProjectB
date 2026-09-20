@@ -61,7 +61,8 @@ const Sidebar = () => {
   }, [closeSidebar]);
 
   // Menú siempre ordenado alfabéticamente por etiqueta (option), incluyendo
-  // los ítems especiales de modal (Boletín, Fecha Corte).
+  // los ítems especiales de modal (Boletín, Fecha Corte). El ítem "Inicio"
+  // (inicio del dashboard) se muestra siempre de primero.
   const menuItems = useMemo(() => {
     const items = (Array.isArray(menu) ? menu : []).map((item) => ({
       type: "link",
@@ -79,9 +80,23 @@ const Sidebar = () => {
         icon: "CalendarCheck",
       });
     }
-    return items.sort((a, b) =>
-      a.option.localeCompare(b.option, "es", { sensitivity: "base" }),
-    );
+    const isHome = (item) =>
+      item.option.toLowerCase().trim() === "inicio" ||
+      (typeof item.link === "string" && item.link.endsWith("/home"));
+    if (!items.some(isHome)) {
+      items.push({
+        type: "link",
+        option: "Inicio",
+        link: "/dashboard/home",
+        icon: "Home",
+      });
+    }
+    return items.sort((a, b) => {
+      const aHome = isHome(a);
+      const bHome = isHome(b);
+      if (aHome !== bHome) return aHome ? -1 : 1;
+      return a.option.localeCompare(b.option, "es", { sensitivity: "base" });
+    });
   }, [menu, rol]);
 
   return (

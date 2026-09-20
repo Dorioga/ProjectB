@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { jsPDF } from "jspdf";
 import useStudent from "../../lib/hooks/useStudent";
 import useAuth from "../../lib/hooks/useAuth";
+import { getStudentGuardian } from "../../services/studentService";
 import Loader from "../../components/atoms/Loader";
 
 /**
@@ -178,8 +179,24 @@ async function generateNotesPDF(grouped, studentName, nameSchool) {
 
 const StudentNotes = ({ studentId }) => {
   const { getStudentNotesById } = useStudent();
-  const { idEstudiante: authIdEstudiante, userName, nameSchool } = useAuth();
-  const idEstudiante = studentId || authIdEstudiante;
+  const {
+    idEstudiante: authIdEstudiante,
+    userName,
+    nameSchool,
+    rol,
+    idPersona,
+  } = useAuth();
+  const isGuardian = String(rol) === "5";
+
+  // ── Estudiantes del acudiente (rol 5) ──────────────────────────────────
+  const [guardianStudents, setGuardianStudents] = useState([]);
+  const [loadingGuardianStudents, setLoadingGuardianStudents] = useState(false);
+  const [selectedGuardianStudentId, setSelectedGuardianStudentId] =
+    useState("");
+
+  const idEstudiante = isGuardian
+    ? selectedGuardianStudentId
+    : studentId || authIdEstudiante;
   const [pdfLoading, setPdfLoading] = useState(false);
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -187,6 +204,40 @@ const StudentNotes = ({ studentId }) => {
   const [selectedPeriodo, setSelectedPeriodo] = useState("");
 
   useEffect(() => {
+    if (!isGuardian || !idPersona) {
+      setGuardianStudents([]);
+      return;
+    }
+    let mounted = true;
+    setLoadingGuardianStudents(true);
+    getStudentGuardian({ idPersonaGuardian: Number(idPersona) })
+      .then((data) => {
+        if (mounted) setGuardianStudents(Array.isArray(data) ? data : []);
+      })
+      .catch((err) => {
+        console.error("StudentNotes - getStudentGuardian error:", err);
+        if (mounted) setGuardianStudents([]);
+      })
+      .finally(() => {
+        if (mounted) setLoadingGuardianStudents(false);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [isGuardian, idPersona]);
+
+  useEffect(() => {
+    setNotes([]);
+    setSelectedPeriodo("");
+    setError(null);
+    setLoading(true);
+  }, [selectedGuardianStudentId, isGuardian]);
+
+  useEffect(() => {
+    if (isGuardian && !selectedGuardianStudentId) {
+      setLoading(false);
+      return;
+    }
     if (!idEstudiante) {
       setError("No se encontró el ID del estudiante.");
       setLoading(false);
@@ -197,7 +248,13 @@ const StudentNotes = ({ studentId }) => {
       .then((data) => setNotes(data))
       .catch((err) => setError(err.message || "Error al cargar las notas."))
       .finally(() => setLoading(false));
-  }, [getStudentNotesById, idEstudiante]);
+  }, [getStudentNotesById, idEstudiante, isGuardian, selectedGuardianStudentId]);
+
+  const selectedGuardianStudent = isGuardian
+    ? guardianStudents.find(
+        (s) => String(s.id_estudiante) === String(selectedGuardianStudentId),
+      )
+    : null;
 
   // Agrupar notas por periodo → asignatura
   const grouped = useMemo(() => {
@@ -234,23 +291,9 @@ const StudentNotes = ({ studentId }) => {
     return { [selectedPeriodo]: grouped[selectedPeriodo] };
   }, [grouped, selectedPeriodo]);
 
-  if (loading) return <Loader message="Cargando notas..." size={96} />;
-
-  if (error) {
-    return (
-      <div className="border p-6 rounded bg-bg h-full flex items-center justify-center">
-        <p className="text-red-600 text-lg">{error}</p>
-      </div>
-    );
-  }
-
-  if (notes.length === 0) {
-    return (
-      <div className="border p-6 rounded bg-bg h-full flex items-center justify-center">
-        <p className="text-muted text-lg">No hay notas registradas.</p>
-      </div>
-    );
-  }
+  const mustSelectStudent = isGuardian && !selectedGuardianStudentId;
+  const noGuardianStudents =
+    isGuardian && !loadingGuardianStudents && guardianStudents.length === 0;
 
   return (
     <div className="border p-6 rounded bg-bg h-full gap-6 flex flex-col overflow-auto">
@@ -274,7 +317,11 @@ const StudentNotes = ({ studentId }) => {
             onClick={async () => {
               setPdfLoading(true);
               try {
-                await generateNotesPDF(grouped, userName, nameSchool);
+                await generateNotesPDF(
+                  grouped,
+                  selectedGuardianStudent?.concat_ws || userName,
+                  nameSchool,
+                );
               } finally {
                 setPdfLoading(false);
               }
@@ -312,7 +359,55 @@ const StudentNotes = ({ studentId }) => {
         </div>
       </div>
 
-      {Object.entries(filteredGrouped)
+      {isGuardian && (
+        <div className="max-w-md">
+          <label className="block text-sm font-medium mb-1">Estudiante</label>
+          {loadingGuardianStudents ? (
+            <p className="text-sm text-gray-500 py-1">
+              Cargando estudiantes...
+            </p>
+          ) : (
+            <select
+              value={selectedGuardianStudentId}
+              onChange={(e) => setSelectedGuardianStudentId(e.target.value)}
+              className="w-full p-2 border rounded bg-surface"
+              aria-label="Estudiante del acudiente"
+            >
+              <option value="">Selecciona un estudiante</option>
+              {guardianStudents.map((s) => (
+                <option key={s.id_estudiante} value={s.id_estudiante}>
+                  {s.concat_ws}
+                </option>
+              ))}
+            </select>
+          )}
+          {noGuardianStudents && (
+            <p className="text-sm text-red-600 mt-1">
+              No se encontraron estudiantes asociados al acudiente.
+            </p>
+          )}
+        </div>
+      )}
+
+      {mustSelectStudent ? (
+        <div className="border p-6 rounded bg-bg h-full flex items-center justify-center">
+          <p className="text-muted text-lg">
+            Selecciona un estudiante para ver sus notas.
+          </p>
+        </div>
+      ) : loading ? (
+        <Loader message="Cargando notas..." size={96} />
+      ) : error ? (
+        <div className="border p-6 rounded bg-bg h-full flex items-center justify-center">
+          <p className="text-red-600 text-lg">{error}</p>
+        </div>
+      ) : notes.length === 0 ? (
+        <div className="border p-6 rounded bg-bg h-full flex items-center justify-center">
+          <p className="text-muted text-lg">No hay notas registradas.</p>
+        </div>
+      ) : (
+        <>
+          {Object.entries(filteredGrouped)
         .sort(([a], [b]) => {
           const na = parseInt(a.replace(/\D/g, "") || "0", 10);
           const nb = parseInt(b.replace(/\D/g, "") || "0", 10);
@@ -395,6 +490,8 @@ const StudentNotes = ({ studentId }) => {
             ))}
           </div>
         ))}
+        </>
+        )}
     </div>
   );
 };
