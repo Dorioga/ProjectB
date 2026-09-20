@@ -8,6 +8,8 @@ import RegisterStudent from "./RegisterStudent";
 import UploadStudentExcel from "./UploadStudentExcel";
 import UploadStudentPDF from "./UploadStudentPDF";
 import StudentModal from "../../components/molecules/StudentModal";
+import ProfileStudentEnfasis from "../../components/molecules/ProfileStudentEnfasis";
+import StudentEnfasis from "./StudentEnfasis";
 import AuditBulkModal from "../../components/molecules/AuditBulkModal";
 import DownloadProgressModal from "../../components/molecules/DownloadProgressModal";
 import DownloadErrorModal from "../../components/molecules/DownloadErrorModal";
@@ -30,6 +32,8 @@ const ManageStudent = () => {
   const [isBulkPdfOpen, setIsBulkPdfOpen] = useState(false);
   const [isBulkAuditOpen, setIsBulkAuditOpen] = useState(false);
   const [isBulkAuditUploadOpen, setIsBulkAuditUploadOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("estudiantes");
+  const [isStudentEnfasisOpen, setIsStudentEnfasisOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [initialEditing, setInitialEditing] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
@@ -194,7 +198,17 @@ const ManageStudent = () => {
         />
       </div>
     );
-  }, [rol, selectedSedeFilter, selectedGradoFilter, sedes, grados, filteredTableData, isDownloading, downloadProgress, notify]);
+  }, [
+    rol,
+    selectedSedeFilter,
+    selectedGradoFilter,
+    sedes,
+    grados,
+    filteredTableData,
+    isDownloading,
+    downloadProgress,
+    notify,
+  ]);
 
   // Abrir modal (ver o editar) y cargar datos del estudiante
   const openStudentModal = useCallback(
@@ -364,236 +378,311 @@ const ManageStudent = () => {
           <h2 className="text-2xl font-bold">Datos de Estudiantes</h2>
         </div>
         <div
-          className={`w-full grid gap-2 lg:col-span-5 xl:col-span-8 2xl:col-span-5 ${Number(rol) === 10 ? "grid-cols-1" : Number(rol) === 9 ? "grid-cols-5" : "grid-cols-7"}`}
+          className={`w-full grid gap-2 lg:col-span-5 xl:col-span-8 2xl:col-span-5 ${activeTab === "enfasis" ? "grid-cols-3" : "grid-cols-7"}`}
         >
-          {Number(rol) !== 9 && Number(rol) !== 10 && (
-            <div id="tour-mst-add-btn" className="col-span-2">
-              <SimpleButton
-                onClick={() => setIsAddOpen(true)}
-                msj="Registrar estudiante"
-                icon="Plus"
-                bg="bg-secondary"
-                text="text-surface"
-                noRounded={false}
-              />
-            </div>
+          {activeTab === "estudiantes" ? (
+            <>
+              {Number(rol) !== 9 && Number(rol) !== 10 && (
+                <div id="tour-mst-add-btn" className="col-span-2">
+                  <SimpleButton
+                    onClick={() => setIsAddOpen(true)}
+                    msj="Registrar estudiante"
+                    icon="Plus"
+                    bg="bg-secondary"
+                    text="text-surface"
+                    noRounded={false}
+                  />
+                </div>
+              )}
+              {Number(rol) !== 9 && Number(rol) !== 10 && (
+                <div id="tour-mst-bulk-excel" className="col-span-2">
+                  <SimpleButton
+                    onClick={() => setIsBulkOpen(true)}
+                    msj="Carga masiva "
+                    icon="Upload"
+                    bg="bg-secondary"
+                    text="text-surface"
+                    noRounded={false}
+                  />
+                </div>
+              )}
+              {Number(rol) !== 9 && Number(rol) !== 10 && (
+                <div id="tour-mst-bulk-pdf" className="col-span-2">
+                  <SimpleButton
+                    onClick={() => setIsBulkPdfOpen(true)}
+                    msj="Subir PDF(s)"
+                    icon="FileText"
+                    bg="bg-secondary"
+                    text="text-surface"
+                    noRounded={false}
+                  />
+                </div>
+              )}
+              {Number(rol) === 9 && (
+                <div className="col-span-2">
+                  <SimpleButton
+                    onClick={() => setIsBulkAuditOpen(true)}
+                    msj="Descarga Masiva Auditoria"
+                    icon="Download"
+                    bg="bg-secondary"
+                    text="text-surface"
+                    noRounded={false}
+                  />
+                </div>
+              )}
+              {Number(rol) === 9 && (
+                <div className="col-span-2">
+                  <SimpleButton
+                    onClick={() => setIsBulkAuditUploadOpen(true)}
+                    msj="Carga Masiva Auditoria"
+                    icon="Upload"
+                    bg="bg-secondary"
+                    text="text-surface"
+                    noRounded={false}
+                  />
+                </div>
+              )}
+              <div className="col-span-1">
+                <SimpleButton
+                  type="button"
+                  onClick={tourManageStudent}
+                  icon="HelpCircle"
+                  msjtooltip="Iniciar tutorial"
+                  noRounded={false}
+                  bg="bg-info"
+                  text="text-surface"
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              {Number(rol) !== 9 && Number(rol) !== 10 && (
+                <div id="tour-mst-add-btn" className="col-span-2">
+                  <SimpleButton
+                    onClick={() => setIsStudentEnfasisOpen(true)}
+                    msj="Registrar estudiantes de énfasis"
+                    icon="UserPlus"
+                    bg="bg-secondary"
+                    text="text-surface"
+                    noRounded={false}
+                  />
+                </div>
+              )}
+              <div className="col-span-1">
+                <SimpleButton
+                  type="button"
+                  onClick={tourManageStudent}
+                  icon="HelpCircle"
+                  msjtooltip="Iniciar tutorial"
+                  noRounded={false}
+                  bg="bg-info"
+                  text="text-surface"
+                />
+              </div>
+            </>
           )}
-          {Number(rol) !== 9 && Number(rol) !== 10 && (
-            <div id="tour-mst-bulk-excel" className="col-span-2">
-              <SimpleButton
-                onClick={() => setIsBulkOpen(true)}
-                msj="Carga masiva "
-                icon="Upload"
-                bg="bg-secondary"
-                text="text-surface"
-                noRounded={false}
-              />
-            </div>
-          )}
-          {Number(rol) !== 9 && Number(rol) !== 10 && (
-            <div id="tour-mst-bulk-pdf" className="col-span-2">
-              <SimpleButton
-                onClick={() => setIsBulkPdfOpen(true)}
-                msj="Subir PDF(s)"
-                icon="FileText"
-                bg="bg-secondary"
-                text="text-surface"
-                noRounded={false}
-              />
-            </div>
-          )}
-          {Number(rol) === 9 && (
-            <div className="col-span-2">
-              <SimpleButton
-                onClick={() => setIsBulkAuditOpen(true)}
-                msj="Descarga Masiva Auditoria"
-                icon="Download"
-                bg="bg-secondary"
-                text="text-surface"
-                noRounded={false}
-              />
-            </div>
-          )}
-          {Number(rol) === 9 && (
-            <div className="col-span-2">
-              <SimpleButton
-                onClick={() => setIsBulkAuditUploadOpen(true)}
-                msj="Carga Masiva Auditoria"
-                icon="Upload"
-                bg="bg-secondary"
-                text="text-surface"
-                noRounded={false}
-              />
-            </div>
-          )}
-          <div className="col-span-1">
-            <SimpleButton
-              type="button"
-              onClick={tourManageStudent}
-              icon="HelpCircle"
-              msjtooltip="Iniciar tutorial"
-              noRounded={false}
-              bg="bg-info"
-              text="text-surface"
-            />
-          </div>
         </div>
       </div>
-      <div id="tour-mst-table" className="relative flex-1 p-4">
-        <DataTable
-          key="students-table"
-          data={filteredTableData || []}
-          columns={columns}
-          fileName="Export_Students"
-          initialSorting={[{ id: "nombre_sede", desc: false }]}
-          mode="Student"
-          showDownloadButtons={false}
-          loading={isFetching}
-          loaderMessage="Cargando estudiantes..."
-          toolbarExtra={toolbarExtra}
-          groupBy="nombre_sede"
-          groupSummary={(rows, isOpen) => {
-            if (!isOpen) return null;
-            const counts = {};
-            rows.forEach((r) => {
-              const grado = r.original.nombre_grado ?? "SIN GRADO";
-              counts[grado] = (counts[grado] || 0) + 1;
-            });
-            return (
-              <div className="flex items-center gap-2 flex-wrap">
-                {Object.entries(counts).map(([grado, count]) => (
-                  <span
-                    key={grado}
-                    className="px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-700"
-                  >
-                    {grado}: {count}
-                  </span>
-                ))}
-              </div>
-            );
-          }}
-        />
 
-        {fetchError && (
-          <div className="mt-4 text-center text-red-600">
-            Error al cargar estudiantes: {fetchError}
-          </div>
-        )}
-
-        <Modal
-          isOpen={isAddOpen}
-          onClose={() => setIsAddOpen(false)}
-          title="Registrar estudiante"
-          size="4xl"
+      {/* Tabs */}
+      <div className="flex gap-0 border-b border-gray-300">
+        <button
+          type="button"
+          onClick={() => setActiveTab("estudiantes")}
+          className={`px-5 py-2 text-sm font-semibold transition-colors rounded-tl rounded-tr cursor-pointer ${
+            activeTab === "estudiantes"
+              ? "bg-primary text-white border-2 border-primary"
+              : "bg-secondary text-primary hover:bg-gray-100"
+          }`}
         >
-          <RegisterStudent
-            onSuccess={() => {
-              setIsAddOpen(false);
-              fetchStudentsData();
+          Datos de Estudiantes
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("enfasis")}
+          className={`px-5 py-2 text-sm font-semibold transition-colors rounded-tl rounded-tr cursor-pointer ${
+            activeTab === "enfasis"
+              ? "bg-primary text-white border-2 border-primary"
+              : "bg-secondary text-primary hover:bg-gray-100"
+          }`}
+        >
+          Estudiantes de Énfasis
+        </button>
+      </div>
+
+      {activeTab === "estudiantes" ? (
+        <div id="tour-mst-table" className="relative flex-1 p-4">
+          <DataTable
+            key="students-table"
+            data={filteredTableData || []}
+            columns={columns}
+            fileName="Export_Students"
+            initialSorting={[{ id: "nombre_sede", desc: false }]}
+            mode="Student"
+            showDownloadButtons={false}
+            loading={isFetching}
+            loaderMessage="Cargando estudiantes..."
+            toolbarExtra={toolbarExtra}
+            groupBy="nombre_sede"
+            groupSummary={(rows, isOpen) => {
+              if (!isOpen) return null;
+              const counts = {};
+              rows.forEach((r) => {
+                const grado = r.original.nombre_grado ?? "SIN GRADO";
+                counts[grado] = (counts[grado] || 0) + 1;
+              });
+              return (
+                <div className="flex items-center gap-2 flex-wrap">
+                  {Object.entries(counts).map(([grado, count]) => (
+                    <span
+                      key={grado}
+                      className="px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-700"
+                    >
+                      {grado}: {count}
+                    </span>
+                  ))}
+                </div>
+              );
             }}
           />
-        </Modal>
 
-        <Modal
-          isOpen={isBulkOpen}
-          onClose={() => setIsBulkOpen(false)}
-          title="Carga masiva de estudiantes"
-          size="4xl"
-        >
-          <UploadStudentExcel
-            onSuccess={() => {
-              setIsBulkOpen(false);
-              fetchStudentsData();
-            }}
-          />
-        </Modal>
+          {fetchError && (
+            <div className="mt-4 text-center text-red-600">
+              Error al cargar estudiantes: {fetchError}
+            </div>
+          )}
 
-        <Modal
-          isOpen={isBulkPdfOpen}
-          onClose={() => setIsBulkPdfOpen(false)}
-          title="Subir PDF(s)"
-          size="4xl"
-        >
-          <UploadStudentPDF
-            onSuccess={() => {
-              setIsBulkPdfOpen(false);
-              // si los PDFs afectan listado, recargar
-              fetchStudentsData();
-            }}
-          />
-        </Modal>
+          <Modal
+            isOpen={isAddOpen}
+            onClose={() => setIsAddOpen(false)}
+            title="Registrar estudiante"
+            size="4xl"
+          >
+            <RegisterStudent
+              onSuccess={() => {
+                setIsAddOpen(false);
+                fetchStudentsData();
+              }}
+            />
+          </Modal>
 
-        <Modal
-          isOpen={isBulkAuditOpen}
-          onClose={() => setIsBulkAuditOpen(false)}
-          title="Descarga masiva auditoria"
-          size="4xl"
-        >
-          <AuditBulkModal
-            mode="download"
+          <Modal
+            isOpen={isBulkOpen}
+            onClose={() => setIsBulkOpen(false)}
+            title="Carga masiva de estudiantes"
+            size="4xl"
+          >
+            <UploadStudentExcel
+              onSuccess={() => {
+                setIsBulkOpen(false);
+                fetchStudentsData();
+              }}
+            />
+          </Modal>
+
+          <Modal
+            isOpen={isBulkPdfOpen}
+            onClose={() => setIsBulkPdfOpen(false)}
+            title="Subir PDF(s)"
+            size="4xl"
+          >
+            <UploadStudentPDF
+              onSuccess={() => {
+                setIsBulkPdfOpen(false);
+                // si los PDFs afectan listado, recargar
+                fetchStudentsData();
+              }}
+            />
+          </Modal>
+
+          <Modal
+            isOpen={isBulkAuditOpen}
             onClose={() => setIsBulkAuditOpen(false)}
-            onSuccess={() => {
-              setIsBulkAuditOpen(false);
-              fetchStudentsData();
-            }}
-          />
-        </Modal>
+            title="Descarga masiva auditoria"
+            size="4xl"
+          >
+            <AuditBulkModal
+              mode="download"
+              onClose={() => setIsBulkAuditOpen(false)}
+              onSuccess={() => {
+                setIsBulkAuditOpen(false);
+                fetchStudentsData();
+              }}
+            />
+          </Modal>
 
-        <Modal
-          isOpen={isBulkAuditUploadOpen}
-          onClose={() => setIsBulkAuditUploadOpen(false)}
-          title="Carga masiva auditoria"
-          size="4xl"
-        >
-          <AuditBulkModal
-            mode="upload"
+          <Modal
+            isOpen={isBulkAuditUploadOpen}
             onClose={() => setIsBulkAuditUploadOpen(false)}
-            onSuccess={() => {
-              setIsBulkAuditUploadOpen(false);
-              fetchStudentsData();
-            }}
-          />
-        </Modal>
+            title="Carga masiva auditoria"
+            size="4xl"
+          >
+            <AuditBulkModal
+              mode="upload"
+              onClose={() => setIsBulkAuditUploadOpen(false)}
+              onSuccess={() => {
+                setIsBulkAuditUploadOpen(false);
+                fetchStudentsData();
+              }}
+            />
+          </Modal>
 
-        <StudentModal
-          isOpen={isModalOpen}
-          onClose={() => {
-            setIsModalOpen(false);
-            fetchStudentsData();
-          }}
-          student={selectedStudent}
-          initialEditing={initialEditing}
-          isLoading={isFetching}
-          onSave={async (studentId, personId, updatedData) => {
-            try {
-              await updateStudent(studentId, personId, updatedData);
-              notify.success("Estudiante actualizado exitosamente.");
+          <StudentModal
+            isOpen={isModalOpen}
+            onClose={() => {
               setIsModalOpen(false);
               fetchStudentsData();
-            } catch (err) {
-              console.error("Error al actualizar estudiante:", err);
-              notify.error(err?.message || "Error al actualizar estudiante.");
+            }}
+            student={selectedStudent}
+            initialEditing={initialEditing}
+            isLoading={isFetching}
+            onSave={async (studentId, personId, updatedData) => {
+              try {
+                await updateStudent(studentId, personId, updatedData);
+                notify.success("Estudiante actualizado exitosamente.");
+                setIsModalOpen(false);
+                fetchStudentsData();
+              } catch (err) {
+                console.error("Error al actualizar estudiante:", err);
+                notify.error(err?.message || "Error al actualizar estudiante.");
+              }
+            }}
+          />
+
+          <DownloadProgressModal
+            isOpen={isDownloading}
+            onClose={() => {}}
+            progress={downloadProgress}
+            downloadLog={downloadLog}
+            isDownloading={isDownloading}
+          />
+
+          <DownloadErrorModal
+            isOpen={
+              !isDownloading && downloadErrors && downloadErrors.length > 0
             }
-          }}
-        />
+            onClose={() => {
+              setDownloadErrors(null);
+              setDownloadLog([]);
+            }}
+            errors={downloadErrors}
+          />
+        </div>
+      ) : (
+        <StudentEnfasis />
+      )}
 
-        <DownloadProgressModal
-          isOpen={isDownloading}
-          onClose={() => {}}
-          progress={downloadProgress}
-          downloadLog={downloadLog}
-          isDownloading={isDownloading}
+      <Modal
+        isOpen={isStudentEnfasisOpen}
+        onClose={() => setIsStudentEnfasisOpen(false)}
+        title="Registrar estudiantes a énfasis"
+        size="7xl"
+      >
+        <ProfileStudentEnfasis
+          onSave={() => setIsStudentEnfasisOpen(false)}
+          onClose={() => setIsStudentEnfasisOpen(false)}
         />
-
-        <DownloadErrorModal
-          isOpen={!isDownloading && downloadErrors && downloadErrors.length > 0}
-          onClose={() => {
-            setDownloadErrors(null);
-            setDownloadLog([]);
-          }}
-          errors={downloadErrors}
-        />
-      </div>
+      </Modal>
     </div>
   );
 };

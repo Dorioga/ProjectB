@@ -1,4 +1,4 @@
-﻿import { useState, useMemo, useEffect, useCallback } from "react";
+﻿import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import useSchool from "../../lib/hooks/useSchool";
 import useAuth from "../../lib/hooks/useAuth";
 import useData from "../../lib/hooks/useData";
@@ -11,6 +11,7 @@ import JourneySelect from "../../components/atoms/JourneySelect";
 import SedeSelect from "../../components/atoms/SedeSelect";
 import { useNotify } from "../../lib/hooks/useNotify";
 import ProfileAssignature from "../../components/molecules/ProfileAssignature";
+import ManageAsignatureEnfasis from "./ManageAsignatureEnfasis";
 import tourManageAsignature from "../../tour/tourManageAsignature";
 
 const ManageAsignature = () => {
@@ -19,6 +20,8 @@ const ManageAsignature = () => {
   const { institutionSedes } = useData();
   const notify = useNotify();
 
+  const [activeTab, setActiveTab] = useState("asignaturas");
+  const enfasisRef = useRef(null);
   const [tableData, setTableData] = useState([]);
   const [fetchError, setFetchError] = useState(null);
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -232,16 +235,37 @@ const ManageAsignature = () => {
         </div>
         <div
           id="tour-ma-add-btn"
-          className=" grid grid-cols-2 col-span-2 xl:col-span-2 gap-2"
+          className={` grid col-span-2 xl:col-span-2 gap-2 ${activeTab === "asignaturas" ? "grid-cols-2" : "grid-cols-3"}`}
         >
-          <SimpleButton
-            onClick={() => setIsAddOpen(true)}
-            msj="Registrar asignatura"
-            icon="Plus"
-            bg="bg-secondary"
-            text="text-surface"
-            noRounded={false}
-          />
+          {activeTab === "asignaturas" ? (
+            <SimpleButton
+              onClick={() => setIsAddOpen(true)}
+              msj="Registrar asignatura"
+              icon="Plus"
+              bg="bg-secondary"
+              text="text-surface"
+              noRounded={false}
+            />
+          ) : (
+            <>
+              <SimpleButton
+                onClick={() => enfasisRef.current?.openRegister()}
+                msj="Registrar Enfasis"
+                icon="Plus"
+                bg="bg-secondary"
+                text="text-surface"
+                noRounded={false}
+              />
+              <SimpleButton
+                onClick={() => enfasisRef.current?.openStudentEnfasis()}
+                msj="Registrar estudiantes"
+                icon="UserPlus"
+                bg="bg-secondary"
+                text="text-surface"
+                noRounded={false}
+              />
+            </>
+          )}
           <SimpleButton
             type="button"
             onClick={tourManageAsignature}
@@ -255,8 +279,36 @@ const ManageAsignature = () => {
         </div>
       </div>
 
-      {/* Filtros */}
-      <div className="bg-surface p-4 rounded-lg shadow grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Tabs */}
+      <div className="flex gap-0 border-b border-gray-300">
+        <button
+          type="button"
+          onClick={() => setActiveTab("asignaturas")}
+          className={`px-5 py-2 text-sm font-semibold transition-colors rounded-tl rounded-tr cursor-pointer ${
+            activeTab === "asignaturas"
+              ? "bg-primary text-white border-2 border-primary"
+              : "bg-secondary text-primary hover:bg-gray-100"
+          }`}
+        >
+          Asignaturas
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("enfasis")}
+          className={`px-5 py-2 text-sm font-semibold transition-colors rounded-tl rounded-tr cursor-pointer ${
+            activeTab === "enfasis"
+              ? "bg-primary text-white border-2 border-primary"
+              : "bg-secondary text-primary hover:bg-gray-100"
+          }`}
+        >
+          Asignatura Énfasis
+        </button>
+      </div>
+
+      {activeTab === "asignaturas" ? (
+        <>
+          {/* Filtros */}
+          <div className="bg-surface p-4 rounded-lg shadow grid grid-cols-1 md:grid-cols-2 gap-4">
         <div id="tour-ma-sede">
           <SedeSelect
             value={selectedSede}
@@ -336,7 +388,11 @@ const ManageAsignature = () => {
             />
           )}
         </Modal>
-      </div>
+        </div>
+        </>
+      ) : (
+        <ManageAsignatureEnfasis ref={enfasisRef} hideToolbar />
+      )}
     </div>
   );
 };
