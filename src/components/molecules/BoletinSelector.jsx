@@ -116,6 +116,12 @@ const _computeNotaEfectiva = (notaPeriodo, notaRecuperacion) => {
   return String(Math.max(pV, rV));
 };
 
+const esAsignaturaEnfasis = (tipo) =>
+  String(tipo ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") === "enfasis";
+
 /* ── Hooks de procesamiento de datos del boletín ── */
 const useBoletinProcessed = (data, periodId) => {
   const periodos = useMemo(() => {
@@ -165,6 +171,7 @@ const useBoletinProcessed = (data, periodId) => {
             r.nombre_asignatura_grado ?? key,
           ).toUpperCase(),
           tiene_nota: r.tiene_nota,
+          esEnfasis: esAsignaturaEnfasis(r.tipo_asignatura),
           nombre_docente: r.nombre_docente || "-",
           intensidad_horaria: r.intensidad_horaria,
           definitiva: r.definitiva || "-",
@@ -284,6 +291,7 @@ const useBoletinProcessed = (data, periodId) => {
     const pid = String(periodId);
     let sum = 0;
     for (const asig of asignaturas) {
+      if (asig.esEnfasis) continue;
       if (asig.tiene_nota === "SI") {
         const per = asig.periodos.get(pid);
         const v = parseFloat(per?.nota);
@@ -360,6 +368,7 @@ function computeBoletinData(data, periodId) {
           r.nombre_asignatura_grado ?? key,
         ).toUpperCase(),
         tiene_nota: r.tiene_nota,
+        esEnfasis: esAsignaturaEnfasis(r.tipo_asignatura),
         nombre_docente: r.nombre_docente || "-",
         intensidad_horaria: r.intensidad_horaria,
         definitiva: r.definitiva || "-",
@@ -472,6 +481,7 @@ function computeBoletinData(data, periodId) {
   const pid = String(periodId);
   let promedioSum = 0;
   for (const asig of asignaturas) {
+    if (asig.esEnfasis) continue;
     if (asig.tiene_nota === "SI") {
       const per = asig.periodos.get(pid);
       const v = parseFloat(per?.nota);
