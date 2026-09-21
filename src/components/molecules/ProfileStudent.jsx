@@ -569,7 +569,9 @@ const ProfileStudent = ({
           </div>
 
           <div className="flex flex-row gap-4 items-center">
-            <label className="text-lg font-medium">Estado:</label>
+            <label className="text-lg font-medium">
+              Estado en la Institución:
+            </label>
             {canEditRestricted ? (
               <select
                 value={editedData.estado}
