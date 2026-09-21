@@ -338,6 +338,25 @@ const ManageStudent = () => {
             },
           ]
         : []),
+            {
+        accessorKey: "estado_estudiante",
+        header: "Estado",
+        cell: ({ getValue }) => {
+          const value = getValue() || "Activo";
+          const isInactivo = String(value).toLowerCase() === "inactivo";
+          return (
+            <span
+              className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                isInactivo
+                  ? "bg-gray-200 text-gray-700"
+                  : "bg-green-100 text-green-700"
+              }`}
+            >
+              {value}
+            </span>
+          );
+        },
+      },
       {
         id: "actions",
         header: "Acciones",

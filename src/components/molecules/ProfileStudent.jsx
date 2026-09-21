@@ -120,6 +120,7 @@ const ProfileStudent = ({
     first_lastname: data?.primer_apellido || data?.first_lastname || "",
     second_lastname: data?.segundo_apellido || data?.second_lastname || "",
     periodo_ingreso: data?.perido_ingreso || data?.fk_periodo_ingreso || "",
+    estado: data?.estado || "Activo",
   });
 
   // Selectores para sede y jornada
@@ -205,6 +206,7 @@ const ProfileStudent = ({
       nui: data.nui || "",
       per_id: data.per_id || "",
       fk_beca: becaIdMap[editedData.state_beca] ?? 1,
+      estado: editedData.estado,
       // Periodo de ingreso
       periodo_ingreso: editedData.periodo_ingreso || data.periodo_ingreso || "",
       fk_periodo_ingreso: editedData.periodo_ingreso
@@ -564,6 +566,22 @@ const ProfileStudent = ({
           <div className="flex flex-row gap-4 items-center">
             <label className="text-lg font-medium">Jornada:</label>
             <p>{data.nombre_jornada}</p>
+          </div>
+
+          <div className="flex flex-row gap-4 items-center">
+            <label className="text-lg font-medium">Estado:</label>
+            {canEditRestricted ? (
+              <select
+                value={editedData.estado}
+                onChange={(e) => handleStateChange("estado", e.target.value)}
+                className="border p-2 rounded bg-surface"
+              >
+                <option value="Activo">Activo</option>
+                <option value="Inactivo">Inactivo</option>
+              </select>
+            ) : (
+              <p>{editedData.estado}</p>
+            )}
           </div>
         </div>
         <div
