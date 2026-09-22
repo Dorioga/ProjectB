@@ -259,9 +259,18 @@ const ProfileStudent = ({
     const hasGuardianIdFile = Boolean(documentFiles.id_Acudiente);
 
     if (hasGuardianIdFile) {
+      const idAcudiente = String(
+        data.numero_identificacion_acudiente ?? "",
+      ).trim();
+      if (!idAcudiente) {
+        notify.error(
+          "No se puede subir el documento: identificación del acudiente vacía.",
+        );
+        return;
+      }
       try {
         const form = new FormData();
-        form.append("identificacion", data.numero_identificacion_acudiente);
+        form.append("identificacion", idAcudiente);
         form.append("cedulaAcudiente", documentFiles.id_Acudiente);
 
         const res = await upload(form, "upload/acudientes");
@@ -1064,9 +1073,20 @@ const ProfileStudent = ({
                 <FileChooser
                   editing={isEditing}
                   accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={(file) =>
-                    handleDocumentChange("id_Acudiente", file)
-                  }
+                  onChange={(file) => {
+                    const idAcudiente = String(
+                      data.numero_identificacion_acudiente ??
+                        data.identification_acudiente ??
+                        "",
+                    ).trim();
+                    if (!idAcudiente) {
+                      notify.error(
+                        "El estudiante no tiene registrado el número de identificación del acudiente. No se puede cargar el documento.",
+                      );
+                      return;
+                    }
+                    handleDocumentChange("id_Acudiente", file);
+                  }}
                   label={
                     documentFiles.id_Acudiente
                       ? documentFiles.id_Acudiente.name
