@@ -119,6 +119,8 @@ const ProfileStudent = ({
     second_name: data?.segundo_nombre || data?.second_name || "",
     first_lastname: data?.primer_apellido || data?.first_lastname || "",
     second_lastname: data?.segundo_apellido || data?.second_lastname || "",
+    identification_number:
+      data?.numero_identificacion || data?.identification || "",
     periodo_ingreso: data?.perido_ingreso || data?.fk_periodo_ingreso || "",
     estado: data?.estado || "Activo",
   });
@@ -195,8 +197,7 @@ const ProfileStudent = ({
       first_lastname: editedData.first_lastname,
       second_lastname: editedData.second_lastname,
       phone: data.telefono_acudiente || data.telephone || data.phone || "",
-      identification_number:
-        data.numero_identificacion || data.identification || "",
+      identification_number: editedData.identification_number || "",
       email: data.email || data.correo_electronico || "",
       birth_date: data.fecha_nacimiento || data.birthday || "",
       process_id: processIdMap[editedData.state_process],
@@ -228,7 +229,7 @@ const ProfileStudent = ({
         const form = new FormData();
         form.append(
           "identificacion",
-          data.numero_identificacion || data.identification || "",
+          editedData.identification_number || "",
         );
         if (hasIdFile) {
           form.append("cedulaEstudiante", documentFiles.id_Student);
@@ -314,7 +315,7 @@ const ProfileStudent = ({
         fd.append("imageBase64", photoBase64);
         fd.append(
           "identificacion",
-          data.numero_identificacion || data.identification || "",
+          editedData.identification_number || "",
         );
         fd.append("etapa", currentEtapa);
         const uploadRes = await upload(fd, "uploadfirma/estudiantes");
@@ -448,7 +449,18 @@ const ProfileStudent = ({
               <label className="text-lg font-medium">
                 Número de identificación:
               </label>
-              <p>{data.numero_identificacion || data.identification}</p>
+              {canEditRestricted ? (
+                <input
+                  type="text"
+                  value={editedData.identification_number}
+                  onChange={(e) =>
+                    handleStateChange("identification_number", e.target.value)
+                  }
+                  className="border p-2 rounded bg-surface"
+                />
+              ) : (
+                <p>{editedData.identification_number}</p>
+              )}
             </div>
             <div className="flex flex-row gap-4 items-center">
               <label className="text-lg font-medium">Primer nombre:</label>
