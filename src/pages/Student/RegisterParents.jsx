@@ -58,14 +58,14 @@ const RegisterParents = ({ fkEstudiante, onSuccess }) => {
   const handleSearchStudent = async () => {
     const value = studentIdInput.trim();
     if (!value) {
-      notify.error("Ingresa un número de identificación para buscar.");
+      notify.error("Ingresa la identificación del estudiante para buscar.");
       return;
     }
     setSearchStatus("loading");
     setFoundStudentId(null);
     try {
       const found = await getStudentByIdentification({
-        numero_identificacion_estu: Number(value),
+        numero_identificacion_estu: value,
         fk_institucion: Number(idInstitution),
       });
       setFoundStudentId(found.id_estudiante);
@@ -201,7 +201,7 @@ const RegisterParents = ({ fkEstudiante, onSuccess }) => {
       {/* Búsqueda de estudiante por número de identificación */}
       <div className="flex flex-col gap-2 p-4 border border-secondary/30 rounded-lg bg-surface/50">
         <label className="text-sm font-semibold text-on-surface">
-          Buscar estudiante por N.º de identificación
+          Buscar estudiante por identificación
         </label>
         <div className="grid grid-cols-5 gap-2  items-center">
           <input

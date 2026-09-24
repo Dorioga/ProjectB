@@ -21,8 +21,7 @@ export default defineConfig({
       },
       "/backend-proxy": {
         target:
-          process.env.VITE_API_BACKEND_URL ||
-          "https://backend-barranquilla.onrender.com",
+          process.env.VITE_API_BACKEND_URL || "https://nexusplataforma.com/api",
         changeOrigin: true,
         secure: true,
         rewrite: (path) => path.replace(/^\/backend-proxy/, ""),
