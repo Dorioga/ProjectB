@@ -88,6 +88,50 @@ export async function getStudentByIdentification(payload) {
   return data;
 }
 
+/**
+ * Consulta si un acudiente ya está registrado en la institución.
+ *
+ * Endpoint: POST /values/guardian
+ * @param {{ numero_identificacion_acudiente: string, fk_institucion: number }} payload
+ * @param {Object} [config] Configuración extra de Axios (ej. { silent: true }).
+ * @returns {Promise<Array<Object>>} Registros del acudiente encontrados.
+ */
+export async function getGuardianByInstitution(payload, config = {}) {
+  if (!payload?.numero_identificacion_acudiente || !payload?.fk_institucion) {
+    throw new Error(
+      "numero_identificacion_acudiente y fk_institucion son requeridos.",
+    );
+  }
+  const res = await ApiClient.instance.post(
+    "/values/guardian",
+    payload,
+    config,
+  );
+  const data = Array.isArray(res) ? res : (res?.data ?? []);
+  return data;
+}
+
+/**
+ * Asigna un estudiante a un acudiente ya registrado en la institución.
+ *
+ * Endpoint: POST /guardian/existing
+ * @param {Object} payload - { id_acudiente, fk_persona, fk_estudiante, link_identificacion, link_firma }
+ * @returns {Promise<Object>} Respuesta del servidor.
+ */
+export async function assignGuardianExisting(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+  if (!payload.id_acudiente || !payload.fk_estudiante) {
+    throw new Error("id_acudiente y fk_estudiante son requeridos.");
+  }
+  const res = await ApiClient.instance.post("/guardian/existing", payload);
+  const data = res;
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+  throw new Error("Respuesta inesperada de assignGuardianExisting.");
+}
+
 export async function getStudent(payload) {
   // Aceptar tanto string/id como objeto payload
   const body =

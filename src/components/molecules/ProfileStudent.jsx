@@ -19,6 +19,9 @@ import {
 import { upload } from "../../services/uploadService";
 import { updateGuardian } from "../../services/studentService";
 import { useNotify } from "../../lib/hooks/useNotify";
+import useSchool from "../../lib/hooks/useSchool";
+import JourneySelect from "../atoms/JourneySelect";
+import GradeSelector from "../atoms/GradeSelector";
 import useAudit from "../../lib/hooks/useAudit";
 import tourProfileStudent from "../../tour/tourProfileStudent";
 
@@ -219,17 +222,95 @@ const ProfileStudent = ({
     }
   };
 
+  const becaIdMap = {
+    Activo: 1,
+    Retirado: 0,
+  };
+
+  // Estado independiente para editar grado y jornada del estudiante
+  const { journeys } = useSchool();
+  const [isEditingGrade, setIsEditingGrade] = useState(false);
+  const [isSavingGrade, setIsSavingGrade] = useState(false);
+  const [gradeEditForm, setGradeEditForm] = useState({
+    jornada: "",
+    grado: "",
+    nombreGrado: "",
+  });
+  const initialSchoolInfo = (d) => ({
+    fk_grado: d?.id_grado || d?.fk_grado || "",
+    nombre_grado: d?.nombre_grado || d?.grade_scholar || "",
+    grupo: d?.grupo || d?.group_grade || "",
+    fk_jornada: d?.fk_jornada || d?.fk_journey || d?.jornada_estudiante || "",
+    nombre_jornada: d?.nombre_jornada || "",
+  });
+  const [schoolInfo, setSchoolInfo] = useState(() => initialSchoolInfo(data));
+
+  useEffect(() => {
+    setSchoolInfo(initialSchoolInfo(data));
+  }, [data]);
+
+  const openGradeEdit = () => {
+    setGradeEditForm({
+      jornada: String(
+        data?.fk_jornada || data?.fk_journey || data?.jornada_estudiante || "",
+      ),
+      grado: String(data?.id_grado || data?.fk_grado || ""),
+      nombreGrado: String(data?.nombre_grado || data?.grade_scholar || ""),
+    });
+    setIsEditingGrade(true);
+  };
+
+  const handleCancelGrade = () => {
+    setGradeEditForm({ jornada: "", grado: "", nombreGrado: "" });
+    setIsEditingGrade(false);
+  };
+
+  const handleJourneyChange = (e) => {
+    setGradeEditForm((prev) => ({
+      ...prev,
+      jornada: e.target.value,
+      grado: "",
+      nombreGrado: "",
+    }));
+  };
+
+  const handleGradeChange = (e) => {
+    setGradeEditForm((prev) => ({ ...prev, grado: e.target.value }));
+  };
+
+  const handleGradeOptionChange = (nombre) => {
+    setGradeEditForm((prev) => ({ ...prev, nombreGrado: nombre || "" }));
+  };
+
+  const handleSaveGrade = () => {
+    if (!gradeEditForm.jornada) {
+      notify.error("Debes seleccionar una jornada.");
+      return;
+    }
+    if (!gradeEditForm.grado) {
+      notify.error("Debes seleccionar un grado.");
+      return;
+    }
+    const journeyOption = Array.isArray(journeys)
+      ? journeys.find((j) => String(j.value) === String(gradeEditForm.jornada))
+      : null;
+    setSchoolInfo({
+      fk_grado: gradeEditForm.grado,
+      nombre_grado: gradeEditForm.nombreGrado || schoolInfo.nombre_grado,
+      grupo: schoolInfo.grupo,
+      fk_jornada: gradeEditForm.jornada,
+      nombre_jornada: journeyOption?.label || schoolInfo.nombre_jornada,
+    });
+    setIsEditingGrade(false);
+    notify.success("Grado actualizado.");
+  };
+
   const processIdMap = {
     Conforme: "1",
     Excusa: "2",
     SinExcusa: "3",
     Retirado: "4",
     Reasignado: "5",
-  };
-
-  const becaIdMap = {
-    Activo: 1,
-    Retirado: 0,
   };
 
   const findExcuseLink = (etapa) =>
@@ -295,10 +376,7 @@ const ProfileStudent = ({
     if (hasIdFile || hasPiarFile) {
       try {
         const form = new FormData();
-        form.append(
-          "identificacion",
-          editedData.identification_number || "",
-        );
+        form.append("identificacion", editedData.identification_number || "");
         if (hasIdFile) {
           form.append("cedulaEstudiante", documentFiles.id_Student);
         }
@@ -381,10 +459,7 @@ const ProfileStudent = ({
         });
         const fd = new FormData();
         fd.append("imageBase64", photoBase64);
-        fd.append(
-          "identificacion",
-          editedData.identification_number || "",
-        );
+        fd.append("identificacion", editedData.identification_number || "");
         fd.append("etapa", currentEtapa);
         const uploadRes = await upload(fd, "uploadfirma/estudiantes");
         if (uploadRes?.status === 200 && uploadRes?.data) {
@@ -623,7 +698,57 @@ const ProfileStudent = ({
           </div>
           <div className="flex flex-row gap-4 items-center">
             <label className="text-lg font-medium">Grado:</label>
-            <p>{data.nombre_grado || data.grade_scholar}</p>
+            {isEditingGrade ? (
+              <div className="flex flex-wrap gap-2">
+                <JourneySelect
+                  name="jornada"
+                  label={false}
+                  value={gradeEditForm.jornada}
+                  onChange={handleJourneyChange}
+                  placeholder="Selecciona una jornada"
+                  className="w-56 p-2 border rounded bg-surface"
+                />
+                <GradeSelector
+                  name="gradeId"
+                  label={false}
+                  value={gradeEditForm.grado}
+                  onChange={handleGradeChange}
+                  onOptionChange={handleGradeOptionChange}
+                  sedeId={data?.id_sede || data?.fk_sede || selectedSede}
+                  workdayId={gradeEditForm.jornada}
+                  placeholder="Selecciona un grado"
+                  className="w-56 p-2 border rounded bg-surface"
+                />
+                <SimpleButton
+                  onClick={handleCancelGrade}
+                  msj="Cancelar"
+                  bg="bg-secondary"
+                  icon="X"
+                  text="text-surface"
+                />
+                <SimpleButton
+                  onClick={handleSaveGrade}
+                  msj={isSavingGrade ? "Guardando..." : "Guardar"}
+                  bg="bg-accent"
+                  icon="Save"
+                  text="text-surface"
+                  disabled={isSavingGrade}
+                />
+              </div>
+            ) : (
+              <div className="flex items-center justify-end  gap-2">
+                <p>{schoolInfo.nombre_grado || "No registrado"}</p>
+                {(!isDocente || isRol7) && !isRol6 && !isRol10 && (
+                  <SimpleButton
+                    onClick={openGradeEdit}
+                    msj="Editar grado"
+                    bg="bg-primary"
+                    icon="Pencil"
+                    text="text-surface"
+                  />
+                )}
+              </div>
+            )}
           </div>
           <div className="flex flex-row gap-4 items-center">
             <label className="text-lg font-medium">Grupo:</label>
@@ -654,7 +779,7 @@ const ProfileStudent = ({
 
           <div className="flex flex-row gap-4 items-center">
             <label className="text-lg font-medium">Jornada:</label>
-            <p>{data.nombre_jornada}</p>
+            <p>{schoolInfo.nombre_jornada || "No registrado"}</p>
           </div>
 
           <div className="flex flex-row gap-4 items-center">
@@ -680,9 +805,7 @@ const ProfileStudent = ({
           className="p-4 bg-bg rounded-lg shadow-md"
         >
           <div className="flex items-center justify-between pb-4">
-            <h2 className="text-2xl font-semibold">
-              Información familiar
-            </h2>
+            <h2 className="text-2xl font-semibold">Información familiar</h2>
             {(!isDocente || isRol7) && !isRol6 && !isRol10 && (
               <div className="flex gap-2">
                 {isEditingFamily ? (
@@ -798,9 +921,7 @@ const ProfileStudent = ({
               <input
                 type="text"
                 value={familyForm.telefono}
-                onChange={(e) =>
-                  handleFamilyChange("telefono", e.target.value)
-                }
+                onChange={(e) => handleFamilyChange("telefono", e.target.value)}
                 className="border p-2 rounded bg-surface"
               />
             ) : (
