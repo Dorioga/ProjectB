@@ -339,6 +339,31 @@ export async function registerGuardian(payload) {
 }
 
 /**
+ * Actualiza los datos de un acudiente.
+ *
+ * Endpoint: PATCH /guardian/:personId
+ * @param {string|number} personId - ID de la persona (acudiente).
+ * @param {Object} payload - Datos del acudiente a actualizar.
+ * @returns {Promise<Object>} Respuesta del servidor.
+ */
+export async function updateGuardian(personId, payload) {
+  if (!personId) {
+    throw new Error("personId del acudiente es requerido.");
+  }
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+  const res = await ApiClient.instance.patch(
+    `/guardian/${personId}`,
+    payload,
+  );
+  const data = res;
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+  throw new Error("Respuesta inesperada de updateGuardian.");
+}
+
+/**
  * Obtiene las notas de un estudiante por su id.
  * Endpoint: POST /note/student/:studentId
  * @param {string|number} studentId - ID del estudiante

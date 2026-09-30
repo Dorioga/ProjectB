@@ -17,6 +17,7 @@ import {
   getIdentificationLabel,
 } from "../../utils/formatUtils";
 import { upload } from "../../services/uploadService";
+import { updateGuardian } from "../../services/studentService";
 import { useNotify } from "../../lib/hooks/useNotify";
 import useAudit from "../../lib/hooks/useAudit";
 import tourProfileStudent from "../../tour/tourProfileStudent";
@@ -150,6 +151,73 @@ const ProfileStudent = ({
       Boolean(data?.cuenta_piar || data?.auDoc_piar || data?.link_piar),
     );
   }, [data]);
+
+  const getGuardianFields = (d) => ({
+    nombre1: d?.primero_nombre_acudiente || "",
+    nombre2: d?.segundo_nombre_acudiente || "",
+    apellido1: d?.primer_apellido_acudiente || "",
+    apellido2: d?.segundo_apellido_acudiente || "",
+    telefono: d?.telefono_acudiente || "",
+    numero_identificacion: d?.numero_identificacion_acudiente || "",
+    correo: d?.correo_acudiente || "",
+  });
+
+  // Estado independiente para editar la información familiar (acudiente)
+  const [isEditingFamily, setIsEditingFamily] = useState(false);
+  const [isSavingFamily, setIsSavingFamily] = useState(false);
+  const [guardianInfo, setGuardianInfo] = useState(() =>
+    getGuardianFields(data),
+  );
+  const [familyForm, setFamilyForm] = useState(() => getGuardianFields(data));
+
+  useEffect(() => {
+    setGuardianInfo(getGuardianFields(data));
+    setFamilyForm(getGuardianFields(data));
+  }, [data]);
+
+  const openFamilyEdit = () => {
+    setFamilyForm(getGuardianFields(data));
+    setIsEditingFamily(true);
+  };
+
+  const handleCancelFamily = () => {
+    setFamilyForm(getGuardianFields(data));
+    setIsEditingFamily(false);
+  };
+
+  const handleFamilyChange = (field, value) => {
+    setFamilyForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSaveFamily = async () => {
+    const personId = data?.id_persona_acudiente;
+    if (!personId) {
+      notify.error(
+        "El estudiante no tiene registrado un acudiente (id_persona_acudiente).",
+      );
+      return;
+    }
+    const payload = {
+      nombre1: familyForm.nombre1?.trim() || null,
+      nombre2: familyForm.nombre2?.trim() || null,
+      apellido1: familyForm.apellido1?.trim() || null,
+      apellido2: familyForm.apellido2?.trim() || null,
+      telefono: familyForm.telefono?.trim() || null,
+      numero_identificacion: familyForm.numero_identificacion?.trim() || null,
+      correo: familyForm.correo?.trim() || null,
+    };
+    setIsSavingFamily(true);
+    try {
+      await updateGuardian(personId, payload);
+      setGuardianInfo(payload);
+      setIsEditingFamily(false);
+      notify.success("Información del acudiente actualizada.");
+    } catch (err) {
+      console.error("Error guardando información del acudiente:", err);
+    } finally {
+      setIsSavingFamily(false);
+    }
+  };
 
   const processIdMap = {
     Conforme: "1",
@@ -611,7 +679,42 @@ const ProfileStudent = ({
           id="tour-ps-family-info"
           className="p-4 bg-bg rounded-lg shadow-md"
         >
-          <h2 className="text-2xl font-semibold pb-4">Información familiar</h2>
+          <div className="flex items-center justify-between pb-4">
+            <h2 className="text-2xl font-semibold">
+              Información familiar
+            </h2>
+            {(!isDocente || isRol7) && !isRol6 && !isRol10 && (
+              <div className="flex gap-2">
+                {isEditingFamily ? (
+                  <>
+                    <SimpleButton
+                      onClick={handleCancelFamily}
+                      msj="Cancelar"
+                      bg="bg-secondary"
+                      icon="X"
+                      text="text-surface"
+                    />
+                    <SimpleButton
+                      onClick={handleSaveFamily}
+                      msj={isSavingFamily ? "Guardando..." : "Guardar"}
+                      bg="bg-accent"
+                      icon="Save"
+                      text="text-surface"
+                      disabled={isSavingFamily}
+                    />
+                  </>
+                ) : (
+                  <SimpleButton
+                    onClick={openFamilyEdit}
+                    msj="Editar"
+                    bg="bg-primary"
+                    icon="Pencil"
+                    text="text-surface"
+                  />
+                )}
+              </div>
+            )}
+          </div>
           <div className="flex flex-row gap-4 items-center">
             <label className="text-lg font-medium">
               Tipo Documento Acudiente:
@@ -627,20 +730,95 @@ const ProfileStudent = ({
             <label className="text-lg font-medium">
               Número identificación Acudiente:
             </label>
-            <p>{data.numero_identificacion_acudiente}</p>
+            {isEditingFamily ? (
+              <input
+                type="text"
+                value={familyForm.numero_identificacion}
+                onChange={(e) =>
+                  handleFamilyChange("numero_identificacion", e.target.value)
+                }
+                className="border p-2 rounded bg-surface"
+              />
+            ) : (
+              <p>{guardianInfo.numero_identificacion || "No registrado"}</p>
+            )}
           </div>
           <div className="flex flex-row gap-4 items-center">
             <label className="text-lg font-medium">Nombre Acudiente:</label>
-            <p>
-              {data.nombre_acudiente ||
-                `${data.primero_nombre_acudiente || ""} ${data.segundo_nombre_acudiente || ""} ${data.primer_apellido_acudiente || ""} ${data.segundo_apellido_acudiente || ""}`.trim()}
-            </p>
+            {isEditingFamily ? (
+              <div className="flex flex-wrap gap-2">
+                <input
+                  type="text"
+                  placeholder="Nombre 1"
+                  value={familyForm.nombre1}
+                  onChange={(e) =>
+                    handleFamilyChange("nombre1", e.target.value)
+                  }
+                  className="border p-2 rounded bg-surface"
+                />
+                <input
+                  type="text"
+                  placeholder="Nombre 2"
+                  value={familyForm.nombre2}
+                  onChange={(e) =>
+                    handleFamilyChange("nombre2", e.target.value)
+                  }
+                  className="border p-2 rounded bg-surface"
+                />
+                <input
+                  type="text"
+                  placeholder="Apellido 1"
+                  value={familyForm.apellido1}
+                  onChange={(e) =>
+                    handleFamilyChange("apellido1", e.target.value)
+                  }
+                  className="border p-2 rounded bg-surface"
+                />
+                <input
+                  type="text"
+                  placeholder="Apellido 2"
+                  value={familyForm.apellido2}
+                  onChange={(e) =>
+                    handleFamilyChange("apellido2", e.target.value)
+                  }
+                  className="border p-2 rounded bg-surface"
+                />
+              </div>
+            ) : (
+              <p>
+                {data.nombre_acudiente ||
+                  `${guardianInfo.nombre1 || ""} ${guardianInfo.nombre2 || ""} ${guardianInfo.apellido1 || ""} ${guardianInfo.apellido2 || ""}`.trim() ||
+                  "No registrado"}
+              </p>
+            )}
           </div>
           <div className="flex flex-row gap-4 items-center">
             <label className="text-lg font-medium">Teléfono Acudiente:</label>
-            <p>
-              {data.telefono_acudiente || data.telephone || "No registrado"}
-            </p>
+            {isEditingFamily ? (
+              <input
+                type="text"
+                value={familyForm.telefono}
+                onChange={(e) =>
+                  handleFamilyChange("telefono", e.target.value)
+                }
+                className="border p-2 rounded bg-surface"
+              />
+            ) : (
+              <p>{guardianInfo.telefono || "No registrado"}</p>
+            )}
+          </div>
+          <div className="flex flex-row gap-4 items-center">
+            <label className="text-lg font-medium">Correo Acudiente:</label>
+            {isEditingFamily ? (
+              <input
+                type="email"
+                value={familyForm.correo}
+                onChange={(e) => handleFamilyChange("correo", e.target.value)}
+                className="border p-2 rounded bg-surface"
+              />
+            ) : (
+              <p>{guardianInfo.correo || "No registrado"}</p>
+            )}
           </div>
         </div>
         {showStates && (
