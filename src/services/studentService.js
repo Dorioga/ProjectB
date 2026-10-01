@@ -132,6 +132,61 @@ export async function assignGuardianExisting(payload) {
   throw new Error("Respuesta inesperada de assignGuardianExisting.");
 }
 
+/**
+ * Consulta las notas académicas y de énfasis de un estudiante.
+ *
+ * Endpoint: GET /student/notes/grade/:fk_estudiante
+ * @param {string|number} fkEstudiante - ID del estudiante.
+ * @returns {Promise<{ notas_estudiante: Array, notas_asignatura_enfasis: Array }>}
+ */
+export async function getValidateStudentNote(fkEstudiante) {
+  if (!fkEstudiante) {
+    throw new Error("fkEstudiante es requerido.");
+  }
+  const res = await ApiClient.instance.get(
+    `/student/notes/grade/${fkEstudiante}`,
+  );
+  const data = res?.data ?? res;
+  return {
+    notas_estudiante: Array.isArray(data?.notas_estudiante)
+      ? data.notas_estudiante
+      : [],
+    notas_asignatura_enfasis: Array.isArray(data?.notas_asignatura_enfasis)
+      ? data.notas_asignatura_enfasis
+      : [],
+  };
+}
+
+/**
+ * Actualiza el grado de un estudiante junto con sus notas.
+ *
+ * Endpoint: PATCH /student/notes/grade/update
+ * @param {Object} payload - { fk_student, fk_grade, fk_grade_student, notas_estudiante, notas_asignatura_enfasis }
+ * @returns {Promise<Object>} Respuesta del servidor.
+ */
+export async function updateStudentGrade(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+  if (
+    ![payload.fk_student, payload.fk_grade, payload.fk_grade_student].every(
+      (v) => v !== undefined && v !== null && v !== "",
+    )
+  ) {
+    throw new Error(
+      "fk_student, fk_grade y fk_grade_student son requeridos.",
+    );
+  }
+  const res = await ApiClient.instance.patch(
+    "/student/notes/grade/update",
+    payload,
+  );
+  const data = res;
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+  throw new Error("Respuesta inesperada de updateStudentGrade.");
+}
+
 export async function getStudent(payload) {
   // Aceptar tanto string/id como objeto payload
   const body =

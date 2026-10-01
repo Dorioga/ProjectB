@@ -18,6 +18,7 @@ import {
 } from "../../utils/formatUtils";
 import { upload } from "../../services/uploadService";
 import { updateGuardian } from "../../services/studentService";
+import { getValidateStudentNote, updateStudentGrade } from "../../services/studentService";
 import { useNotify } from "../../lib/hooks/useNotify";
 import useSchool from "../../lib/hooks/useSchool";
 import JourneySelect from "../atoms/JourneySelect";
@@ -231,6 +232,9 @@ const ProfileStudent = ({
   const { journeys } = useSchool();
   const [isEditingGrade, setIsEditingGrade] = useState(false);
   const [isSavingGrade, setIsSavingGrade] = useState(false);
+  const [showGradeConfirmModal, setShowGradeConfirmModal] = useState(false);
+  const [isSavingGradeConfirm, setIsSavingGradeConfirm] = useState(false);
+  const [gradeConfirmPayload, setGradeConfirmPayload] = useState(null);
   const [gradeEditForm, setGradeEditForm] = useState({
     jornada: "",
     grado: "",
@@ -282,15 +286,7 @@ const ProfileStudent = ({
     setGradeEditForm((prev) => ({ ...prev, nombreGrado: nombre || "" }));
   };
 
-  const handleSaveGrade = () => {
-    if (!gradeEditForm.jornada) {
-      notify.error("Debes seleccionar una jornada.");
-      return;
-    }
-    if (!gradeEditForm.grado) {
-      notify.error("Debes seleccionar un grado.");
-      return;
-    }
+  const applyGradeUpdate = () => {
     const journeyOption = Array.isArray(journeys)
       ? journeys.find((j) => String(j.value) === String(gradeEditForm.jornada))
       : null;
@@ -301,8 +297,93 @@ const ProfileStudent = ({
       fk_jornada: gradeEditForm.jornada,
       nombre_jornada: journeyOption?.label || schoolInfo.nombre_jornada,
     });
+    setGradeEditForm({ jornada: "", grado: "", nombreGrado: "" });
     setIsEditingGrade(false);
     notify.success("Grado actualizado.");
+  };
+
+  const handleSaveGrade = async () => {
+    if (!gradeEditForm.jornada) {
+      notify.error("Debes seleccionar una jornada.");
+      return;
+    }
+    if (!gradeEditForm.grado) {
+      notify.error("Debes seleccionar un grado.");
+      return;
+    }
+    const currentGrade = String(data?.id_grado || data?.fk_grado || "");
+    if (String(gradeEditForm.grado) === currentGrade) {
+      notify.error("Debes seleccionar un grado diferente al actual.");
+      return;
+    }
+    const fkStudent = data?.id_estudiante ?? data?.id_student;
+    const fkGradeStudent = data?.id_grade_student;
+    if (!fkStudent) {
+      notify.error("No se pudo identificar al estudiante (id_estudiante).");
+      return;
+    }
+    if (!fkGradeStudent) {
+      notify.error(
+        "No se pudo identificar el registro del grado (id_grade_student).",
+      );
+      return;
+    }
+    const basePayload = {
+      fk_student: Number(fkStudent),
+      fk_grade: Number(gradeEditForm.grado),
+      fk_grade_student: Number(fkGradeStudent),
+    };
+    setIsSavingGrade(true);
+    try {
+      const notas = await getValidateStudentNote(fkStudent);
+      const notasEstudiante = Array.isArray(notas?.notas_estudiante)
+        ? notas.notas_estudiante
+        : [];
+      const notasEnfasis = Array.isArray(notas?.notas_asignatura_enfasis)
+        ? notas.notas_asignatura_enfasis
+        : [];
+      if (notasEstudiante.length > 0 || notasEnfasis.length > 0) {
+        setGradeConfirmPayload({
+          ...basePayload,
+          notas_estudiante: notasEstudiante,
+          notas_asignatura_enfasis: notasEnfasis,
+        });
+        setShowGradeConfirmModal(true);
+        return;
+      }
+      await updateStudentGrade({
+        ...basePayload,
+        notas_estudiante: [],
+        notas_asignatura_enfasis: [],
+      });
+      applyGradeUpdate();
+    } catch (err) {
+      notify.error(err?.message ?? "Error al actualizar el grado.");
+    } finally {
+      setIsSavingGrade(false);
+    }
+  };
+
+  const handleConfirmGradeSave = async () => {
+    if (!gradeConfirmPayload) return;
+    setIsSavingGradeConfirm(true);
+    try {
+      await updateStudentGrade(gradeConfirmPayload);
+      setShowGradeConfirmModal(false);
+      setGradeConfirmPayload(null);
+      applyGradeUpdate();
+    } catch (err) {
+      notify.error(err?.message ?? "Error al actualizar el grado.");
+    } finally {
+      setIsSavingGradeConfirm(false);
+    }
+  };
+
+  const handleCancelGradeConfirm = () => {
+    setShowGradeConfirmModal(false);
+    setGradeConfirmPayload(null);
+    setGradeEditForm({ jornada: "", grado: "", nombreGrado: "" });
+    setIsEditingGrade(false);
   };
 
   const processIdMap = {
@@ -732,7 +813,13 @@ const ProfileStudent = ({
                   bg="bg-accent"
                   icon="Save"
                   text="text-surface"
-                  disabled={isSavingGrade}
+                  disabled={
+                    isSavingGrade ||
+                    !gradeEditForm.jornada ||
+                    !gradeEditForm.grado ||
+                    String(gradeEditForm.grado) ===
+                      String(data?.id_grado || data?.fk_grado || "")
+                  }
                 />
               </div>
             ) : (
@@ -1576,6 +1663,37 @@ const ProfileStudent = ({
         onClose={() => setIsOpenHabeasData(false)}
         data={data}
       />
+      <Modal
+        isOpen={showGradeConfirmModal}
+        onClose={handleCancelGradeConfirm}
+        title="Confirmar cambio de grado"
+        size="md"
+      >
+        <div className="flex flex-col gap-4">
+          <p className="text-on-surface">
+            ¿Está seguro de hacer el cambio del estudiante con notas
+            registradas, sean notas académicas que están en relación con notas_estudiante
+            o notas de énfasis que están en relación con notas_estudiante_enfasis?
+          </p>
+          <div className="flex justify-end gap-2">
+            <SimpleButton
+              onClick={handleCancelGradeConfirm}
+              msj="No"
+              bg="bg-error"
+              icon="X"
+              text="text-surface"
+            />
+            <SimpleButton
+              onClick={handleConfirmGradeSave}
+              msj={isSavingGradeConfirm ? "Guardando..." : "Sí"}
+              bg="bg-accent"
+              icon="Check"
+              text="text-surface"
+              disabled={isSavingGradeConfirm}
+            />
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
