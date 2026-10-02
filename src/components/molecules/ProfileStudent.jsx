@@ -18,7 +18,10 @@ import {
 } from "../../utils/formatUtils";
 import { upload } from "../../services/uploadService";
 import { updateGuardian } from "../../services/studentService";
-import { getValidateStudentNote, updateStudentGrade } from "../../services/studentService";
+import {
+  getValidateStudentNote,
+  updateStudentGrade,
+} from "../../services/studentService";
 import { useNotify } from "../../lib/hooks/useNotify";
 import useSchool from "../../lib/hooks/useSchool";
 import JourneySelect from "../atoms/JourneySelect";
@@ -1672,8 +1675,7 @@ const ProfileStudent = ({
         <div className="flex flex-col gap-4">
           <p className="text-on-surface">
             ¿Está seguro de hacer el cambio del estudiante con notas
-            registradas, sean notas académicas que están en relación con notas_estudiante
-            o notas de énfasis que están en relación con notas_estudiante_enfasis?
+            registradas, sean notas académicas o notas de énfasis?
           </p>
           <div className="flex justify-end gap-2">
             <SimpleButton
