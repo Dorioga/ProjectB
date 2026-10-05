@@ -2,7 +2,7 @@
 import { StudentContext } from "../../lib/context/StudentContext";
 import Loader from "../../components/atoms/Loader";
 import SimpleButton from "../../components/atoms/SimpleButton";
-import { handleNumericInput } from "../../utils/formatUtils";
+import { handleNumericInput, ensureObservationSeparator } from "../../utils/formatUtils";
 import useAuth from "../../lib/hooks/useAuth";
 import useStudent from "../../lib/hooks/useStudent";
 import { useNotification } from "../../lib/context/NotificationContext";
@@ -115,13 +115,16 @@ const ObservadorEstudiante = ({ onClose }) => {
 
     setSubmitLoading(true);
     const datePrefix = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const observacion = ensureObservationSeparator(
+      `${datePrefix}: ${form.observacion.trim()} ${userName}`,
+    );
     const payload = {
       fk_estudiante: student.id_estudiante,
       fk_grado: student.id_grado ?? student.fk_grado,
       lugar_nacimiento: form.lugar_nacimiento,
       fk_acudiente: student.id_acudiente,
       ocupacion: form.ocupacion,
-      observacion: `${datePrefix}: ${form.observacion} ${userName} |-|`,
+      observacion,
       telefono: form.telefono,
       direccion: form.direccion,
       fk_institucion: Number(effectiveInstitution),
@@ -131,7 +134,13 @@ const ObservadorEstudiante = ({ onClose }) => {
     }
 
     try {
-      const res = await registerObservation(payload);
+      await registerObservation(payload);
+      addNotification("¡Observación registrada correctamente!", "success");
+      setForm((prev) => ({
+        ...prev,
+        observacion: "",
+        docente: teacherName,
+      }));
       setEntries((prev) => [
         ...prev,
         {
@@ -141,16 +150,7 @@ const ObservadorEstudiante = ({ onClose }) => {
           fecha: new Date().toISOString(),
         },
       ]);
-      addNotification("¡Observación registrada correctamente!", "success");
-      setForm((prev) => ({
-        ...prev,
-        observacion: "",
-        docente: teacherName,
-      }));
-
-      if (res && (res.code === "OK" || res.status === 200)) {
-        onClose?.();
-      }
+      onClose?.();
     } catch (err) {
       console.error("handleFormSubmit error", err);
       addNotification(

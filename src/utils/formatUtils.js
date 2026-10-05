@@ -366,6 +366,37 @@ export function sortAlphabetically(data, field, order = "asc") {
 /** Campos que NO se convierten a mayúsculas (sensibles a capitalización). */
 const _LOWERCASE_FIELDS = new Set(["email", "password", "gender"]);
 
+/** Separador usado entre entradas del historial de observaciones. */
+export const OBSERVATION_SEPARATOR = "|-|";
+
+/**
+ * Une varias entradas de observación en un solo texto, separándolas con "|-|"
+ * y garantizando que el resultado siempre termine con said separador.
+ * @param {Array<string>} entries - Entradas (texto de cada observación).
+ * @returns {string} Texto unido, o "" si no hay entradas.
+ */
+export function joinObservations(entries) {
+  const cleaned = (Array.isArray(entries) ? entries : [])
+    .map((entry) => String(entry ?? "").trim())
+    .filter(Boolean);
+  if (cleaned.length === 0) return "";
+  return `${cleaned.join(` ${OBSERVATION_SEPARATOR} `)} ${OBSERVATION_SEPARATOR}`;
+}
+
+/**
+ * Asegura que un texto de observaciones termine con el separador "|-|",
+ * sin duplicarlo si ya está presente.
+ * @param {string} text
+ * @returns {string}
+ */
+export function ensureObservationSeparator(text) {
+  const value = String(text ?? "").trim();
+  if (!value) return value;
+  return value.endsWith(OBSERVATION_SEPARATOR)
+    ? value
+    : `${value} ${OBSERVATION_SEPARATOR}`;
+}
+
 /**
  * Convierte el valor de un campo de texto a mayúsculas,
  * excepto para email y contraseña.

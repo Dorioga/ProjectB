@@ -192,7 +192,7 @@ const ManageObserver = () => {
         title="Registrar observación"
         size="screen-2xl"
       >
-        <ObservadorEstudiante />
+        <ObservadorEstudiante onClose={() => setIsModalOpen(false)} />
       </Modal>
 
       {/* Modal Editar Observación */}

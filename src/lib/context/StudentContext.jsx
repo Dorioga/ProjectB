@@ -269,6 +269,20 @@ export function StudentProvider({ children }) {
     }
   }, []);
 
+  const editObservation = useCallback(async (payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await studentService.editObservation(payload);
+      return result;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const saveConvivencia = useCallback(async (payload) => {
     const result = await studentService.saveConvivencia(payload);
 
@@ -295,6 +309,7 @@ export function StudentProvider({ children }) {
       registerObservation,
       getObservationData,
       updateObservation,
+      editObservation,
       updateStudent,
       getRandomStudents,
       getStudentNotesById,
@@ -320,6 +335,7 @@ export function StudentProvider({ children }) {
       registerObservation,
       getObservationData,
       updateObservation,
+      editObservation,
       removeStudent,
       uploadStudentsExcel,
       saveConvivencia,

@@ -5,6 +5,24 @@ import useAuth from "../../lib/hooks/useAuth";
 import { useNotification } from "../../lib/context/NotificationContext";
 import PdfObservador from "./PdfObservador";
 import tourProfileObserver from "../../tour/tourProfileObserver";
+import {
+  OBSERVATION_SEPARATOR,
+  joinObservations,
+  ensureObservationSeparator,
+} from "../../utils/formatUtils";
+
+/**
+ * Divide el historial de observaciones en entradas usando el separador "|-|".
+ * @param {string} raw
+ * @returns {string[]}
+ */
+const parseEntries = (raw) => {
+  if (!raw) return [];
+  return raw
+    .split(OBSERVATION_SEPARATOR)
+    .map((s) => s.trim())
+    .filter(Boolean);
+};
 
 /**
  * ProfileObserver – muestra los datos completos de un registro del observador,
@@ -16,13 +34,14 @@ import tourProfileObserver from "../../tour/tourProfileObserver";
  *  - onSaved: callback opcional tras guardar exitosamente
  */
 const ProfileObserver = ({ data, onClose, onSaved }) => {
-  const { updateObservation } = useStudent();
+  const { updateObservation, editObservation } = useStudent();
   const {
     idInstitution,
     fkInstitucion,
     nameRole,
     rol,
     idDocente,
+    userId,
     nameSchool,
     imgSchool,
     userName,
@@ -32,11 +51,18 @@ const ProfileObserver = ({ data, onClose, onSaved }) => {
     (typeof nameRole === "string" &&
       nameRole.toLowerCase().includes("docente")) ||
     String(rol) === "7";
+  const isAdminInst = String(rol) === "3";
   const effectiveInstitution = isDocenteRole ? fkInstitucion : idInstitution;
 
   const [newEntry, setNewEntry] = useState("");
   const [saving, setSaving] = useState(false);
   const [isTourMode, setIsTourMode] = useState(false);
+  const [historyEntries, setHistoryEntries] = useState(() =>
+    parseEntries(data?.observacion),
+  );
+  const [editedEntries, setEditedEntries] = useState([]);
+  const [isEditingHistory, setIsEditingHistory] = useState(false);
+  const [isSavingHistory, setIsSavingHistory] = useState(false);
 
   const startTour = useCallback(() => {
     setIsTourMode(true);
@@ -65,16 +91,8 @@ const ProfileObserver = ({ data, onClose, onSaved }) => {
     };
   }, []);
 
-  // ── Parseo de observaciones existentes ───────────────────────────────────
-  const parseEntries = (raw) => {
-    if (!raw) return [];
-    return raw
-      .split("|-|")
-      .map((s) => s.trim())
-      .filter(Boolean);
-  };
-
-  const existingEntries = parseEntries(data?.observacion);
+  // ── Historial de observaciones ────────────────────────────────────────────
+  const existingEntries = historyEntries;
 
   // ── Descargar PDF ─────────────────────────────────────────────────────────
   const handleDownloadPdf = async () => {
@@ -126,11 +144,13 @@ const ProfileObserver = ({ data, onClose, onSaved }) => {
     if (!newEntry.trim()) return;
 
     const datePrefix = new Date().toISOString().slice(0, 10);
-    const newBlock = `${datePrefix}: ${newEntry.trim()}  ${userName} |-|`;
+    const newBlock = `${datePrefix}: ${newEntry.trim()}  ${userName}`;
 
-    // Unir todo: existente (ya tiene |-| al final) + nueva entrada
-    const existingRaw = data?.observacion ? data.observacion.trim() : "";
-    const combined = existingRaw ? `${existingRaw} ${newBlock}` : newBlock;
+    // Unir todo: historial actual + nueva entrada (siempre termina en |-|)
+    const existingRaw = joinObservations(existingEntries);
+    const combined = ensureObservationSeparator(
+      existingRaw ? `${existingRaw} ${newBlock}` : newBlock,
+    );
     const payload = {
       id_observador: Number(data.id_observador),
       observacion: combined,
@@ -144,6 +164,7 @@ const ProfileObserver = ({ data, onClose, onSaved }) => {
       await updateObservation(payload);
       addNotification("¡Observación actualizada correctamente!", "success");
       setNewEntry("");
+      setHistoryEntries(parseEntries(combined));
       onSaved?.();
       onClose?.();
     } catch (err) {
@@ -151,6 +172,48 @@ const ProfileObserver = ({ data, onClose, onSaved }) => {
       addNotification("Error al actualizar la observación.", "error");
     } finally {
       setSaving(false);
+    }
+  };
+
+  // ── Edición del historial (solo admin institucional) ────────────────────────
+  const handleStartEditHistory = () => {
+    setEditedEntries(historyEntries);
+    setIsEditingHistory(true);
+  };
+
+  const handleCancelEditHistory = () => {
+    setEditedEntries([]);
+    setIsEditingHistory(false);
+  };
+
+  const handleSaveHistory = async () => {
+    if (!data?.id_observador) {
+      addNotification("No se pudo identificar el registro (id_observador).", "error");
+      return;
+    }
+    const entries = editedEntries
+      .map((entry) => String(entry ?? "").trim())
+      .filter(Boolean);
+    const idDocenteValue =
+      data?.id_docente ?? (idDocente !== null && idDocente !== undefined ? idDocente : null);
+    const payload = {
+      id_observador: Number(data.id_observador),
+      observacion: joinObservations(entries),
+      id_docente: idDocenteValue != null ? Number(idDocenteValue) : null,
+      fk_usuario: userId != null ? Number(userId) : null,
+    };
+    setIsSavingHistory(true);
+    try {
+      await editObservation(payload);
+      addNotification("¡Observación actualizada correctamente!", "success");
+      setHistoryEntries(entries);
+      setEditedEntries([]);
+      setIsEditingHistory(false);
+      onSaved?.();
+    } catch (err) {
+      console.error("ProfileObserver - handleSaveHistory error:", err);
+    } finally {
+      setIsSavingHistory(false);
     }
   };
 
@@ -217,18 +280,78 @@ const ProfileObserver = ({ data, onClose, onSaved }) => {
             {existingEntries.length !== 1 ? "s" : ""})
           </span>
         </h3>
-        {existingEntries.length === 0 ? (
-          <p className="text-sm text-gray-400 italic">Sin observaciones.</p>
+        {(isEditingHistory ? editedEntries : existingEntries).length === 0 ? (
+          <p className="text-sm text-gray-400 italic">
+            {isEditingHistory
+              ? "Agrega al menos una observación."
+              : "Sin observaciones."}
+          </p>
         ) : (
           <div className="flex flex-col gap-2 py-2">
-            {existingEntries.map((entry, i) => (
-              <div
-                key={i}
-                className="bg-surface border rounded px-4 py-3 text-sm whitespace-pre-wrap"
-              >
-                {entry}
-              </div>
-            ))}
+            {(isEditingHistory ? editedEntries : existingEntries).map(
+              (entry, i) =>
+                isEditingHistory ? (
+                  <textarea
+                    key={i}
+                    rows={3}
+                    value={entry ?? ""}
+                    onChange={(e) =>
+                      setEditedEntries((prev) => {
+                        const next = [...prev];
+                        next[i] = e.target.value;
+                        return next;
+                      })
+                    }
+                    className="w-full border border-gray-300 rounded p-2 focus:outline-none focus:ring-2 focus:ring-secondary resize-y text-sm"
+                  />
+                ) : (
+                  <div
+                    key={i}
+                    className="bg-surface border rounded px-4 py-3 text-sm whitespace-pre-wrap"
+                  >
+                    {entry}
+                  </div>
+                ),
+            )}
+          </div>
+        )}
+        {isAdminInst && (
+          <div className="flex justify-end gap-2 py-2">
+            {isEditingHistory ? (
+              <>
+                <SimpleButton
+                  type="button"
+                  onClick={handleCancelEditHistory}
+                  msj="Cancelar"
+                  bg="bg-gray-200"
+                  text="text-gray-700"
+                  hover="hover:bg-gray-300"
+                />
+                <SimpleButton
+                  type="button"
+                  onClick={handleSaveHistory}
+                  msj={isSavingHistory ? "Guardando…" : "Guardar cambios"}
+                  bg="bg-accent"
+                  text="text-surface"
+                  hover="hover:bg-accent/80"
+                  icon="Save"
+                  disabled={
+                    isSavingHistory ||
+                    editedEntries.every((entry) => !String(entry ?? "").trim())
+                  }
+                />
+              </>
+            ) : (
+              <SimpleButton
+                type="button"
+                onClick={handleStartEditHistory}
+                msj="Editar"
+                bg="bg-secondary"
+                text="text-surface"
+                hover="hover:bg-secondary/80"
+                icon="Pencil"
+              />
+            )}
           </div>
         )}
       </section>

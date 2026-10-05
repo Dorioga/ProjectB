@@ -395,6 +395,29 @@ export async function updateObservation(payload) {
   throw new Error("Respuesta inesperada de updateObservation.");
 }
 
+/**
+ * Edita el historial de observaciones de un registro del observador.
+ *
+ * Endpoint: PATCH /Observation/edit
+ * @param {{ id_observador: number, observacion: string, id_docente: number|null, fk_usuario: number|null }} payload
+ * @returns {Promise<Object>} Respuesta del servidor
+ */
+export async function editObservation(payload) {
+  if (!payload?.id_observador) {
+    throw new Error("id_observador es requerido.");
+  }
+  if (typeof payload?.observacion !== "string") {
+    throw new Error("observacion es requerida.");
+  }
+
+  const res = await ApiClient.patch("/Observation/edit", payload);
+
+  if (res && typeof res === "object" && "data" in res) return res;
+  if (res !== undefined && res !== null) return res;
+
+  throw new Error("Respuesta inesperada de editObservation.");
+}
+
 /* Opcional: subir foto (FormData). */
 export async function uploadStudentPhoto(id, formData) {
   return ApiClient.post(`/students/${id}/photo`, formData, {
