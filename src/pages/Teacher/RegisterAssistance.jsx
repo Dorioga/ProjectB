@@ -7,6 +7,7 @@ import GradeSelector from "../../components/atoms/GradeSelector";
 import PeriodSelector from "../../components/atoms/PeriodSelector";
 import AsignatureSelector from "../../components/molecules/AsignatureSelector";
 import DataTable from "../../components/atoms/DataTable";
+import Modal from "../../components/atoms/Modal";
 import useSchool from "../../lib/hooks/useSchool";
 import useTeacher from "../../lib/hooks/useTeacher";
 import useData from "../../lib/hooks/useData";
@@ -46,6 +47,11 @@ const RegisterAssistance = () => {
   const [period, setPeriod] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fechaAsistencia, setFechaAsistencia] = useState("");
+
+  // Resultado del registro de asistencia (no registradas)
+  const [isNoRegistradasOpen, setIsNoRegistradasOpen] = useState(false);
+  const [noRegistradasRows, setNoRegistradasRows] = useState([]);
+  const [submitSummary, setSubmitSummary] = useState(null);
 
   const notify = useNotify();
 
@@ -236,25 +242,55 @@ const RegisterAssistance = () => {
     });
 
     try {
-      await registerAssistance(rows);
-      notify.success("Asistencia registrada correctamente");
-      // regresar al modo no edición para mostrar el botón "Activar Asistencia"
-      setIsEditMode(false);
-      // marcar todas las filas como guardadas (persistente)
+      const res = await registerAssistance(rows);
+
+      const totalRegistradas = Number(res?.total_registradas ?? 0);
+      const totalNoRegistradas = Number(res?.total_no_registradas ?? 0);
+      const listaNoReg = Array.isArray(res?.no_registradas)
+        ? res.no_registradas
+        : [];
+      const hasNoRegistradas = totalNoRegistradas > 0 || listaNoReg.length > 0;
+
+      setSubmitSummary({
+        total_recibidas: Number(res?.total_recibidas ?? rows.length),
+        total_registradas: totalRegistradas,
+        total_no_registradas: totalNoRegistradas,
+      });
+
+      if (totalRegistradas > 0) {
+        notify.success(
+          `Asistencia registrada correctamente (${totalRegistradas}).`,
+        );
+      } else if (!hasNoRegistradas) {
+        notify.info("No se registró ninguna asistencia.");
+      }
+
+      // Marcar por estudiante: guardado salvo los que quedaron en no_registradas.
+      const failedIds = new Set(
+        listaNoReg.map((r) => String(r?.fk_estudiante ?? "").trim()),
+      );
       setRowSavedById((prev) => {
         const next = { ...(prev ?? {}) };
         (studentsFromService || []).forEach((s) => {
-          next[getStudentKey(s)] = true;
+          const key = getStudentKey(s);
+          next[key] = !failedIds.has(key);
         });
         return next;
       });
-      // Reinicializar todos como PRESENTE para que al reactivar el modo edición
-      // los checkboxes aparezcan marcados por defecto.
-      const reset = {};
-      (studentsFromService || []).forEach((s) => {
-        reset[getStudentKey(s)] = "PRESENTE";
-      });
-      setAttendanceByStudent(reset);
+
+      if (hasNoRegistradas) {
+        // Mantener modo edición y filas no guardadas para reintentar.
+        setNoRegistradasRows(listaNoReg);
+        setIsNoRegistradasOpen(true);
+      } else {
+        // Éxito total: salir de edición y reiniciar todos a PRESENTE.
+        setIsEditMode(false);
+        const reset = {};
+        (studentsFromService || []).forEach((s) => {
+          reset[getStudentKey(s)] = "PRESENTE";
+        });
+        setAttendanceByStudent(reset);
+      }
     } catch (err) {
       console.error("RegisterAssistance - error registrando asistencia:", err);
       notify.error(err?.message || "Error al registrar asistencia");
@@ -743,11 +779,66 @@ const RegisterAssistance = () => {
                   },
                 ]}
                 pageSize={50}
+                initialSorting={[{ id: "fullName", desc: false }]}
               />
             </div>
           </div>
         )}
       </div>
+
+      <Modal
+        isOpen={isNoRegistradasOpen}
+        onClose={() => setIsNoRegistradasOpen(false)}
+        title="Asistencia no registrada"
+        size="3xl"
+      >
+        <div className="flex flex-col gap-4">
+          {submitSummary && (
+            <div className="text-sm opacity-80">
+              Recibidas:{" "}
+              <span className="font-medium">
+                {submitSummary.total_recibidas}
+              </span>{" "}
+              · Registradas:{" "}
+              <span className="font-medium">
+                {submitSummary.total_registradas}
+              </span>{" "}
+              · No registradas:{" "}
+              <span className="font-medium text-error">
+                {submitSummary.total_no_registradas}
+              </span>
+            </div>
+          )}
+
+          <DataTable
+            data={(noRegistradasRows || []).map((r, i) => ({
+              id: String(r?.id_assistance ?? r?.fk_estudiante ?? i),
+              estudiante: r?.estudiante ?? "",
+              motivo: r?.motivo ?? "",
+            }))}
+            columns={[
+              { accessorKey: "estudiante", header: "Estudiante" },
+              { accessorKey: "motivo", header: "Motivo" },
+            ]}
+            fileName="Asistencia_no_registrada"
+            showDownloadButtons={false}
+            pageSize={50}
+            initialSorting={[{ id: "estudiante", desc: false }]}
+          />
+
+          <div className="flex justify-end">
+            <SimpleButton
+              type="button"
+              onClick={() => setIsNoRegistradasOpen(false)}
+              icon="Check"
+              bg="bg-primary"
+              text="text-surface"
+              msj="Entendido"
+              className="px-3 py-1.5"
+            />
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

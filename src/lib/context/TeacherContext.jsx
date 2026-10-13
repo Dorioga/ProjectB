@@ -198,7 +198,6 @@ export function TeacherProvider({ children }) {
     setErrorTeachers(null);
     try {
       const res = await teacherService.registerAssistance(payload);
-      eventBus.emit("¡Asistencia registrada exitosamente!", "success");
       return res;
     } catch (err) {
       setErrorTeachers(err);
