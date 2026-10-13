@@ -23,8 +23,8 @@ const DataTable = ({
   showDownloadButtons = true,
   // optional: function (row) => string | string
   rowClassName,
-  // optional default page size for pagination (defaults to 20)
-  pageSize = 20,
+  // optional default page size for pagination (defaults to 50)
+  pageSize = 50,
   // Loader support
   loading = false,
   loaderMessage = "Cargando...",
@@ -441,8 +441,8 @@ const DataTable = ({
                               className={
                                 typeof groupHeaderClassName === "function"
                                   ? groupHeaderClassName(groupKey)
-                                  : (groupHeaderClassName ||
-                                    "bg-blue-50 border-b cursor-pointer select-none hover:bg-blue-100 transition-colors")
+                                  : groupHeaderClassName ||
+                                    "bg-blue-50 border-b cursor-pointer select-none hover:bg-blue-100 transition-colors"
                               }
                               onClick={() =>
                                 setOpenGroups((prev) => {
@@ -519,14 +519,14 @@ const DataTable = ({
                                         : ""
                                     } 
                                   ${
-                                      cell.column.columnDef.meta?.hideOnLG
-                                        ? "hidden lg:table-cell"
-                                        : ""
-                                    }${
-                                      cell.column.columnDef.meta?.hideOnXL
-                                        ? "hidden xl:table-cell"
-                                        : ""
-                                    }`}
+                                    cell.column.columnDef.meta?.hideOnLG
+                                      ? "hidden lg:table-cell"
+                                      : ""
+                                  }${
+                                    cell.column.columnDef.meta?.hideOnXL
+                                      ? "hidden xl:table-cell"
+                                      : ""
+                                  }`}
                                   >
                                     <div className=" p-0 block">
                                       {flexRender(
@@ -582,14 +582,14 @@ const DataTable = ({
                             : ""
                         } 
                       ${
-                          cell.column.columnDef.meta?.hideOnLG
-                            ? "hidden lg:table-cell"
-                            : ""
-                        }${
-                          cell.column.columnDef.meta?.hideOnXL
-                            ? "hidden xl:table-cell"
-                            : ""
-                        }`}
+                        cell.column.columnDef.meta?.hideOnLG
+                          ? "hidden lg:table-cell"
+                          : ""
+                      }${
+                        cell.column.columnDef.meta?.hideOnXL
+                          ? "hidden xl:table-cell"
+                          : ""
+                      }`}
                       >
                         <div className=" p-0 block">
                           {flexRender(

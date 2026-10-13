@@ -197,10 +197,13 @@ const RegisterAssistance = () => {
   }, [idDocente, getTeacherSede, token, sedeSelected]);
 
   // Limpiar asignatura y detectedJourney cuando cambia el grado para evitar incoherencias
+  // Solo aplica para flujo docente: Grado -> Asignatura
   useEffect(() => {
-    setAsignatureCode("");
-    setDetectedJourney(null);
-  }, [grade]);
+    if (isTeacher) {
+      setAsignatureCode("");
+      setDetectedJourney(null);
+    }
+  }, [grade, isTeacher]);
 
   // NOTE: `getStudentKey`, `getStudentName` y `handleToggleAttendance` están
   // definidos más abajo (implementaciones consolidadas). Se eliminó la
@@ -389,6 +392,11 @@ const RegisterAssistance = () => {
     return null;
   }, [rol, authIdSede, nameSede, teacherSedes]);
 
+  const sedesData = useMemo(() => {
+    if (isTeacher) return teacherSedeData;
+    return Array.isArray(institutionSedes) ? institutionSedes : null;
+  }, [isTeacher, teacherSedeData, institutionSedes]);
+
   const gradeOptions = useMemo(() => {
     const base =
       Array.isArray(studentsFromService) && studentsFromService.length > 0
@@ -549,8 +557,8 @@ const RegisterAssistance = () => {
             onChange={handleSedeChange}
             className="w-full p-2 border rounded bg-surface"
             labelClassName="text-lg font-semibold"
-            data={teacherSedeData}
-            loading={loadingTeacherSedes}
+            data={sedesData}
+            loading={isTeacher && loadingTeacherSedes}
           />
         </div>
 
@@ -790,7 +798,7 @@ const RegisterAssistance = () => {
         isOpen={isNoRegistradasOpen}
         onClose={() => setIsNoRegistradasOpen(false)}
         title="Asistencia no registrada"
-        size="3xl"
+        size="7xl"
       >
         <div className="flex flex-col gap-4">
           {submitSummary && (
@@ -811,12 +819,28 @@ const RegisterAssistance = () => {
           )}
 
           <DataTable
-            data={(noRegistradasRows || []).map((r, i) => ({
-              id: String(r?.id_assistance ?? r?.fk_estudiante ?? i),
-              estudiante: r?.estudiante ?? "",
-              motivo: r?.motivo ?? "",
-            }))}
+            data={(noRegistradasRows || []).map((r, i) => {
+              const rawFecha = r?.fecha_assistance || r?.fecha || "";
+              let fecha = "";
+              if (rawFecha) {
+                const s = String(rawFecha);
+                const d = s.includes("T") ? s.split("T")[0] : s.slice(0, 10);
+                if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+                  const [y, m, day] = d.split("-");
+                  fecha = `${day}-${m}-${y}`;
+                } else {
+                  fecha = d;
+                }
+              }
+              return {
+                id: String(r?.id_assistance ?? r?.fk_estudiante ?? i),
+                estudiante: r?.estudiante ?? "",
+                fecha_assistance: fecha,
+                motivo: r?.motivo ?? "",
+              };
+            })}
             columns={[
+              { accessorKey: "fecha_assistance", header: "Fecha" },
               { accessorKey: "estudiante", header: "Estudiante" },
               { accessorKey: "motivo", header: "Motivo" },
             ]}
