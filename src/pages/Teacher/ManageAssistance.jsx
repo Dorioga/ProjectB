@@ -53,9 +53,27 @@ const getLastDayOfMonth = () => {
   return `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, "0")}-${String(lastDay.getDate()).padStart(2, "0")}`;
 };
 
+/**
+ * Normaliza el valor de "presente" a "Si" o "No".
+ */
+const toAsistenciaLabel = (valor) => {
+  const isPresent =
+    String(valor).toLowerCase() === "si" ||
+    String(valor).toLowerCase() === "sí" ||
+    valor === true ||
+    valor === 1;
+  return isPresent ? "Si" : "No";
+};
+
+const ASISTENCIA_OPTIONS = ["Si", "No"];
+
 const ManageAssistance = () => {
-  const { getAssistanceValues, getTeacherSede, getTeacherGrades } =
-    useTeacher();
+  const {
+    getAssistanceValues,
+    getTeacherSede,
+    getTeacherGrades,
+    auditAssistance,
+  } = useTeacher();
   const { getGradeOnlySede } = useSchool();
   const {
     idSede,
@@ -64,6 +82,7 @@ const ManageAssistance = () => {
     token,
     rol,
     idInstitution,
+    userId,
     nameSchool,
     imgSchool,
   } = useAuth();
@@ -90,6 +109,11 @@ const ManageAssistance = () => {
     () => isRol3 || isPureDocente,
     [isRol3, isPureDocente],
   );
+  // Roles con permiso para editar/auditar la asistencia (docente y admin inst)
+  const canEditAsistencia = useMemo(
+    () => isRol3 || isPureDocente,
+    [isRol3, isPureDocente],
+  );
 
   // ── Filtros ───────────────────────────────────────────────────────────────
   const [sedeId, setSedeId] = useState("");
@@ -111,6 +135,12 @@ const ManageAssistance = () => {
   const [isExportingByDayPDF, setIsExportingByDayPDF] = useState(false);
   const [isEnfasisRegisterOpen, setIsEnfasisRegisterOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("asistencia");
+
+  // ── Auditoría de asistencia (edición inline) ──────────────────────────────
+  const [editingRowId, setEditingRowId] = useState(null);
+  const [editedPresente, setEditedPresente] = useState("");
+  const [savingAuditId, setSavingAuditId] = useState(null);
+  const [reloadTick, setReloadTick] = useState(0);
 
   // Filas de encabezado institucional para la exportación Excel
   const exportHeaderRows = useMemo(() => {
@@ -246,7 +276,7 @@ const ManageAssistance = () => {
       mounted = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDocente, sedeId, gradeId, periodId, startDate, endDate]);
+  }, [isDocente, sedeId, gradeId, periodId, startDate, endDate, reloadTick]);
 
   // ── Handlers de cascada (admin) ───────────────────────────────────────────
   const handleSedeChange = (e) => {
@@ -381,7 +411,61 @@ const ManageAssistance = () => {
     setEndDate(getLastDayOfMonth());
     setTableData([]);
     setHasSearched(false);
+    setEditingRowId(null);
   };
+
+  // ── Auditoría de asistencia ───────────────────────────────────────────────
+  const handleStartEditAssistance = useCallback(
+    (row) => {
+      if (!row?.id_assistance) {
+        notify.warning("No se pudo identificar el registro (id_assistance).");
+        return;
+      }
+      setEditedPresente(toAsistenciaLabel(row.presente));
+      setEditingRowId(String(row.id_assistance));
+    },
+    [notify],
+  );
+
+  const handleCancelEditAssistance = useCallback(() => {
+    setEditingRowId(null);
+    setSavingAuditId(null);
+  }, []);
+
+  const handleConfirmAudit = useCallback(
+    async (row) => {
+      const idAssistance = row?.id_assistance;
+      if (!idAssistance) {
+        notify.warning("No se pudo identificar el registro (id_assistance).");
+        return;
+      }
+      const asistenciaVieja = toAsistenciaLabel(row.presente);
+      if (asistenciaVieja === editedPresente) return;
+      if (userId === null || userId === undefined || userId === "") {
+        notify.warning("No se pudo identificar al usuario (fk_user).");
+        return;
+      }
+
+      setSavingAuditId(String(idAssistance));
+      try {
+        await auditAssistance({
+          id_assistance: Number(idAssistance),
+          fk_user: Number(userId),
+          asistencia_vieja: asistenciaVieja,
+          asistencia_nueva: editedPresente,
+        });
+        notify.success("Asistencia auditada correctamente.");
+        setEditingRowId(null);
+        setReloadTick((t) => t + 1);
+      } catch (err) {
+        console.error("ManageAssistance - auditAssistance error:", err);
+        notify.error(err?.message || "Error al auditar la asistencia.");
+      } finally {
+        setSavingAuditId(null);
+      }
+    },
+    [editedPresente, userId, notify, auditAssistance],
+  );
 
   // ── Columnas ──────────────────────────────────────────────────────────────
   const columns = useMemo(
@@ -411,12 +495,7 @@ const ManageAssistance = () => {
         accessorKey: "presente",
         header: "Presente",
         cell: ({ getValue }) => {
-          const val = getValue();
-          const isPresent =
-            String(val).toLowerCase() === "si" ||
-            String(val).toLowerCase() === "sí" ||
-            val === true ||
-            val === 1;
+          const isPresent = toAsistenciaLabel(getValue()) === "Si";
           return (
             <span
               className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
@@ -440,8 +519,84 @@ const ManageAssistance = () => {
         header: "Jornada",
         meta: { hideOnXL: true },
       },
+      ...(canEditAsistencia
+        ? [
+            {
+              id: "actions",
+              header: "Editar",
+              cell: ({ row }) => {
+                const original = row.original;
+                const rowId = String(original.id_assistance ?? "");
+                const isEditing = editingRowId === rowId;
+                const asistenciaVieja = toAsistenciaLabel(original.presente);
+
+                if (!isEditing) {
+                  return (
+                    <div className="flex justify-center">
+                      <SimpleButton
+                        type="button"
+                        onClick={() => handleStartEditAssistance(original)}
+                        icon="Pencil"
+                        bg="bg-secondary"
+                        text="text-surface"
+                        noRounded={true}
+                        msjtooltip="Editar asistencia"
+                      />
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="flex items-center justify-center gap-2">
+                    <select
+                      value={editedPresente}
+                      onChange={(e) => setEditedPresente(e.target.value)}
+                      className="p-1 border rounded bg-surface text-sm"
+                    >
+                      {ASISTENCIA_OPTIONS.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                    <SimpleButton
+                      type="button"
+                      onClick={() => handleConfirmAudit(original)}
+                      icon="Save"
+                      bg="bg-accent"
+                      text="text-surface"
+                      noRounded={true}
+                      msjtooltip="Guardar cambios"
+                      disabled={
+                        savingAuditId === rowId ||
+                        asistenciaVieja === editedPresente
+                      }
+                    />
+                    <SimpleButton
+                      type="button"
+                      onClick={handleCancelEditAssistance}
+                      icon="X"
+                      bg="bg-gray-200"
+                      text="text-gray-700"
+                      noRounded={true}
+                      msjtooltip="Cancelar"
+                    />
+                  </div>
+                );
+              },
+            },
+          ]
+        : []),
     ],
-    [],
+    [
+      canEditAsistencia,
+      editingRowId,
+      editedPresente,
+      savingAuditId,
+      handleStartEditAssistance,
+      handleConfirmAudit,
+      handleCancelEditAssistance,
+    ],
   );
 
   return (

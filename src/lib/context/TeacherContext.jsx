@@ -218,6 +218,11 @@ export function TeacherProvider({ children }) {
     }
   }, []);
 
+  // Auditar el cambio del estado de asistencia de un registro
+  const auditAssistance = useCallback(async (payload = {}) => {
+    return teacherService.auditAssistance(payload);
+  }, []);
+
   // Obtener asignaturas por sede para control de asistencia
   const getAssistanceBySedeAsignatures = useCallback(async (payload = {}) => {
     try {
@@ -722,6 +727,7 @@ export function TeacherProvider({ children }) {
       // Asistencia
       registerAssistance,
       getAssistanceValues,
+      auditAssistance,
       getAssistanceBySedeAsignatures,
       // estudiantes docente
       getAllStudentTeacher,
@@ -783,6 +789,7 @@ export function TeacherProvider({ children }) {
       updateLogro,
       registerAssistance,
       getAssistanceValues,
+      auditAssistance,
       getAssistanceBySedeAsignatures,
       getAllStudentTeacher,
       getNotesTeacher,

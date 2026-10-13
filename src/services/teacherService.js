@@ -331,6 +331,34 @@ export async function getAssistanceValues(payload = {}) {
 }
 
 /**
+ * Audita el cambio del estado de asistencia (presente) de un registro.
+ * Endpoint: POST /assistance/audit
+ * @param {{ id_assistance: number, fk_user: number|null, asistencia_vieja: string, asistencia_nueva: string }} payload
+ */
+export async function auditAssistance(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto para auditAssistance.");
+  }
+  if (payload.id_assistance == null) {
+    throw new Error("id_assistance es requerido.");
+  }
+  if (!payload.asistencia_vieja || !payload.asistencia_nueva) {
+    throw new Error("asistencia_vieja y asistencia_nueva son requeridas.");
+  }
+
+  try {
+    const res = await ApiClient.instance.post("/assistance/audit", payload);
+    const data = res;
+    if (data && typeof data === "object" && "data" in data) return data.data;
+    if (data !== undefined && data !== null) return data;
+    throw new Error("Respuesta inesperada de /assistance/audit.");
+  } catch (error) {
+    console.error("teacherService - auditAssistance error:", error);
+    throw error;
+  }
+}
+
+/**
  * Registra asistencia de estudiantes (POST /assistance/student)
  * payload: objeto con la información de asistencia requerida por el backend
  */
