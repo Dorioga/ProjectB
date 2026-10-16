@@ -541,6 +541,14 @@ const ProfileLogro = ({
     }
     setRegisteringAll(false);
     if (count > 0) {
+      // Limpiar los inputs de todos los períodos tras registrar correctamente
+      setPeriodRows((prev) => {
+        const next = {};
+        Object.keys(prev).forEach((pid) => {
+          next[pid] = (prev[pid] || []).map((r) => ({ ...r, text: "" }));
+        });
+        return next;
+      });
       notify.success(`Registro completado: ${count} logro(s) registrado(s).`);
     } else {
       notify.info("No hay descripciones pendientes por registrar.");
