@@ -50,6 +50,9 @@ const ManageDBA = lazy(() => import("../pages/Teacher/ManageDBA"));
 const ManageEval = lazy(() => import("../pages/Teacher/ManageEval"));
 const StudentEval = lazy(() => import("../pages/Student/StudentEval"));
 const ManageBoletin = lazy(() => import("../pages/School/ManageBoletin"));
+const ManageYearScholar = lazy(
+  () => import("../pages/School/ManageYearScholar"),
+);
 const Slots = lazy(() => import("../pages/Dashboard/Slots"));
 const ControlNotas = lazy(() => import("../pages/Dashboard/ControlNotas"));
 const ControlAccesoSalida = lazy(
@@ -305,6 +308,14 @@ const GeneralRoutes = () => {
               element={
                 <Suspense fallback={<SuspenseFallback />}>
                   <ManageBoletin />
+                </Suspense>
+              }
+            />
+            <Route
+              path="manageYearScholar"
+              element={
+                <Suspense fallback={<SuspenseFallback />}>
+                  <ManageYearScholar />
                 </Suspense>
               }
             />
