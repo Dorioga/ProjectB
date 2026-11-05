@@ -53,6 +53,13 @@ const colorEstado = (estado) => {
   return "#dc2626";
 };
 
+const colorFinal = (valor, umbral) => {
+  const nota = parseFloat(valor);
+  const limite = parseFloat(umbral);
+  if (Number.isNaN(nota) || Number.isNaN(limite)) return "#374151";
+  return nota >= limite ? "#15803d" : "#dc2626";
+};
+
 /* ── Estilos inline para la vista HTML ── */
 const S = {
   th: {
@@ -116,6 +123,25 @@ const _computeNotaEfectiva = (notaPeriodo, notaRecuperacion) => {
   return String(Math.max(pV, rV));
 };
 
+// Nota final anual: promedio de los periodos 1 a 4 usando la recuperación
+// cuando existe en lugar de la nota del periodo.
+const computeFinalAnual = (asig) => {
+  let sum = 0;
+  let count = 0;
+  for (const pid of [1, 2, 3, 4]) {
+    const per = asig.periodos.get(pid) ?? asig.periodos.get(String(pid));
+    if (!per) continue;
+    const hasRecovery =
+      per.recuperacion != null && String(per.recuperacion).trim() !== "";
+    const value = parseFloat(hasRecovery ? per.recuperacion : per.nota);
+    if (!Number.isNaN(value)) {
+      sum += value;
+      count += 1;
+    }
+  }
+  return count > 0 ? (sum / count).toFixed(2) : null;
+};
+
 const esAsignaturaEnfasis = (tipo) =>
   String(tipo ?? "")
     .toLowerCase()
@@ -139,13 +165,6 @@ const useBoletinProcessed = (data, periodId) => {
       .sort((a, b) => Number(a[0]) - Number(b[0]))
       .map(([id, nombre]) => ({ id, nombre }));
   }, [data, periodId]);
-
-  const totalAsignaturas = useMemo(() => {
-    for (const r of data) {
-      if (r.total_asignaturas != null) return parseInt(r.total_asignaturas, 10);
-    }
-    return 0;
-  }, [data]);
 
   const { asignaturas, areas } = useMemo(() => {
     const m = new Map();
@@ -276,6 +295,7 @@ const useBoletinProcessed = (data, periodId) => {
           );
         });
         for (const asig of area.asignaturas) {
+          asig.final = computeFinalAnual(asig);
           for (const [, per] of asig.periodos) {
             per.nota = _computeNotaEfectiva(per.nota, per.recuperacion);
           }
@@ -287,7 +307,7 @@ const useBoletinProcessed = (data, periodId) => {
   }, [data]);
 
   const promedioGeneral = useMemo(() => {
-    if (!totalAsignaturas) return null;
+    if (!asignaturas.length) return null;
     const pid = String(periodId);
     let sum = 0;
     for (const asig of asignaturas) {
@@ -298,8 +318,8 @@ const useBoletinProcessed = (data, periodId) => {
         if (!isNaN(v)) sum += v;
       }
     }
-    return (sum / totalAsignaturas).toFixed(2);
-  }, [asignaturas, periodId, totalAsignaturas]);
+    return (sum / asignaturas.length).toFixed(2);
+  }, [asignaturas, periodId]);
 
   const resumenEstado = useMemo(() => {
     if (!asignaturas.length) return "-";
@@ -336,14 +356,6 @@ function computeBoletinData(data, periodId) {
   const periodos = Array.from(periodoMap.entries())
     .sort((a, b) => Number(a[0]) - Number(b[0]))
     .map(([id, nombre]) => ({ id, nombre }));
-
-  let totalAsignaturas = 0;
-  for (const r of data) {
-    if (r.total_asignaturas != null) {
-      totalAsignaturas = parseInt(r.total_asignaturas, 10);
-      break;
-    }
-  }
 
   const asigMap = new Map();
   const areaInfoMap = new Map();
@@ -471,6 +483,7 @@ function computeBoletinData(data, periodId) {
         );
       });
       for (const asig of area.asignaturas) {
+        asig.final = computeFinalAnual(asig);
         for (const [, per] of asig.periodos) {
           per.nota = _computeNotaEfectiva(per.nota, per.recuperacion);
         }
@@ -488,8 +501,8 @@ function computeBoletinData(data, periodId) {
       if (!isNaN(v)) promedioSum += v;
     }
   }
-  const promedioGeneral = totalAsignaturas
-    ? (promedioSum / totalAsignaturas).toFixed(2)
+  const promedioGeneral = asignaturas.length
+    ? (promedioSum / asignaturas.length).toFixed(2)
     : null;
   const resumenEstado = (() => {
     if (!asignaturas.length) return "-";
@@ -1137,7 +1150,13 @@ asigMap.set(asigKey, {
       y += computedRowH;
     }
   } else {
-    // Tabla normal: Asignatura | IH | [Nota, Escala, Estado, Logro] por periodo
+    // Tabla normal: Asignatura | IH | [Nota, Escala, Estado, (Final, Est. Final), Logro] por periodo
+    const mostrarFinalPDF = String(meta.periodId) === "4";
+    const colsPerPeriodo = mostrarFinalPDF ? 6 : 4;
+    const umbralPDFNum = parseFloat(
+      escalas.find((e) => e.umbral != null)?.umbral,
+    );
+    const umbralPDF = Number.isNaN(umbralPDFNum) ? null : umbralPDFNum;
 
     // Anchos proporcionales
     const asigW = contentW * 0.16;
@@ -1148,17 +1167,44 @@ asigMap.set(asigKey, {
       periodos.length > 0 ? (remainW * 0.2) / (periodos.length * 2) : 0;
     const estadoSubW =
       periodos.length > 0 ? (remainW * 0.18) / periodos.length : 0;
+    // Ancho dinámico para Final / Est. Final: debe contener "No aprobado"
+    // en una sola línea, además de sus encabezados.
+    let finalColWidth = 0;
+    if (mostrarFinalPDF && periodos.length > 0) {
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(6);
+      const estTextW = Math.max(
+        pdf.getTextWidth("Aprobado"),
+        pdf.getTextWidth("No aprobado"),
+      );
+      pdf.setFontSize(8);
+      const estHeaderW = pdf.getTextWidth("Est. Final");
+      pdf.setFontSize(9);
+      const finalHeaderW = pdf.getTextWidth("Final");
+      const neededW = Math.max(estTextW, estHeaderW, finalHeaderW) + 2.5;
+      const baseW = (remainW * 0.1) / periodos.length;
+      const maxW = (remainW * 0.3) / periodos.length;
+      finalColWidth = Math.min(Math.max(baseW, neededW), maxW);
+    }
+    const finalSubW = finalColWidth;
+    const estFinalSubW = finalColWidth;
     const logroSubW =
       periodos.length > 0
         ? (remainW -
             smallSubW * 2 * periodos.length -
-            estadoSubW * periodos.length) /
+            estadoSubW * periodos.length -
+            finalSubW * periodos.length -
+            estFinalSubW * periodos.length) /
           periodos.length
         : 0;
 
     const colWidths = [asigW, ihW];
     for (let i = 0; i < periodos.length; i++) {
-      colWidths.push(smallSubW, smallSubW, estadoSubW, logroSubW);
+      colWidths.push(smallSubW, smallSubW, estadoSubW);
+      if (mostrarFinalPDF) {
+        colWidths.push(finalSubW, estFinalSubW);
+      }
+      colWidths.push(logroSubW);
     }
 
     const colX = (colIdx) => {
@@ -1262,11 +1308,11 @@ asigMap.set(asigKey, {
       align: "center",
     });
 
-    /* Sub-cabecera: Nota, Escala, Estado, Logro (sin fila de nombre de periodo) */
+    /* Sub-cabecera: Nota, Escala, Estado, [Final, Est. Final], Logro */
     const subBg = [255, 255, 255];
     const subColor = [0, 0, 0];
     for (let pi = 0; pi < periodos.length; pi++) {
-      const base = 2 + pi * 4;
+      const base = 2 + pi * colsPerPeriodo;
       drawCell("Nota", base, y, rowH + subHeaderH, {
         bold: true,
         fontSize: 9,
@@ -1285,12 +1331,32 @@ asigMap.set(asigKey, {
         color: subColor,
         bg: subBg,
       });
-      drawCell("Logro", base + 3, y, rowH + subHeaderH, {
-        bold: true,
-        fontSize: 9,
-        color: subColor,
-        bg: subBg,
-      });
+      if (mostrarFinalPDF) {
+        drawCell("Final", base + 3, y, rowH + subHeaderH, {
+          bold: true,
+          fontSize: 9,
+          color: subColor,
+          bg: subBg,
+        });
+        drawCell("Est. Final", base + 4, y, rowH + subHeaderH, {
+          bold: true,
+          fontSize: 8,
+          color: subColor,
+          bg: subBg,
+        });
+      }
+      drawCell(
+        "Logro",
+        base + (mostrarFinalPDF ? 5 : 3),
+        y,
+        rowH + subHeaderH,
+        {
+          bold: true,
+          fontSize: 9,
+          color: subColor,
+          bg: subBg,
+        },
+      );
     }
     y += rowH + subHeaderH;
 
@@ -1325,7 +1391,10 @@ asigMap.set(asigKey, {
         for (let pi = 0; pi < periodos.length; pi++) {
           const per = asig.periodos.get(periodos[pi].id);
           {
-            const logroColW = colWidths[2 + pi * 4 + 3];
+            const logroColW =
+              colWidths[
+                2 + pi * colsPerPeriodo + (mostrarFinalPDF ? 5 : 3)
+              ];
             const lineH = 9 * 0.45;
             const logros = per?.logros ?? [];
             let logroHeight = 2; // padding top
@@ -1368,10 +1437,28 @@ asigMap.set(asigKey, {
             if (logroHeight > computedRowH) computedRowH = logroHeight;
           }
           const estadoText = per?.estado || "-";
-          const estadoColW = colWidths[2 + pi * 4 + 2];
+          const estadoColW = colWidths[2 + pi * colsPerPeriodo + 2];
           const estadoLines = pdf.splitTextToSize(estadoText, estadoColW - 1.5);
           const estadoNeeded = estadoLines.length * (6 * 0.45) + 2;
           if (estadoNeeded > computedRowH) computedRowH = estadoNeeded;
+          if (mostrarFinalPDF) {
+            const finalNum = parseFloat(asig.final);
+            const estFinalText =
+              umbralPDF == null || Number.isNaN(finalNum)
+                ? "-"
+                : finalNum >= umbralPDF
+                  ? "Aprobado"
+                  : "No aprobado";
+            const estFinalColW = colWidths[2 + pi * colsPerPeriodo + 4];
+            const estFinalLines = pdf.splitTextToSize(
+              estFinalText,
+              estFinalColW - 1.5,
+            );
+            const estFinalNeeded = estFinalLines.length * (6 * 0.45) + 2;
+            if (estFinalNeeded > computedRowH) {
+              computedRowH = estFinalNeeded;
+            }
+          }
         }
         addPageIfNeeded(computedRowH);
 
@@ -1387,7 +1474,7 @@ asigMap.set(asigKey, {
 
         for (let pi = 0; pi < periodos.length; pi++) {
           const per = asig.periodos.get(periodos[pi].id);
-          const base = 2 + pi * 4;
+          const base = 2 + pi * colsPerPeriodo;
           drawCell(per?.nota ?? "-", base, y, computedRowH, {
             bold: true,
             bg: rowBg,
@@ -1406,9 +1493,45 @@ asigMap.set(asigKey, {
             color: estColor,
             bg: rowBg,
           });
+          if (mostrarFinalPDF) {
+            const finalNum = parseFloat(asig.final);
+            const estFinalText =
+              umbralPDF == null || Number.isNaN(finalNum)
+                ? "-"
+                : finalNum >= umbralPDF
+                  ? "Aprobado"
+                  : "No aprobado";
+            const estFinalColor =
+              umbralPDF == null || Number.isNaN(finalNum)
+                ? [55, 65, 81]
+                : finalNum >= umbralPDF
+                  ? [21, 128, 61]
+                  : [220, 38, 38];
+            drawCell(
+              asig.final ?? "-",
+              base + 3,
+              y,
+              computedRowH,
+              { bold: true, bg: rowBg },
+            );
+            drawCellMultiline(
+              estFinalText,
+              base + 4,
+              y,
+              computedRowH,
+              {
+                bold: true,
+                align: "center",
+                color: estFinalColor,
+                fontSize: 6,
+                bg: rowBg,
+              },
+            );
+          }
           {
-            const cx = colX(base + 3);
-            const w = colWidths[base + 3];
+            const logroCol = base + (mostrarFinalPDF ? 5 : 3);
+            const cx = colX(logroCol);
+            const w = colWidths[logroCol];
             pdf.setFillColor(...rowBg);
             pdf.rect(cx, y, w, computedRowH, "F");
             pdf.setDrawColor(0, 0, 0);
@@ -1785,6 +1908,15 @@ const BoletinSelector = ({
 
   const { periodos, areas, asignaturas, promedioGeneral, resumenEstado } =
     useBoletinProcessed(!isTransicion ? (boletinData ?? []) : [], periodId);
+
+  const mostrarColumnasFinal =
+    !isTransicion && String(periodId) === "4";
+
+  const umbralEscala = useMemo(() => {
+    const raw = escalas.find((e) => e.umbral != null)?.umbral;
+    const value = parseFloat(raw);
+    return Number.isNaN(value) ? null : value;
+  }, [escalas]);
 
   const { asignaturas: transicionAsignaturas } = useBoletinTransicionProcessed(
     isTransicion ? (boletinData ?? []) : [],
@@ -2654,7 +2786,17 @@ const BoletinSelector = ({
                         <col style={{ width: "7%" }} />
                         <col style={{ width: "7%" }} />
                         <col style={{ width: "14%" }} />
-                        <col style={{ width: "50%" }} />
+                        {mostrarColumnasFinal && (
+                          <>
+                            <col style={{ width: "7%" }} />
+                            <col style={{ width: "10%" }} />
+                          </>
+                        )}
+                        <col
+                          style={{
+                            width: mostrarColumnasFinal ? "33%" : "50%",
+                          }}
+                        />
                       </colgroup>
                       <thead>
                         <tr
@@ -2675,6 +2817,22 @@ const BoletinSelector = ({
                           </th>
                           <th style={{ ...S.th, fontSize: "8px" }}>Escala</th>
                           <th style={{ ...S.th, fontSize: "8px" }}>Estado</th>
+                          {mostrarColumnasFinal && (
+                            <>
+                              <th
+                                style={{ ...S.th, fontSize: "8px" }}
+                                title="Promedio de los periodos 1 a 4"
+                              >
+                                Final
+                              </th>
+                              <th
+                                style={{ ...S.th, fontSize: "8px" }}
+                                title="Estado según el umbral de la escala"
+                              >
+                                Est. Final
+                              </th>
+                            </>
+                          )}
                           <th style={{ ...S.th, fontSize: "8px" }}>Logro</th>
                         </tr>
                       </thead>
@@ -2683,7 +2841,7 @@ const BoletinSelector = ({
                           <React.Fragment key={area.nombre_area ?? "sin-area"}>
                             <tr style={{ backgroundColor: "#e5e7eb" }}>
                               <td
-                                colSpan={6}
+                                colSpan={mostrarColumnasFinal ? 8 : 6}
                                 style={{
                                   ...S.tdLeft,
                                   fontWeight: "bold",
@@ -2713,6 +2871,14 @@ const BoletinSelector = ({
                                 </td>
                                 {periodos.map((p) => {
                                   const per = asig.periodos.get(p.id);
+                                  const finalNum = parseFloat(asig.final);
+                                  const estFinal =
+                                    umbralEscala == null ||
+                                    Number.isNaN(finalNum)
+                                      ? "-"
+                                      : finalNum >= umbralEscala
+                                        ? "Aprobado"
+                                        : "No aprobado";
                                   return (
                                     <React.Fragment key={p.id}>
                                       <td
@@ -2736,6 +2902,31 @@ const BoletinSelector = ({
                                       >
                                         {per?.estado ?? "-"}
                                       </td>
+                                      {mostrarColumnasFinal && (
+                                        <>
+                                          <td
+                                            style={{
+                                              ...S.td,
+                                              fontWeight: "600",
+                                            }}
+                                          >
+                                            {asig.final ?? "-"}
+                                          </td>
+                                          <td
+                                            style={{
+                                              ...S.td,
+                                              color: colorFinal(
+                                                asig.final,
+                                                umbralEscala,
+                                              ),
+                                              fontWeight: "600",
+                                              fontSize: "9px",
+                                            }}
+                                          >
+                                            {estFinal}
+                                          </td>
+                                        </>
+                                      )}
                                       <td
                                         style={{
                                           ...S.tdLeft,
