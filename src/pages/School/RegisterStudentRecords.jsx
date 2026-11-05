@@ -1004,7 +1004,7 @@ const RegisterStudentRecords = ({ initialFilters = null }) => {
   // Llamar a los servicios cuando se tengan los 4 campos requeridos (secuencial):
   // 1) cargar estudiantes del grado
   // 2) por cada estudiante llamar a getStudentNotes con fk_estudiante y consolidar
-  const loadStudentsAndNotes = useCallback(async () => {
+  const loadStudentsAndNotes = useCallback(async ({ preserveDrafts = false } = {}) => {
     if (
       !idDocente ||
       !asignatureSelected ||
@@ -1023,13 +1023,16 @@ const RegisterStudentRecords = ({ initialFilters = null }) => {
     }
 
     setLoadingData(true);
-    // Limpiar selects de logros y comentarios al iniciar una nueva consulta
-    setTipoByStudent({});
-    setLogrosOptionsByStudent({});
-    setCommentsById({});
+    // Limpiar selects de logros y comentarios solo en una consulta nueva.
+    // Al recargar tras guardar se conservan los borradores de las demás filas.
+    if (!preserveDrafts) {
+      setTipoByStudent({});
+      setLogrosOptionsByStudent({});
+      setCommentsById({});
+    }
     try {
       // 1) Cargar estudiantes
-      setSelectedLogroByStudent({});
+      if (!preserveDrafts) setSelectedLogroByStudent({});
       const studentsResponse = await getStudentGrades({
         idGrade: Number(gradeSelected),
       });
@@ -1235,26 +1238,66 @@ const RegisterStudentRecords = ({ initialFilters = null }) => {
         });
       });
 
+      // Al recargar tras guardar una fila, conservar los borradores de las
+      // filas que siguen en edición para no resetear sus inputs.
+      const keepEditingDrafts = (serverMap, currentMap) => {
+        if (!preserveDrafts) return serverMap;
+        const next = { ...(serverMap ?? {}) };
+        (studentsArray || []).forEach((s) => {
+          const key = getStudentKey(s);
+          if (!rowEditByIdRef.current?.[key]) return;
+          const current = currentMap?.[key];
+          if (current !== undefined) next[key] = current;
+        });
+        return next;
+      };
+
+      const nextComments = keepEditingDrafts(
+        allComments,
+        commentsByIdRef.current,
+      );
+      const nextTipo = keepEditingDrafts(allTipo, tipoByStudentRef.current);
+      const nextLogro = keepEditingDrafts(
+        allLogro,
+        selectedLogroByStudentRef.current,
+      );
+      const nextLogroOptions = keepEditingDrafts(
+        allLogroOptions,
+        logrosOptionsByStudentRef.current,
+      );
+      const nextRecovery = keepEditingDrafts(
+        allRecovery,
+        recoveryNotesByIdRef.current,
+      );
+      const nextObservacion = keepEditingDrafts(
+        allObservacion,
+        observacionEnfasisByIdRef.current,
+      );
+      const nextValuesByStudent = keepEditingDrafts(
+        valuesByStudent,
+        recordValuesByStudentRef.current,
+      );
+
       // Reemplazar estados completos con los datos frescos del servidor
-      setCommentsById(allComments);
-      setTipoByStudent(allTipo);
-      setSelectedLogroByStudent(allLogro);
-      setLogrosOptionsByStudent(allLogroOptions);
-      setRecoveryNotesById(allRecovery);
-      setObservacionEnfasisById(allObservacion);
+      setCommentsById(nextComments);
+      setTipoByStudent(nextTipo);
+      setSelectedLogroByStudent(nextLogro);
+      setLogrosOptionsByStudent(nextLogroOptions);
+      setRecoveryNotesById(nextRecovery);
+      setObservacionEnfasisById(nextObservacion);
 
       // Sincronizar refs inmediatamente para que las celdas lean los valores correctos
-      commentsByIdRef.current = allComments;
-      tipoByStudentRef.current = allTipo;
-      selectedLogroByStudentRef.current = allLogro;
-      logrosOptionsByStudentRef.current = allLogroOptions;
-      recoveryNotesByIdRef.current = allRecovery;
-      observacionEnfasisByIdRef.current = allObservacion;
+      commentsByIdRef.current = nextComments;
+      tipoByStudentRef.current = nextTipo;
+      selectedLogroByStudentRef.current = nextLogro;
+      logrosOptionsByStudentRef.current = nextLogroOptions;
+      recoveryNotesByIdRef.current = nextRecovery;
+      observacionEnfasisByIdRef.current = nextObservacion;
 
       const consolidatedNotes = Array.from(notesMap.values());
       setNotesFromService(consolidatedNotes);
       console.debug("initial valuesByStudent set", { valuesByStudent });
-      setRecordValuesByStudent(valuesByStudent);
+      setRecordValuesByStudent(nextValuesByStudent);
       setNoteMetaByStudent(metaByStudent);
 
       // Inicializar estados por fila basados en valores traídos del servicio:
@@ -1264,10 +1307,17 @@ const RegisterStudentRecords = ({ initialFilters = null }) => {
       (studentsArray || []).forEach((s) => {
         const key = getStudentKey(s);
         const hasValues = Boolean(
-          valuesByStudent?.[key] &&
-          Object.keys(valuesByStudent[key]).length > 0,
+          nextValuesByStudent?.[key] &&
+          Object.keys(nextValuesByStudent[key]).length > 0,
         );
         editMap[key] = !hasValues; // editable si NO tiene valores desde servicio
+        // Al recargar tras guardar, mantener el estado de edición de las filas
+        if (
+          preserveDrafts &&
+          rowEditByIdRef.current?.[key] !== undefined
+        ) {
+          editMap[key] = Boolean(rowEditByIdRef.current[key]);
+        }
       });
       setRowEditById(editMap);
       setRowSavedById({});
@@ -1275,8 +1325,10 @@ const RegisterStudentRecords = ({ initialFilters = null }) => {
       console.error("Error al cargar datos secuencialmente:", error);
       setNotesFromService([]);
       setStudentsFromService([]);
-      setRecordValuesByStudent({});
-      setNoteMetaByStudent({});
+      if (!preserveDrafts) {
+        setRecordValuesByStudent({});
+        setNoteMetaByStudent({});
+      }
       notify.error("No fue posible cargar estudiantes o notas");
     } finally {
       setLoadingData(false);
@@ -1760,8 +1812,8 @@ const RegisterStudentRecords = ({ initialFilters = null }) => {
 
       await Promise.all(ops);
 
-      // Recargar datos de la tabla (repoblará selectedLogroByStudent desde el servidor)
-      await loadStudentsAndNotes();
+      // Recargar datos de la tabla sin descartar los borradores de las demás filas
+      await loadStudentsAndNotes({ preserveDrafts: true });
 
       setRowInitialValuesById((prev) => ({
         ...prev,
