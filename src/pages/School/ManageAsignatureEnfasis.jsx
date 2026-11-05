@@ -581,7 +581,7 @@ const ManageAsignatureEnfasis = forwardRef(({ hideToolbar = false }, ref) => {
         title="Registrar notas de énfasis"
         size="7xl"
       >
-        <RegisterRecords modo="enfasis" onClose={() => setIsNotesOpen(false)} />
+        <RegisterRecords modo="enfasis" />
       </Modal>
 
       <Modal

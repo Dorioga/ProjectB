@@ -489,12 +489,35 @@ const normalize = (value) =>
     .trim()
     .toLowerCase();
 
-const RegisterStudentRecords = () => {
+const SCALE_COLORS = {
+  bajo: "bg-red-100",
+  basico: "bg-yellow-100",
+  "básico": "bg-yellow-100",
+  alto: "bg-blue-100",
+  superior: "bg-green-100",
+};
+
+const getScaleColor = (nota, scales) => {
+  if (!Number.isFinite(nota) || !Array.isArray(scales)) return null;
+  const found = scales.find(
+    (scale) =>
+      Number.isFinite(scale.desde) &&
+      Number.isFinite(scale.hasta) &&
+      nota >= scale.desde &&
+      nota <= scale.hasta,
+  );
+  if (!found) return null;
+  const key = normalize(found.escala);
+  return SCALE_COLORS[key] ?? null;
+};
+
+const RegisterStudentRecords = ({ initialFilters = null }) => {
   const {
     getStudentGrades,
     createTransitionNote,
     saveTransitionStudentNote,
     updateTransitionStudentNote,
+    getInstitutionScales,
   } = useSchool();
   const {
     getTeacherSede,
@@ -519,13 +542,25 @@ const RegisterStudentRecords = () => {
   // Detectar si el usuario es docente
   const isTeacher = Boolean(idDocente);
 
-  const [sedeSelected, setSedeSelected] = useState("");
-  const [workdaySelected, setWorkdaySelected] = useState("");
-  const [gradeSelected, setGradeSelected] = useState("");
-  const [asignatureSelected, setAsignatureSelected] = useState("");
-  const [periodSelected, setPeriodSelected] = useState("");
-  const [journey, setJourney] = useState("");
-  const [asignatureCode, setAsignatureCode] = useState("");
+  const [sedeSelected, setSedeSelected] = useState(
+    initialFilters?.sedeId ?? "",
+  );
+  const [workdaySelected, setWorkdaySelected] = useState(
+    initialFilters?.workdayId ?? "",
+  );
+  const [gradeSelected, setGradeSelected] = useState(
+    initialFilters?.gradeId ?? "",
+  );
+  const [asignatureSelected, setAsignatureSelected] = useState(
+    initialFilters?.asignatureId ?? "",
+  );
+  const [periodSelected, setPeriodSelected] = useState(
+    initialFilters?.periodId ?? "",
+  );
+  const [journey, setJourney] = useState(initialFilters?.workdayId ?? "");
+  const [asignatureCode, setAsignatureCode] = useState(
+    initialFilters?.asignatureId ?? "",
+  );
   const [recordValuesByStudent, setRecordValuesByStudent] = useState({});
   const [notesFromService, setNotesFromService] = useState([]);
   const [studentsFromService, setStudentsFromService] = useState([]);
@@ -553,7 +588,9 @@ const RegisterStudentRecords = () => {
   const [selectedLogroByStudent, setSelectedLogroByStudent] = useState({});
 
   // --- Grado Transición ---
-  const [isTransicion, setIsTransicion] = useState(false);
+  const [isTransicion, setIsTransicion] = useState(
+    Boolean(initialFilters?.isTransicion),
+  );
   const [purposeOptions, setPurposeOptions] = useState([]);
   const [loadingPurposes, setLoadingPurposes] = useState(false);
   const [dbaByPurposeCache, setDbaByPurposeCache] = useState({});
@@ -687,6 +724,51 @@ const RegisterStudentRecords = () => {
     }
     return idInstitution ? Number(idInstitution) : null;
   }, [rol, teacherSedeData, idInstitution]);
+
+  // ── Escalas de valoración de la institución ──────────────────────────────
+  const [scales, setScales] = useState([]);
+
+  useEffect(() => {
+    let mounted = true;
+    if (!fkInstitucion || !getInstitutionScales) {
+      setScales([]);
+      return undefined;
+    }
+
+    const loadScales = async () => {
+      try {
+        const res = await getInstitutionScales(Number(fkInstitucion));
+        const list = Array.isArray(res) ? res : (res?.data ?? []);
+        const normalized = (Array.isArray(list) ? list : [])
+          .filter(Boolean)
+          .map((scale) => ({
+            escala: String(scale?.escala ?? "").trim(),
+            desde: Number(scale?.desde),
+            hasta: Number(scale?.hasta),
+            umbral: Number(scale?.umbral),
+          }))
+          .filter(
+            (scale) =>
+              !Number.isNaN(scale.desde) && !Number.isNaN(scale.hasta),
+          );
+        if (mounted) setScales(normalized);
+      } catch (err) {
+        console.error("RegisterStudentRecords - Error cargando escalas:", err);
+        if (mounted) setScales([]);
+      }
+    };
+
+    loadScales();
+
+    return () => {
+      mounted = false;
+    };
+  }, [fkInstitucion, getInstitutionScales]);
+
+  const recoveryUmbral = useMemo(
+    () => scales.find((scale) => Number.isFinite(scale.umbral))?.umbral ?? null,
+    [scales],
+  );
 
   // Si existe idDocente, cargar sedes desde el servicio y mapear a {id, name}
   // Mejoras: esperar a que haya token y evitar llamadas duplicadas (deduplicación por idDocente)
@@ -2234,15 +2316,18 @@ const RegisterStudentRecords = () => {
         const finalInfo = computeFinalRecord(studentValues);
 
         const nota = parseFloat(finalInfo.final);
-        const bgClass = !isNaN(nota)
-          ? nota < 3
-            ? "bg-red-100"
-            : nota <= 3.5
-              ? "bg-yellow-100"
-              : "bg-green-100"
-          : finalInfo.isComplete
-            ? "bg-green-100"
-            : "bg-yellow-100";
+        const scaleBg = getScaleColor(nota, scales);
+        const bgClass =
+          scaleBg ??
+          (!isNaN(nota)
+            ? nota < 3
+              ? "bg-red-100"
+              : nota <= 3.5
+                ? "bg-yellow-100"
+                : "bg-green-100"
+            : finalInfo.isComplete
+              ? "bg-green-100"
+              : "bg-yellow-100");
 
         return (
           <div className={`p-3 text-center ${bgClass} rounded`}>
@@ -2277,6 +2362,19 @@ const RegisterStudentRecords = () => {
           const recoveryValue =
             recoveryNotesByIdRef.current?.[studentKey] ?? "";
           const editing = rowEditByIdRef.current?.[studentKey] !== false;
+          const finalInfo = computeFinalRecordRef.current(
+            recordValuesByStudentRef.current?.[studentKey] ?? {},
+          );
+          const notaFinal = parseFloat(finalInfo.final);
+          const needsRecovery =
+            recoveryUmbral == null ||
+            (!Number.isNaN(notaFinal) && notaFinal < recoveryUmbral);
+
+          if (!needsRecovery) {
+            return (
+              <div className="p-2 text-center text-sm opacity-60">-</div>
+            );
+          }
 
           return (
             <div className="p-2">
@@ -2392,6 +2490,9 @@ const RegisterStudentRecords = () => {
     handleObservacionEnfasisChange,
     sanitizeGradeInput,
     periodSelected,
+    recoveryNotesById,
+    scales,
+    recoveryUmbral,
     tipoByStudent,
     selectedLogroByStudent,
     logrosOptionsByStudent,
@@ -2431,6 +2532,7 @@ const RegisterStudentRecords = () => {
   }, [
     filteredStudents,
     recordValuesByStudent,
+    recoveryNotesById,
     transicionItemsByStudent,
     transicionSavingById,
     tipoLogroOptions,

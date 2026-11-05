@@ -18,8 +18,9 @@ import {
 // Función auxiliar para redondeo consistente
 const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
 
-const RegisterRecords = ({ onClose, modo = "normal" }) => {
+const RegisterRecords = ({ modo = "normal", initialFilters = null }) => {
   const isEnfasis = modo === "enfasis";
+  const initial = isEnfasis ? null : initialFilters;
   const {
     createNote,
     createTransitionNote,
@@ -33,14 +34,20 @@ const RegisterRecords = ({ onClose, modo = "normal" }) => {
   // Detectar si el usuario es docente
   const isTeacher = Boolean(idDocente);
 
-  const [sedeSelected, setSedeSelected] = useState("");
-  const [workdaySelected, setWorkdaySelected] = useState("");
-  const [gradeSelected, setGradeSelected] = useState("");
-  const [asignatureSelected, setAsignatureSelected] = useState("");
+  const [sedeSelected, setSedeSelected] = useState(initial?.sedeId ?? "");
+  const [workdaySelected, setWorkdaySelected] = useState(
+    initial?.workdayId ?? "",
+  );
+  const [gradeSelected, setGradeSelected] = useState(initial?.gradeId ?? "");
+  const [asignatureSelected, setAsignatureSelected] = useState(
+    initial?.asignatureId ?? "",
+  );
   const [numberRecords, setNumberRecords] = useState(0);
   const [auxRecords, setAuxRecords] = useState([]);
   const [isTest, setIsTest] = useState(false);
-  const [periodSelected, setPeriodSelected] = useState("");
+  const [periodSelected, setPeriodSelected] = useState(
+    initial?.periodId ?? "",
+  );
   const [porcentualTotal, setPorcentualTotal] = useState(100);
   const [finalTest, setFinalTest] = useState({
     record: 0,
@@ -48,7 +55,9 @@ const RegisterRecords = ({ onClose, modo = "normal" }) => {
     goal: "",
   });
 
-  const [isTransicion, setIsTransicion] = useState(false);
+  const [isTransicion, setIsTransicion] = useState(
+    Boolean(initial?.isTransicion),
+  );
   const [propositoSelected, setPropositoSelected] = useState("");
   const [propositos, setPropositos] = useState([]);
   const [loadingPropositos, setLoadingPropositos] = useState(false);
@@ -536,15 +545,10 @@ const RegisterRecords = ({ onClose, modo = "normal" }) => {
       }));
       try {
         await createTransitionNote({ notes: transitionNotes });
-        setSedeSelected("");
-        setWorkdaySelected("");
-        setGradeSelected("");
-        setAsignatureSelected("");
-        setPeriodSelected("");
+        // Mantener los filtros seleccionados; limpiar solo las notas capturadas
         setNumberRecords(0);
         setAuxRecords([]);
-        setIsTransicion(false);
-        setPropositoSelected("");
+        setNotesValidated(false);
       } catch (error) {
         console.error("Error al registrar notas de transición:", error);
       }
@@ -576,16 +580,12 @@ const RegisterRecords = ({ onClose, modo = "normal" }) => {
 
     try {
       await createNote({ notes });
-      // Limpiar formulario
-      setSedeSelected("");
-      setWorkdaySelected("");
-      setGradeSelected("");
-      setAsignatureSelected("");
-      setPeriodSelected("");
+      // Mantener los filtros seleccionados; limpiar solo las notas capturadas
       setNumberRecords(0);
       setAuxRecords([]);
       setIsTest(false);
       setFinalTest({ record: 0, porcentual: 20, goal: "" });
+      setNotesValidated(false);
     } catch (error) {
       console.error("Error al registrar notas:", error);
     }
@@ -615,10 +615,7 @@ const RegisterRecords = ({ onClose, modo = "normal" }) => {
               bg="bg-secondary"
               text="text-surface"
               type="button"
-              onClick={() => {
-                setExistingNotesModal(false);
-                onClose?.();
-              }}
+              onClick={() => setExistingNotesModal(false)}
             />
           </div>
         </div>

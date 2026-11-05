@@ -423,7 +423,16 @@ const ManageNote = () => {
         title="Crear Nota"
         size="7xl"
       >
-        <RegisterRecords onClose={() => setIsAddOpen(false)} />
+        <RegisterRecords
+          initialFilters={{
+            sedeId,
+            workdayId,
+            gradeId,
+            asignatureId,
+            periodId,
+            isTransicion,
+          }}
+        />
       </Modal>
 
       <Modal
@@ -432,7 +441,16 @@ const ManageNote = () => {
         title="Registrar Notas"
         size="7xl"
       >
-        <RegisterStudentRecords onClose={() => setIsAssignOpen(false)} />
+        <RegisterStudentRecords
+          initialFilters={{
+            sedeId,
+            workdayId,
+            gradeId,
+            asignatureId,
+            periodId,
+            isTransicion,
+          }}
+        />
       </Modal>
 
       <Modal

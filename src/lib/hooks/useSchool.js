@@ -13,6 +13,7 @@ const EMPTY_CONTEXT = {
   // most callers only use a few functions; provide no-op defaults here
   getGradeSede: noop,
   getGradeOnlySede: noop,
+  getInstitutionScales: noop,
   getTeacherSubjects: noop,
   getTeacherGrades: noop,
   loadAreas: noop,

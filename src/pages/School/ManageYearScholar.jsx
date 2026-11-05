@@ -266,6 +266,11 @@ const ManageYearScholar = () => {
   const [loadingStudentId, setLoadingStudentId] = useState(null);
   const [loadingAll, setLoadingAll] = useState(false);
   const [progressAll, setProgressAll] = useState({ current: 0, total: 0 });
+  const [promoteModalOpen, setPromoteModalOpen] = useState(false);
+  const [targetGrades, setTargetGrades] = useState([]);
+  const [loadingTargetGrades, setLoadingTargetGrades] = useState(false);
+  const [targetGradeId, setTargetGradeId] = useState("");
+  const [approvedTargetGrade, setApprovedTargetGrade] = useState("");
 
   const notifyRef = useRef(notify);
   useEffect(() => {
@@ -332,6 +337,41 @@ const ManageYearScholar = () => {
     };
   }, [idDocente, getTeacherSede, token]);
 
+  useEffect(() => {
+    if (!promoteModalOpen) return undefined;
+    let cancelled = false;
+    setTargetGradeId("");
+    const loadTargetGrades = async () => {
+      setLoadingTargetGrades(true);
+      try {
+        const res = await getGradeOnlySede({ idSede: Number(sedeId) });
+        const list = Array.isArray(res) ? res : (res?.data ?? []);
+        const filtered = list.filter(Boolean).filter((grade) => {
+          const gradeValue = grade?.id_grade ?? grade?.id ?? grade?.id_grado;
+          return String(gradeValue) !== String(gradeId);
+        });
+        if (!cancelled) setTargetGrades(filtered);
+      } catch (err) {
+        console.error(
+          "ManageYearScholar - Error cargando grados destino:",
+          err,
+        );
+        if (!cancelled) {
+          setTargetGrades([]);
+          notifyRef.current.error(
+            err?.message || "No se pudieron cargar los grados.",
+          );
+        }
+      } finally {
+        if (!cancelled) setLoadingTargetGrades(false);
+      }
+    };
+    loadTargetGrades();
+    return () => {
+      cancelled = true;
+    };
+  }, [promoteModalOpen, sedeId, gradeId, getGradeOnlySede]);
+
   const fetchStudents = useCallback(async () => {
     if (!gradeId) {
       setStudents([]);
@@ -364,6 +404,7 @@ const ManageYearScholar = () => {
     setHistoryByStudent({});
     setHistoryModalStudent(null);
     setSummaryOpen(false);
+    setApprovedTargetGrade("");
   }, [gradeId]);
 
   useEffect(() => {
@@ -442,6 +483,36 @@ const ManageYearScholar = () => {
       );
     }
   }, [students, loadingAll, fetchStudentHistory]);
+
+  const handleOpenPromoteModal = useCallback(() => {
+    setTargetGradeId("");
+    setPromoteModalOpen(true);
+  }, []);
+
+  const handleClosePromoteModal = useCallback(() => {
+    if (loadingAll) return;
+    setPromoteModalOpen(false);
+    setTargetGradeId("");
+  }, [loadingAll]);
+
+  const handleConfirmApproveAll = useCallback(() => {
+    if (!targetGradeId) return;
+    const selected = targetGrades.find((grade) => {
+      const gradeValue = grade?.id_grade ?? grade?.id ?? grade?.id_grado;
+      return String(gradeValue) === String(targetGradeId);
+    });
+    const gradeName =
+      selected?.grado ??
+      selected?.nombre ??
+      selected?.nombre_grado ??
+      selected?.name ??
+      targetGradeId;
+    const gradeGroup = selected?.grupo ? ` - ${selected.grupo}` : "";
+    setApprovedTargetGrade(`${gradeName}${gradeGroup}`);
+    setPromoteModalOpen(false);
+    setTargetGradeId("");
+    handleApproveAll();
+  }, [targetGradeId, targetGrades, handleApproveAll]);
 
   const summaryPeriods = useMemo(() => {
     const ids = new Set();
@@ -603,8 +674,12 @@ const ManageYearScholar = () => {
                   icon="CheckSquare"
                   bg="bg-secondary"
                   text="text-surface"
-                  onClick={handleApproveAll}
-                  disabled={loadingAll || loadingStudentId != null}
+                  onClick={handleOpenPromoteModal}
+                  disabled={
+                    loadingAll ||
+                    loadingStudentId != null ||
+                    promoteModalOpen
+                  }
                 />
               </div>
             </div>
@@ -622,6 +697,66 @@ const ManageYearScholar = () => {
           )}
         </div>
       )}
+
+      <Modal
+        isOpen={promoteModalOpen}
+        onClose={handleClosePromoteModal}
+        title="Aprobar todos"
+        size="2xl"
+      >
+        <div className="flex flex-col gap-4">
+          <p className="text-sm opacity-80">
+            ¿A qué grado va a aprobar los estudiantes de{" "}
+            <strong>{students[0]?.grado ?? "grado seleccionado"}</strong>?
+          </p>
+          <GradeSelector
+            label="Grado destino"
+            labelClassName="text-sm font-semibold"
+            value={targetGradeId}
+            onChange={(e) => setTargetGradeId(e.target.value)}
+            staticOptions={targetGrades}
+            disabled={loadingTargetGrades || targetGrades.length === 0}
+            placeholder={
+              loadingTargetGrades
+                ? "Cargando grados..."
+                : "Selecciona un grado destino"
+            }
+          />
+          {!loadingTargetGrades && targetGrades.length === 0 && (
+            <p className="text-sm opacity-70">
+              No hay otros grados disponibles para esta sede.
+            </p>
+          )}
+          <div className="flex justify-end gap-2">
+            <div className="w-40">
+              <SimpleButton
+                type="button"
+                msj="Cancelar"
+                bg="bg-secondary"
+                text="text-surface"
+                onClick={handleClosePromoteModal}
+                disabled={loadingAll}
+              />
+            </div>
+            <div className="w-40">
+              <SimpleButton
+                type="button"
+                msj="Continuar"
+                icon="CheckSquare"
+                bg="bg-primary"
+                text="text-surface"
+                onClick={handleConfirmApproveAll}
+                disabled={
+                  !targetGradeId ||
+                  loadingTargetGrades ||
+                  targetGrades.length === 0 ||
+                  loadingAll
+                }
+              />
+            </div>
+          </div>
+        </div>
+      </Modal>
 
       <Modal
         isOpen={Boolean(historyModalStudent)}
@@ -666,6 +801,11 @@ const ManageYearScholar = () => {
         title="Historial de notas — Curso"
         size="7xl"
       >
+        {approvedTargetGrade && (
+          <p className="text-sm mb-3">
+            <strong>Grado destino:</strong> {approvedTargetGrade}
+          </p>
+        )}
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead className="bg-primary/10">
