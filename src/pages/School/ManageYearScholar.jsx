@@ -59,6 +59,13 @@ const getEffectiveNote = (nota, recuperacion) => {
   return toNumber(nota);
 };
 
+const esAsignaturaConvivencia = (nombre) =>
+  String(nombre ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .includes("convivencia");
+
 const colorAprobacion = (estado) => {
   if (!estado) return "#111827";
   const lower = String(estado).toLowerCase();
@@ -178,8 +185,11 @@ const buildStudentHistory = (rows, student, year) => {
 
   for (const period of sortedPeriods) {
     let periodSum = 0;
+    let totalAsignaturas = 0;
 
     for (const asignatura of period.asignaturas) {
+      if (esAsignaturaConvivencia(asignatura.nombreAsignatura)) continue;
+      totalAsignaturas += 1;
       if (asignatura.tieneNota !== "SI") continue;
       const effectiveNote = getEffectiveNote(
         asignatura.nota,
@@ -224,8 +234,7 @@ const buildStudentHistory = (rows, student, year) => {
       }
     }
 
-    // Total de asignaturas: cantidad de id_asignatura_grado distintos.
-    period.totalAsignaturas = period.asignaturas.length;
+    period.totalAsignaturas = totalAsignaturas;
     period.promedio =
       period.totalAsignaturas > 0
         ? (periodSum / period.totalAsignaturas).toFixed(2)

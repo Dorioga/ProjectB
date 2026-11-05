@@ -115,11 +115,15 @@ const S = {
 };
 
 /* ── Helpers de nota efectiva (recuperación vs periodo) ── */
+const parseNota = (valor) =>
+  parseFloat(String(valor ?? "").trim().replace(",", "."));
+
 const _computeNotaEfectiva = (notaPeriodo, notaRecuperacion) => {
-  if (notaRecuperacion == null) return notaPeriodo;
-  const pV = parseFloat(notaPeriodo);
-  const rV = parseFloat(notaRecuperacion);
-  if (isNaN(pV) || isNaN(rV)) return notaRecuperacion ?? notaPeriodo;
+  const rRaw = String(notaRecuperacion ?? "").trim();
+  if (!rRaw) return notaPeriodo;
+  const pV = parseNota(notaPeriodo);
+  const rV = parseNota(rRaw);
+  if (isNaN(pV) || isNaN(rV)) return notaRecuperacion;
   return String(Math.max(pV, rV));
 };
 
@@ -155,17 +159,32 @@ const esAsignaturaConvivencia = (nombre) =>
     .replace(/[\u0300-\u036f]/g, "")
     .includes("convivencia");
 
+const esAreaEnfasis = (nombre) => {
+  const normalized = String(nombre ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return /area(\s+de)?\s+enfasis/.test(normalized);
+};
+
+const getNotaMostrar = (per) => {
+  if (!per) return "-";
+  if (String(per.nota ?? "").trim() !== "") return per.nota;
+  if (String(per.notaPorcentual ?? "").trim() !== "") return per.notaPorcentual;
+  return "-";
+};
+
 /* ── Hooks de procesamiento de datos del boletín ── */
 const useBoletinProcessed = (data, periodId) => {
   const periodos = useMemo(() => {
     const m = new Map();
     for (const r of data) {
-      if (
-        r.id_periodo &&
-        String(r.id_periodo) === String(periodId) &&
-        !m.has(r.id_periodo)
-      ) {
-        m.set(r.id_periodo, r.nombre_periodo || `Periodo ${r.id_periodo}`);
+      if (r.id_periodo == null) continue;
+      const pid = String(r.id_periodo);
+      if (pid === String(periodId) && !m.has(pid)) {
+        m.set(pid, r.nombre_periodo || `Periodo ${pid}`);
       }
     }
     return Array.from(m.entries())
@@ -219,11 +238,13 @@ const useBoletinProcessed = (data, periodId) => {
       if ((!asig.estado_final || asig.estado_final === "-") && r.estado_final) {
         asig.estado_final = r.estado_final;
       }
-      const pid = r.id_periodo;
-      if (!pid) continue;
+      const pidRaw = r.id_periodo;
+      if (pidRaw == null || pidRaw === "") continue;
+      const pid = String(pidRaw);
       if (!asig.periodos.has(pid)) {
         asig.periodos.set(pid, {
           nota: null,
+          notaPorcentual: null,
           recuperacion: null,
           escala: null,
           estado: null,
@@ -233,16 +254,20 @@ const useBoletinProcessed = (data, periodId) => {
         });
       }
       const per = asig.periodos.get(pid);
-      if (r.nota_periodo_porcentual != null) {
-        const v = parseFloat(r.nota_periodo_porcentual);
-        if (
-          !isNaN(v) &&
-          (per.nota === null || v > parseFloat(per.nota ?? "0"))
-        ) {
+      const notaPorcentualRaw = String(
+        r.nota_periodo_porcentual ?? "",
+      ).trim();
+      if (notaPorcentualRaw !== "") {
+        if (per.notaPorcentual == null) {
+          per.notaPorcentual = r.nota_periodo_porcentual;
+        }
+        const v = parseNota(notaPorcentualRaw);
+        if (!isNaN(v) && (per.nota === null || v > parseNota(per.nota))) {
           per.nota = r.nota_periodo_porcentual;
         }
       }
-      if (r.nota_recuperacion != null && per.recuperacion === null) {
+      const recuperacionRaw = String(r.nota_recuperacion ?? "").trim();
+      if (recuperacionRaw !== "" && per.recuperacion === null) {
         per.recuperacion = r.nota_recuperacion;
       }
       if (!per.escala && r.escala_nota) per.escala = r.escala_nota;
@@ -268,6 +293,7 @@ const useBoletinProcessed = (data, periodId) => {
     for (const [key, subject] of m) {
       const info = areaInfoMap.get(key);
       const areaKey = (info?.nombre_area ?? "").toUpperCase() || "SIN ÁREA";
+      subject.nombre_area = areaKey;
       if (!areaMap.has(areaKey)) {
         areaMap.set(areaKey, {
           fk_area: info?.fk_area ?? null,
@@ -303,8 +329,15 @@ const useBoletinProcessed = (data, periodId) => {
         });
         for (const asig of area.asignaturas) {
           asig.final = computeFinalAnual(asig);
+          const esConvivencia = esAsignaturaConvivencia(
+            asig.nombre_asignatura_grado,
+          );
           for (const [, per] of asig.periodos) {
-            per.nota = _computeNotaEfectiva(per.nota, per.recuperacion);
+            per.nota = esConvivencia
+              ? String(per.nota ?? "").trim() !== ""
+                ? per.nota
+                : per.notaPorcentual
+              : _computeNotaEfectiva(per.nota, per.recuperacion);
           }
         }
         return area;
@@ -315,7 +348,9 @@ const useBoletinProcessed = (data, periodId) => {
 
   const promedioGeneral = useMemo(() => {
     const computables = asignaturas.filter(
-      (asig) => !esAsignaturaConvivencia(asig.nombre_asignatura_grado),
+      (asig) =>
+        !esAsignaturaConvivencia(asig.nombre_asignatura_grado) &&
+        !esAreaEnfasis(asig.nombre_area),
     );
     if (!computables.length) return null;
     const pid = String(periodId);
@@ -324,7 +359,7 @@ const useBoletinProcessed = (data, periodId) => {
       if (asig.esEnfasis) continue;
       if (asig.tiene_nota === "SI") {
         const per = asig.periodos.get(pid);
-        const v = parseFloat(per?.nota);
+        const v = parseNota(per?.nota);
         if (!isNaN(v)) sum += v;
       }
     }
@@ -352,15 +387,10 @@ const useBoletinProcessed = (data, periodId) => {
 function computeBoletinData(data, periodId) {
   const periodoMap = new Map();
   for (const r of data) {
-    if (
-      r.id_periodo &&
-      String(r.id_periodo) === String(periodId) &&
-      !periodoMap.has(r.id_periodo)
-    ) {
-      periodoMap.set(
-        r.id_periodo,
-        r.nombre_periodo || `Periodo ${r.id_periodo}`,
-      );
+    if (r.id_periodo == null) continue;
+    const pid = String(r.id_periodo);
+    if (pid === String(periodId) && !periodoMap.has(pid)) {
+      periodoMap.set(pid, r.nombre_periodo || `Periodo ${pid}`);
     }
   }
   const periodos = Array.from(periodoMap.entries())
@@ -410,11 +440,13 @@ function computeBoletinData(data, periodId) {
     }
     if ((!asig.estado_final || asig.estado_final === "-") && r.estado_final)
       asig.estado_final = r.estado_final;
-    const pid = r.id_periodo;
-    if (!pid) continue;
+    const pidRaw = r.id_periodo;
+    if (pidRaw == null || pidRaw === "") continue;
+    const pid = String(pidRaw);
     if (!asig.periodos.has(pid)) {
       asig.periodos.set(pid, {
         nota: null,
+        notaPorcentual: null,
         recuperacion: null,
         escala: null,
         estado: null,
@@ -424,13 +456,18 @@ function computeBoletinData(data, periodId) {
       });
     }
     const per = asig.periodos.get(pid);
-    if (r.nota_periodo_porcentual != null) {
-      const v = parseFloat(r.nota_periodo_porcentual);
-      if (!isNaN(v) && (per.nota === null || v > parseFloat(per.nota ?? "0"))) {
+    const notaPorcentualRaw = String(r.nota_periodo_porcentual ?? "").trim();
+    if (notaPorcentualRaw !== "") {
+      if (per.notaPorcentual == null) {
+        per.notaPorcentual = r.nota_periodo_porcentual;
+      }
+      const v = parseNota(notaPorcentualRaw);
+      if (!isNaN(v) && (per.nota === null || v > parseNota(per.nota))) {
         per.nota = r.nota_periodo_porcentual;
       }
     }
-    if (r.nota_recuperacion != null && per.recuperacion === null) {
+    const recuperacionRaw = String(r.nota_recuperacion ?? "").trim();
+    if (recuperacionRaw !== "" && per.recuperacion === null) {
       per.recuperacion = r.nota_recuperacion;
     }
     if (!per.escala && r.escala_nota) per.escala = r.escala_nota;
@@ -455,6 +492,7 @@ function computeBoletinData(data, periodId) {
   for (const [key, subject] of asigMap) {
     const info = areaInfoMap.get(key);
     const areaKey = (info?.nombre_area ?? "").toUpperCase() || "SIN ÁREA";
+    subject.nombre_area = areaKey;
     if (!areaMap2.has(areaKey)) {
       areaMap2.set(areaKey, {
         fk_area: info?.fk_area ?? null,
@@ -494,15 +532,24 @@ function computeBoletinData(data, periodId) {
       });
       for (const asig of area.asignaturas) {
         asig.final = computeFinalAnual(asig);
+        const esConvivencia = esAsignaturaConvivencia(
+          asig.nombre_asignatura_grado,
+        );
         for (const [, per] of asig.periodos) {
-          per.nota = _computeNotaEfectiva(per.nota, per.recuperacion);
+          per.nota = esConvivencia
+            ? String(per.nota ?? "").trim() !== ""
+              ? per.nota
+              : per.notaPorcentual
+            : _computeNotaEfectiva(per.nota, per.recuperacion);
         }
       }
       return area;
     });
   const asignaturas = areas.flatMap((a) => a.asignaturas);
   const computables = asignaturas.filter(
-    (asig) => !esAsignaturaConvivencia(asig.nombre_asignatura_grado),
+    (asig) =>
+      !esAsignaturaConvivencia(asig.nombre_asignatura_grado) &&
+      !esAreaEnfasis(asig.nombre_area),
   );
   const pid = String(periodId);
   let promedioSum = 0;
@@ -510,7 +557,7 @@ function computeBoletinData(data, periodId) {
     if (asig.esEnfasis) continue;
     if (asig.tiene_nota === "SI") {
       const per = asig.periodos.get(pid);
-      const v = parseFloat(per?.nota);
+      const v = parseNota(per?.nota);
       if (!isNaN(v)) promedioSum += v;
     }
   }
@@ -1175,11 +1222,10 @@ asigMap.set(asigKey, {
     const asigW = contentW * 0.16;
     const ihW = contentW * 0.04;
     const remainW = contentW - asigW - ihW;
-    // Subcolumnas: Nota, Escala usan smallSubW; Estado usa estadoSubW más ancho; Logro ocupa el resto
+    // Subcolumnas: Nota, Escala usan smallSubW; Estado y Est. Final comparten
+    // el mismo ancho; Logro ocupa el resto.
     const smallSubW =
       periodos.length > 0 ? (remainW * 0.2) / (periodos.length * 2) : 0;
-    const estadoSubW =
-      periodos.length > 0 ? (remainW * 0.18) / periodos.length : 0;
     // Ancho dinámico para Final / Est. Final: debe contener "No aprobado"
     // en una sola línea, además de sus encabezados.
     let finalColWidth = 0;
@@ -1199,6 +1245,12 @@ asigMap.set(asigKey, {
       const maxW = (remainW * 0.3) / periodos.length;
       finalColWidth = Math.min(Math.max(baseW, neededW), maxW);
     }
+    const estadoSubW =
+      mostrarFinalPDF && periodos.length > 0
+        ? finalColWidth
+        : periodos.length > 0
+          ? (remainW * 0.18) / periodos.length
+          : 0;
     const finalSubW = finalColWidth;
     const estFinalSubW = finalColWidth;
     const logroSubW =
@@ -1488,7 +1540,7 @@ asigMap.set(asigKey, {
         for (let pi = 0; pi < periodos.length; pi++) {
           const per = asig.periodos.get(periodos[pi].id);
           const base = 2 + pi * colsPerPeriodo;
-          drawCell(per?.nota ?? "-", base, y, computedRowH, {
+          drawCell(getNotaMostrar(per), base, y, computedRowH, {
             bold: true,
             bg: rowBg,
           });
@@ -1724,7 +1776,7 @@ asigMap.set(asigKey, {
         const cx = margin + perColW + ai * asigColW;
         pdf.rect(cx, y, asigColW, dataRowH, "D");
         const per = asignaturas[ai].periodos.get(todosLosPeriodosIds[pi]);
-        const nota = per?.nota ?? "-";
+        const nota = getNotaMostrar(per);
         pdf.text(nota, cx + asigColW / 2, y + dataRowH / 2 + 1.5, {
           align: "center",
         });
@@ -1963,8 +2015,10 @@ const BoletinSelector = ({
     if (!boletinData) return [];
     const m = new Map();
     for (const r of boletinData) {
-      if (r.id_periodo && !m.has(r.id_periodo)) {
-        m.set(r.id_periodo, r.nombre_periodo || `Periodo ${r.id_periodo}`);
+      if (r.id_periodo == null) continue;
+      const pid = String(r.id_periodo);
+      if (!m.has(pid)) {
+        m.set(pid, r.nombre_periodo || `Periodo ${pid}`);
       }
     }
     return Array.from(m.entries())
@@ -2900,7 +2954,7 @@ const BoletinSelector = ({
                                           fontWeight: "600",
                                         }}
                                       >
-                                        {per?.nota ?? "-"}
+                                        {getNotaMostrar(per)}
                                       </td>
                                       <td style={S.td}>{per?.escala ?? "-"}</td>
                                       <td
@@ -3133,7 +3187,7 @@ const BoletinSelector = ({
                                               textAlign: "center",
                                             }}
                                           >
-                                            {per?.nota ?? "-"}
+                                            {getNotaMostrar(per)}
                                           </td>
                                         );
                                       })}
