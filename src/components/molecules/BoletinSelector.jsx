@@ -148,6 +148,13 @@ const esAsignaturaEnfasis = (tipo) =>
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "") === "enfasis";
 
+const esAsignaturaConvivencia = (nombre) =>
+  String(nombre ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .includes("convivencia");
+
 /* ── Hooks de procesamiento de datos del boletín ── */
 const useBoletinProcessed = (data, periodId) => {
   const periodos = useMemo(() => {
@@ -307,10 +314,13 @@ const useBoletinProcessed = (data, periodId) => {
   }, [data]);
 
   const promedioGeneral = useMemo(() => {
-    if (!asignaturas.length) return null;
+    const computables = asignaturas.filter(
+      (asig) => !esAsignaturaConvivencia(asig.nombre_asignatura_grado),
+    );
+    if (!computables.length) return null;
     const pid = String(periodId);
     let sum = 0;
-    for (const asig of asignaturas) {
+    for (const asig of computables) {
       if (asig.esEnfasis) continue;
       if (asig.tiene_nota === "SI") {
         const per = asig.periodos.get(pid);
@@ -318,7 +328,7 @@ const useBoletinProcessed = (data, periodId) => {
         if (!isNaN(v)) sum += v;
       }
     }
-    return (sum / asignaturas.length).toFixed(2);
+    return (sum / computables.length).toFixed(2);
   }, [asignaturas, periodId]);
 
   const resumenEstado = useMemo(() => {
@@ -491,9 +501,12 @@ function computeBoletinData(data, periodId) {
       return area;
     });
   const asignaturas = areas.flatMap((a) => a.asignaturas);
+  const computables = asignaturas.filter(
+    (asig) => !esAsignaturaConvivencia(asig.nombre_asignatura_grado),
+  );
   const pid = String(periodId);
   let promedioSum = 0;
-  for (const asig of asignaturas) {
+  for (const asig of computables) {
     if (asig.esEnfasis) continue;
     if (asig.tiene_nota === "SI") {
       const per = asig.periodos.get(pid);
@@ -501,8 +514,8 @@ function computeBoletinData(data, periodId) {
       if (!isNaN(v)) promedioSum += v;
     }
   }
-  const promedioGeneral = asignaturas.length
-    ? (promedioSum / asignaturas.length).toFixed(2)
+  const promedioGeneral = computables.length
+    ? (promedioSum / computables.length).toFixed(2)
     : null;
   const resumenEstado = (() => {
     if (!asignaturas.length) return "-";

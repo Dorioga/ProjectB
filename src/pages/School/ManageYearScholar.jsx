@@ -9,7 +9,12 @@ import useSchool from "../../lib/hooks/useSchool";
 import useTeacher from "../../lib/hooks/useTeacher";
 import useAuth from "../../lib/hooks/useAuth";
 import { useNotify } from "../../lib/hooks/useNotify";
-import { getBoletin } from "../../services/studentService";
+import {
+  getBoletin,
+  getStudent,
+  getValidateStudentNote,
+  updateStudentGrade,
+} from "../../services/studentService";
 
 const CURRENT_YEAR = new Date().getFullYear();
 const FINAL_PERIOD_ID = 4;
@@ -27,10 +32,48 @@ const toNumber = (value) => {
   return Number.isNaN(parsed) ? null : parsed;
 };
 
+const getGradeStudentLinkId = (student) =>
+  student?.id_grade_student ??
+  student?.fk_grade_student ??
+  student?.id_grado_estudiante ??
+  student?.grade_student_id ??
+  "";
+
+const getGradeValue = (grade) =>
+  grade?.id_grade ?? grade?.id ?? grade?.id_grado ?? "";
+
+const getGradeLabel = (grade) => {
+  const name =
+    grade?.grado ??
+    grade?.nombre ??
+    grade?.nombre_grado ??
+    grade?.name ??
+    "";
+  const group = grade?.grupo ? ` - ${grade.grupo}` : "";
+  return `${name}${group}`.trim();
+};
+
 const getEffectiveNote = (nota, recuperacion) => {
   const recuperacionValue = toNumber(recuperacion);
   if (recuperacionValue != null) return recuperacionValue;
   return toNumber(nota);
+};
+
+const colorAprobacion = (estado) => {
+  if (!estado) return "#111827";
+  const lower = String(estado).toLowerCase();
+  if (
+    lower.includes("no aprobado") ||
+    lower.includes("reprobado") ||
+    lower.includes("no promovido") ||
+    lower.includes("perdi")
+  ) {
+    return "#dc2626";
+  }
+  if (lower.includes("aprobado") || lower.includes("promovido")) {
+    return "#15803d";
+  }
+  return "#111827";
 };
 
 const buildStudentHistory = (rows, student, year) => {
@@ -127,6 +170,7 @@ const buildStudentHistory = (rows, student, year) => {
   let generalSum = 0;
   let generalCount = 0;
   const periods = {};
+  const annualSubjectsMap = new Map();
 
   const sortedPeriods = Array.from(periodMap.values()).sort(
     (a, b) => Number(a.idPeriodo) - Number(b.idPeriodo),
@@ -147,6 +191,39 @@ const buildStudentHistory = (rows, student, year) => {
       generalCount += 1;
     }
 
+    // Resumen anual por asignatura (notas de los periodos 1 a 4).
+    const periodNumber = Number(period.idPeriodo);
+    for (const asignatura of period.asignaturas) {
+      const key = asignatura.idAsignaturaGrado;
+      if (!annualSubjectsMap.has(key)) {
+        annualSubjectsMap.set(key, {
+          idAsignaturaGrado: key,
+          nombreAsignatura: asignatura.nombreAsignatura,
+          nombreArea: asignatura.nombreArea,
+          estadoFinal: null,
+          suma: 0,
+          count: 0,
+        });
+      }
+      const entry = annualSubjectsMap.get(key);
+      if (!entry.nombreArea && asignatura.nombreArea) {
+        entry.nombreArea = asignatura.nombreArea;
+      }
+      if (!entry.estadoFinal && asignatura.estadoFinal) {
+        entry.estadoFinal = asignatura.estadoFinal;
+      }
+      if (periodNumber >= 1 && periodNumber <= 4) {
+        const effectiveNote = getEffectiveNote(
+          asignatura.nota,
+          asignatura.notaRecuperacion,
+        );
+        if (effectiveNote != null) {
+          entry.suma += effectiveNote;
+          entry.count += 1;
+        }
+      }
+    }
+
     // Total de asignaturas: cantidad de id_asignatura_grado distintos.
     period.totalAsignaturas = period.asignaturas.length;
     period.promedio =
@@ -160,6 +237,21 @@ const buildStudentHistory = (rows, student, year) => {
     periods[period.idPeriodo] = period;
   }
 
+  const annualSubjects = Array.from(annualSubjectsMap.values())
+    .map((entry) => ({
+      idAsignaturaGrado: entry.idAsignaturaGrado,
+      nombreAsignatura: entry.nombreAsignatura,
+      nombreArea: entry.nombreArea,
+      definitiva:
+        entry.count > 0 ? (entry.suma / entry.count).toFixed(2) : null,
+      estadoFinal: entry.estadoFinal,
+    }))
+    .sort((a, b) =>
+      a.nombreAsignatura.localeCompare(b.nombreAsignatura, "es", {
+        sensitivity: "base",
+      }),
+    );
+
   return {
     studentId: String(getStudentId(student)),
     nombre: getStudentName(student) || "Estudiante",
@@ -167,6 +259,7 @@ const buildStudentHistory = (rows, student, year) => {
     year: String(year),
     periodIdConsultado: FINAL_PERIOD_ID,
     periods,
+    annualSubjects,
     annual: {
       estadoFinal: annualEstadoFinal,
       definitiva: annualDefinitiva,
@@ -175,6 +268,58 @@ const buildStudentHistory = (rows, student, year) => {
     },
   };
 };
+
+const AnnualSummary = ({ subjects }) => (
+  <div className="border border-primary/20 rounded-lg overflow-hidden">
+    <div className="bg-primary text-surface px-3 py-2">
+      <h3 className="font-bold">Resumen anual</h3>
+    </div>
+    <div className="overflow-x-auto">
+      <table className="min-w-full text-sm">
+        <thead className="bg-primary/10">
+          <tr>
+            <th className="text-left px-3 py-2 font-semibold">Asignatura</th>
+            <th className="text-left px-3 py-2 font-semibold">Área</th>
+            <th className="text-center px-3 py-2 font-semibold">
+              Definitiva
+            </th>
+            <th className="text-center px-3 py-2 font-semibold">
+              Estado final
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {subjects.length === 0 ? (
+            <tr>
+              <td colSpan={4} className="px-3 py-2 text-center">
+                Sin asignaturas para mostrar.
+              </td>
+            </tr>
+          ) : (
+            subjects.map((asignatura) => (
+              <tr
+                key={asignatura.idAsignaturaGrado}
+                className="border-t border-primary/10"
+              >
+                <td className="px-3 py-2">{asignatura.nombreAsignatura}</td>
+                <td className="px-3 py-2">{asignatura.nombreArea || "-"}</td>
+                <td className="px-3 py-2 text-center font-semibold">
+                  {asignatura.definitiva ?? "-"}
+                </td>
+                <td
+                  className="px-3 py-2 text-center font-semibold"
+                  style={{ color: colorAprobacion(asignatura.estadoFinal) }}
+                >
+                  {asignatura.estadoFinal ?? "-"}
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  </div>
+);
 
 const PeriodHistory = ({ period }) => (
   <div className="border border-primary/20 rounded-lg overflow-hidden">
@@ -199,10 +344,6 @@ const PeriodHistory = ({ period }) => (
             <th className="text-center px-3 py-2 font-semibold">
               Estado período
             </th>
-            <th className="text-center px-3 py-2 font-semibold">Definitiva</th>
-            <th className="text-center px-3 py-2 font-semibold">
-              Estado final
-            </th>
           </tr>
         </thead>
         <tbody>
@@ -219,17 +360,21 @@ const PeriodHistory = ({ period }) => (
               <td className="px-3 py-2 text-center">
                 {asignatura.notaRecuperacion ?? "-"}
               </td>
-              <td className="px-3 py-2 text-center">
+              <td
+                className="px-3 py-2 text-center font-semibold"
+                style={{
+                  color: colorAprobacion(asignatura.estadoPeriodo),
+                }}
+              >
                 {asignatura.escala ?? "-"}
               </td>
-              <td className="px-3 py-2 text-center">
+              <td
+                className="px-3 py-2 text-center font-semibold"
+                style={{
+                  color: colorAprobacion(asignatura.estadoPeriodo),
+                }}
+              >
                 {asignatura.estadoPeriodo ?? "-"}
-              </td>
-              <td className="px-3 py-2 text-center">
-                {asignatura.definitiva ?? "-"}
-              </td>
-              <td className="px-3 py-2 text-center">
-                {asignatura.estadoFinal ?? "-"}
               </td>
             </tr>
           ))}
@@ -254,6 +399,12 @@ const ManageYearScholar = () => {
 
   const [historyModalStudent, setHistoryModalStudent] = useState(null);
   const [loadingStudentId, setLoadingStudentId] = useState(null);
+  const [promoteModalOpen, setPromoteModalOpen] = useState(false);
+  const [confirmPromoteOpen, setConfirmPromoteOpen] = useState(false);
+  const [targetGrades, setTargetGrades] = useState([]);
+  const [loadingTargetGrades, setLoadingTargetGrades] = useState(false);
+  const [targetGradeId, setTargetGradeId] = useState("");
+  const [promoting, setPromoting] = useState(false);
 
   const notifyRef = useRef(notify);
   useEffect(() => {
@@ -319,6 +470,42 @@ const ManageYearScholar = () => {
       mounted = false;
     };
   }, [idDocente, getTeacherSede, token]);
+
+  useEffect(() => {
+    if (!promoteModalOpen) return undefined;
+    let cancelled = false;
+    setTargetGradeId("");
+    const loadTargetGrades = async () => {
+      setLoadingTargetGrades(true);
+      try {
+        const res = await getGradeOnlySede({ idSede: Number(sedeId) });
+        const list = Array.isArray(res) ? res : (res?.data ?? []);
+        const filtered = list
+          .filter(Boolean)
+          .filter(
+            (grade) => String(getGradeValue(grade)) !== String(gradeId),
+          );
+        if (!cancelled) setTargetGrades(filtered);
+      } catch (err) {
+        console.error(
+          "ManageYearScholar - Error cargando grados destino:",
+          err,
+        );
+        if (!cancelled) {
+          setTargetGrades([]);
+          notifyRef.current.error(
+            err?.message || "No se pudieron cargar los grados.",
+          );
+        }
+      } finally {
+        if (!cancelled) setLoadingTargetGrades(false);
+      }
+    };
+    loadTargetGrades();
+    return () => {
+      cancelled = true;
+    };
+  }, [promoteModalOpen, sedeId, gradeId, getGradeOnlySede]);
 
   const fetchStudents = useCallback(async () => {
     if (!gradeId) {
@@ -387,7 +574,7 @@ const ManageYearScholar = () => {
       setLoadingStudentId(studentId);
       try {
         const history = await fetchStudentHistory(student);
-        setHistoryModalStudent(history);
+        setHistoryModalStudent({ ...history, rawStudent: student });
       } catch (err) {
         console.error("ManageYearScholar - historial error:", err);
         notifyRef.current.error(
@@ -399,6 +586,100 @@ const ManageYearScholar = () => {
     },
     [fetchStudentHistory],
   );
+
+  const promoteStudent = useCallback(
+    async (student, targetGrade) => {
+      const studentId = getStudentId(student);
+      if (!studentId) {
+        throw new Error("El estudiante no tiene identificador.");
+      }
+
+      let gradeStudentId = getGradeStudentLinkId(student);
+      if (!gradeStudentId) {
+        const info = await getStudent({
+          id_estudiante: Number(studentId),
+          ...(sedeId || idSede
+            ? { fk_sede: Number(sedeId || idSede) }
+            : {}),
+        });
+        gradeStudentId = getGradeStudentLinkId(info);
+      }
+      if (!gradeStudentId) {
+        throw new Error(
+          "No se encontró el registro de grado del estudiante.",
+        );
+      }
+
+      const notas = await getValidateStudentNote(studentId);
+
+      await updateStudentGrade({
+        fk_student: Number(studentId),
+        fk_grade: Number(targetGrade),
+        fk_grade_student: Number(gradeStudentId),
+        notas_estudiante: Array.isArray(notas?.notas_estudiante)
+          ? notas.notas_estudiante
+          : [],
+        notas_asignatura_enfasis: Array.isArray(
+          notas?.notas_asignatura_enfasis,
+        )
+          ? notas.notas_asignatura_enfasis
+          : [],
+      });
+    },
+    [sedeId, idSede],
+  );
+
+  const handleOpenPromoteModal = useCallback(() => {
+    setTargetGradeId("");
+    setPromoteModalOpen(true);
+  }, []);
+
+  const handleClosePromoteModal = useCallback(() => {
+    if (promoting) return;
+    setPromoteModalOpen(false);
+    setTargetGradeId("");
+  }, [promoting]);
+
+  const handleSendPromote = useCallback(() => {
+    if (!targetGradeId) return;
+    setPromoteModalOpen(false);
+    setConfirmPromoteOpen(true);
+  }, [targetGradeId]);
+
+  const handleCloseConfirmPromote = useCallback(() => {
+    if (promoting) return;
+    setConfirmPromoteOpen(false);
+  }, [promoting]);
+
+  const handleConfirmPromote = useCallback(async () => {
+    const student = historyModalStudent?.rawStudent;
+    if (!student || !targetGradeId || promoting) return;
+    setPromoting(true);
+    try {
+      await promoteStudent(student, targetGradeId);
+      notifyRef.current.success(
+        `${historyModalStudent?.nombre ?? "El estudiante"} fue promovido correctamente.`,
+      );
+      setConfirmPromoteOpen(false);
+      setTargetGradeId("");
+      setHistoryModalStudent(null);
+      fetchStudents();
+    } catch (err) {
+      console.error("ManageYearScholar - promover error:", err);
+      notifyRef.current.error(
+        err?.message || "No se pudo promover al estudiante.",
+      );
+    } finally {
+      setPromoting(false);
+    }
+  }, [historyModalStudent, targetGradeId, promoting, promoteStudent, fetchStudents]);
+
+  const targetGradeLabel = useMemo(() => {
+    const selected = targetGrades.find(
+      (grade) => String(getGradeValue(grade)) === String(targetGradeId),
+    );
+    return getGradeLabel(selected) || targetGradeId;
+  }, [targetGrades, targetGradeId]);
 
   const columns = useMemo(
     () => [
@@ -432,7 +713,7 @@ const ManageYearScholar = () => {
               icon="CheckSquare"
               bg="bg-secondary"
               text="text-surface"
-              noRounded={false}
+              noRounded={true}
               onClick={() => handleLoadStudentHistory(student)}
               disabled={
                 !studentId || isCurrentLoading || loadingStudentId != null
@@ -529,6 +810,7 @@ const ManageYearScholar = () => {
               fileName="gestion_anio_escolar"
               pageSize={50}
               initialSorting={[{ id: "nombre_completo", desc: false }]}
+              
             />
           )}
         </div>
@@ -542,6 +824,7 @@ const ManageYearScholar = () => {
       >
         {historyModalStudent && (
           <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex flex-col gap-1 text-sm">
               <span>
                 <strong>Año:</strong> {historyModalStudent.year}
@@ -553,11 +836,35 @@ const ManageYearScholar = () => {
                 <strong>Promedio general:</strong>{" "}
                 {historyModalStudent.annual.promedioGeneral ?? "-"}
               </span>
-              <span>
-                <strong>Estado final:</strong>{" "}
-                {historyModalStudent.annual.estadoFinal ?? "-"}
-              </span>
             </div>
+            <div className="flex gap-2">
+              <div className="w-36">
+                <SimpleButton
+                  type="button"
+                  msj="Promover"
+                  icon="CheckSquare"
+                  bg="bg-primary"
+                  text="text-surface"
+                  noRounded={false}
+                  onClick={handleOpenPromoteModal}
+                  disabled={promoting}
+                />
+              </div>
+              <div className="w-36">
+                <SimpleButton
+                  type="button"
+                  msj="Mantener"
+                  icon="Minus"
+                  bg="bg-secondary"
+                  text="text-surface"
+                  noRounded={false}
+                />
+              </div>
+            </div>
+          </div>
+            <AnnualSummary
+              subjects={historyModalStudent.annualSubjects ?? []}
+            />
             {Object.keys(historyModalStudent.periods).length === 0 ? (
               <p className="text-sm opacity-70">
                 No se encontraron períodos con notas para este estudiante.
@@ -569,6 +876,102 @@ const ManageYearScholar = () => {
             )}
           </div>
         )}
+      </Modal>
+
+      <Modal
+        isOpen={promoteModalOpen}
+        onClose={handleClosePromoteModal}
+        title="Promover estudiante"
+        size="lg"
+      >
+        <div className="flex flex-col gap-4">
+          <p className="text-sm opacity-80">
+            ¿A qué grado desea promover a{" "}
+            <strong>{historyModalStudent?.nombre ?? "el estudiante"}</strong>?
+          </p>
+          <GradeSelector
+            label="Grado destino"
+            labelClassName="text-sm font-semibold"
+            value={targetGradeId}
+            onChange={(e) => setTargetGradeId(e.target.value)}
+            staticOptions={targetGrades}
+            disabled={loadingTargetGrades || targetGrades.length === 0}
+            placeholder={
+              loadingTargetGrades
+                ? "Cargando grados..."
+                : "Selecciona un grado"
+            }
+          />
+          {!loadingTargetGrades && targetGrades.length === 0 && (
+            <p className="text-sm opacity-70">
+              No hay otros grados disponibles para esta sede.
+            </p>
+          )}
+          <div className="flex justify-end gap-2">
+            <div className="w-36">
+              <SimpleButton
+                type="button"
+                msj="Cancelar"
+                bg="bg-secondary"
+                text="text-surface"
+                onClick={handleClosePromoteModal}
+              />
+            </div>
+            <div className="w-36">
+              <SimpleButton
+                type="button"
+                msj="Enviar"
+                icon="Send"
+                bg="bg-primary"
+                text="text-surface"
+                onClick={handleSendPromote}
+                disabled={
+                  !targetGradeId ||
+                  loadingTargetGrades ||
+                  targetGrades.length === 0
+                }
+              />
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={confirmPromoteOpen}
+        onClose={handleCloseConfirmPromote}
+        title="Confirmar promoción"
+        size="lg"
+      >
+        <div className="flex flex-col gap-4">
+          <p className="text-sm opacity-80">
+            ¿Está seguro de promover a{" "}
+            <strong>{historyModalStudent?.nombre ?? "el estudiante"}</strong>{" "}
+            al grado <strong>{targetGradeLabel || "-"}</strong>?
+          </p>
+          <div className="flex justify-end gap-2">
+            <div className="w-36">
+              <SimpleButton
+                type="button"
+                msj="Cancelar"
+                bg="bg-secondary"
+                text="text-surface"
+                onClick={handleCloseConfirmPromote}
+                disabled={promoting}
+              />
+            </div>
+            <div className="w-36">
+              <SimpleButton
+                type="button"
+                msj={promoting ? "Promoviendo..." : "Sí, promover"}
+                icon="CheckSquare"
+                bg="bg-primary"
+                text="text-surface"
+                onClick={handleConfirmPromote}
+                disabled={promoting}
+              />
+            </div>
+          </div>
+        </div>
       </Modal>
     </div>
   );
