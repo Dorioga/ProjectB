@@ -187,6 +187,31 @@ export async function updateStudentGrade(payload) {
   throw new Error("Respuesta inesperada de updateStudentGrade.");
 }
 
+/**
+ * Promueve o mantiene a un estudiante en un grado.
+ *
+ * Endpoint: POST /promote/student
+ * @param {{ fk_student: number, fk_grade_old: number, fk_grade: number }} payload
+ * @returns {Promise<Object>} Respuesta del servidor.
+ */
+export async function promoteStudent(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("payload debe ser un objeto.");
+  }
+  if (
+    ![payload.fk_student, payload.fk_grade_old, payload.fk_grade].every(
+      (v) => v !== undefined && v !== null && v !== "",
+    )
+  ) {
+    throw new Error("fk_student, fk_grade_old y fk_grade son requeridos.");
+  }
+  const res = await ApiClient.instance.post("/promote/student", payload);
+  const data = res;
+  if (data && typeof data === "object" && "data" in data) return data.data;
+  if (data !== undefined && data !== null) return data;
+  throw new Error("Respuesta inesperada de /promote/student.");
+}
+
 export async function getStudent(payload) {
   // Aceptar tanto string/id como objeto payload
   const body =

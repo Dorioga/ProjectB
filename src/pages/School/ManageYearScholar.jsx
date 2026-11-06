@@ -11,9 +11,7 @@ import useAuth from "../../lib/hooks/useAuth";
 import { useNotify } from "../../lib/hooks/useNotify";
 import {
   getBoletin,
-  getStudent,
-  getValidateStudentNote,
-  updateStudentGrade,
+  promoteStudent as promoteStudentService,
 } from "../../services/studentService";
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -31,13 +29,6 @@ const toNumber = (value) => {
   const parsed = parseFloat(value);
   return Number.isNaN(parsed) ? null : parsed;
 };
-
-const getGradeStudentLinkId = (student) =>
-  student?.id_grade_student ??
-  student?.fk_grade_student ??
-  student?.id_grado_estudiante ??
-  student?.grade_student_id ??
-  "";
 
 const getGradeValue = (grade) =>
   grade?.id_grade ?? grade?.id ?? grade?.id_grado ?? "";
@@ -410,6 +401,7 @@ const ManageYearScholar = () => {
   const [loadingStudentId, setLoadingStudentId] = useState(null);
   const [promoteModalOpen, setPromoteModalOpen] = useState(false);
   const [confirmPromoteOpen, setConfirmPromoteOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
   const [targetGrades, setTargetGrades] = useState([]);
   const [loadingTargetGrades, setLoadingTargetGrades] = useState(false);
   const [targetGradeId, setTargetGradeId] = useState("");
@@ -597,49 +589,27 @@ const ManageYearScholar = () => {
   );
 
   const promoteStudent = useCallback(
-    async (student, targetGrade) => {
+    async (student, targetGrade, currentGrade) => {
       const studentId = getStudentId(student);
       if (!studentId) {
         throw new Error("El estudiante no tiene identificador.");
       }
-
-      let gradeStudentId = getGradeStudentLinkId(student);
-      if (!gradeStudentId) {
-        const info = await getStudent({
-          id_estudiante: Number(studentId),
-          ...(sedeId || idSede
-            ? { fk_sede: Number(sedeId || idSede) }
-            : {}),
-        });
-        gradeStudentId = getGradeStudentLinkId(info);
-      }
-      if (!gradeStudentId) {
-        throw new Error(
-          "No se encontró el registro de grado del estudiante.",
-        );
+      if (!currentGrade) {
+        throw new Error("No se pudo identificar el grado actual.");
       }
 
-      const notas = await getValidateStudentNote(studentId);
-
-      await updateStudentGrade({
+      await promoteStudentService({
         fk_student: Number(studentId),
+        fk_grade_old: Number(currentGrade),
         fk_grade: Number(targetGrade),
-        fk_grade_student: Number(gradeStudentId),
-        notas_estudiante: Array.isArray(notas?.notas_estudiante)
-          ? notas.notas_estudiante
-          : [],
-        notas_asignatura_enfasis: Array.isArray(
-          notas?.notas_asignatura_enfasis,
-        )
-          ? notas.notas_asignatura_enfasis
-          : [],
       });
     },
-    [sedeId, idSede],
+    [],
   );
 
   const handleOpenPromoteModal = useCallback(() => {
     setTargetGradeId("");
+    setConfirmAction(null);
     setPromoteModalOpen(true);
   }, []);
 
@@ -651,37 +621,67 @@ const ManageYearScholar = () => {
 
   const handleSendPromote = useCallback(() => {
     if (!targetGradeId) return;
+    setConfirmAction("promover");
     setPromoteModalOpen(false);
     setConfirmPromoteOpen(true);
   }, [targetGradeId]);
 
+  const handleOpenKeepConfirm = useCallback(() => {
+    if (!gradeId) {
+      notifyRef.current.error(
+        "No se pudo identificar el grado actual del estudiante.",
+      );
+      return;
+    }
+    setTargetGradeId("");
+    setConfirmAction("mantener");
+    setConfirmPromoteOpen(true);
+  }, [gradeId]);
+
   const handleCloseConfirmPromote = useCallback(() => {
     if (promoting) return;
     setConfirmPromoteOpen(false);
+    setConfirmAction(null);
   }, [promoting]);
 
   const handleConfirmPromote = useCallback(async () => {
     const student = historyModalStudent?.rawStudent;
-    if (!student || !targetGradeId || promoting) return;
+    const isKeep = confirmAction === "mantener";
+    const targetGrade = isKeep ? gradeId : targetGradeId;
+    if (!student || !targetGrade || !gradeId || promoting) return;
     setPromoting(true);
     try {
-      await promoteStudent(student, targetGradeId);
+      await promoteStudent(student, targetGrade, gradeId);
       notifyRef.current.success(
-        `${historyModalStudent?.nombre ?? "El estudiante"} fue promovido correctamente.`,
+        isKeep
+          ? `${historyModalStudent?.nombre ?? "El estudiante"} se mantiene en el grado actual.`
+          : `${historyModalStudent?.nombre ?? "El estudiante"} fue promovido correctamente.`,
       );
       setConfirmPromoteOpen(false);
+      setConfirmAction(null);
       setTargetGradeId("");
       setHistoryModalStudent(null);
       fetchStudents();
     } catch (err) {
       console.error("ManageYearScholar - promover error:", err);
       notifyRef.current.error(
-        err?.message || "No se pudo promover al estudiante.",
+        err?.message ||
+          (isKeep
+            ? "No se pudo mantener al estudiante."
+            : "No se pudo promover al estudiante."),
       );
     } finally {
       setPromoting(false);
     }
-  }, [historyModalStudent, targetGradeId, promoting, promoteStudent, fetchStudents]);
+  }, [
+    confirmAction,
+    fetchStudents,
+    gradeId,
+    historyModalStudent,
+    promoteStudent,
+    promoting,
+    targetGradeId,
+  ]);
 
   const targetGradeLabel = useMemo(() => {
     const selected = targetGrades.find(
@@ -692,11 +692,7 @@ const ManageYearScholar = () => {
 
   const columns = useMemo(
     () => [
-      {
-        accessorKey: "id_estudiante",
-        header: "ID",
-        meta: { hideOnLG: true },
-      },
+   
       {
         accessorFn: (row) =>
           `${row.nombre_estudiante ?? row.nombre ?? ""} ${row.apellido_estudiante ?? row.apellido ?? ""}`.trim(),
@@ -847,7 +843,7 @@ const ManageYearScholar = () => {
               </span>
             </div>
             <div className="flex gap-2">
-              <div className="w-36">
+              {/* <div className="w-36">
                 <SimpleButton
                   type="button"
                   msj="Promover"
@@ -867,8 +863,10 @@ const ManageYearScholar = () => {
                   bg="bg-secondary"
                   text="text-surface"
                   noRounded={false}
+                  onClick={handleOpenKeepConfirm}
+                  disabled={promoting}
                 />
-              </div>
+              </div> */}
             </div>
           </div>
             <AnnualSummary
@@ -948,14 +946,33 @@ const ManageYearScholar = () => {
       <Modal
         isOpen={confirmPromoteOpen}
         onClose={handleCloseConfirmPromote}
-        title="Confirmar promoción"
+        title={
+          confirmAction === "mantener"
+            ? "Confirmar permanencia"
+            : "Confirmar promoción"
+        }
         size="lg"
       >
         <div className="flex flex-col gap-4">
           <p className="text-sm opacity-80">
-            ¿Está seguro de promover a{" "}
-            <strong>{historyModalStudent?.nombre ?? "el estudiante"}</strong>{" "}
-            al grado <strong>{targetGradeLabel || "-"}</strong>?
+            {confirmAction === "mantener" ? (
+              <>
+                ¿Está seguro de mantener a{" "}
+                <strong>
+                  {historyModalStudent?.nombre ?? "el estudiante"}
+                </strong>{" "}
+                en el grado actual{" "}
+                <strong>{historyModalStudent?.grado || gradeId}</strong>?
+              </>
+            ) : (
+              <>
+                ¿Está seguro de promover a{" "}
+                <strong>
+                  {historyModalStudent?.nombre ?? "el estudiante"}
+                </strong>{" "}
+                al grado <strong>{targetGradeLabel || "-"}</strong>?
+              </>
+            )}
           </p>
           <div className="flex justify-end gap-2">
             <div className="w-36">
@@ -971,7 +988,15 @@ const ManageYearScholar = () => {
             <div className="w-36">
               <SimpleButton
                 type="button"
-                msj={promoting ? "Promoviendo..." : "Sí, promover"}
+                msj={
+                  promoting
+                    ? confirmAction === "mantener"
+                      ? "Guardando..."
+                      : "Promoviendo..."
+                    : confirmAction === "mantener"
+                      ? "Sí, mantener"
+                      : "Sí, promover"
+                }
                 icon="CheckSquare"
                 bg="bg-primary"
                 text="text-surface"
