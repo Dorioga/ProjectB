@@ -50,6 +50,34 @@ const getEffectiveNote = (nota, recuperacion) => {
   return toNumber(nota);
 };
 
+const normalizeScales = (list) =>
+  (Array.isArray(list) ? list : [])
+    .filter(Boolean)
+    .map((scale) => ({
+      escala: String(scale?.escala ?? "").trim(),
+      desde: toNumber(scale?.desde),
+      hasta: toNumber(scale?.hasta),
+      umbral: toNumber(scale?.umbral),
+    }))
+    .filter((scale) => scale.desde != null && scale.hasta != null);
+
+const getUmbralParaNota = (nota, scales) => {
+  const scale = scales.find(
+    (item) => nota >= item.desde && nota <= item.hasta,
+  );
+  if (scale?.umbral != null) return scale.umbral;
+  const scaleWithUmbral = scales.find((item) => item.umbral != null);
+  return scaleWithUmbral?.umbral ?? null;
+};
+
+const evaluarEstadoFinal = (nota, scales, fallback = null) => {
+  const value = toNumber(nota);
+  if (value == null) return fallback;
+  const umbral = getUmbralParaNota(value, Array.isArray(scales) ? scales : []);
+  if (umbral == null) return fallback;
+  return value >= umbral ? "Aprobado" : "No aprobado";
+};
+
 const esAsignaturaConvivencia = (nombre) =>
   String(nombre ?? "")
     .toLowerCase()
@@ -74,7 +102,7 @@ const colorAprobacion = (estado) => {
   return "#111827";
 };
 
-const buildStudentHistory = (rows, student, year) => {
+const buildStudentHistory = (rows, student, year, scales = []) => {
   const periodMap = new Map();
   let annualEstadoFinal = null;
   let annualDefinitiva = null;
@@ -238,14 +266,21 @@ const buildStudentHistory = (rows, student, year) => {
   }
 
   const annualSubjects = Array.from(annualSubjectsMap.values())
-    .map((entry) => ({
-      idAsignaturaGrado: entry.idAsignaturaGrado,
-      nombreAsignatura: entry.nombreAsignatura,
-      nombreArea: entry.nombreArea,
-      definitiva:
-        entry.count > 0 ? (entry.suma / entry.count).toFixed(2) : null,
-      estadoFinal: entry.estadoFinal,
-    }))
+    .map((entry) => {
+      const definitiva =
+        entry.count > 0 ? (entry.suma / 4).toFixed(2) : null;
+      return {
+        idAsignaturaGrado: entry.idAsignaturaGrado,
+        nombreAsignatura: entry.nombreAsignatura,
+        nombreArea: entry.nombreArea,
+        definitiva,
+        estadoFinal: evaluarEstadoFinal(
+          definitiva,
+          scales,
+          entry.estadoFinal,
+        ),
+      };
+    })
     .sort((a, b) =>
       a.nombreAsignatura.localeCompare(b.nombreAsignatura, "es", {
         sensitivity: "base",
@@ -385,9 +420,10 @@ const PeriodHistory = ({ period }) => (
 );
 
 const ManageYearScholar = () => {
-  const { getStudentGrades, getGradeOnlySede } = useSchool();
+  const { getStudentGrades, getGradeOnlySede, getInstitutionScales } =
+    useSchool();
   const { getTeacherSede, getTeacherGrades } = useTeacher();
-  const { idSede, nameSede, idDocente, token, rol } = useAuth();
+  const { idSede, nameSede, idDocente, token, rol, idInstitution } = useAuth();
   const notify = useNotify();
 
   const [sedeId, setSedeId] = useState("");
@@ -550,17 +586,37 @@ const ManageYearScholar = () => {
       if (!studentId) {
         throw new Error("El estudiante no tiene identificador.");
       }
-      const res = await getBoletin({
-        studentId,
-        periodId: FINAL_PERIOD_ID,
-        year: String(CURRENT_YEAR),
-        fk_rol: String(rol ?? "3"),
-      });
+      const [res, scalesRes] = await Promise.all([
+        getBoletin({
+          studentId,
+          periodId: FINAL_PERIOD_ID,
+          year: String(CURRENT_YEAR),
+          fk_rol: String(rol ?? "3"),
+        }),
+        idInstitution && getInstitutionScales
+          ? getInstitutionScales(Number(idInstitution)).catch((err) => {
+              console.error(
+                "ManageYearScholar - Error cargando escalas:",
+                err,
+              );
+              return [];
+            })
+          : Promise.resolve([]),
+      ]);
       const rows = Array.isArray(res) ? res : (res?.data ?? []);
-      const history = buildStudentHistory(rows, student, CURRENT_YEAR);
+      const scaleList = Array.isArray(scalesRes)
+        ? scalesRes
+        : (scalesRes?.data ?? []);
+      const scales = normalizeScales(scaleList);
+      const history = buildStudentHistory(
+        rows,
+        student,
+        CURRENT_YEAR,
+        scales,
+      );
       return history;
     },
-    [rol],
+    [rol, idInstitution, getInstitutionScales],
   );
 
   const handleLoadStudentHistory = useCallback(
