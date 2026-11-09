@@ -3,6 +3,7 @@ import useSchool from "../../lib/hooks/useSchool";
 import useAuth from "../../lib/hooks/useAuth";
 import DataTable from "../../components/atoms/DataTable";
 import SimpleButton from "../../components/atoms/SimpleButton";
+import YearSelector from "../../components/atoms/YearSelector";
 import Modal from "../../components/atoms/Modal";
 import RegisterStudent from "./RegisterStudent";
 import UploadStudentExcel from "./UploadStudentExcel";
@@ -24,6 +25,14 @@ const ManageStudent = () => {
   const { updateStudent, getStudent } = useStudent();
   const notify = useNotify();
 
+  const canSelectYear = useMemo(
+    () => ["2", "3", "4"].includes(String(rol)),
+    [rol],
+  );
+
+  const [selectedYear, setSelectedYear] = useState(
+    String(new Date().getFullYear()),
+  );
   const [tableData, setTableData] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [fetchError, setFetchError] = useState(null);
@@ -58,7 +67,9 @@ const ManageStudent = () => {
     setFetchError(null);
 
     try {
-      const response = await fetchAllStudents({ institucion: idInstitution });
+      const payload = { institucion: idInstitution };
+      if (canSelectYear) payload.anio = Number(selectedYear);
+      const response = await fetchAllStudents(payload);
       const students = Array.isArray(response)
         ? response
         : (response?.data ?? []);
@@ -69,7 +80,7 @@ const ManageStudent = () => {
     } finally {
       setIsFetching(false);
     }
-  }, [idInstitution, fetchAllStudents]);
+  }, [idInstitution, fetchAllStudents, canSelectYear, selectedYear]);
 
   useEffect(() => {
     fetchStudentsData();
@@ -393,7 +404,7 @@ const ManageStudent = () => {
         id="tour-mst-header"
         className="w-full grid gap-2 grid-cols-1 lg:grid-cols-7 xl:grid-cols-11 2xl:grid-cols-8 justify-between items-center bg-primary text-surface p-3 rounded-lg"
       >
-        <div className="w-full lg:col-span-2  xl:col-span-3 flex items-center">
+        <div className="w-full lg:col-span-2 xl:col-span-3 flex items-center">
           <h2 className="text-2xl font-bold">Datos de Estudiantes</h2>
         </div>
         <div
@@ -504,7 +515,7 @@ const ManageStudent = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-0 border-b border-gray-300">
+      <div className="flex items-end gap-0 border-b border-gray-300">
         <button
           type="button"
           onClick={() => setActiveTab("estudiantes")}
@@ -527,6 +538,15 @@ const ManageStudent = () => {
         >
           Estudiantes de Énfasis
         </button>
+        {canSelectYear && (
+          <div className="ml-auto w-36 pb-1">
+            <YearSelector
+              label="Año"
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+            />
+          </div>
+        )}
       </div>
 
       {activeTab === "estudiantes" ? (
@@ -688,7 +708,9 @@ const ManageStudent = () => {
           />
         </div>
       ) : (
-        <StudentEnfasis />
+        <StudentEnfasis
+          anio={canSelectYear ? Number(selectedYear) : undefined}
+        />
       )}
 
       <Modal

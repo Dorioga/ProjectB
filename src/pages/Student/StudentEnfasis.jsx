@@ -7,7 +7,7 @@ import {
   getStudentEnfasis,
 } from "../../services/enfasisService";
 
-const StudentEnfasis = () => {
+const StudentEnfasis = ({ anio }) => {
   const { idInstitution } = useAuth();
   const notify = useNotify();
 
@@ -103,7 +103,10 @@ const StudentEnfasis = () => {
     }
     let mounted = true;
     setLoadingStudents(true);
-    getStudentEnfasis(Number(selectedAsignatura))
+    getStudentEnfasis(
+      Number(selectedAsignatura),
+      anio ? Number(anio) : undefined,
+    )
       .then((res) => {
         if (mounted) setStudents(Array.isArray(res) ? res : []);
       })
@@ -120,7 +123,7 @@ const StudentEnfasis = () => {
     return () => {
       mounted = false;
     };
-  }, [selectedAsignatura, notify]);
+  }, [selectedAsignatura, anio, notify]);
 
   const columns = useMemo(
     () => [
@@ -190,7 +193,7 @@ const StudentEnfasis = () => {
           </select>
         </div>
         <div>
-          <label className="">Asignatura de énfasis</label>
+          <label className="">Asignaturafffff de énfasis</label>
           <select
             name="select-asignatura"
             value={selectedAsignatura}

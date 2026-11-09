@@ -151,10 +151,13 @@ export async function getTeacherNotesEnfasis(payload) {
   }
 }
 
-export async function getStudentEnfasis(id) {
+export async function getStudentEnfasis(id, anio) {
   if (!id) throw new Error("id es requerido.");
   try {
-    const res = await ApiClient.get(`/student/emphasis/${Number(id)}`);
+    const url = anio
+      ? `/student/emphasis/${Number(id)}/anio/${Number(anio)}`
+      : `/student/emphasis/${Number(id)}`;
+    const res = await ApiClient.get(url);
     const data = Array.isArray(res) ? res : (res?.data ?? []);
     return Array.isArray(data) ? data : [];
   } catch (error) {

@@ -9,6 +9,7 @@ import SedeSelect from "../../components/atoms/SedeSelect";
 import AsignatureSelector from "../../components/molecules/AsignatureSelector";
 import GradeSelector from "../../components/atoms/GradeSelector";
 import PeriodSelector from "../../components/atoms/PeriodSelector";
+import YearSelector from "../../components/atoms/YearSelector";
 import useTeacher from "../../lib/hooks/useTeacher";
 import { useNotify } from "../../lib/hooks/useNotify";
 import useAuth from "../../lib/hooks/useAuth";
@@ -158,6 +159,9 @@ const ManageEval = () => {
   const [grade, setGrade] = useState("");
   const [asignature, setAsignature] = useState("");
   const [period, setPeriod] = useState("");
+  const [selectedYear, setSelectedYear] = useState(
+    String(new Date().getFullYear()),
+  );
 
   const [adminFilters, setAdminFilters] = useState({
     tipo: "",
@@ -247,7 +251,10 @@ const ManageEval = () => {
     [rol],
   );
 
-  const isAdminInstitucional = useMemo(() => String(rol) === "3", [rol]);
+  const isAdminInstitucional = useMemo(
+    () => ["2", "3", "4"].includes(String(rol)),
+    [rol],
+  );
 
   const isStudentOrGuardian = useMemo(
     () => ["5", "6"].includes(String(rol)),
@@ -423,6 +430,7 @@ const ManageEval = () => {
       if (isAdminInstitucional) {
         res = await getElementInstitutionRef.current({
           institution: Number(idInstitution),
+          anio: Number(selectedYear),
         });
       } else if (isStudentOrGuardian) {
         const selectedStudentData = guardianStudents.find(
@@ -472,6 +480,7 @@ const ManageEval = () => {
     selectedStudent,
     guardianStudents,
     idEstudiante,
+    selectedYear,
   ]);
 
   useEffect(() => {
@@ -1114,7 +1123,14 @@ const ManageEval = () => {
         </>
       ) : isAdminInstitucional ? (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mt-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mt-2">
+            <div>
+              <YearSelector
+                label="Año"
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+              />
+            </div>
             <div>
               <label className="">Tipo</label>
               <select

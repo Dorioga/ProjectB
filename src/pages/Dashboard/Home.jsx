@@ -15,6 +15,7 @@ import useAuth from "../../lib/hooks/useAuth";
 import useTeacher from "../../lib/hooks/useTeacher";
 import { getCurrentTheme } from "../../utils/themeManager";
 import Loader from "../../components/atoms/Loader";
+import YearSelector from "../../components/atoms/YearSelector";
 import AlertTable from "../../components/molecules/AlertTable";
 
 const getResolvedBecaStatus = (student) => {
@@ -52,6 +53,9 @@ const DashHome = () => {
   const [studentAlerts, setStudentAlerts] = useState([]);
 
   // Selectors state
+  const [selectedYear, setSelectedYear] = useState(
+    String(new Date().getFullYear()),
+  );
   const [selectedSede, setSelectedSede] = useState("");
   const [selectedJourney, setSelectedJourney] = useState("todas"); // label used to filter student.journey
   const [selectedGrade, setSelectedGrade] = useState("");
@@ -63,12 +67,15 @@ const DashHome = () => {
     if (!(rol === 3 || rol === "3")) return;
 
     try {
-      const raw = await fetchStudentAlerts({ fk_institucion: idInstitution });
+      const raw = await fetchStudentAlerts({
+        fk_institucion: idInstitution,
+        anio: Number(selectedYear),
+      });
       setStudentAlerts(Array.isArray(raw) ? raw : []);
     } catch (err) {
       console.error("Home - error loading alerts:", err);
     }
-  }, [fetchStudentAlerts, rol]);
+  }, [fetchStudentAlerts, idInstitution, rol, selectedYear]);
 
   // Cargar estudiantes del contexto y la lista completa desde el servicio al montar
   useEffect(() => {
@@ -87,7 +94,10 @@ const DashHome = () => {
           idInstitution &&
           !(rol === 5 || rol === "5" || rol === 6 || rol === "6")
         ) {
-          const res = await fetchAllStudents({ institucion: idInstitution });
+          const res = await fetchAllStudents({
+            institucion: idInstitution,
+            anio: Number(selectedYear),
+          });
           arr = Array.isArray(res) ? res : (res?.data ?? []);
         }
 
@@ -109,6 +119,7 @@ const DashHome = () => {
     idDocente,
     getAllStudentTeacher,
     rol,
+    selectedYear,
   ]);
 
   // Fuente de datos para la UI: preferimos `allStudents` (fetchAllStudents); si está vacío, usar lista vacía
@@ -335,7 +346,16 @@ const DashHome = () => {
       <div className="grid grid-cols-1 2xl:grid-cols-5 justify-between items-center gap-4 bg-primary text-surface p-3 rounded-lg">
         <h1 className="text-2xl font-bold  xl:col-span-1">Panel principal</h1>
 
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 w-full items-center gap-3 xl:col-span-4">
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 w-full items-center gap-3 xl:col-span-4">
+          <div className="col-span-1">
+            <YearSelector
+              label="Año"
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              className="w-full p-2 border rounded-lg bg-input text-black bg-surface"
+            />
+          </div>
+
           <div className="col-span-1">
             <label className="text-sm font-medium">Sede</label>
             <select

@@ -751,7 +751,7 @@ export async function getElementQuestions(payload) {
 /**
  * Obtiene las evaluaciones (elementos) de la institución (admin institucional).
  * Endpoint: POST /element/institution
- * payload: { institution }
+ * payload: { institution, anio }
  * @returns {Promise<Array>} Lista de evaluaciones
  */
 export async function getElementInstitution(payload) {

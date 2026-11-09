@@ -4,6 +4,7 @@ import SimpleButton from "../../components/atoms/SimpleButton";
 import Modal from "../../components/atoms/Modal";
 import SedeSelect from "../../components/atoms/SedeSelect";
 import GradeSelector from "../../components/atoms/GradeSelector";
+import YearSelector from "../../components/atoms/YearSelector";
 import Loader from "../../components/atoms/Loader";
 import useSchool from "../../lib/hooks/useSchool";
 import useTeacher from "../../lib/hooks/useTeacher";
@@ -428,6 +429,7 @@ const ManageYearScholar = () => {
 
   const [sedeId, setSedeId] = useState("");
   const [gradeId, setGradeId] = useState("");
+  const [selectedYear, setSelectedYear] = useState(String(CURRENT_YEAR));
   const [teacherSedes, setTeacherSedes] = useState([]);
   const [loadingTeacherSedes, setLoadingTeacherSedes] = useState(false);
   const [students, setStudents] = useState([]);
@@ -551,7 +553,10 @@ const ManageYearScholar = () => {
     }
     setIsLoading(true);
     try {
-      const res = await getStudentGrades({ idGrade: Number(gradeId) });
+      const res = await getStudentGrades({
+        idGrade: Number(gradeId),
+        anio: Number(selectedYear),
+      });
       const data = Array.isArray(res) ? res : (res?.data ?? []);
       setStudents(data);
       if (data.length === 0) {
@@ -566,7 +571,7 @@ const ManageYearScholar = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [gradeId, getStudentGrades]);
+  }, [gradeId, getStudentGrades, selectedYear]);
 
   useEffect(() => {
     fetchStudents();
@@ -590,7 +595,7 @@ const ManageYearScholar = () => {
         getBoletin({
           studentId,
           periodId: FINAL_PERIOD_ID,
-          year: String(CURRENT_YEAR),
+          year: String(selectedYear),
           fk_rol: String(rol ?? "3"),
         }),
         idInstitution && getInstitutionScales
@@ -611,12 +616,12 @@ const ManageYearScholar = () => {
       const history = buildStudentHistory(
         rows,
         student,
-        CURRENT_YEAR,
+        selectedYear,
         scales,
       );
       return history;
     },
-    [rol, idInstitution, getInstitutionScales],
+    [rol, idInstitution, getInstitutionScales, selectedYear],
   );
 
   const handleLoadStudentHistory = useCallback(
@@ -806,7 +811,7 @@ const ManageYearScholar = () => {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <SedeSelect
           value={sedeId}
           onChange={(e) => {
@@ -849,6 +854,12 @@ const ManageYearScholar = () => {
             disabled={!sedeId}
           />
         )}
+        <YearSelector
+          label="Año"
+          labelClassName="text-lg font-semibold"
+          value={selectedYear}
+          onChange={(e) => setSelectedYear(e.target.value)}
+        />
       </div>
 
       {!sedeId && (

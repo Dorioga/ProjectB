@@ -629,7 +629,7 @@ export async function createOrUpdateNote(payload) {
  * Obtiene los grados de un estudiante.
  *
  * Endpoint esperado: POST /student/grades
- * @param {Object} payload - Datos para filtrar grados del estudiante (ej: {idStudent: 123})
+ * @param {{ idGrade: number, anio: number }} payload
  * @returns {Promise<Object>} Respuesta del servidor con los grados del estudiante
  */
 export async function getStudentGrades(payload) {
@@ -674,17 +674,10 @@ export async function getValuesReservations(payload = {}) {
 // Use `useTeacher()` / `TeacherContext` or import `teacherService` directly.
 // Use `useTeacher()` / `TeacherContext` or import `teacherService` directly.
 /**
- * Obtiene todos los estudiantes de la institución.
- *
- * Endpoint esperado: POST /institution/students
- * @param {Object} payload - Datos para filtrar estudiantes
- * @returns {Promise<Object>} Respuesta del servidor con los estudiantes
- */
-/**
  * Obtiene las alertas documentales de estudiantes.
  *
  * Endpoint esperado: POST /student/alerts
- * @param {{ fk_institucion: number }} payload
+ * @param {{ fk_institucion: number, anio: number }} payload
  * @returns {Promise<Array>} Array de alertas de estudiantes
  */
 export async function getStudentAlerts(payload) {
@@ -702,6 +695,13 @@ export async function getStudentAlerts(payload) {
   throw new Error("Respuesta inesperada de /student/alerts.");
 }
 
+/**
+ * Obtiene todos los estudiantes de la institución.
+ *
+ * Endpoint: POST /institution/students
+ * @param {{ institucion: number, anio: number }} payload
+ * @returns {Promise<Object>} Respuesta del servidor con los estudiantes
+ */
 export async function allstudent(payload) {
   if (!payload || typeof payload !== "object") {
     throw new Error("payload debe ser un objeto.");
