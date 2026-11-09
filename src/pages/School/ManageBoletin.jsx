@@ -130,7 +130,10 @@ const ManageBoletin = () => {
     }
     setIsLoading(true);
     try {
-      const res = await getStudentGrades({ idGrade: Number(gradeId) });
+      const res = await getStudentGrades({
+        idGrade: Number(gradeId),
+        anio: new Date().getFullYear(),
+      });
       const data = Array.isArray(res) ? res : (res?.data ?? []);
       setStudents(data);
       if (data.length === 0) {

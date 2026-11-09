@@ -320,7 +320,10 @@ const RegisterAssistance = () => {
 
       setLoadingData(true);
       try {
-        const res = await getStudentGrades({ idGrade: Number(grade) });
+        const res = await getStudentGrades({
+          idGrade: Number(grade),
+          anio: new Date().getFullYear(),
+        });
         const list = Array.isArray(res) ? res : (res?.data ?? []);
         if (!mounted) return;
         setStudentsFromService(list || []);

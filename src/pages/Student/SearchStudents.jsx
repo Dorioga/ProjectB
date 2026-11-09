@@ -6,6 +6,7 @@ import SimpleButton from "../../components/atoms/SimpleButton";
 import SedeSelect from "../../components/atoms/SedeSelect";
 import JourneySelect from "../../components/atoms/JourneySelect";
 import GradeSelector from "../../components/atoms/GradeSelector";
+import YearSelector from "../../components/atoms/YearSelector";
 import Loader from "../../components/atoms/Loader";
 import StudentModal from "../../components/molecules/StudentModal";
 import useAuth from "../../lib/hooks/useAuth";
@@ -19,6 +20,9 @@ const SearchStudents = () => {
   const [sedeId, setSedeId] = useState(authIdSede ?? "");
   const [workdayId, setWorkdayId] = useState("");
   const [gradeId, setGradeId] = useState("");
+  const [selectedYear, setSelectedYear] = useState(
+    String(new Date().getFullYear()),
+  );
 
   // ── Tabla ────────────────────────────────────────────────────────────────
   const [studentsData, setStudentsData] = useState([]);
@@ -109,7 +113,10 @@ const SearchStudents = () => {
     }
     setIsLoading(true);
     try {
-      const res = await getStudentGrades({ idGrade: Number(gradeId) });
+      const res = await getStudentGrades({
+        idGrade: Number(gradeId),
+        anio: Number(selectedYear),
+      });
       const data = Array.isArray(res) ? res : (res?.data ?? []);
       setStudentsData(data);
     } catch (err) {
@@ -118,7 +125,7 @@ const SearchStudents = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [gradeId, getStudentGrades]);
+  }, [gradeId, getStudentGrades, selectedYear]);
 
   useEffect(() => {
     fetchStudents();
@@ -179,7 +186,7 @@ const SearchStudents = () => {
         <h1 className="text-2xl font-bold">Buscar estudiantes</h1>
       </div>
       {/* ── Filtros ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-3xl">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full max-w-4xl">
         <div className="flex flex-col gap-1">
           <SedeSelect
             label="Sede"
@@ -208,6 +215,13 @@ const SearchStudents = () => {
             sedeId={sedeId}
             workdayId={workdayId}
             disabled={!sedeId || !workdayId}
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <YearSelector
+            label="Año"
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(e.target.value)}
           />
         </div>
       </div>

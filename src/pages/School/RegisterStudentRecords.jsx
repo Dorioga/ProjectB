@@ -1035,6 +1035,7 @@ const RegisterStudentRecords = ({ initialFilters = null }) => {
       if (!preserveDrafts) setSelectedLogroByStudent({});
       const studentsResponse = await getStudentGrades({
         idGrade: Number(gradeSelected),
+        anio: new Date().getFullYear(),
       });
       const studentsArray = Array.isArray(studentsResponse)
         ? studentsResponse
