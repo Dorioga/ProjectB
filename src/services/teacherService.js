@@ -528,9 +528,9 @@ export async function updateNoteTransition(idTranNoteDoc, payload) {
 }
 
 /**
- * Control de notas creadas por sede y período
+ * Control de notas creadas por sede, período y año
  * Endpoint: POST /note/controle/create
- * payload: { id_sede, id_periodo }
+ * payload: { id_sede, id_periodo, anio }
  */
 export async function ControlCreateNote(payload) {
   if (!payload || typeof payload !== "object") {
@@ -938,9 +938,9 @@ export async function getElementData(payload) {
 }
 
 /**
- * Control de notas asignadas por sede y período
+ * Control de notas asignadas por sede, período y año
  * Endpoint: POST /note/controle/assignment
- * payload: { id_sede, id_periodo }
+ * payload: { id_sede, id_periodo, anio }
  */
 export async function ControlAsignNote(payload) {
   if (!payload || typeof payload !== "object") {

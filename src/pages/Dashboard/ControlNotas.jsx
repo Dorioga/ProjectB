@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import DataTable from "../../components/atoms/DataTable";
 import SedeSelect from "../../components/atoms/SedeSelect";
 import PeriodSelector from "../../components/atoms/PeriodSelector";
+import YearSelector from "../../components/atoms/YearSelector";
 import SimpleButton from "../../components/atoms/SimpleButton";
 import Loader from "../../components/atoms/Loader";
 import useTeacher from "../../lib/hooks/useTeacher";
@@ -26,6 +27,7 @@ const ControlNotas = () => {
   // ── Filtros ───────────────────────────────────────────────────────────────
   const [sedeId, setSedeId] = useState("");
   const [periodId, setPeriodId] = useState("");
+  const [yearId, setYearId] = useState("2026");
 
   // ── Datos de las pestañas ─────────────────────────────────────────────────
   const [createData, setCreateData] = useState([]);
@@ -46,10 +48,14 @@ const ControlNotas = () => {
   });
 
   // ── Cargar datos cuando sede y período están seleccionados ─────────────────
-  const loadData = useCallback(async (sede, periodo) => {
-    if (!sede || !periodo) return;
+  const loadData = useCallback(async (sede, periodo, anio) => {
+    if (!sede || !periodo || !anio) return;
     setIsLoading(true);
-    const payload = { id_sede: Number(sede), id_periodo: Number(periodo) };
+    const payload = {
+      id_sede: Number(sede),
+      id_periodo: Number(periodo),
+      anio: Number(anio),
+    };
     try {
       const [resCreate, resAssign] = await Promise.all([
         controlCreateNoteRef.current(payload),
@@ -68,10 +74,10 @@ const ControlNotas = () => {
   }, []);
 
   useEffect(() => {
-    if (sedeId && periodId) {
-      loadData(sedeId, periodId);
+    if (sedeId && periodId && yearId) {
+      loadData(sedeId, periodId, yearId);
     }
-  }, [sedeId, periodId, loadData]);
+  }, [sedeId, periodId, yearId, loadData]);
 
   // ── Handlers de filtros ───────────────────────────────────────────────────
   const handleSedeChange = (e) => {
@@ -80,6 +86,10 @@ const ControlNotas = () => {
 
   const handlePeriodChange = (e) => {
     setPeriodId(e.target.value);
+  };
+
+  const handleYearChange = (e) => {
+    setYearId(e.target.value);
   };
 
   // ── Columnas Pestaña 1: Notas Creadas ─────────────────────────────────────
@@ -234,7 +244,7 @@ const ControlNotas = () => {
       </div>
 
       {/* Filtros */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div id="tour-cn-sede">
           <SedeSelect
             label="Sede"
@@ -251,6 +261,14 @@ const ControlNotas = () => {
             placeholder="Selecciona un período"
           />
         </div>
+        <div id="tour-cn-anio">
+          <YearSelector
+            label="Año"
+            value={yearId}
+            onChange={handleYearChange}
+            placeholder="Selecciona un año"
+          />
+        </div>
       </div>
 
       {/* Indicador de carga inicial */}
@@ -261,7 +279,7 @@ const ControlNotas = () => {
       )}
 
       {/* Pestañas y tabla (solo cuando hay datos o después de buscar) */}
-      {!isLoading && sedeId && periodId && (
+      {!isLoading && sedeId && periodId && yearId && (
         <>
           {/* Tabs */}
           <div className="flex gap-0 border-b border-gray-300">
@@ -371,10 +389,11 @@ const ControlNotas = () => {
       )}
 
       {/* Mensaje cuando no se han seleccionado filtros */}
-      {!isLoading && (!sedeId || !periodId) && (
+      {!isLoading && (!sedeId || !periodId || !yearId) && (
         <div className="flex flex-col items-center justify-center py-16 text-gray-400">
           <p className="text-lg font-medium">
-            Selecciona una sede y un período para ver el control de notas.
+            Selecciona una sede, un período y un año para ver el control de
+            notas.
           </p>
         </div>
       )}
