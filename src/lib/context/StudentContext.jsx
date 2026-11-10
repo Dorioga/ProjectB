@@ -188,12 +188,12 @@ export function StudentProvider({ children }) {
     }
   }, []);
 
-  const getStudentNotesById = useCallback(async (studentId) => {
+  const getStudentNotesById = useCallback(async (studentId, anio) => {
     setLoading(true);
     setError(null);
 
     try {
-      const res = await studentService.getStudentNotesById(studentId);
+      const res = await studentService.getStudentNotesById(studentId, anio);
       return Array.isArray(res) ? res : (res?.data ?? []);
     } catch (err) {
       setError(err);

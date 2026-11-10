@@ -511,13 +511,6 @@ export async function updateGuardian(personId, payload) {
 }
 
 /**
- * Obtiene las notas de un estudiante por su id.
- * Endpoint: POST /note/student/:studentId
- * @param {string|number} studentId - ID del estudiante
- * @returns {Promise<Array>} Lista de notas del estudiante
- */
-
-/**
  * Obtiene el observador de un estudiante por número de identificación.
  *
  * Endpoint: POST /student/observer
@@ -567,10 +560,20 @@ export async function getDataStudentGuardian(payload) {
   return data;
 }
 
-export async function getStudentNotesById(studentId) {
+/**
+ * Obtiene las notas de un estudiante por su id y año.
+ * Endpoint: POST /note/student/:studentId/anio/:anio
+ * @param {string|number} studentId - ID del estudiante
+ * @param {number} [anio] - Año a consultar (por defecto el año actual)
+ * @returns {Promise<Array>} Lista de notas del estudiante
+ */
+export async function getStudentNotesById(studentId, anio) {
   if (!studentId)
     throw new Error("studentId es requerido para getStudentNotesById");
-  const res = await ApiClient.post(`/note/student/${studentId}`);
+  const anioFinal = Number(anio) || new Date().getFullYear();
+  const res = await ApiClient.post(
+    `/note/student/${studentId}/anio/${anioFinal}`,
+  );
   const data = res;
   if (data && typeof data === "object" && "data" in data) return data.data;
   if (data !== undefined && data !== null) return data;

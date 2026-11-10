@@ -244,7 +244,7 @@ const StudentNotes = ({ studentId }) => {
       return;
     }
 
-    getStudentNotesById(idEstudiante)
+    getStudentNotesById(idEstudiante, new Date().getFullYear())
       .then((data) => setNotes(data))
       .catch((err) => setError(err.message || "Error al cargar las notas."))
       .finally(() => setLoading(false));

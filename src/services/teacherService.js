@@ -771,7 +771,7 @@ export async function getElementInstitution(payload) {
 /**
  * Obtiene las evaluaciones (elementos) visibles para estudiantes/acudientes.
  * Endpoint: POST /element/student
- * payload: { fk_sede, fk_grado, fk_period, fk_asignatura }
+ * payload: { fk_sede, fk_grado, fk_period, fk_student, anio }
  * @returns {Promise<Array>} Lista de evaluaciones
  */
 export async function getElementStudent(payload) {

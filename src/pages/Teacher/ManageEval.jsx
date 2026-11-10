@@ -443,6 +443,7 @@ const ManageEval = () => {
           ),
           fk_period: Number(period),
           fk_student: Number(isGuardian ? selectedStudent : idEstudiante),
+          anio: new Date().getFullYear(),
         });
       } else {
         res = await getElementQuestionsRef.current({
