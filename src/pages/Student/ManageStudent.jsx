@@ -67,8 +67,10 @@ const ManageStudent = () => {
     setFetchError(null);
 
     try {
-      const payload = { institucion: idInstitution };
-      if (canSelectYear) payload.anio = Number(selectedYear);
+      const payload = {
+        institucion: idInstitution,
+        anio: Number(selectedYear),
+      };
       const response = await fetchAllStudents(payload);
       const students = Array.isArray(response)
         ? response
@@ -80,7 +82,7 @@ const ManageStudent = () => {
     } finally {
       setIsFetching(false);
     }
-  }, [idInstitution, fetchAllStudents, canSelectYear, selectedYear]);
+  }, [idInstitution, fetchAllStudents, selectedYear]);
 
   useEffect(() => {
     fetchStudentsData();
@@ -708,9 +710,7 @@ const ManageStudent = () => {
           />
         </div>
       ) : (
-        <StudentEnfasis
-          anio={canSelectYear ? Number(selectedYear) : undefined}
-        />
+        <StudentEnfasis anio={Number(selectedYear)} />
       )}
 
       <Modal

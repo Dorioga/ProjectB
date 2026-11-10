@@ -13,6 +13,8 @@ import {
   updateNoteStudentEmphasis,
 } from "../../services/enfasisService";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
 
 const noteKey = (r) =>
@@ -89,7 +91,10 @@ const RegisterStudentEnfasisRecords = ({ onClose }) => {
     }
     setLoadingData(true);
     try {
-      const studentsResponse = await getStudentEnfasis(asignatura);
+      const studentsResponse = await getStudentEnfasis(
+        asignatura,
+        CURRENT_YEAR,
+      );
       const studentsArray = Array.isArray(studentsResponse)
         ? studentsResponse
         : [];

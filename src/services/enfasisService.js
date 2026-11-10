@@ -130,18 +130,27 @@ export async function createEnfasisNote(payload) {
   }
 }
 
+/**
+ * Obtiene las notas de énfasis de un docente.
+ *
+ * Endpoint: POST /notes/teacher
+ * @param {{ fk_teacher: number, fk_asignatura_enfasis: number, fk_period: number, anio?: number }} payload
+ * @returns {Promise<Array>} Listado de notas.
+ */
 export async function getTeacherNotesEnfasis(payload) {
-  const { fk_teacher, fk_asignatura_enfasis, fk_period } = payload || {};
+  const { fk_teacher, fk_asignatura_enfasis, fk_period, anio } = payload || {};
   if (!fk_teacher || !fk_asignatura_enfasis || !fk_period) {
     throw new Error(
       "fk_teacher, fk_asignatura_enfasis y fk_period son requeridos.",
     );
   }
+  const anioFinal = Number(anio) || new Date().getFullYear();
   try {
     const res = await ApiClient.post("/notes/teacher", {
       fk_teacher: Number(fk_teacher),
       fk_asignatura_enfasis: Number(fk_asignatura_enfasis),
       fk_period: Number(fk_period),
+      anio: anioFinal,
     });
     const data = Array.isArray(res) ? res : (res?.data ?? []);
     return Array.isArray(data) ? data : [];

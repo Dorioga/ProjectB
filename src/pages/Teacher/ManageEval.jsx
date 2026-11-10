@@ -451,6 +451,7 @@ const ManageEval = () => {
           fk_grado: Number(grade),
           fk_period: Number(period),
           fk_asignatura: Number(asignature),
+          anio: Number(selectedYear),
         });
       }
       const data = Array.isArray(res) ? res : (res?.data ?? []);

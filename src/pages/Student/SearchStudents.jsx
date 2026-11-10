@@ -14,7 +14,12 @@ import useAuth from "../../lib/hooks/useAuth";
 const SearchStudents = () => {
   const { updateStudent, getStudent } = useStudent();
   const { getStudentGrades, journeys } = useSchool();
-  const { nameSchool, idSede: authIdSede } = useAuth();
+  const { nameSchool, idSede: authIdSede, rol } = useAuth();
+
+  const isDocente = useMemo(
+    () => String(rol).toLowerCase() === "docente" || String(rol) === "7",
+    [rol],
+  );
 
   // ── Filtros ──────────────────────────────────────────────────────────────
   const [sedeId, setSedeId] = useState(authIdSede ?? "");
@@ -186,7 +191,11 @@ const SearchStudents = () => {
         <h1 className="text-2xl font-bold">Buscar estudiantes</h1>
       </div>
       {/* ── Filtros ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full max-w-4xl">
+      <div
+        className={`grid grid-cols-1 sm:grid-cols-2 gap-4 w-full ${
+          isDocente ? "lg:grid-cols-3 max-w-3xl" : "lg:grid-cols-4 max-w-4xl"
+        }`}
+      >
         <div className="flex flex-col gap-1">
           <SedeSelect
             label="Sede"
@@ -217,13 +226,15 @@ const SearchStudents = () => {
             disabled={!sedeId || !workdayId}
           />
         </div>
-        <div className="flex flex-col gap-1">
-          <YearSelector
-            label="Año"
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(e.target.value)}
-          />
-        </div>
+        {!isDocente && (
+          <div className="flex flex-col gap-1">
+            <YearSelector
+              label="Año"
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+            />
+          </div>
+        )}
       </div>
 
       {/* ── Tabla ── */}

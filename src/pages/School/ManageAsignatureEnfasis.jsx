@@ -26,6 +26,8 @@ import {
   getTeacherNotesEnfasis,
 } from "../../services/enfasisService";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 const ManageAsignatureEnfasis = forwardRef(({ hideToolbar = false }, ref) => {
   const { idInstitution, rol, idDocente } = useAuth();
   const notify = useNotify();
@@ -125,6 +127,7 @@ const ManageAsignatureEnfasis = forwardRef(({ hideToolbar = false }, ref) => {
         fk_teacher: Number(idDocente),
         fk_asignatura_enfasis: Number(teacherAsignature),
         fk_period: Number(teacherPeriod),
+        anio: CURRENT_YEAR,
       });
       setTeacherNotes(Array.isArray(res) ? res : []);
     } catch (err) {

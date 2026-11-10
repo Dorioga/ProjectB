@@ -11,6 +11,8 @@ import {
   registerAssistanceStudentEmphasis,
 } from "../../services/enfasisService";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 const getStudentKey = (student) =>
   String(
     student?.fk_student ?? student?.id_student ?? student?.id ?? "",
@@ -63,7 +65,10 @@ const RegisterAsignatureEmphasis = ({ onClose }) => {
     }
     setLoadingData(true);
     try {
-      const studentsResponse = await getStudentEnfasis(asignatura);
+      const studentsResponse = await getStudentEnfasis(
+        asignatura,
+        CURRENT_YEAR,
+      );
       const studentsArray = Array.isArray(studentsResponse)
         ? studentsResponse
         : [];

@@ -344,7 +344,8 @@ const ProfileNoteSede = ({ Modal } = {}) => {
   const { getGradeOnlySede } = useSchool();
   const notify = useNotify();
 
-  const isDocente = String(rol) === "7";
+  const isDocente =
+    String(rol).toLowerCase() === "docente" || String(rol) === "7";
   const isAdmin = String(rol) === "3";
 
   // ── Sedes del docente ─────────────────────────────────────────────────────
@@ -391,6 +392,10 @@ const ProfileNoteSede = ({ Modal } = {}) => {
   const [gradeId, setGradeId] = useState("");
   const [anio, setAnio] = useState(String(currentYear));
   const [periodoId, setPeriodoId] = useState("");
+
+  useEffect(() => {
+    if (isDocente) setAnio(String(currentYear));
+  }, [isDocente]);
 
   // Periodos (hardcoded según el patrón de la app, o se puede cargar via PeriodSelector)
   const [periods, setPeriods] = useState([]);
@@ -552,7 +557,11 @@ const ProfileNoteSede = ({ Modal } = {}) => {
       ) : null}
 
       {/* ── Filtros ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 py-4">
+      <div
+        className={`grid grid-cols-1 md:grid-cols-2 gap-4 py-4 ${
+          isDocente ? "lg:grid-cols-4" : "lg:grid-cols-5"
+        }`}
+      >
         {/* Sede */}
         <SedeSelect
           value={sedeId}
@@ -603,20 +612,22 @@ const ProfileNoteSede = ({ Modal } = {}) => {
         )}
 
         {/* Año */}
-        <div>
-          <label className="block text-sm font-medium mb-1">Año</label>
-          <select
-            className="w-full p-2 border rounded bg-surface"
-            value={anio}
-            onChange={(e) => setAnio(e.target.value)}
-          >
-            {YEAR_OPTIONS.map((y) => (
-              <option key={y} value={String(y)}>
-                {y}
-              </option>
-            ))}
-          </select>
-        </div>
+        {!isDocente && (
+          <div>
+            <label className="block text-sm font-medium mb-1">Año</label>
+            <select
+              className="w-full p-2 border rounded bg-surface"
+              value={anio}
+              onChange={(e) => setAnio(e.target.value)}
+            >
+              {YEAR_OPTIONS.map((y) => (
+                <option key={y} value={String(y)}>
+                  {y}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Periodo */}
         <div>

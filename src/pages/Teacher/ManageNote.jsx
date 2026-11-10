@@ -11,6 +11,7 @@ import JourneySelect from "../../components/atoms/JourneySelect";
 import GradeSelector from "../../components/atoms/GradeSelector";
 import AsignatureSelector from "../../components/molecules/AsignatureSelector";
 import PeriodSelector from "../../components/atoms/PeriodSelector";
+import YearSelector from "../../components/atoms/YearSelector";
 import Loader from "../../components/atoms/Loader";
 import useTeacher from "../../lib/hooks/useTeacher";
 import useAuth from "../../lib/hooks/useAuth";
@@ -25,8 +26,13 @@ const ManageNote = () => {
     getTeacherSubjects,
     getTransitionNotes,
   } = useTeacher();
-  const { idSede, nameSede, idDocente, token } = useAuth();
+  const { idSede, nameSede, idDocente, token, rol } = useAuth();
   const notify = useNotify();
+
+  const canSelectYear = useMemo(
+    () => ["2", "3", "4"].includes(String(rol)),
+    [rol],
+  );
 
   // Refs estables para evitar bucles infinitos en useEffect
   const getNotesTeacherRef = useRef(getNotesTeacher);
@@ -44,6 +50,9 @@ const ManageNote = () => {
   const [gradeId, setGradeId] = useState("");
   const [asignatureId, setAsignatureId] = useState("");
   const [periodId, setPeriodId] = useState("");
+  const [selectedYear, setSelectedYear] = useState(
+    String(new Date().getFullYear()),
+  );
   const [detectedJourney, setDetectedJourney] = useState(null);
 
   // ── Sedes del docente ────────────────────────────────────────────────────
@@ -146,6 +155,7 @@ const ManageNote = () => {
         fk_grade: Number(gradeId),
         fk_periodo: Number(periodId),
         fk_asignatura: Number(asignatureId),
+        ...(!isTransicion && { anio: Number(selectedYear) }),
       };
 
       let data;
@@ -176,6 +186,7 @@ const ManageNote = () => {
     idDocente,
     isTransicion,
     getTransitionNotes,
+    selectedYear,
   ]);
 
   // Invocación automática cuando cambian los filtros necesarios
@@ -286,7 +297,11 @@ const ManageNote = () => {
       </div>
 
       {/* ── Selectores en cascada ────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mt-2">
+      <div
+        className={`grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 ${
+          canSelectYear ? "lg:grid-cols-6" : "lg:grid-cols-5"
+        }`}
+      >
         {/* Sede siempre primero */}
         <div id="tour-mn-sede">
           <SedeSelect
@@ -379,6 +394,13 @@ const ManageNote = () => {
             Valoración Cualitativa
           </label>
         </div>
+
+        {canSelectYear && (
+          <YearSelector
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(e.target.value)}
+          />
+        )}
       </div>
 
       {/* ── Tabla de resultados ──────────────────────────────────────────── */}

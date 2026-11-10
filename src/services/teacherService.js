@@ -427,9 +427,9 @@ export async function updateLogro(logroId, institucionFk, payload) {
 }
 
 /**
- * Obtiene notas del docente por grado, periodo y asignatura
+ * Obtiene notas del docente por grado, periodo, asignatura y año
  * Endpoint: POST /notes/data
- * payload: { fk_docente, fk_grade, fk_periodo, fk_asignatura }
+ * payload: { fk_docente, fk_grade, fk_periodo, fk_asignatura, anio }
  */
 export async function getNotesTeacher(payload) {
   if (!payload || typeof payload !== "object") {
@@ -730,7 +730,7 @@ export async function updateElement(payload) {
 /**
  * Obtiene las evaluaciones (elementos) del docente o de la institución con sus preguntas.
  * Endpoint: POST /element/question
- * payload docente: { fk_docente, fk_sede, fk_grado, fk_period, fk_asignatura }
+ * payload docente: { fk_docente, fk_sede, fk_grado, fk_period, fk_asignatura, anio }
  * payload admin institucional: { institution }
  * @returns {Promise<Array>} Lista de evaluaciones
  */
