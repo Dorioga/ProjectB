@@ -4,6 +4,7 @@ import SimpleButton from "../../components/atoms/SimpleButton";
 import Modal from "../../components/atoms/Modal";
 import SedeSelect from "../../components/atoms/SedeSelect";
 import GradeSelector from "../../components/atoms/GradeSelector";
+import YearSelector from "../../components/atoms/YearSelector";
 import Loader from "../../components/atoms/Loader";
 import BoletinSelector from "../../components/molecules/BoletinSelector";
 import useSchool from "../../lib/hooks/useSchool";
@@ -21,6 +22,9 @@ const ManageBoletin = () => {
   // ── Filtros ─────────────────────────────────────────────────────────────
   const [sedeId, setSedeId] = useState("");
   const [gradeId, setGradeId] = useState("");
+  const [selectedYear, setSelectedYear] = useState(
+    String(new Date().getFullYear()),
+  );
   // ── Sedes del docente ────────────────────────────────────────────────────
   const [teacherSedes, setTeacherSedes] = useState([]);
   const [loadingTeacherSedes, setLoadingTeacherSedes] = useState(false);
@@ -42,6 +46,10 @@ const ManageBoletin = () => {
   // ── Params memoizados para selectores ────────────────────────────────────
   const isTeacher = Boolean(idDocente);
   const isRol3 = useMemo(() => String(rol) === "3", [rol]);
+  const canSelectYear = useMemo(
+    () => ["2", "3", "4"].includes(String(rol)),
+    [rol],
+  );
 
   // ── Revisión pendiente: filtrar grados por gradoAcargo del director de grupo ──
   // const gradoAcargoId = useMemo(() => {
@@ -132,7 +140,7 @@ const ManageBoletin = () => {
     try {
       const res = await getStudentGrades({
         idGrade: Number(gradeId),
-        anio: new Date().getFullYear(),
+        anio: Number(selectedYear),
       });
       const data = Array.isArray(res) ? res : (res?.data ?? []);
       setStudents(data);
@@ -148,7 +156,7 @@ const ManageBoletin = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [gradeId, getStudentGrades]);
+  }, [gradeId, getStudentGrades, selectedYear]);
 
   useEffect(() => {
     fetchStudents();
@@ -232,7 +240,11 @@ const ManageBoletin = () => {
       </div>
 
       {/* ── Selectores en cascada ────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div
+        className={`grid grid-cols-1 gap-4 ${
+          canSelectYear ? "md:grid-cols-3" : "md:grid-cols-2"
+        }`}
+      >
         <SedeSelect
           value={sedeId}
           onChange={(e) => {
@@ -274,6 +286,14 @@ const ManageBoletin = () => {
             onChange={(e) => setGradeId(e.target.value)}
             sedeId={sedeId}
             disabled={!sedeId}
+          />
+        )}
+        {canSelectYear && (
+          <YearSelector
+            label="Año"
+            labelClassName="text-lg font-semibold"
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(e.target.value)}
           />
         )}
       </div>
