@@ -910,7 +910,7 @@ const ManageYearScholar = () => {
               </span>
             </div>
             <div className="flex gap-2">
-              {/* <div className="w-36">
+              <div className="w-36">
                 <SimpleButton
                   type="button"
                   msj="Promover"
@@ -933,7 +933,7 @@ const ManageYearScholar = () => {
                   onClick={handleOpenKeepConfirm}
                   disabled={promoting}
                 />
-              </div> */}
+              </div>
             </div>
           </div>
             <AnnualSummary
