@@ -193,7 +193,7 @@ const StudentEnfasis = ({ anio }) => {
           </select>
         </div>
         <div>
-          <label className="">Asignaturafffff de énfasis</label>
+          <label className="">Asignatura de énfasis</label>
           <select
             name="select-asignatura"
             value={selectedAsignatura}
